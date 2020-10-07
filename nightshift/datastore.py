@@ -16,7 +16,7 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.ext.declarative import declarative_base
-from schalchemy.inspection import inspect
+from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import relationship, sessionmaker
 
 
@@ -90,12 +90,10 @@ class UpgradeSource(Base):
 
 class Resource(Base):
     __tablename__ = "resource"
-    __table_args__ = UniqueConstraint("bid", "library_system_id", name="uix_resource")
+    __table_args__ = (UniqueConstraint("sbid", "librarySystemId", name="uix_resource"),)
 
-    bid = Column(Integer, primary_key=True, autoincrement=False)
-    library_system_id = Column(
-        Integer, ForeignKey("library_system.lsid"), nullable=False
-    )
+    sbid = Column(Integer, primary_key=True, autoincrement=False)
+    librarySystemId = Column(Integer, ForeignKey("library_system.lsid"), nullable=False)
     bibCategoryId = Column(Integer, ForeignKey("bib_category.bcid"), nullable=False)
     exportFileId = Column(Integer, ForeignKey("export_file.efid"), nullable=False)
     outputFileId = Column(Integer, ForeignKey("output_file.ofid"))
@@ -121,9 +119,9 @@ class Resource(Base):
 class UrlField(Base):
     __tablename__ = "url_field"
 
-    uid = Column(Integer, primary_key=True)
-    bibId = Column(Integer, ForeignKey("resource.bid"), nullable=False)
-    url = Column(PickleType, nullable=False)
+    ufid = Column(Integer, primary_key=True)
+    sBibId = Column(Integer, ForeignKey("resource.sbid"), nullable=False)
+    field = Column(PickleType, nullable=False)
 
     def __repr__(self):
         state = inspect(self)
@@ -135,7 +133,7 @@ class WorldcatQuery(Base):
     __tablename__ = "worldcat_query"
 
     wqid = Column(Integer, primary_key=True)
-    bibId = Column(Integer, ForeignKey("resource.bid"), nullable=False)
+    sBibId = Column(Integer, ForeignKey("resource.sbid"), nullable=False)
     queryStamp = Column(DateTime, nullable=False, default=datetime.now())
     found = Column(Boolean, nullable=False, default=False)
     wcResponse = Column(PickleType)
