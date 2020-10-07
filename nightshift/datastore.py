@@ -26,7 +26,7 @@ Base = declarative_base()
 class LibrarySystem(Base):
     __tablename__ = "library_system"
 
-    lsid = Column(Integer, primary_key=True)
+    lsid = Column(Integer, primary_key=True, autoincrement=False)
     code = Column(String(3), nullable=False, unique=True)
     name = Column(String(25))
 
