@@ -97,13 +97,14 @@ class Resource(Base):
     bibCategoryId = Column(Integer, ForeignKey("bib_category.bcid"), nullable=False)
     exportFileId = Column(Integer, ForeignKey("export_file.efid"), nullable=False)
     outputFileId = Column(Integer, ForeignKey("output_file.ofid"))
+    cno = Column(String(20))  # bib control number
     sbn = Column(String(13))  # isbn
     lcn = Column(String(15))  # lccn
     did = Column(String(50))  # distributor number, ex. Overdrive reserve no.
     sid = Column(String(15))  # other standard number, ex. UPC
     wcn = Column(Integer)  # Worldcat OCLC number
     bibDate = Column(Date, nullable=False)
-    title = Column(String(50), nullable=False)
+    title = Column(String(50))
     author = Column(String(50))
     pubDate = Column(Date)
     upgradeStamp = Column(DateTime)
