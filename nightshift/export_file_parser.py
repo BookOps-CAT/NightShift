@@ -7,7 +7,7 @@ This module reads and parses exports to a file from Siera ILS
 import csv
 from collections import namedtuple
 import datetime
-from typing import Type
+from typing import List, Type
 
 from .datastore_values import LIB_SYS, BIB_CAT
 from .errors import SierraExportReaderError
@@ -15,21 +15,7 @@ from .errors import SierraExportReaderError
 
 ResourceMeta = namedtuple(
     "ResourceMeta",
-    [
-        "sbid",
-        "lsid",
-        "bcid",
-        "efid",
-        "sbn",
-        "lcn",
-        "did",
-        "sid",
-        "wcn",
-        "bibDate",
-        "title",
-        "author",
-        "pubDate",
-    ],
+    ["sbid", "lsid", "bcid", "cno", "bibDate"],
 )
 
 
@@ -95,4 +81,45 @@ class SierraExportReader:
         Returns:
             `datetime.date` object
         """
-        pass
+        try:
+            created = datetime.datetime.strptime(created, "%m-%d-%Y").date()
+        except (ValueError, TypeError) as exc:
+            raise SierraExportReaderError(f"ValueError: {exc}")
+        return created
+
+    def _prep_sierra_bibno(self, sid: str) -> int:
+        """
+        Verifies and formats Sierra bib numbers
+
+        Args:
+            sid:            full Sierra bib number
+
+        Returns:
+            sid_int
+        """
+        err_msg = "Invalid Sierra number passed."
+        try:
+            sid_int = int(sid[1:-1])
+        except (TypeError, ValueError) as exc:
+            raise SierraExportReaderError(f"{err_msg}: {exc}")
+        return sid_int
+
+    def _map_data(self, row: List[str]) -> Type[namedtuple]:
+        """
+        Maps csv row data into datastore Resource record
+        """
+        bid = self._prep_sierra_bibno(row[0])
+        created = self._determine_bib_created_date(row[1])
+        cno = row[2].strip()
+
+        if bid:
+            return ResourceMeta(bid, self.lsid, self.bcid, cno, created)
+
+    def __iter__(self):
+        with open(self.fh, "r") as src_file:
+            data = csv.reader(src_file)
+            # skip header
+            data.__next__()
+            for row in data:
+                record = self._map_data(row)
+                yield record
