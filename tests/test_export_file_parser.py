@@ -108,6 +108,7 @@ class TestSierraExportReader:
         n = 0
         for record in reader:
             records.append(record)
+            print(record)
             assert record.bibDate == date(2020, 9, 30)
             assert record.lsid == 2
             assert record.bcid == 1

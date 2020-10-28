@@ -111,9 +111,7 @@ class SierraExportReader:
         bid = self._prep_sierra_bibno(row[0])
         created = self._determine_bib_created_date(row[1])
         cno = row[2].strip()
-
-        if bid:
-            return ResourceMeta(bid, self.lsid, self.bcid, cno, created)
+        return ResourceMeta(bid, self.lsid, self.bcid, cno, created)
 
     def __iter__(self):
         with open(self.fh, "r") as src_file:
@@ -121,5 +119,6 @@ class SierraExportReader:
             # skip header
             data.__next__()
             for row in data:
-                record = self._map_data(row)
-                yield record
+                if row:
+                    record = self._map_data(row)
+                    yield record
