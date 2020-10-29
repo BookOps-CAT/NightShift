@@ -13,7 +13,7 @@ from nightshift.datastore import (
     UrlField,
     WorldcatQuery,
 )
-from nightshift.datastore_values import LIB_SYS, BIB_CAT
+from nightshift.datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC
 
 
 @pytest.fixture(scope="function")
@@ -38,13 +38,17 @@ def init_dataset(db_setup):
 
     #
     for values in LIB_SYS.values():
-        lib = LibrarySystem(**values)
-        session.add(lib)
+        rec = LibrarySystem(**values)
+        session.add(rec)
         session.commit()
 
     for values in BIB_CAT.values():
-        cat = BibCategory(**values)
-        session.add(cat)
+        rec = BibCategory(**values)
+        session.add(rec)
         session.commit()
+
+    for values in UPGRADE_SRC.values():
+        rec = UpgradeSource(**values)
+        session.add(rec)
 
     yield session
