@@ -56,7 +56,7 @@ version = "0.1.0"
 description = "BookOps Python wrapper around BPL Solr service."
 category = "main"
 optional = false
-python-versions = "^3.8"
+python-versions = "^3.7"
 develop = false
 
 [package.dependencies]
@@ -74,7 +74,7 @@ version = "0.2.0"
 description = "BookOps Python wrapper around NYPL Platform API"
 category = "main"
 optional = false
-python-versions = "^3.8"
+python-versions = "^3.7"
 develop = false
 
 [package.dependencies]
