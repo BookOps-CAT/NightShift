@@ -15,7 +15,7 @@ from .errors import SierraExportReaderError
 
 ResourceMeta = namedtuple(
     "ResourceMeta",
-    ["sbid", "lsid", "bcid", "cno", "bibDate"],
+    ["sbid", "librarySystemId", "bibCategoryId", "cno", "bibDate"],
 )
 
 

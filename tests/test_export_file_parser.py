@@ -109,8 +109,8 @@ class TestSierraExportReader:
         for record in reader:
             records.append(record)
             assert record.bibDate == date(2020, 9, 30)
-            assert record.lsid == 2
-            assert record.bcid == 1
+            assert record.librarySystemId == 2
+            assert record.bibCategoryId == 1
 
             if n == 0:
                 assert record.sbid == 12353027
