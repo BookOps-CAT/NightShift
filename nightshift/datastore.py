@@ -55,7 +55,7 @@ class ExportFile(Base):
     __tablename__ = "export_file"
 
     efid = Column(Integer, primary_key=True)
-    handle = Column(String(50), nullable=False)
+    handle = Column(String(50), nullable=False, unique=True)
     dateCreated = Column(DateTime, nullable=False, default=datetime.now())
 
     def __repr__(self):
