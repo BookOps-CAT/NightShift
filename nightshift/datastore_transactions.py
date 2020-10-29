@@ -2,7 +2,14 @@
 This modules contains methods for transactions with data.db
 """
 
-from .datastore import dal, LibrarySystem, BibCategory, UpgradeSource, Resource
+from .datastore import (
+    dal,
+    ExportFile,
+    LibrarySystem,
+    BibCategory,
+    UpgradeSource,
+    Resource,
+)
 from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC
 
 
@@ -36,6 +43,17 @@ def insert_resource(session, **kwargs):
     instance = session.query(Resource).filter_by(sbid=kwargs["sbid"]).first()
     if not instance:
         instance = Resource(**kwargs)
+        session.add(instance)
+    return instance
+
+
+def insert_export_file(session, **kwargs):
+    """
+    Inserts to ExportFile table
+    """
+    instance = session.query(ExportFile).filter_by(handle=kwargs["handle"]).first()
+    if not instance:
+        instance = ExportFile(**kwargs)
         session.add(instance)
     return instance
 
