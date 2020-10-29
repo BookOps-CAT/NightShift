@@ -2,20 +2,51 @@
 This modules contains methods for transactions with data.db
 """
 
-from .datastore import dal, LibrarySystem, BibCategory, UpgradeSource
+from .datastore import dal, LibrarySystem, BibCategory, UpgradeSource, Resource
 from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC
 
 
 def insert(session, model, **kwargs):
+    """
+    Inserts a record into the datastore
+
+    Args:
+        session:            sqlalchemy db session
+        model:              datastore table
+
+    Returns:
+        instance
+    """
     instance = model(**kwargs)
     session.add(instance)
     session.flush()
     return instance
 
 
+def insert_resource(session, **kwargs):
+    """
+    Inserts to Resource table if new record or returns instance of exisitng
+
+    Args:
+        session:            sqlalchemy db session
+
+    Returns:
+        instance
+    """
+    instance = session.query(Resource).filter_by(sbid=kwargs["sbid"]).first()
+    if not instance:
+        instance = Resource(**kwargs)
+        session.add(instance)
+    return instance
+
+
 def create_datastore(prod: bool = False):
     """
     Creates and prepopulates with initial data new datastore (data.db)
+
+    Args:
+        prod:               if True creates production data.db,
+                            if False creates in-memody database
     """
 
     if not prod:
