@@ -1,13 +1,15 @@
 """
-Defines and initiates NightShift SQLite database
+Defines and initiates NightShift SQLite database. Contains data model and session.
 """
 
+from contextlib import contextmanager
 from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
     Date,
     DateTime,
+    create_engine,
     Column,
     ForeignKey,
     Integer,
@@ -39,7 +41,7 @@ class LibrarySystem(Base):
 class BibCategory(Base):
     __tablename__ = "bib_category"
 
-    bcid = Column(Integer, primary_key=True)
+    bcid = Column(Integer, primary_key=True, autoincrement=False)
     code = Column(String(5), nullable=False, unique=True)
     description = Column(String(50))
 
@@ -78,7 +80,7 @@ class OutputFile(Base):
 class UpgradeSource(Base):
     __tablename__ = "upgrade_source"
 
-    usid = Column(Integer, primary_key=True)
+    usid = Column(Integer, primary_key=True, autoincrement=False)
     name = Column(String(8), nullable=False, unique=True)
     description = Column(String(50))
 
@@ -110,6 +112,9 @@ class Resource(Base):
     upgradeStamp = Column(DateTime)
     upgraded = Column(Boolean, default=False)
     upgradeSourceId = Column(Integer, ForeignKey("upgrade_source.usid"))
+
+    urls = relationship("UrlField", cascade="all, delete-orphan")
+    wqueries = relationship("WorldcatQuery", cascade="all, delete-orphan")
 
     def __repr__(self):
         state = inspect(self)
@@ -143,3 +148,31 @@ class WorldcatQuery(Base):
         state = inspect(self)
         attrs = ", ".join([f"{attr.key}={attr.loaded_value!r}" for attr in state.attrs])
         return f"<WorldcatQuery({attrs})>"
+
+
+class DataAccessLayer:
+    def __init__(self):
+        self.conn_string = "sqlite:///data.db"
+
+    def connect(self):
+        self.engine = create_engine(self.conn_string)
+        Base.metadata.create_all(self.engine)
+        self.Session = sessionmaker(bind=self.engine)
+
+
+dal = DataAccessLayer()
+
+
+@contextmanager
+def session_scope():
+    """Provide a transactional scope around a series of operations."""
+    dal.connect()
+    session = dal.Session()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
