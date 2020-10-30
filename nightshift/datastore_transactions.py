@@ -2,6 +2,10 @@
 This modules contains methods for transactions with data.db
 """
 
+from typing import List, Type
+
+import sqlalchemy
+
 from .datastore import (
     dal,
     ExportFile,
@@ -56,6 +60,36 @@ def insert_export_file(session, **kwargs):
         instance = ExportFile(**kwargs)
         session.add(instance)
     return instance
+
+
+def retrieve_records(session, model, **kwargs):
+    instances = session.query(model).filter_by(**kwargs).all()
+    return instances
+
+
+def retrieve_bibnos(
+    session: Type[sqlalchemy.orm.session.Session], lsid: int, bcid: int
+) -> List[int]:
+    """
+    Retrieves records from datastore with matching library system id, bib category id,
+    and missing full Sierra data
+
+    Args:
+        session:            sqlalchemy session
+        lsid:               LibrarySytstem lsid
+        bcid:               BibCategory bcid
+
+    Returns:
+        list of Sierra bibNos
+    """
+    sbids = []
+    records = retrieve_records(
+        session, Resource, librarySystemId=lsid, bibCategoryId=bcid, title=None
+    )
+    for rec in records:
+        sbids.append(rec.sbid)
+
+    return sbids
 
 
 def create_datastore(prod: bool = False):
