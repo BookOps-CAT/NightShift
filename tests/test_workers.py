@@ -9,15 +9,15 @@ import pytest
 from nightshift.datastore import Resource, ExportFile
 from nightshift.workers import (
     import_sierra_data,
-    record_export_file_data,
+    import_export_file_data,
     retrieve_bibnos_for_enhancement,
 )
 
 
-def test_record_export_file_data(init_dataset):
+def test_import_export_file_data(init_dataset):
     session = init_dataset
     fh = "tests/files/bpl-ere-export-sample.txt"
-    rec = record_export_file_data(fh, session)
+    rec = import_export_file_data(fh, session)
     assert rec.efid == 1
     assert rec.handle == "bpl-ere-export-sample.txt"
 

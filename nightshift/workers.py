@@ -13,7 +13,7 @@ from .datastore_transactions import insert_resource, insert_export_file, retriev
 from .datastore_values import LIB_SYS, BIB_CAT
 
 
-def record_export_file_data(fh: str, session: Type[sqlalchemy.orm.session.Session]):
+def import_export_file_data(fh: str, session: Type[sqlalchemy.orm.session.Session]):
     """
     Inserts export file record to ExportFile table
 
@@ -39,7 +39,7 @@ def import_sierra_data(fh: str, session: Type[sqlalchemy.orm.session.Session]):
         session:                sqlalchemy session
     """
     # record and get table id of export file
-    fh_rec = record_export_file_data(fh, session)
+    fh_rec = import_export_file_data(fh, session)
 
     data = SierraExportReader(fh)
     for res in data:
@@ -69,3 +69,14 @@ def retrieve_bibnos_for_enhancement(
     sierra_bibnos = retrieve_bibnos(session, lsid, bcid)
 
     return sierra_bibnos
+
+
+def query_nyp_sierra(bibnos: List[int]):
+    """
+    Queries NYPL Platform retrieving records with particular Sierra bib numbers.
+
+    Args:
+        sbids:                  list of Sierra bib numbers without 'b' prefix and
+                                last digit check
+    """
+    pass
