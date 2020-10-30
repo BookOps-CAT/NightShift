@@ -11,7 +11,7 @@ LIB_SYS = {
 }
 
 BIB_CAT = {
-    "ebk": {"code": "ebk", "bcid": 1, "description": "Overdrive e-resources"},
+    "ere": {"code": "ere", "bcid": 1, "description": "Overdrive e-resources"},
     "pre": {"code": "pre", "bcid": 2, "description": "English print monograph"},
 }
 

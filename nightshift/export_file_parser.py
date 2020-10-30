@@ -61,8 +61,11 @@ class SierraExportReader:
         Returns:
             bcid
         """
-        if "ebk" in fh:
-            bcid = BIB_CAT["ebk"]["bcid"]
+
+        # e-resouces
+        if "ere" in fh:
+            bcid = BIB_CAT["ere"]["bcid"]
+        # English print
         elif "pre" in fh:
             bcid = BIB_CAT["pre"]["bcid"]
         else:

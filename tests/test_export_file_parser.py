@@ -20,8 +20,8 @@ class TestSierraExportReader:
     @pytest.mark.parametrize(
         "handle,expectation",
         [
-            ("nyp-ebk-201001.txt", LIB_SYS["nyp"]["lsid"]),
-            ("bpl-ebk-201001.txt", LIB_SYS["bpl"]["lsid"]),
+            ("nyp-ere-201001.txt", LIB_SYS["nyp"]["lsid"]),
+            ("bpl-ere-201001.txt", LIB_SYS["bpl"]["lsid"]),
         ],
     )
     def test_determine_library_system_id(self, handle, expectation):
@@ -35,7 +35,7 @@ class TestSierraExportReader:
             (None, "No file handle was passed to Sierra export reader."),
             (1234, "No file handle was passed to Sierra export reader."),
             ([], "No file handle was passed to Sierra export reader."),
-            ("ebk-201001.txt", "Sierra export file handle has invalid format"),
+            ("ere-201001.txt", "Sierra export file handle has invalid format"),
         ],
     )
     def test_determine_library_system_id_exceptions(self, handle, err_msg):
@@ -46,7 +46,7 @@ class TestSierraExportReader:
     @pytest.mark.parametrize(
         "handle,expectation",
         [
-            ("nyp-ebk-201001.txt", BIB_CAT["ebk"]["bcid"]),
+            ("nyp-ere-201001.txt", BIB_CAT["ere"]["bcid"]),
             ("bpl-pre-201001.txt", BIB_CAT["pre"]["bcid"]),
         ],
     )
@@ -64,8 +64,8 @@ class TestSierraExportReader:
     @pytest.mark.parametrize(
         "handle,date_arg,expectation",
         [
-            ("nyp-ebk-201001.txt", "09-22-2020 16:23", date(2020, 9, 22)),
-            ("bpl-ebk-201001.txt", "09-30-2020", date(2020, 9, 30)),
+            ("nyp-ere-201001.txt", "09-22-2020 16:23", date(2020, 9, 22)),
+            ("bpl-ere-201001.txt", "09-30-2020", date(2020, 9, 30)),
         ],
     )
     def test_determine_bib_created_date(self, handle, date_arg, expectation):
@@ -75,17 +75,17 @@ class TestSierraExportReader:
     @pytest.mark.parametrize("arg", ["2020-09-30", "", None])
     def test_determine_bib_created_date_exceptions(self, arg):
         with pytest.raises(SierraExportReaderError):
-            reader = SierraExportReader("nyp-ebk-201001.txt")
+            reader = SierraExportReader("nyp-ere-201001.txt")
             reader._determine_bib_created_date(arg)
 
     def test_prep_sierra_bibno(self):
-        reader = SierraExportReader("nyp-ebk-201001.txt")
+        reader = SierraExportReader("nyp-ere-201001.txt")
         assert reader._prep_sierra_bibno("b123456789") == 12345678
 
     @pytest.mark.parametrize("arg", [None, ""])
     def test_prep_sierra_bibno_exceptions(self, arg):
         err_msg = "Invalid Sierra number passed."
-        reader = SierraExportReader("nyp-ebk-201001.txt")
+        reader = SierraExportReader("nyp-ere-201001.txt")
         with pytest.raises(SierraExportReaderError) as exc:
             reader._prep_sierra_bibno(arg)
             assert err_msg in str(exc.value)
@@ -94,7 +94,7 @@ class TestSierraExportReader:
         "fh,row,expectation",
         [
             (
-                "nyp-ebk-201001.txt",
+                "nyp-ere-201001.txt",
                 ["b123530271", "09-30-2020 17:22", "ODN0004408595"],
                 ResourceMeta(12353027, 1, 1, "ODN0004408595", date(2020, 9, 30)),
             ),
@@ -110,7 +110,7 @@ class TestSierraExportReader:
         assert reader._map_data(row) == expectation
 
     def test_generator(self):
-        reader = SierraExportReader("tests/files/bpl-ebk-export-sample.txt")
+        reader = SierraExportReader("tests/files/bpl-ere-export-sample.txt")
         records = []
         n = 0
         for record in reader:
