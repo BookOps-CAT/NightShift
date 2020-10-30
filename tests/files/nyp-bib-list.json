@@ -1,0 +1,2983 @@
+{
+  "data": [
+    {
+      "id": "22259002",
+      "nyplSource": "sierra-nypl",
+      "nyplType": "bib",
+      "updatedDate": "2020-09-29T15:30:46-04:00",
+      "createdDate": "2020-09-22T20:23:19-04:00",
+      "deletedDate": null,
+      "deleted": false,
+      "locations": [
+        {
+          "code": "ia",
+          "name": "Electronic Material for Adults"
+        }
+      ],
+      "suppressed": false,
+      "lang": {
+        "code": "eng",
+        "name": "English"
+      },
+      "title": "The saddest words [electronic resource] : William faulkner's civil war.",
+      "author": "Gorra, Michael.",
+      "materialType": {
+        "code": "z  ",
+        "value": "E-BOOK"
+      },
+      "bibLevel": {
+        "code": "m",
+        "value": "MONOGRAPH"
+      },
+      "publishYear": 2020,
+      "catalogDate": "2020-09-22",
+      "country": {
+        "code": "nyu",
+        "name": "New York (State)"
+      },
+      "normTitle": "saddest words electronic resource william faulkners civil war",
+      "normAuthor": "gorra michael",
+      "standardNumbers": [
+        "9781631491719"
+      ],
+      "controlNumber": "ODN0005077214",
+      "fixedFields": {
+        "24": {
+          "label": "Language",
+          "value": "eng",
+          "display": "English"
+        },
+        "25": {
+          "label": "Skip",
+          "value": "4",
+          "display": null
+        },
+        "26": {
+          "label": "Location",
+          "value": "ia   ",
+          "display": "Electronic Material for Adults"
+        },
+        "27": {
+          "label": "COPIES",
+          "value": "1",
+          "display": null
+        },
+        "28": {
+          "label": "Cat. Date",
+          "value": "2020-09-22",
+          "display": null
+        },
+        "29": {
+          "label": "Bib Level",
+          "value": "m",
+          "display": "MONOGRAPH"
+        },
+        "30": {
+          "label": "Material Type",
+          "value": "z  ",
+          "display": "E-BOOK"
+        },
+        "31": {
+          "label": "Bib Code 3",
+          "value": "a",
+          "display": null
+        },
+        "80": {
+          "label": "Record Type",
+          "value": "b",
+          "display": null
+        },
+        "81": {
+          "label": "Record Number",
+          "value": "22259002",
+          "display": null
+        },
+        "83": {
+          "label": "Created Date",
+          "value": "2020-09-22T20:23:19Z",
+          "display": null
+        },
+        "84": {
+          "label": "Updated Date",
+          "value": "2020-09-29T15:30:46Z",
+          "display": null
+        },
+        "85": {
+          "label": "No. of Revisions",
+          "value": "2",
+          "display": null
+        },
+        "86": {
+          "label": "Agency",
+          "value": "1",
+          "display": null
+        },
+        "89": {
+          "label": "Country",
+          "value": "nyu",
+          "display": "New York (State)"
+        },
+        "98": {
+          "label": "PDATE",
+          "value": "2020-09-22T20:23:19Z",
+          "display": null
+        },
+        "107": {
+          "label": "MARC Type",
+          "value": " ",
+          "display": null
+        }
+      },
+      "varFields": [
+        {
+          "fieldTag": "a",
+          "marcTag": "100",
+          "ind1": "1",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Gorra, Michael."
+            }
+          ]
+        },
+        {
+          "fieldTag": "b",
+          "marcTag": "710",
+          "ind1": "2",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "OverDrive, Inc.,"
+            },
+            {
+              "tag": "e",
+              "content": "distributor."
+            }
+          ]
+        },
+        {
+          "fieldTag": "c",
+          "marcTag": "091",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "eNYPL Book"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "650",
+          "ind1": " ",
+          "ind2": "7",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Biography & Autobiography."
+            },
+            {
+              "tag": "2",
+              "content": "OverDrive"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "650",
+          "ind1": " ",
+          "ind2": "7",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "History."
+            },
+            {
+              "tag": "2",
+              "content": "OverDrive"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "650",
+          "ind1": " ",
+          "ind2": "7",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Literary Criticism."
+            },
+            {
+              "tag": "2",
+              "content": "OverDrive"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "655",
+          "ind1": " ",
+          "ind2": "0",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Electronic books."
+            }
+          ]
+        },
+        {
+          "fieldTag": "i",
+          "marcTag": "020",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "9781631491719"
+            },
+            {
+              "tag": "q",
+              "content": "(electronic bk)"
+            }
+          ]
+        },
+        {
+          "fieldTag": "n",
+          "marcTag": "520",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "How do we read William Faulkner in the twenty-first century? asks Michael Gorra, in this reconsideration of Faulkner's life and legacy. William Faulkner, one of America's most iconic writers, is an author who defies easy interpretation. Born in 1897 in Mississippi, Faulkner wrote such classic novels as Absolom, Absolom! and The Sound and The Fury, creating in Yoknapatawpha county one of the most memorable gallery of characters ever assembled in American literature. Yet, as acclaimed literary critic Michael Gorra explains, Faulkner has sustained justified criticism for his failures of racial nuance -- his ventriloquism of black characters and his rendering of race relations in a largely unreconstructed South -- demanding that we reevaluate the Nobel laureate's life and legacy in the twenty-first century, as we reexamine the junctures of race and literature in works that once rested firmly in the American canon. Interweaving biography, literary criticism, and rich travelogue, The Saddest Words argues that even despite these contradictions -- and perhaps because of them -- William Faulkner still needs to be read, and even more, remains central to understanding the contradictions inherent in the American experience itself. Evoking Faulkner's biography and his literary characters, Gorra illuminates what Faulkner maintained was \"the South's curse and its separate destiny,\" a class and racial system built on slavery that was devastated during the Civil War and was reimagined thereafter through the South's revanchism. Driven by currents of violence, a \"Lost Cause\" romanticism not only defined Faulkner's twentieth century but now even our own age. Through Gorra's critical lens, Faulkner's mythic Yoknapatawpha County comes alive as his imagined land finds itself entwined in America's history, the characters wrestling with the ghosts of a past that refuses to stay buried, stuck in an unending cycle between those two saddest words, \"was\" and \"again.\" Upending previous critical traditions, The Saddest Words returns Faulkner to his sociopolitical context, revealing the civil war within him and proving that \"the real war lies not only in the physical combat, but also in the war after the war, the war over its memory and meaning.\" Filled with vignettes of Civil War battles and generals, vivid scenes from Gorra's travels through the South -- including Faulkner's Oxford, Mississippi -- and commentaries on Faulkner's fiction, The Saddest Words is a mesmerizing work of literary thought that recontextualizes Faulkner in light of the most plangent cultural issues facing America today."
+            }
+          ]
+        },
+        {
+          "fieldTag": "n",
+          "marcTag": "533",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Electronic reproduction."
+            },
+            {
+              "tag": "b",
+              "content": "New York :"
+            },
+            {
+              "tag": "c",
+              "content": "Liveright,"
+            },
+            {
+              "tag": "d",
+              "content": "2020."
+            },
+            {
+              "tag": "n",
+              "content": "Requires OverDrive Read (file size: N/A KB) or Adobe Digital Editions (file size: 4694 KB) or Kobo app or compatible Kobo device (file size: N/A KB) or Amazon Kindle (file size: N/A KB)."
+            }
+          ]
+        },
+        {
+          "fieldTag": "o",
+          "marcTag": "001",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "ODN0005077214",
+          "subfields": null
+        },
+        {
+          "fieldTag": "p",
+          "marcTag": "260",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "c",
+              "content": "2020."
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "300",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "1 online resource"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "336",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "text"
+            },
+            {
+              "tag": "b",
+              "content": "txt"
+            },
+            {
+              "tag": "2",
+              "content": "rdacontent"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "337",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "computer"
+            },
+            {
+              "tag": "b",
+              "content": "c"
+            },
+            {
+              "tag": "2",
+              "content": "rdamedia"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "338",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "online resource"
+            },
+            {
+              "tag": "b",
+              "content": "cr"
+            },
+            {
+              "tag": "2",
+              "content": "rdacarrier"
+            }
+          ]
+        },
+        {
+          "fieldTag": "t",
+          "marcTag": "245",
+          "ind1": "1",
+          "ind2": "4",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "The saddest words"
+            },
+            {
+              "tag": "h",
+              "content": "[electronic resource] :"
+            },
+            {
+              "tag": "b",
+              "content": "William faulkner's civil war."
+            },
+            {
+              "tag": "c",
+              "content": "Michael Gorra."
+            }
+          ]
+        },
+        {
+          "fieldTag": "w",
+          "marcTag": "776",
+          "ind1": "1",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "c",
+              "content": "Original"
+            },
+            {
+              "tag": "z",
+              "content": "9781631491702"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "006",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "m        d        ",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "007",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "cr cn---------",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "008",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "200502s2020    nyu     s     000 0 eng dnamKa ",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "037",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "40CC3B3F-4C30-4685-B391-DB7B2EA91455"
+            },
+            {
+              "tag": "b",
+              "content": "OverDrive, Inc."
+            },
+            {
+              "tag": "n",
+              "content": "http://www.overdrive.com"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "040",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "TEFOD"
+            },
+            {
+              "tag": "c",
+              "content": "TEFOD"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "084",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "BIO007000"
+            },
+            {
+              "tag": "a",
+              "content": "HIS036050"
+            },
+            {
+              "tag": "a",
+              "content": "LIT004020"
+            },
+            {
+              "tag": "2",
+              "content": "bisacsh"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": "0",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "u",
+              "content": "http://link.overdrive.com/?websiteID=37&titleID=5077214"
+            },
+            {
+              "tag": "z",
+              "content": "Access eNYPL"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Excerpt"
+            },
+            {
+              "tag": "u",
+              "content": "https://samples.overdrive.com/?crid=40cc3b3f-4c30-4685-b391-db7b2ea91455&.epub-sample.overdrive.com"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Image"
+            },
+            {
+              "tag": "u",
+              "content": "https://img1.od-cdn.com/ImageType-100/0044-1/%7B40CC3B3F-4C30-4685-B391-DB7B2EA91455%7DImg100.jpg"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Thumbnail"
+            },
+            {
+              "tag": "u",
+              "content": "https://img1.od-cdn.com/ImageType-200/0044-1/%7B40CC3B3F-4C30-4685-B391-DB7B2EA91455%7DImg200.jpg"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "901",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "OverDrive_ME-0837"
+            }
+          ]
+        },
+        {
+          "fieldTag": "_",
+          "marcTag": null,
+          "ind1": null,
+          "ind2": null,
+          "content": "00000nam a2200385Ka 4500",
+          "subfields": null
+        }
+      ]
+    },
+    {
+      "id": "22259003",
+      "nyplSource": "sierra-nypl",
+      "nyplType": "bib",
+      "updatedDate": "2020-09-22T20:23:19-04:00",
+      "createdDate": "2020-09-22T20:23:19-04:00",
+      "deletedDate": null,
+      "deleted": false,
+      "locations": [
+        {
+          "code": "ia",
+          "name": "Electronic Material for Adults"
+        }
+      ],
+      "suppressed": false,
+      "lang": {
+        "code": "eng",
+        "name": "English"
+      },
+      "title": "Passion of the western mind [electronic resource] : Understanding the ideas that have shaped our world view.",
+      "author": "Tarnas, Richard.",
+      "materialType": {
+        "code": "z  ",
+        "value": "E-BOOK"
+      },
+      "bibLevel": {
+        "code": "m",
+        "value": "MONOGRAPH"
+      },
+      "publishYear": 2011,
+      "catalogDate": "2020-09-22",
+      "country": {
+        "code": "nyu",
+        "name": "New York (State)"
+      },
+      "normTitle": "passion of the western mind electronic resource understanding the ideas that have shaped our world view",
+      "normAuthor": "tarnas richard",
+      "standardNumbers": [
+        "9780307804525"
+      ],
+      "controlNumber": "ODN0000647341",
+      "fixedFields": {
+        "24": {
+          "label": "Language",
+          "value": "eng",
+          "display": "English"
+        },
+        "25": {
+          "label": "Skip",
+          "value": "0",
+          "display": null
+        },
+        "26": {
+          "label": "Location",
+          "value": "ia   ",
+          "display": "Electronic Material for Adults"
+        },
+        "27": {
+          "label": "COPIES",
+          "value": "1",
+          "display": null
+        },
+        "28": {
+          "label": "Cat. Date",
+          "value": "2020-09-22",
+          "display": null
+        },
+        "29": {
+          "label": "Bib Level",
+          "value": "m",
+          "display": "MONOGRAPH"
+        },
+        "30": {
+          "label": "Material Type",
+          "value": "z  ",
+          "display": "E-BOOK"
+        },
+        "31": {
+          "label": "Bib Code 3",
+          "value": "a",
+          "display": null
+        },
+        "80": {
+          "label": "Record Type",
+          "value": "b",
+          "display": null
+        },
+        "81": {
+          "label": "Record Number",
+          "value": "22259003",
+          "display": null
+        },
+        "83": {
+          "label": "Created Date",
+          "value": "2020-09-22T20:23:19Z",
+          "display": null
+        },
+        "84": {
+          "label": "Updated Date",
+          "value": "2020-09-22T20:23:19Z",
+          "display": null
+        },
+        "85": {
+          "label": "No. of Revisions",
+          "value": "1",
+          "display": null
+        },
+        "86": {
+          "label": "Agency",
+          "value": "1",
+          "display": null
+        },
+        "89": {
+          "label": "Country",
+          "value": "nyu",
+          "display": "New York (State)"
+        },
+        "98": {
+          "label": "PDATE",
+          "value": "2020-09-22T20:23:19Z",
+          "display": null
+        },
+        "107": {
+          "label": "MARC Type",
+          "value": " ",
+          "display": null
+        }
+      },
+      "varFields": [
+        {
+          "fieldTag": "a",
+          "marcTag": "100",
+          "ind1": "1",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Tarnas, Richard."
+            }
+          ]
+        },
+        {
+          "fieldTag": "b",
+          "marcTag": "710",
+          "ind1": "2",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "OverDrive, Inc.,"
+            },
+            {
+              "tag": "e",
+              "content": "distributor."
+            }
+          ]
+        },
+        {
+          "fieldTag": "c",
+          "marcTag": "091",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "eNYPL Book"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "650",
+          "ind1": " ",
+          "ind2": "7",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Philosophy."
+            },
+            {
+              "tag": "2",
+              "content": "OverDrive"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "655",
+          "ind1": " ",
+          "ind2": "0",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Electronic books."
+            }
+          ]
+        },
+        {
+          "fieldTag": "i",
+          "marcTag": "020",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "9780307804525"
+            },
+            {
+              "tag": "q",
+              "content": "(electronic bk)"
+            }
+          ]
+        },
+        {
+          "fieldTag": "n",
+          "marcTag": "520",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "\"[This] magnificent critical survey, with its inherent respect for both the 'Westt's mainstream high culture' and the 'radically changing world' of the 1990s, offers a new breakthrough for lay and scholarly readers alike....Allows readers to grasp the big picture of Western culture for the first time.\" SAN FRANCISCO CHRONICLE Here are the great minds of Western civilization and their pivotal ideas, from Plato to Hegel, from Augustine to Nietzsche, from Copernicus to Freud. Richard Tarnas performs the near-miracle of describing profound philosophical concepts simply but without simplifying them. Ten years in the making and already hailed as a classic, THE PASSION OF THE WESERN MIND is truly a complete liberal education in a single volume. From the Trade Paperback edition."
+            }
+          ]
+        },
+        {
+          "fieldTag": "n",
+          "marcTag": "533",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Electronic reproduction."
+            },
+            {
+              "tag": "b",
+              "content": "New York :"
+            },
+            {
+              "tag": "c",
+              "content": "Ballantine Books,"
+            },
+            {
+              "tag": "d",
+              "content": "2011."
+            },
+            {
+              "tag": "n",
+              "content": "Requires OverDrive Read (file size: N/A KB) or Adobe Digital Editions (file size: 2290 KB) or Kobo app or compatible Kobo device (file size: N/A KB) or Amazon Kindle (file size: N/A KB)."
+            }
+          ]
+        },
+        {
+          "fieldTag": "o",
+          "marcTag": "001",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "ODN0000647341",
+          "subfields": null
+        },
+        {
+          "fieldTag": "p",
+          "marcTag": "260",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "c",
+              "content": "2011."
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "300",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "1 online resource"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "336",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "text"
+            },
+            {
+              "tag": "b",
+              "content": "txt"
+            },
+            {
+              "tag": "2",
+              "content": "rdacontent"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "337",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "computer"
+            },
+            {
+              "tag": "b",
+              "content": "c"
+            },
+            {
+              "tag": "2",
+              "content": "rdamedia"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "338",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "online resource"
+            },
+            {
+              "tag": "b",
+              "content": "cr"
+            },
+            {
+              "tag": "2",
+              "content": "rdacarrier"
+            }
+          ]
+        },
+        {
+          "fieldTag": "t",
+          "marcTag": "245",
+          "ind1": "1",
+          "ind2": "0",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Passion of the western mind"
+            },
+            {
+              "tag": "h",
+              "content": "[electronic resource] :"
+            },
+            {
+              "tag": "b",
+              "content": "Understanding the ideas that have shaped our world view."
+            },
+            {
+              "tag": "c",
+              "content": "Richard Tarnas."
+            }
+          ]
+        },
+        {
+          "fieldTag": "w",
+          "marcTag": "776",
+          "ind1": "1",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "c",
+              "content": "Original"
+            },
+            {
+              "tag": "z",
+              "content": "9780345368096"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "006",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "m        d        ",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "007",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "cr cn---------",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "008",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "171212s2011    nyu     s     000 0 eng dnamKa ",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "037",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "4E7547BF-6D42-43F4-9180-8FCF302497F3"
+            },
+            {
+              "tag": "b",
+              "content": "OverDrive, Inc."
+            },
+            {
+              "tag": "n",
+              "content": "http://www.overdrive.com"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "040",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "TEFOD"
+            },
+            {
+              "tag": "c",
+              "content": "TEFOD"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "084",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "PHI004000"
+            },
+            {
+              "tag": "a",
+              "content": "PHI005000"
+            },
+            {
+              "tag": "a",
+              "content": "PHI021000"
+            },
+            {
+              "tag": "2",
+              "content": "bisacsh"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": "0",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "u",
+              "content": "http://link.overdrive.com/?websiteID=37&titleID=647341"
+            },
+            {
+              "tag": "z",
+              "content": "Access eNYPL"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Excerpt"
+            },
+            {
+              "tag": "u",
+              "content": "https://samples.overdrive.com/?crid=4E7547BF-6D42-43F4-9180-8FCF302497F3&.epub-sample.overdrive.com"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Image"
+            },
+            {
+              "tag": "u",
+              "content": "https://img1.od-cdn.com/ImageType-100/0111-1/%7B4E7547BF-6D42-43F4-9180-8FCF302497F3%7DImg100.jpg"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Thumbnail"
+            },
+            {
+              "tag": "u",
+              "content": "https://img1.od-cdn.com/ImageType-200/0111-1/%7B4E7547BF-6D42-43F4-9180-8FCF302497F3%7DImg200.jpg"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "901",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "OverDrive_ME-0837"
+            }
+          ]
+        },
+        {
+          "fieldTag": "_",
+          "marcTag": null,
+          "ind1": null,
+          "ind2": null,
+          "content": "00000nam a2200361Ka 4500",
+          "subfields": null
+        }
+      ]
+    },
+    {
+      "id": "22259004",
+      "nyplSource": "sierra-nypl",
+      "nyplType": "bib",
+      "updatedDate": "2020-09-29T15:30:22-04:00",
+      "createdDate": "2020-09-22T20:23:19-04:00",
+      "deletedDate": null,
+      "deleted": false,
+      "locations": [
+        {
+          "code": "ia",
+          "name": "Electronic Material for Adults"
+        }
+      ],
+      "suppressed": false,
+      "lang": {
+        "code": "eng",
+        "name": "English"
+      },
+      "title": "Borges and me [electronic resource] : An encounter.",
+      "author": "Parini, Jay.",
+      "materialType": {
+        "code": "z  ",
+        "value": "E-BOOK"
+      },
+      "bibLevel": {
+        "code": "m",
+        "value": "MONOGRAPH"
+      },
+      "publishYear": 2020,
+      "catalogDate": "2020-09-22",
+      "country": {
+        "code": "nyu",
+        "name": "New York (State)"
+      },
+      "normTitle": "borges and me electronic resource an encounter",
+      "normAuthor": "parini jay",
+      "standardNumbers": [
+        "9780385545839"
+      ],
+      "controlNumber": "ODN0005089447",
+      "fixedFields": {
+        "24": {
+          "label": "Language",
+          "value": "eng",
+          "display": "English"
+        },
+        "25": {
+          "label": "Skip",
+          "value": "0",
+          "display": null
+        },
+        "26": {
+          "label": "Location",
+          "value": "ia   ",
+          "display": "Electronic Material for Adults"
+        },
+        "27": {
+          "label": "COPIES",
+          "value": "1",
+          "display": null
+        },
+        "28": {
+          "label": "Cat. Date",
+          "value": "2020-09-22",
+          "display": null
+        },
+        "29": {
+          "label": "Bib Level",
+          "value": "m",
+          "display": "MONOGRAPH"
+        },
+        "30": {
+          "label": "Material Type",
+          "value": "z  ",
+          "display": "E-BOOK"
+        },
+        "31": {
+          "label": "Bib Code 3",
+          "value": "a",
+          "display": null
+        },
+        "80": {
+          "label": "Record Type",
+          "value": "b",
+          "display": null
+        },
+        "81": {
+          "label": "Record Number",
+          "value": "22259004",
+          "display": null
+        },
+        "83": {
+          "label": "Created Date",
+          "value": "2020-09-22T20:23:19Z",
+          "display": null
+        },
+        "84": {
+          "label": "Updated Date",
+          "value": "2020-09-29T15:30:22Z",
+          "display": null
+        },
+        "85": {
+          "label": "No. of Revisions",
+          "value": "2",
+          "display": null
+        },
+        "86": {
+          "label": "Agency",
+          "value": "1",
+          "display": null
+        },
+        "89": {
+          "label": "Country",
+          "value": "nyu",
+          "display": "New York (State)"
+        },
+        "98": {
+          "label": "PDATE",
+          "value": "2020-09-22T20:23:19Z",
+          "display": null
+        },
+        "107": {
+          "label": "MARC Type",
+          "value": " ",
+          "display": null
+        }
+      },
+      "varFields": [
+        {
+          "fieldTag": "a",
+          "marcTag": "100",
+          "ind1": "1",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Parini, Jay."
+            }
+          ]
+        },
+        {
+          "fieldTag": "b",
+          "marcTag": "710",
+          "ind1": "2",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "OverDrive, Inc.,"
+            },
+            {
+              "tag": "e",
+              "content": "distributor."
+            }
+          ]
+        },
+        {
+          "fieldTag": "c",
+          "marcTag": "091",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "eNYPL Book"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "650",
+          "ind1": " ",
+          "ind2": "7",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Biography & Autobiography."
+            },
+            {
+              "tag": "2",
+              "content": "OverDrive"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "650",
+          "ind1": " ",
+          "ind2": "7",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Travel."
+            },
+            {
+              "tag": "2",
+              "content": "OverDrive"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "655",
+          "ind1": " ",
+          "ind2": "0",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Electronic books."
+            }
+          ]
+        },
+        {
+          "fieldTag": "i",
+          "marcTag": "020",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "9780385545839"
+            },
+            {
+              "tag": "q",
+              "content": "(electronic bk)"
+            }
+          ]
+        },
+        {
+          "fieldTag": "n",
+          "marcTag": "520",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "An apprentice writer has an entirely unexpected encounter with literary genius Jorge Luis Borges that will profoundly alter his life and work. A poignant and comic literary coming-of-age memoir. \"This is a jewel of a book.\"  -- Ian McEwan In 1971 Jay Parini was an aspiring poet and graduate student of literature at University of St Andrews in Scotland; he was also in flight from being drafted into service in the Vietnam War. One day his friend and mentor, Alastair Reid, asked Jay if he could play host for a \"visiting Latin American writer\" while he attended to business in London. He agreed -- and that \"writer\" turned out to be the blind and aged and eccentric master of literary compression and metaphysics, Jorge Luis Borges. About whom Jay Parini knew precisely nothing. What ensued was a seriocomic romp across the Scottish landscape that Borges insisted he must \"see,\" all the while declaiming and reciting from the literary encyclopedia that was his head, and Jay Parini's eventual reckoning with his vocation and personal fate."
+            }
+          ]
+        },
+        {
+          "fieldTag": "n",
+          "marcTag": "533",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Electronic reproduction."
+            },
+            {
+              "tag": "b",
+              "content": "New York :"
+            },
+            {
+              "tag": "c",
+              "content": "Doubleday,"
+            },
+            {
+              "tag": "d",
+              "content": "2020."
+            },
+            {
+              "tag": "n",
+              "content": "Requires OverDrive Read (file size: N/A KB) or Adobe Digital Editions (file size: 2246 KB) or Kobo app or compatible Kobo device (file size: N/A KB) or Amazon Kindle (file size: N/A KB)."
+            }
+          ]
+        },
+        {
+          "fieldTag": "o",
+          "marcTag": "001",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "ODN0005089447",
+          "subfields": null
+        },
+        {
+          "fieldTag": "p",
+          "marcTag": "260",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "c",
+              "content": "2020."
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "300",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "1 online resource"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "336",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "text"
+            },
+            {
+              "tag": "b",
+              "content": "txt"
+            },
+            {
+              "tag": "2",
+              "content": "rdacontent"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "337",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "computer"
+            },
+            {
+              "tag": "b",
+              "content": "c"
+            },
+            {
+              "tag": "2",
+              "content": "rdamedia"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "338",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "online resource"
+            },
+            {
+              "tag": "b",
+              "content": "cr"
+            },
+            {
+              "tag": "2",
+              "content": "rdacarrier"
+            }
+          ]
+        },
+        {
+          "fieldTag": "t",
+          "marcTag": "245",
+          "ind1": "1",
+          "ind2": "0",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Borges and me"
+            },
+            {
+              "tag": "h",
+              "content": "[electronic resource] :"
+            },
+            {
+              "tag": "b",
+              "content": "An encounter."
+            },
+            {
+              "tag": "c",
+              "content": "Jay Parini."
+            }
+          ]
+        },
+        {
+          "fieldTag": "w",
+          "marcTag": "776",
+          "ind1": "1",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "c",
+              "content": "Original"
+            },
+            {
+              "tag": "z",
+              "content": "9780385545822"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "006",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "m        d        ",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "007",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "cr cn---------",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "008",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "200804s2020    nyu     s     000 0 eng dnamKa ",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "037",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "BFF60F39-DF7B-44C8-B25E-894556590BE4"
+            },
+            {
+              "tag": "b",
+              "content": "OverDrive, Inc."
+            },
+            {
+              "tag": "n",
+              "content": "http://www.overdrive.com"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "040",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "TEFOD"
+            },
+            {
+              "tag": "c",
+              "content": "TEFOD"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "084",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "BIO007000"
+            },
+            {
+              "tag": "a",
+              "content": "BIO026000"
+            },
+            {
+              "tag": "a",
+              "content": "TRV009070"
+            },
+            {
+              "tag": "2",
+              "content": "bisacsh"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": "0",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "u",
+              "content": "http://link.overdrive.com/?websiteID=37&titleID=5089447"
+            },
+            {
+              "tag": "z",
+              "content": "Access eNYPL"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Excerpt"
+            },
+            {
+              "tag": "u",
+              "content": "https://samples.overdrive.com/?crid=bff60f39-df7b-44c8-b25e-894556590be4&.epub-sample.overdrive.com"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Image"
+            },
+            {
+              "tag": "u",
+              "content": "https://img1.od-cdn.com/ImageType-100/0111-1/%7BBFF60F39-DF7B-44C8-B25E-894556590BE4%7DImg100.jpg"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Thumbnail"
+            },
+            {
+              "tag": "u",
+              "content": "https://img1.od-cdn.com/ImageType-200/0111-1/%7BBFF60F39-DF7B-44C8-B25E-894556590BE4%7DImg200.jpg"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "901",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "OverDrive_ME-0837"
+            }
+          ]
+        },
+        {
+          "fieldTag": "_",
+          "marcTag": null,
+          "ind1": null,
+          "ind2": null,
+          "content": "00000nam a2200373Ka 4500",
+          "subfields": null
+        }
+      ]
+    },
+    {
+      "id": "22259005",
+      "nyplSource": "sierra-nypl",
+      "nyplType": "bib",
+      "updatedDate": "2020-09-29T15:30:42-04:00",
+      "createdDate": "2020-09-22T20:23:19-04:00",
+      "deletedDate": null,
+      "deleted": false,
+      "locations": [
+        {
+          "code": "ia",
+          "name": "Electronic Material for Adults"
+        }
+      ],
+      "suppressed": false,
+      "lang": {
+        "code": "eng",
+        "name": "English"
+      },
+      "title": "The erratics [electronic resource] : A memoir.",
+      "author": "Laveau-Harvie, Vicki.",
+      "materialType": {
+        "code": "z  ",
+        "value": "E-BOOK"
+      },
+      "bibLevel": {
+        "code": "m",
+        "value": "MONOGRAPH"
+      },
+      "publishYear": 2020,
+      "catalogDate": "2020-09-22",
+      "country": {
+        "code": "nyu",
+        "name": "New York (State)"
+      },
+      "normTitle": "erratics electronic resource a memoir",
+      "normAuthor": "laveau harvie vicki",
+      "standardNumbers": [
+        "9780525658627"
+      ],
+      "controlNumber": "ODN0005043354",
+      "fixedFields": {
+        "24": {
+          "label": "Language",
+          "value": "eng",
+          "display": "English"
+        },
+        "25": {
+          "label": "Skip",
+          "value": "4",
+          "display": null
+        },
+        "26": {
+          "label": "Location",
+          "value": "ia   ",
+          "display": "Electronic Material for Adults"
+        },
+        "27": {
+          "label": "COPIES",
+          "value": "1",
+          "display": null
+        },
+        "28": {
+          "label": "Cat. Date",
+          "value": "2020-09-22",
+          "display": null
+        },
+        "29": {
+          "label": "Bib Level",
+          "value": "m",
+          "display": "MONOGRAPH"
+        },
+        "30": {
+          "label": "Material Type",
+          "value": "z  ",
+          "display": "E-BOOK"
+        },
+        "31": {
+          "label": "Bib Code 3",
+          "value": "a",
+          "display": null
+        },
+        "80": {
+          "label": "Record Type",
+          "value": "b",
+          "display": null
+        },
+        "81": {
+          "label": "Record Number",
+          "value": "22259005",
+          "display": null
+        },
+        "83": {
+          "label": "Created Date",
+          "value": "2020-09-22T20:23:19Z",
+          "display": null
+        },
+        "84": {
+          "label": "Updated Date",
+          "value": "2020-09-29T15:30:42Z",
+          "display": null
+        },
+        "85": {
+          "label": "No. of Revisions",
+          "value": "2",
+          "display": null
+        },
+        "86": {
+          "label": "Agency",
+          "value": "1",
+          "display": null
+        },
+        "89": {
+          "label": "Country",
+          "value": "nyu",
+          "display": "New York (State)"
+        },
+        "98": {
+          "label": "PDATE",
+          "value": "2020-09-22T20:23:19Z",
+          "display": null
+        },
+        "107": {
+          "label": "MARC Type",
+          "value": " ",
+          "display": null
+        }
+      },
+      "varFields": [
+        {
+          "fieldTag": "a",
+          "marcTag": "100",
+          "ind1": "1",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Laveau-Harvie, Vicki."
+            }
+          ]
+        },
+        {
+          "fieldTag": "b",
+          "marcTag": "710",
+          "ind1": "2",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "OverDrive, Inc.,"
+            },
+            {
+              "tag": "e",
+              "content": "distributor."
+            }
+          ]
+        },
+        {
+          "fieldTag": "c",
+          "marcTag": "091",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "eNYPL Book"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "650",
+          "ind1": " ",
+          "ind2": "7",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Biography & Autobiography."
+            },
+            {
+              "tag": "2",
+              "content": "OverDrive"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "650",
+          "ind1": " ",
+          "ind2": "7",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Family & Relationships."
+            },
+            {
+              "tag": "2",
+              "content": "OverDrive"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "655",
+          "ind1": " ",
+          "ind2": "0",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Electronic books."
+            }
+          ]
+        },
+        {
+          "fieldTag": "i",
+          "marcTag": "020",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "9780525658627"
+            },
+            {
+              "tag": "q",
+              "content": "(electronic bk)"
+            }
+          ]
+        },
+        {
+          "fieldTag": "n",
+          "marcTag": "520",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "\"...a searing, brilliantly-written memoir about a destructive and cunning mother; reads like a novel...\"  -- Margaret Atwood via Twitter In this award-winning memoir, two sisters reckon with the decline and death of their outlandishly tyrannical mother and with the care of their psychologically terrorized father, all relayed with dark humor and brutal honesty. When her elderly mother is hospitalized unexpectedly, Vicki Laveau-Harvie and her sister travel to their parents' ranch home in Alberta, Canada, to help their father. Estranged from their parents for many years, they are horrified by what they discover on their arrival. For years their mother has camouflaged her manic delusions and savage unpredictability, and over the decades she has managed to shut herself and her husband away from the outside world, systematically starving him and making him a virtual prisoner in his own home. Rearranging their lives to be the daughters they were never allowed to be, the sisters focus their efforts on helping their father cope with the unending manipulations of their mother and encounter all the pressures that come with caring for elderly parents. And at every step they have to contend with their mother, whose favorite phrase during their childhood was: \"I'll get you and you won't even know I'm doing it.\" Set against the natural world of the Canadian foothills (\"in winter the cold will kill you, nothing personal\"), this memoir -- at once dark and hopeful -- shatters precedents about grief, anger, and family trauma with surprising tenderness and humor."
+            }
+          ]
+        },
+        {
+          "fieldTag": "n",
+          "marcTag": "533",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Electronic reproduction."
+            },
+            {
+              "tag": "b",
+              "content": "New York :"
+            },
+            {
+              "tag": "c",
+              "content": "Knopf,"
+            },
+            {
+              "tag": "d",
+              "content": "2020."
+            },
+            {
+              "tag": "n",
+              "content": "Requires OverDrive Read (file size: N/A KB) or Adobe Digital Editions (file size: 1486 KB) or Kobo app or compatible Kobo device (file size: N/A KB) or Amazon Kindle (file size: N/A KB)."
+            }
+          ]
+        },
+        {
+          "fieldTag": "o",
+          "marcTag": "001",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "ODN0005043354",
+          "subfields": null
+        },
+        {
+          "fieldTag": "p",
+          "marcTag": "260",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "c",
+              "content": "2020."
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "300",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "1 online resource"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "336",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "text"
+            },
+            {
+              "tag": "b",
+              "content": "txt"
+            },
+            {
+              "tag": "2",
+              "content": "rdacontent"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "337",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "computer"
+            },
+            {
+              "tag": "b",
+              "content": "c"
+            },
+            {
+              "tag": "2",
+              "content": "rdamedia"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "338",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "online resource"
+            },
+            {
+              "tag": "b",
+              "content": "cr"
+            },
+            {
+              "tag": "2",
+              "content": "rdacarrier"
+            }
+          ]
+        },
+        {
+          "fieldTag": "t",
+          "marcTag": "245",
+          "ind1": "1",
+          "ind2": "4",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "The erratics"
+            },
+            {
+              "tag": "h",
+              "content": "[electronic resource] :"
+            },
+            {
+              "tag": "b",
+              "content": "A memoir."
+            },
+            {
+              "tag": "c",
+              "content": "Vicki Laveau-Harvie."
+            }
+          ]
+        },
+        {
+          "fieldTag": "w",
+          "marcTag": "776",
+          "ind1": "1",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "c",
+              "content": "Original"
+            },
+            {
+              "tag": "z",
+              "content": "9780525658610"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "006",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "m        d        ",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "007",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "cr cn---------",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "008",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "200729s2020    nyu     s     000 0 eng dnamKa ",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "037",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "28C2C1D7-A1B4-4BE4-ACDB-24E3489F5B9F"
+            },
+            {
+              "tag": "b",
+              "content": "OverDrive, Inc."
+            },
+            {
+              "tag": "n",
+              "content": "http://www.overdrive.com"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "040",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "TEFOD"
+            },
+            {
+              "tag": "c",
+              "content": "TEFOD"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "084",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "BIO026000"
+            },
+            {
+              "tag": "a",
+              "content": "FAM005000"
+            },
+            {
+              "tag": "a",
+              "content": "FAM052000"
+            },
+            {
+              "tag": "2",
+              "content": "bisacsh"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": "0",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "u",
+              "content": "http://link.overdrive.com/?websiteID=37&titleID=5043354"
+            },
+            {
+              "tag": "z",
+              "content": "Access eNYPL"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Excerpt"
+            },
+            {
+              "tag": "u",
+              "content": "https://samples.overdrive.com/?crid=28c2c1d7-a1b4-4be4-acdb-24e3489f5b9f&.epub-sample.overdrive.com"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Image"
+            },
+            {
+              "tag": "u",
+              "content": "https://img1.od-cdn.com/ImageType-100/0111-1/%7B28C2C1D7-A1B4-4BE4-ACDB-24E3489F5B9F%7DImg100.jpg"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Thumbnail"
+            },
+            {
+              "tag": "u",
+              "content": "https://img1.od-cdn.com/ImageType-200/0111-1/%7B28C2C1D7-A1B4-4BE4-ACDB-24E3489F5B9F%7DImg200.jpg"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "901",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "OverDrive_ME-0837"
+            }
+          ]
+        },
+        {
+          "fieldTag": "_",
+          "marcTag": null,
+          "ind1": null,
+          "ind2": null,
+          "content": "00000nam a2200373Ka 4500",
+          "subfields": null
+        }
+      ]
+    },
+    {
+      "id": "22259006",
+      "nyplSource": "sierra-nypl",
+      "nyplType": "bib",
+      "updatedDate": "2020-09-29T15:30:43-04:00",
+      "createdDate": "2020-09-22T20:23:19-04:00",
+      "deletedDate": null,
+      "deleted": false,
+      "locations": [
+        {
+          "code": "ia",
+          "name": "Electronic Material for Adults"
+        }
+      ],
+      "suppressed": false,
+      "lang": {
+        "code": "eng",
+        "name": "English"
+      },
+      "title": "The great offshore grounds [electronic resource] : A novel.",
+      "author": "Veselka, Vanessa.",
+      "materialType": {
+        "code": "z  ",
+        "value": "E-BOOK"
+      },
+      "bibLevel": {
+        "code": "m",
+        "value": "MONOGRAPH"
+      },
+      "publishYear": 2020,
+      "catalogDate": "2020-09-22",
+      "country": {
+        "code": "nyu",
+        "name": "New York (State)"
+      },
+      "normTitle": "great offshore grounds electronic resource a novel",
+      "normAuthor": "veselka vanessa",
+      "standardNumbers": [
+        "9780525658085"
+      ],
+      "controlNumber": "ODN0005167746",
+      "fixedFields": {
+        "24": {
+          "label": "Language",
+          "value": "eng",
+          "display": "English"
+        },
+        "25": {
+          "label": "Skip",
+          "value": "4",
+          "display": null
+        },
+        "26": {
+          "label": "Location",
+          "value": "ia   ",
+          "display": "Electronic Material for Adults"
+        },
+        "27": {
+          "label": "COPIES",
+          "value": "1",
+          "display": null
+        },
+        "28": {
+          "label": "Cat. Date",
+          "value": "2020-09-22",
+          "display": null
+        },
+        "29": {
+          "label": "Bib Level",
+          "value": "m",
+          "display": "MONOGRAPH"
+        },
+        "30": {
+          "label": "Material Type",
+          "value": "z  ",
+          "display": "E-BOOK"
+        },
+        "31": {
+          "label": "Bib Code 3",
+          "value": "a",
+          "display": null
+        },
+        "80": {
+          "label": "Record Type",
+          "value": "b",
+          "display": null
+        },
+        "81": {
+          "label": "Record Number",
+          "value": "22259006",
+          "display": null
+        },
+        "83": {
+          "label": "Created Date",
+          "value": "2020-09-22T20:23:19Z",
+          "display": null
+        },
+        "84": {
+          "label": "Updated Date",
+          "value": "2020-09-29T15:30:43Z",
+          "display": null
+        },
+        "85": {
+          "label": "No. of Revisions",
+          "value": "2",
+          "display": null
+        },
+        "86": {
+          "label": "Agency",
+          "value": "1",
+          "display": null
+        },
+        "89": {
+          "label": "Country",
+          "value": "nyu",
+          "display": "New York (State)"
+        },
+        "98": {
+          "label": "PDATE",
+          "value": "2020-09-22T20:23:19Z",
+          "display": null
+        },
+        "107": {
+          "label": "MARC Type",
+          "value": " ",
+          "display": null
+        }
+      },
+      "varFields": [
+        {
+          "fieldTag": "a",
+          "marcTag": "100",
+          "ind1": "1",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Veselka, Vanessa."
+            }
+          ]
+        },
+        {
+          "fieldTag": "b",
+          "marcTag": "710",
+          "ind1": "2",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "OverDrive, Inc.,"
+            },
+            {
+              "tag": "e",
+              "content": "distributor."
+            }
+          ]
+        },
+        {
+          "fieldTag": "c",
+          "marcTag": "091",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "eNYPL Book"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "655",
+          "ind1": " ",
+          "ind2": "7",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Fiction."
+            },
+            {
+              "tag": "2",
+              "content": "lcgft"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "650",
+          "ind1": " ",
+          "ind2": "7",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Literature."
+            },
+            {
+              "tag": "2",
+              "content": "OverDrive"
+            }
+          ]
+        },
+        {
+          "fieldTag": "d",
+          "marcTag": "655",
+          "ind1": " ",
+          "ind2": "0",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Electronic books."
+            }
+          ]
+        },
+        {
+          "fieldTag": "i",
+          "marcTag": "020",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "9780525658085"
+            },
+            {
+              "tag": "q",
+              "content": "(electronic bk)"
+            }
+          ]
+        },
+        {
+          "fieldTag": "n",
+          "marcTag": "520",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "A wildly original, cross-country novel that subverts a long tradition of family narratives and casts new light on the mythologies -- national, individual, and collective -- that drive and define us. On the day of their estranged father's wedding, half sisters Cheyenne and Livy set off to claim their inheritance. It's been years since the two have seen each other. Cheyenne is newly back in Seattle, crashing with Livy after a failed marriage and a series of dead ends. Livy works refinishing boats, her resentment against her freeloading sister growing as she tamps down dreams of fishing off the coast of Alaska. But the promise of a shot at financial security brings the two together to claim what's theirs. Except, instead of money, what their father gives them is information -- a name -- which both reveals a stunning family secret and compels them to come to grips with it. In the face of their new reality, the sisters and their adopted brother each set out on journeys that will test their faith in one another, as well as their definitions of freedom. Moving from Seattle's underground to the docks of the Far North, from the hideaways of the southern swamps to the storied reaches of the Great Offshore Grounds, Vanessa Veselka spins a tale with boundless verve, linguistic vitality, and undeniable tenderness."
+            }
+          ]
+        },
+        {
+          "fieldTag": "n",
+          "marcTag": "533",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "Electronic reproduction."
+            },
+            {
+              "tag": "b",
+              "content": "New York :"
+            },
+            {
+              "tag": "c",
+              "content": "Knopf,"
+            },
+            {
+              "tag": "d",
+              "content": "2020."
+            },
+            {
+              "tag": "n",
+              "content": "Requires OverDrive Read (file size: N/A KB) or Adobe Digital Editions (file size: 1923 KB) or Kobo app or compatible Kobo device (file size: N/A KB) or Amazon Kindle (file size: N/A KB)."
+            }
+          ]
+        },
+        {
+          "fieldTag": "o",
+          "marcTag": "001",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "ODN0005167746",
+          "subfields": null
+        },
+        {
+          "fieldTag": "p",
+          "marcTag": "260",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "c",
+              "content": "2020."
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "300",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "1 online resource"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "336",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "text"
+            },
+            {
+              "tag": "b",
+              "content": "txt"
+            },
+            {
+              "tag": "2",
+              "content": "rdacontent"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "337",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "computer"
+            },
+            {
+              "tag": "b",
+              "content": "c"
+            },
+            {
+              "tag": "2",
+              "content": "rdamedia"
+            }
+          ]
+        },
+        {
+          "fieldTag": "r",
+          "marcTag": "338",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "online resource"
+            },
+            {
+              "tag": "b",
+              "content": "cr"
+            },
+            {
+              "tag": "2",
+              "content": "rdacarrier"
+            }
+          ]
+        },
+        {
+          "fieldTag": "t",
+          "marcTag": "245",
+          "ind1": "1",
+          "ind2": "4",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "The great offshore grounds"
+            },
+            {
+              "tag": "h",
+              "content": "[electronic resource] :"
+            },
+            {
+              "tag": "b",
+              "content": "A novel."
+            },
+            {
+              "tag": "c",
+              "content": "Vanessa Veselka."
+            }
+          ]
+        },
+        {
+          "fieldTag": "w",
+          "marcTag": "776",
+          "ind1": "1",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "c",
+              "content": "Original"
+            },
+            {
+              "tag": "z",
+              "content": "9780525658078"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "006",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "m        d        ",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "007",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "cr cn---------",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "008",
+          "ind1": " ",
+          "ind2": " ",
+          "content": "200715s2020    nyu     s     000 1 eng dnamKa ",
+          "subfields": null
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "037",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "8DAB34C0-1114-4F61-8CCF-1883935B40AB"
+            },
+            {
+              "tag": "b",
+              "content": "OverDrive, Inc."
+            },
+            {
+              "tag": "n",
+              "content": "http://www.overdrive.com"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "040",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "TEFOD"
+            },
+            {
+              "tag": "c",
+              "content": "TEFOD"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "084",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "FIC019000"
+            },
+            {
+              "tag": "a",
+              "content": "FIC037000"
+            },
+            {
+              "tag": "a",
+              "content": "FIC045020"
+            },
+            {
+              "tag": "2",
+              "content": "bisacsh"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": "0",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "u",
+              "content": "http://link.overdrive.com/?websiteID=37&titleID=5167746"
+            },
+            {
+              "tag": "z",
+              "content": "Access eNYPL"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Excerpt"
+            },
+            {
+              "tag": "u",
+              "content": "https://samples.overdrive.com/?crid=8dab34c0-1114-4f61-8ccf-1883935b40ab&.epub-sample.overdrive.com"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Image"
+            },
+            {
+              "tag": "u",
+              "content": "https://img1.od-cdn.com/ImageType-100/0111-1/%7B8DAB34C0-1114-4F61-8CCF-1883935B40AB%7DImg100.jpg"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "856",
+          "ind1": "4",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "3",
+              "content": "Thumbnail"
+            },
+            {
+              "tag": "u",
+              "content": "https://img1.od-cdn.com/ImageType-200/0111-1/%7B8DAB34C0-1114-4F61-8CCF-1883935B40AB%7DImg200.jpg"
+            }
+          ]
+        },
+        {
+          "fieldTag": "y",
+          "marcTag": "901",
+          "ind1": " ",
+          "ind2": " ",
+          "content": null,
+          "subfields": [
+            {
+              "tag": "a",
+              "content": "OverDrive_ME-0837"
+            }
+          ]
+        },
+        {
+          "fieldTag": "_",
+          "marcTag": null,
+          "ind1": null,
+          "ind2": null,
+          "content": "00000nam a2200373Ka 4500",
+          "subfields": null
+        }
+      ]
+    }
+  ],
+  "count": 5,
+  "totalCount": 0,
+  "statusCode": 200,
+  "debugInfo": []
+}
