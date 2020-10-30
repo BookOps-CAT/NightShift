@@ -82,7 +82,10 @@ class SierraExportReader:
             `datetime.date` object
         """
         try:
-            created = datetime.datetime.strptime(created, "%m-%d-%Y").date()
+            if "nyp" in self.fh:
+                created = datetime.datetime.strptime(created, "%m-%d-%Y %H:%M").date()
+            elif "bpl" in self.fh:
+                created = datetime.datetime.strptime(created, "%m-%d-%Y").date()
         except (ValueError, TypeError) as exc:
             raise SierraExportReaderError(f"ValueError: {exc}")
         return created

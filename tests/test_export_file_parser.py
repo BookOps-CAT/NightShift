@@ -61,9 +61,16 @@ class TestSierraExportReader:
             SierraExportReader(handle)
             assert err_msg in str(exc.value)
 
-    def test_determine_bib_created_date(self):
-        reader = SierraExportReader("nyp-ebk-201001.txt")
-        assert str(reader._determine_bib_created_date("09-30-2020")) == "2020-09-30"
+    @pytest.mark.parametrize(
+        "handle,date_arg,expectation",
+        [
+            ("nyp-ebk-201001.txt", "09-22-2020 16:23", date(2020, 9, 22)),
+            ("bpl-ebk-201001.txt", "09-30-2020", date(2020, 9, 30)),
+        ],
+    )
+    def test_determine_bib_created_date(self, handle, date_arg, expectation):
+        reader = SierraExportReader(handle)
+        assert reader._determine_bib_created_date(date_arg) == expectation
 
     @pytest.mark.parametrize("arg", ["2020-09-30", "", None])
     def test_determine_bib_created_date_exceptions(self, arg):
@@ -88,7 +95,7 @@ class TestSierraExportReader:
         [
             (
                 "nyp-ebk-201001.txt",
-                ["b123530271", "09-30-2020", "ODN0004408595"],
+                ["b123530271", "09-30-2020 17:22", "ODN0004408595"],
                 ResourceMeta(12353027, 1, 1, "ODN0004408595", date(2020, 9, 30)),
             ),
             (
