@@ -16,7 +16,7 @@ from nightshift.workers import (
 
 def test_record_export_file_data(init_dataset):
     session = init_dataset
-    fh = "tests\\files\\bpl-ere-export-sample.txt"
+    fh = "tests/files/bpl-ere-export-sample.txt"
     rec = record_export_file_data(fh, session)
     assert rec.efid == 1
     assert rec.handle == "bpl-ere-export-sample.txt"
@@ -24,7 +24,7 @@ def test_record_export_file_data(init_dataset):
 
 def test_import_sierra_data(init_dataset):
     session = init_dataset
-    import_sierra_data("tests\\files\\bpl-ere-export-sample.txt", session)
+    import_sierra_data("tests/files/bpl-ere-export-sample.txt", session)
 
     assert len(session.query(Resource).all()) == 4
     assert len(session.query(ExportFile).all()) == 1
