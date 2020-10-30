@@ -9,12 +9,12 @@ exclude = ["nightshift/temp.py", "nightshift/temp/*"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.7"
 requests = "^2.24.0"
 SQLAlchemy = "^1.3.19"
 pymarc = "^4.0.0"
-bookops-bpl-solr = {git = "https://github.com/BookOps-CAT/bookops-bpl-solr", rev = "v0.1.0"}
-bookops-nypl-platform = {git = "https://github.com/BookOps-CAT/bookops-nypl-platform", rev = "v0.2.0"}
+bookops-nypl-platform = { git = "https://github.com/BookOps-CAT/bookops-nypl-platform.git", tag = "v0.2.1" }
+bookops-bpl-solr = { git = "https://github.com/BookOps-CAT/bookops-bpl-solr.git", tag = "v0.1.1" }
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
@@ -27,7 +27,7 @@ black = "^20.8b1"
 
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py37']
 include = '\.pyi?$'
 exclude = '''
 (
