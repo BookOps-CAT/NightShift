@@ -117,7 +117,20 @@ def test_ResourceTable_str():
     )
 
 
-@pytest.mark.parametrize("column", ["ufid", "sBibId", "field", "__tablename__"])
+@pytest.mark.parametrize("column", ["utid", "utype", "__tablename__"])
+def test_UrlType(column):
+    assert hasattr(UrlType(), column) is True
+
+
+def test_UrlType_str():
+    table = UrlType()
+    assert table.__tablename__ == "url_type"
+    assert str(table) == "<UrlType(utid=symbol('NO_VALUE'), utype=symbol('NO_VALUE'))>"
+
+
+@pytest.mark.parametrize(
+    "column", ["ufid", "sBibId", "uTypeId", "url", "__tablename__"]
+)
 def test_UrlField_columns(column):
     assert hasattr(UrlField(), column) is True
 
@@ -127,7 +140,7 @@ def test_UrlFieldTable_str():
     assert table.__tablename__ == "url_field"
     assert (
         str(table)
-        == "<UrlField(ufid=symbol('NO_VALUE'), sBibId=symbol('NO_VALUE'), field=symbol('NO_VALUE'))>"
+        == "<UrlField(ufid=symbol('NO_VALUE'), sBibId=symbol('NO_VALUE'), uTypeId=symbol('NO_VALUE'), url=symbol('NO_VALUE'))>"
     )
 
 

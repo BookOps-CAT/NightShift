@@ -90,6 +90,18 @@ class UpgradeSource(Base):
         return f"<UpgradeSource({attrs})>"
 
 
+class UrlType(Base):
+    __tablename__ = "url_type"
+
+    utid = Column(Integer, primary_key=True, autoincrement=False)
+    utype = Column(String(50), unique=False, nullable=False)
+
+    def __repr__(self):
+        state = inspect(self)
+        attrs = ", ".join([f"{attr.key}={attr.loaded_value!r}" for attr in state.attrs])
+        return f"<UrlType({attrs})>"
+
+
 class Resource(Base):
     __tablename__ = "resource"
     __table_args__ = (UniqueConstraint("sbid", "librarySystemId", name="uix_resource"),)
@@ -127,7 +139,8 @@ class UrlField(Base):
 
     ufid = Column(Integer, primary_key=True)
     sBibId = Column(Integer, ForeignKey("resource.sbid"), nullable=False)
-    field = Column(PickleType, nullable=False)
+    uTypeId = Column(Integer, ForeignKey("url_type.utid"), nullable=False)
+    url = Column(String(120), nullable=False)
 
     def __repr__(self):
         state = inspect(self)
