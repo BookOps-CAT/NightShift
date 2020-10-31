@@ -12,10 +12,11 @@ from nightshift.datastore import (
     OutputFile,
     UpgradeSource,
     Resource,
+    UrlType,
     UrlField,
     WorldcatQuery,
 )
-from nightshift.datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC
+from nightshift.datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
 
 
 @pytest.fixture(scope="function")
@@ -50,6 +51,10 @@ def init_dataset(db_setup):
 
     for values in UPGRADE_SRC.values():
         rec = UpgradeSource(**values)
+        session.add(rec)
+
+    for values in URL_TYPE.values():
+        rec = UrlType(**values)
         session.add(rec)
 
     yield session

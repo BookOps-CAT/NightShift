@@ -27,3 +27,10 @@ UPGRADE_SRC = {
         "description": "full bib brought in by staff",
     },
 }
+
+URL_TYPE = {
+    "content": {"utid": 1, "utype": "content"},
+    "excerpt": {"utid": 2, "utype": "excerpt"},
+    "image": {"utid": 3, "utype": "image"},
+    "thumbnail": {"utid": 4, "utype": "thumbnail"},
+}
