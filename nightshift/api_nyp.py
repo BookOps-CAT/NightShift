@@ -5,9 +5,9 @@ This module provides methods for the bot to communicate with NYPL Platform (Sier
 """
 import json
 import os
-from typing import List
+from typing import List, Type
 
-
+from requests import Response
 from bookops_nypl_platform import PlatformToken, PlatformSession
 from bookops_nypl_platform.errors import BookopsPlatformError
 
