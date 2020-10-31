@@ -12,9 +12,10 @@ from .datastore import (
     LibrarySystem,
     BibCategory,
     UpgradeSource,
+    UrlType,
     Resource,
 )
-from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC
+from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
 
 
 def insert(session, model, **kwargs):
@@ -114,6 +115,8 @@ def create_datastore(prod: bool = False):
         insert(session, BibCategory, **values)
     for values in UPGRADE_SRC.values():
         insert(session, UpgradeSource, **values)
+    for values in URL_TYPE.values():
+        insert(session, UrlType, **values)
 
     session.commit()
     session.close()

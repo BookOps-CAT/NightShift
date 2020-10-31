@@ -13,6 +13,7 @@ from nightshift.datastore import (
     LibrarySystem,
     BibCategory,
     UpgradeSource,
+    UrlType,
     Resource,
 )
 from nightshift.datastore_transactions import (
@@ -29,10 +30,15 @@ def test_init_in_memory_db(init_dataset):
     assert len(session.query(LibrarySystem).all()) == 2
     assert len(session.query(BibCategory).all()) == 2
     assert len(session.query(UpgradeSource).all()) == 2
+    assert len(session.query(UrlType).all()) == 4
 
 
 def test_brief_bib_dataset(brief_bib_dataset):
     session = brief_bib_dataset
+    assert len(session.query(LibrarySystem).all()) == 2
+    assert len(session.query(BibCategory).all()) == 2
+    assert len(session.query(UpgradeSource).all()) == 2
+    assert len(session.query(UrlType).all()) == 4
     assert len(session.query(ExportFile).all()) == 4
     assert len(session.query(Resource).all()) == 8
 
