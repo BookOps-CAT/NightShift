@@ -9,6 +9,7 @@ from datetime import date
 import pytest
 
 from nightshift.datastore import (
+    dal,
     ExportFile,
     LibrarySystem,
     BibCategory,
@@ -17,6 +18,7 @@ from nightshift.datastore import (
     Resource,
 )
 from nightshift.datastore_transactions import (
+    create_datastore,
     insert,
     insert_resource,
     insert_export_file,
@@ -41,6 +43,20 @@ def test_brief_bib_dataset(brief_bib_dataset):
     assert len(session.query(UrlType).all()) == 4
     assert len(session.query(ExportFile).all()) == 4
     assert len(session.query(Resource).all()) == 8
+
+
+def test_create_datastore():
+    dal.conn_string = "sqlite:///:memory:"
+    create_datastore(dal)
+
+    session = dal.Session()
+
+    assert len(session.query(LibrarySystem).all()) == 2
+    assert len(session.query(BibCategory).all()) == 2
+    assert len(session.query(UpgradeSource).all()) == 2
+    assert len(session.query(UrlType).all()) == 4
+    assert len(session.query(ExportFile).all()) == 0
+    assert len(session.query(Resource).all()) == 0
 
 
 def test_insert(init_dataset):

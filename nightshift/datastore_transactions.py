@@ -7,7 +7,6 @@ from typing import List, Type
 import sqlalchemy
 
 from .datastore import (
-    dal,
     ExportFile,
     LibrarySystem,
     BibCategory,
@@ -93,17 +92,12 @@ def retrieve_bibnos(
     return sbids
 
 
-def create_datastore(prod: bool = False):
+def create_datastore(dal):
     """
     Creates and prepopulates with initial data new datastore (data.db)
-
     Args:
-        prod:               if True creates production data.db,
-                            if False creates in-memody database
+        dal:                data access layer
     """
-
-    if not prod:
-        dal.conn_string = "sqlite:///:memory:"
     dal.connect()
 
     session = dal.Session()
