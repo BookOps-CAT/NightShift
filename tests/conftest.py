@@ -1,6 +1,7 @@
-from datetime import date
+import datetime
 
 import pytest
+import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -17,6 +18,20 @@ from nightshift.datastore import (
     WorldcatQuery,
 )
 from nightshift.datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
+
+
+from .nyp_resp import RESP
+
+
+class FakeDate(datetime.datetime):
+    @classmethod
+    def now(cls):
+        return cls(2019, 1, 1, 17, 0, 0)
+
+
+@pytest.fixture
+def mock_datetime_now(monkeypatch):
+    monkeypatch.setattr(datetime, "datetime", FakeDate)
 
 
 @pytest.fixture(scope="function")
@@ -82,7 +97,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=1,
             exportFileId=1,
             cno="ODN123456789",
-            bibDate=date(2020, 9, 30),
+            bibDate=datetime.date(2020, 9, 30),
         )
     )
     session.add(
@@ -92,7 +107,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=1,
             exportFileId=1,
             cno="ODN123456780",
-            bibDate=date(2020, 9, 30),
+            bibDate=datetime.date(2020, 9, 30),
         )
     )
     # two nypl English print
@@ -103,7 +118,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=2,
             exportFileId=2,
             cno="ODN123456781",
-            bibDate=date(2020, 9, 29),
+            bibDate=datetime.date(2020, 9, 29),
         )
     )
     session.add(
@@ -113,7 +128,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=2,
             exportFileId=2,
             cno="ODN123456782",
-            bibDate=date(2020, 9, 29),
+            bibDate=datetime.date(2020, 9, 29),
         )
     )
 
@@ -125,7 +140,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=1,
             exportFileId=3,
             cno="ODN223456789",
-            bibDate=date(2020, 9, 30),
+            bibDate=datetime.date(2020, 9, 30),
         )
     )
     session.add(
@@ -135,7 +150,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=1,
             exportFileId=3,
             cno="ODN223456780",
-            bibDate=date(2020, 9, 30),
+            bibDate=datetime.date(2020, 9, 30),
         )
     )
     # two bpl English print
@@ -146,7 +161,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=2,
             exportFileId=4,
             cno="bt223456789",
-            bibDate=date(2020, 9, 29),
+            bibDate=datetime.date(2020, 9, 29),
         )
     )
     session.add(
@@ -156,9 +171,97 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=2,
             exportFileId=4,
             cno="bt223456780",
-            bibDate=date(2020, 9, 29),
+            bibDate=datetime.date(2020, 9, 29),
         )
     )
     session.commit()
 
     yield session
+
+
+class FakeHTTP200SessionResponse:
+    def __init__(self):
+        self.status_code = 200
+
+    def json(self):
+        return RESP
+
+
+class FakeHTTP404SessionResponse:
+    def __init__(self):
+        self.status_code = 404
+
+    def json(self):
+        return {
+            "statusCode": 404,
+            "type": "exception",
+            "message": "No records found",
+            "error": [],
+            "debugInfo": [],
+        }
+
+
+class FakeHTTP401SessionResponse:
+    def __init__(self):
+        self.status_code = 401
+
+    def json(self):
+        return {"statusCode": 401, "type": "unauthorized", "message": "Unauthorized"}
+
+
+@pytest.fixture
+def mock_successful_session_get_request(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return FakeHTTP200SessionResponse()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def stub_nyp_platform_200_response():
+    return FakeHTTP200SessionResponse()
+
+
+@pytest.fixture
+def stub_nyp_platform_401_response():
+    return FakeHTTP401SessionResponse()
+
+
+@pytest.fixture
+def stub_nyp_platform_404_response():
+    return FakeHTTP404SessionResponse()
+
+
+@pytest.fixture
+def stub_nyp_responses():
+    return RESP
+
+
+@pytest.fixture
+def stub_platform_record():
+    return RESP["data"][0]
+
+
+@pytest.fixture
+def stub_platform_record_missing():
+    # dict is mutable so make a copy
+    data = RESP["data"][0].copy()
+
+    # remove isbn tags
+    new_fields = []
+    for field in data["varFields"]:
+        if field["marcTag"] == "020":
+            pass
+        elif field["marcTag"] == "010":
+            pass
+        elif field["marcTag"] == "037":
+            pass
+        elif field["marcTag"] == "100":
+            pass
+        elif field["marcTag"] == "024":
+            pass
+        else:
+            new_fields.append(field)
+
+    data["varFields"] = new_fields
+    return data
