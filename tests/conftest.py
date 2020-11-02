@@ -260,6 +260,8 @@ def stub_platform_record_missing():
             pass
         elif field["marcTag"] == "024":
             pass
+        elif field["marcTag"] == "856":
+            pass
         else:
             new_fields.append(field)
 
