@@ -15,7 +15,7 @@ from bookops_nypl_platform.errors import BookopsPlatformError
 
 from . import __version__, __title__
 from .errors import NightShiftError
-from .datastore_values import UPGRADE_SRC
+from .datastore_values import UPGRADE_SRC, URL_TYPE
 
 
 SierraMeta = namedtuple(
@@ -32,6 +32,7 @@ SierraMeta = namedtuple(
         "upgradeStamp",
         "upgraded",
         "upgradeSourceId",
+        "urls",
     ],
 )
 
@@ -53,7 +54,7 @@ class PlatformResponseReader:
         Generator. Parses variable field subfield $a for specified MARC tag
 
         Args:
-            tag:                MARC tag
+            tag:            MARC tag
             data:           single platform record
 
         Returns:
@@ -88,6 +89,7 @@ class PlatformResponseReader:
         title = self._parse_title(data)
         author = self._parse_author(data)
         pubDate = self._parse_publication_date(data)
+        urls = self._parse_urls(data)
 
         # determine if record in Sierra upgraded manually
         cno = self._parse_control_number(data)
@@ -105,6 +107,7 @@ class PlatformResponseReader:
             upgradeStamp,
             upgraded,
             upgradeSourceId,
+            urls,
         )
 
     def _parse_author(self, data: Dict) -> str:
@@ -214,6 +217,50 @@ class PlatformResponseReader:
         """
         return data["normTitle"]
 
+    def _determine_url_type_id(self, url: str) -> Dict:
+        """
+        Determines type of url based on the pattern:
+
+        Args:
+            url:            url string
+
+        Returns:
+            url type id
+        """
+        if "link.overdrive.com" in url:
+            return URL_TYPE["content"]["utid"]
+        elif "sample.overdrive.com" in url:
+            return URL_TYPE["excerpt"]["utid"]
+        elif "ImageType-100" in url:
+            return URL_TYPE["image"]["utid"]
+        elif "ImageType-200" in url:
+            return URL_TYPE["thumbnail"]["utid"]
+        else:
+            return None
+
+    def _parse_urls(self, data: Dict) -> List[Dict]:
+        """
+        Parses URLs found in MARC record
+
+        Args:
+            data:           single platform record
+
+        Returns:
+            list of dicts
+        """
+        url_data = []
+        urls = self._get_variable_field_content("856", "z", data)
+
+        # determine type of url based on the pattern
+        for url in urls:
+            uid = self._determine_url_type_id(url)
+            if uid is None:
+                pass
+            else:
+                url_data.append(dict(urlTypeId=uid, url=url))
+
+        return url_data
+
     def _parse_worldcat_number(self, control_number: str) -> str:
         """
         Determines if control number is OCLC/Worldcat number and if
@@ -226,14 +273,9 @@ class PlatformResponseReader:
             wcn
         """
 
-        # NYPL format
+        # NYPL format includes only digits, no prefixes
         if control_number.isdigit():
             return control_number
-        # BPL format
-        elif control_number[0:3] in ["ocm", "ocn"]:
-            return control_number[3:]
-        elif "on" == control_number[:2]:
-            return control_number[2:]
         else:
             return None
 

@@ -78,7 +78,7 @@ class TestPlatformResponseReader:
         [
             ("bt123456", (None, None, False, None)),
             (
-                "ocm00012345",
+                "00012345",
                 ("00012345", datetime.datetime(2019, 1, 1, 17, 0, 0), True, 2),
             ),
         ],
@@ -143,9 +143,6 @@ class TestPlatformResponseReader:
         [
             ("bt123456", None),
             ("123456789", "123456789"),
-            ("ocm00012345", "00012345"),
-            ("ocn00012345", "00012345"),
-            ("on123456789", "123456789"),
         ],
     )
     def test_parse_worldcat_number(
@@ -168,6 +165,65 @@ class TestPlatformResponseReader:
     def test_parse_publication_date(self, stub_nyp_platform_200_response):
         reader = PlatformResponseReader(stub_nyp_platform_200_response)
         assert reader._parse_publication_date(reader.datas[0]) == "2020"
+
+    @pytest.mark.parametrize(
+        "url,expectation",
+        [
+            ("http://link.overdrive.com/?websiteID=37&titleID=5077214", 1),
+            (
+                "https://samples.overdrive.com/?crid=40cc3b3f-4c30-4685-b391-db7b2ea91455&.epub-sample.overdrive.com",
+                2,
+            ),
+            (
+                "https://img1.od-cdn.com/ImageType-100/0044-1/%7B40CC3B3F-4C30-4685-B391-DB7B2EA91455%7DImg100.jpg",
+                3,
+            ),
+            (
+                "https://img1.od-cdn.com/ImageType-200/0044-1/%7B40CC3B3F-4C30-4685-B391-DB7B2EA91455%7DImg200.jpg",
+                4,
+            ),
+            ("http://example.com", None),
+        ],
+    )
+    def test_determine_url_type_id(
+        self, url, expectation, stub_nyp_platform_200_response
+    ):
+        reader = PlatformResponseReader(stub_nyp_platform_200_response)
+        assert reader._determine_url_type_id(url) == expectation
+
+    def test_parse_urls(self, stub_nyp_platform_200_response):
+        reader = PlatformResponseReader(stub_nyp_platform_200_response)
+        urls = reader._parse_urls(reader.datas[0])
+
+        loop = 1
+        for u in urls:
+            if loop == 1:
+                assert u == {
+                    "urlTypeId": 1,
+                    "url": "http://link.overdrive.com/?websiteID=37&titleID=5077214",
+                }
+            elif loop == 2:
+                assert u == {
+                    "urlTypeId": 2,
+                    "url": "https://samples.overdrive.com/?crid=40cc3b3f-4c30-4685-b391-db7b2ea91455&.epub-sample.overdrive.com",
+                }
+            elif loop == 3:
+                assert u == {
+                    "urlTypeId": 3,
+                    "url": "https://img1.od-cdn.com/ImageType-100/0044-1/%7B40CC3B3F-4C30-4685-B391-DB7B2EA91455%7DImg100.jpg",
+                }
+            elif loop == 4:
+                assert u == {
+                    "urlTypeId": 4,
+                    "url": "https://img1.od-cdn.com/ImageType-200/0044-1/%7B40CC3B3F-4C30-4685-B391-DB7B2EA91455%7DImg200.jpg",
+                }
+            loop += 1
+
+    def test_parse_urls_no_urls(
+        self, stub_nyp_platform_200_response, stub_platform_record_missing
+    ):
+        reader = PlatformResponseReader(stub_nyp_platform_200_response)
+        assert reader._parse_urls(stub_platform_record_missing) == []
 
     def test_map_data(self, stub_nyp_platform_200_response):
         reader = PlatformResponseReader(stub_nyp_platform_200_response)
