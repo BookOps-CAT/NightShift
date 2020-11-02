@@ -102,6 +102,20 @@ class UrlType(Base):
         return f"<UrlType({attrs})>"
 
 
+class UrlField(Base):
+    __tablename__ = "url_field"
+
+    ufid = Column(Integer, primary_key=True)
+    sBibId = Column(Integer, ForeignKey("resource.sbid"), nullable=False)
+    uTypeId = Column(Integer, ForeignKey("url_type.utid"), nullable=False)
+    url = Column(String(120), nullable=False)
+
+    def __repr__(self):
+        state = inspect(self)
+        attrs = ", ".join([f"{attr.key}={attr.loaded_value!r}" for attr in state.attrs])
+        return f"<UrlField({attrs})>"
+
+
 class Resource(Base):
     __tablename__ = "resource"
     __table_args__ = (UniqueConstraint("sbid", "librarySystemId", name="uix_resource"),)
@@ -132,20 +146,6 @@ class Resource(Base):
         state = inspect(self)
         attrs = ", ".join([f"{attr.key}={attr.loaded_value!r}" for attr in state.attrs])
         return f"<Resource({attrs})>"
-
-
-class UrlField(Base):
-    __tablename__ = "url_field"
-
-    ufid = Column(Integer, primary_key=True)
-    sBibId = Column(Integer, ForeignKey("resource.sbid"), nullable=False)
-    uTypeId = Column(Integer, ForeignKey("url_type.utid"), nullable=False)
-    url = Column(String(120), nullable=False)
-
-    def __repr__(self):
-        state = inspect(self)
-        attrs = ", ".join([f"{attr.key}={attr.loaded_value!r}" for attr in state.attrs])
-        return f"<UrlField({attrs})>"
 
 
 class WorldcatQuery(Base):
