@@ -63,6 +63,16 @@ class TestPlatformResponseReader:
             ("856", "3", ["Excerpt", "Image", "Thumbnail"]),
             ("020", "a", ["9781631491719", "1631491719"]),
             ("010", "a", ["2017022370"]),
+            (
+                "856",
+                "u",
+                [
+                    "http://link.overdrive.com/?content",
+                    "https://samples.overdrive.com/?sample_url",
+                    "https://img1.od-cdn.com/ImageType-100/image.jpg",
+                    "https://img1.od-cdn.com/ImageType-200/thumbnail.jpg",
+                ],
+            ),
         ],
     )
     def test_get_variable_field_content(
@@ -169,17 +179,17 @@ class TestPlatformResponseReader:
     @pytest.mark.parametrize(
         "url,expectation",
         [
-            ("http://link.overdrive.com/?websiteID=37&titleID=5077214", 1),
+            ("http://link.overdrive.com/?content", 1),
             (
-                "https://samples.overdrive.com/?crid=40cc3b3f-4c30-4685-b391-db7b2ea91455&.epub-sample.overdrive.com",
+                "https://samples.overdrive.com/?sample_url",
                 2,
             ),
             (
-                "https://img1.od-cdn.com/ImageType-100/0044-1/%7B40CC3B3F-4C30-4685-B391-DB7B2EA91455%7DImg100.jpg",
+                "https://img1.od-cdn.com/ImageType-100/image.jpg",
                 3,
             ),
             (
-                "https://img1.od-cdn.com/ImageType-200/0044-1/%7B40CC3B3F-4C30-4685-B391-DB7B2EA91455%7DImg200.jpg",
+                "https://img1.od-cdn.com/ImageType-200/thumbnail.jpg",
                 4,
             ),
             ("http://example.com", None),
@@ -200,22 +210,22 @@ class TestPlatformResponseReader:
             if loop == 1:
                 assert u == {
                     "urlTypeId": 1,
-                    "url": "http://link.overdrive.com/?websiteID=37&titleID=5077214",
+                    "url": "http://link.overdrive.com/?content",
                 }
             elif loop == 2:
                 assert u == {
                     "urlTypeId": 2,
-                    "url": "https://samples.overdrive.com/?crid=40cc3b3f-4c30-4685-b391-db7b2ea91455&.epub-sample.overdrive.com",
+                    "url": "https://samples.overdrive.com/?sample_url",
                 }
             elif loop == 3:
                 assert u == {
                     "urlTypeId": 3,
-                    "url": "https://img1.od-cdn.com/ImageType-100/0044-1/%7B40CC3B3F-4C30-4685-B391-DB7B2EA91455%7DImg100.jpg",
+                    "url": "https://img1.od-cdn.com/ImageType-100/image.jpg",
                 }
             elif loop == 4:
                 assert u == {
                     "urlTypeId": 4,
-                    "url": "https://img1.od-cdn.com/ImageType-200/0044-1/%7B40CC3B3F-4C30-4685-B391-DB7B2EA91455%7DImg200.jpg",
+                    "url": "https://img1.od-cdn.com/ImageType-200/thumbnail.jpg",
                 }
             loop += 1
 
@@ -242,6 +252,24 @@ class TestPlatformResponseReader:
         assert meta.upgradeStamp is None
         assert meta.upgraded is False
         assert meta.upgradeSourceId is None
+        assert meta.urls == [
+            {
+                "urlTypeId": 1,
+                "url": "http://link.overdrive.com/?content",
+            },
+            {
+                "urlTypeId": 2,
+                "url": "https://samples.overdrive.com/?sample_url",
+            },
+            {
+                "urlTypeId": 3,
+                "url": "https://img1.od-cdn.com/ImageType-100/image.jpg",
+            },
+            {
+                "urlTypeId": 4,
+                "url": "https://img1.od-cdn.com/ImageType-200/thumbnail.jpg",
+            },
+        ]
 
     def test_generator(self, stub_nyp_platform_200_response):
         reader = PlatformResponseReader(stub_nyp_platform_200_response)

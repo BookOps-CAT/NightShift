@@ -229,7 +229,7 @@ class PlatformResponseReader:
         """
         if "link.overdrive.com" in url:
             return URL_TYPE["content"]["utid"]
-        elif "sample.overdrive.com" in url:
+        elif "samples.overdrive.com" in url:
             return URL_TYPE["excerpt"]["utid"]
         elif "ImageType-100" in url:
             return URL_TYPE["image"]["utid"]
@@ -249,7 +249,7 @@ class PlatformResponseReader:
             list of dicts
         """
         url_data = []
-        urls = self._get_variable_field_content("856", "z", data)
+        urls = self._get_variable_field_content("856", "u", data)
 
         # determine type of url based on the pattern
         for url in urls:
@@ -342,8 +342,9 @@ def get_bibs(sbids: List[int]):
                 # include data if bib deleted
                 responses = session.get_bib_list(batch, deleted=None)
             except BookopsPlatformError as exc:
+                # log errors
                 raise NightShiftError(f"{exc}")
 
             reader = PlatformResponseReader(responses)
-            for sierra_meta in reader:
-                pass
+            for meta in reader:
+                yield meta
