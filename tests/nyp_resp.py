@@ -364,7 +364,7 @@ RESP = {
                     "subfields": [
                         {
                             "tag": "u",
-                            "content": "http://link.overdrive.com/?websiteID=37&titleID=5077214",
+                            "content": "http://link.overdrive.com/?content",
                         },
                         {"tag": "z", "content": "Access eNYPL"},
                     ],
@@ -379,7 +379,7 @@ RESP = {
                         {"tag": "3", "content": "Excerpt"},
                         {
                             "tag": "u",
-                            "content": "https://samples.overdrive.com/?crid=40cc3b3f-4c30-4685-b391-db7b2ea91455&.epub-sample.overdrive.com",
+                            "content": "https://samples.overdrive.com/?sample_url",
                         },
                     ],
                 },
@@ -393,7 +393,7 @@ RESP = {
                         {"tag": "3", "content": "Image"},
                         {
                             "tag": "u",
-                            "content": "https://img1.od-cdn.com/ImageType-100/0044-1/%7B40CC3B3F-4C30-4685-B391-DB7B2EA91455%7DImg100.jpg",
+                            "content": "https://img1.od-cdn.com/ImageType-100/image.jpg",
                         },
                     ],
                 },
@@ -407,7 +407,7 @@ RESP = {
                         {"tag": "3", "content": "Thumbnail"},
                         {
                             "tag": "u",
-                            "content": "https://img1.od-cdn.com/ImageType-200/0044-1/%7B40CC3B3F-4C30-4685-B391-DB7B2EA91455%7DImg200.jpg",
+                            "content": "https://img1.od-cdn.com/ImageType-200/thumbnail.jpg",
                         },
                     ],
                 },
