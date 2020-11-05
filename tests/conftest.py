@@ -1,10 +1,13 @@
 import datetime
+import os
+import json
 
 import pytest
 import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from bookops_nypl_platform.errors import BookopsPlatformError
 from nightshift.datastore import (
     Base,
     LibrarySystem,
@@ -18,6 +21,7 @@ from nightshift.datastore import (
     WorldcatQuery,
 )
 from nightshift.datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
+from nightshift.errors import NightShiftError
 
 
 from .nyp_resp import RESP
@@ -209,10 +213,63 @@ class FakeHTTP401SessionResponse:
         return {"statusCode": 401, "type": "unauthorized", "message": "Unauthorized"}
 
 
+class MockBookopsPlatformError:
+    def __init__(self, *args, **kwargs):
+        raise BookopsPlatformError
+
+
+class MockPlatformAuthServerResponseSuccess:
+    """Simulates oauth server response to successful token request"""
+
+    def __init__(self):
+        self.status_code = 200
+
+    def json(self):
+        return {
+            "access_token": "token_string_here",
+            "expires_in": 3600,
+            "token_type": "Bearer",
+            "scope": "scopes_here",
+            "id_token": "token_string_here",
+        }
+
+
 @pytest.fixture
-def mock_successful_session_get_request(monkeypatch):
+def mock_successful_platform_post_token_response(monkeypatch):
+    def mock_oauth_server_response(*args, **kwargs):
+        return MockPlatformAuthServerResponseSuccess()
+
+    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
+
+
+@pytest.fixture
+def mock_failed_platform_post_token_response(monkeypatch):
+    def mock_oauth_server_response(*args, **kwargs):
+        return MockBookopsPlatformError()
+
+    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
+
+
+@pytest.fixture
+def mock_successful_platform_session_get_request(monkeypatch):
     def mock_api_response(*args, **kwargs):
         return FakeHTTP200SessionResponse()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def mock_bookops_platform_error(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return MockBookopsPlatformError()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def mock_platform_401_error_response(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return FakeHTTP401SessionResponse()
 
     monkeypatch.setattr(requests.Session, "get", mock_api_response)
 
@@ -230,6 +287,27 @@ def stub_nyp_platform_401_response():
 @pytest.fixture
 def stub_nyp_platform_404_response():
     return FakeHTTP404SessionResponse()
+
+
+@pytest.fixture
+def live_keys():
+    if os.name == "nt":
+        fh = os.path.join(os.environ["USERPROFILE"], ".platform/tomasz_platform.json")
+        with open(fh, "r") as file:
+            data = json.load(file)
+            os.environ["platform-client-id"] = data["client-id"]
+            os.environ["platform-client-secret"] = data["client-secret"]
+            os.environ["platform-oauth-server"] = data["oauth-server"]
+    else:
+        # Travis env variables defined in the repository settings
+        pass
+
+
+@pytest.fixture
+def mock_keys():
+    os.environ["platform-client-id"] = "app_client_id"
+    os.environ["platform-client-secret"] = "app_client_secret"
+    os.environ["platform-oauth-server"] = "app_oauth-server"
 
 
 @pytest.fixture
