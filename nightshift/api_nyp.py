@@ -16,26 +16,7 @@ from bookops_nypl_platform.errors import BookopsPlatformError
 from . import __version__, __title__
 from .errors import NightShiftError
 from .datastore_values import UPGRADE_SRC, URL_TYPE
-
-
-SierraMeta = namedtuple(
-    "SierraMeta",
-    [
-        "sbid",
-        "sbn",
-        "lcn",
-        "did",
-        "sid",
-        "wcn",
-        "title",
-        "author",
-        "pubDate",
-        "upgradeStamp",
-        "upgraded",
-        "upgradeSourceId",
-        "urls",
-    ],
-)
+from .models import SierraMeta
 
 
 class PlatformResponseReader:
