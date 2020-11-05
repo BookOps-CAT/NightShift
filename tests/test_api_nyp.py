@@ -81,6 +81,10 @@ class TestPlatformResponseReader:
         reader = PlatformResponseReader(stub_nyp_platform_200_response)
         assert reader._is_upgraded(arg) == expectation
 
+    def test_parse_bib_id(self, stub_nyp_platform_200_response):
+        reader = PlatformResponseReader(stub_nyp_platform_200_response)
+        assert reader._parse_bib_id(reader.datas[0]) == 22259002
+
     def test_parse_isbns(self, stub_nyp_platform_200_response):
         reader = PlatformResponseReader(stub_nyp_platform_200_response)
         assert reader._parse_isbns(reader.datas[0]) == "9781631491719,1631491719"
@@ -220,6 +224,7 @@ class TestPlatformResponseReader:
     def test_map_data(self, stub_nyp_platform_200_response):
         reader = PlatformResponseReader(stub_nyp_platform_200_response)
         meta = reader._map_data(reader.datas[0])
+        assert meta.sbid == 22259002
         assert meta.sbn == "9781631491719,1631491719"
         assert meta.lcn == "2017022370"
         assert meta.did == "40CC3B3F-4C30-4685-B391-DB7B2EA91455"
@@ -259,8 +264,10 @@ class TestPlatformResponseReader:
         for record in reader:
             loop += 1
             if loop == 1:
+                assert record.sbid == 22259002
                 assert record.did == "40CC3B3F-4C30-4685-B391-DB7B2EA91455"
             elif loop == 2:
+                assert record.sbid == 22259003
                 assert record.did == "4E7547BF-6D42-43F4-9180-8FCF302497F3"
         assert loop == 2
 
@@ -314,8 +321,10 @@ def test_get_sierra_bib_data_mocked(
     for rec in records:
         loop += 1
         if loop == 1:
+            assert rec.sbid == 22259002
             assert rec.did == "40CC3B3F-4C30-4685-B391-DB7B2EA91455"
         elif loop == 2:
+            assert rec.sbid == 22259003
             assert rec.did == "4E7547BF-6D42-43F4-9180-8FCF302497F3"
     assert loop == 2
 

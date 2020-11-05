@@ -21,6 +21,7 @@ from .datastore_values import UPGRADE_SRC, URL_TYPE
 SierraMeta = namedtuple(
     "SierraMeta",
     [
+        "sbid",
         "sbn",
         "lcn",
         "did",
@@ -82,6 +83,7 @@ class PlatformResponseReader:
         return (wcn, upgradeStamp, upgraded, upgradeSourceId)
 
     def _map_data(self, data: Dict) -> Type[namedtuple]:
+        sbid = self._parse_bib_id(data)
         sbn = self._parse_isbns(data)
         lcn = self._parse_lccn(data)
         did = self._parse_distributor_number(data)
@@ -96,6 +98,7 @@ class PlatformResponseReader:
         wcn, upgradeStamp, upgraded, upgradeSourceId = self._is_upgraded(cno)
 
         return SierraMeta(
+            sbid,
             sbn,
             lcn,
             did,
@@ -121,6 +124,18 @@ class PlatformResponseReader:
             author
         """
         return data["normAuthor"]
+
+    def _parse_bib_id(self, data: Dict) -> int:
+        """
+        Parses Sierra bib number
+
+        Args:
+            data:           single platform record
+
+        Returns:
+            sbid
+        """
+        return int(data["id"])
 
     def _parse_control_number(self, data: Dict) -> str:
         """
