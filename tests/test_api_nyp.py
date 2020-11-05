@@ -273,10 +273,11 @@ class TestPlatformResponseReader:
 
     def test_generator(self, stub_nyp_platform_200_response):
         reader = PlatformResponseReader(stub_nyp_platform_200_response)
-        loop = 1
+        loop = 0
         for record in reader:
+            loop += 1
             if loop == 1:
                 assert record.did == "40CC3B3F-4C30-4685-B391-DB7B2EA91455"
             elif loop == 2:
                 assert record.did == "4E7547BF-6D42-43F4-9180-8FCF302497F3"
-            loop += 1
+        assert loop == 2
