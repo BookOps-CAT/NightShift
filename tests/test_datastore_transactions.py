@@ -19,6 +19,7 @@ from nightshift.datastore import (
 )
 from nightshift.datastore_transactions import (
     create_datastore,
+    enhance_resource,
     insert,
     insert_resource,
     insert_export_file,
@@ -57,6 +58,12 @@ def test_create_datastore():
     assert len(session.query(UrlType).all()) == 4
     assert len(session.query(ExportFile).all()) == 0
     assert len(session.query(Resource).all()) == 0
+
+
+def test_enhance_resource_nyp(brief_bib_dataset):
+    session = brief_bib_dataset
+    # enhance_resource(session, record, "nyp")
+    # assert session.query().one() ==
 
 
 def test_insert(init_dataset):

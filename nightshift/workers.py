@@ -8,8 +8,14 @@ from typing import List, Type
 
 import sqlalchemy
 
+from .api_nyp import get_sierra_bib_data
 from .export_file_parser import SierraExportReader
-from .datastore_transactions import insert_resource, insert_export_file, retrieve_bibnos
+from .datastore_transactions import (
+    enhance_resource,
+    insert_resource,
+    insert_export_file,
+    retrieve_bibnos,
+)
 from .datastore_values import LIB_SYS, BIB_CAT
 
 
@@ -71,12 +77,17 @@ def retrieve_bibnos_for_enhancement(
     return sierra_bibnos
 
 
-def query_nyp_sierra(bibnos: List[int]):
+def import_platform_data(
+    bibnos: List[int], session: Type[sqlalchemy.orm.session.Session]
+):
     """
-    Queries NYPL Platform retrieving records with particular Sierra bib numbers.
+    Queries NYPL Platform retrieving records with particular Sierra bib numbers
+    and imports data to datastore
 
     Args:
         sbids:                  list of Sierra bib numbers without 'b' prefix and
                                 last digit check
     """
-    pass
+    datas = get_sierra_bib_data(bibnos)
+    for d in datas:
+        enhance_resource(session, data=d, library_system="nyp")

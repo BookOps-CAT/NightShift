@@ -4,17 +4,60 @@ This modules contains methods for transactions with data.db
 
 from typing import List, Type
 
-import sqlalchemy
 
+from .models import *
+import sqlalchemy
 from .datastore import (
     ExportFile,
     LibrarySystem,
     BibCategory,
     UpgradeSource,
+    UrlField,
     UrlType,
     Resource,
 )
 from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
+
+
+def enhance_resource(
+    session,
+    data,
+    library_system,
+):
+    """
+    Updates records in datastore wih extra data pulled from library API
+
+    Args:
+        session:            sqlalchemy db session
+        data:               `nightshift.models.SierraMeta` record data
+    """
+
+    lsid = LIB_SYS[library_system]["lsid"]
+    instance = (
+        session.query(Resource).filter_by(sbid=data.sbid, librarySystemId=lsid).one()
+    )
+
+    urls = [
+        UrlField(sBibId=data.sbid, uTypeId=x["uTypeId"], url=x["url"])
+        for x in data["urls"]
+    ]
+    record = dict(
+        cno=data.cno,
+        sbn=data.sbn,
+        lcn=data.lcn,
+        did=data.did,
+        sid=data.sid,
+        wcn=data.wcn,
+        title=data.title,
+        author=data.author,
+        pubDate=data.pubDate,
+        upgradeStamp=data.upgradeStamp,
+        upgraded=data.upgraded,
+        upgradedSourceId=data.upgradedSourceId,
+        urls=urls,
+    )
+    for key, value in record.items():
+        setattr(instance, key, value)
 
 
 def insert(session, model, **kwargs):
