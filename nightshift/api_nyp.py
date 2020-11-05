@@ -316,24 +316,35 @@ def split_into_batches(sbids: List[int], size: int = 50) -> List[List]:
     return batches
 
 
-def get_bibs(sbids: List[int]):
+def get_access_token():
+    try:
+        token = PlatformToken(
+            client_id=os.environ["platform-client-id"],
+            client_secret=os.environ["platform-client-secret"],
+            oauth_server=os.environ["platform-oauth-server"],
+            agent=f"{__title__}/{__version__}",
+        )
+    except BookopsPlatformError as exc:
+        raise NightShiftError(f"Platform autorization error: {exc}")
+    else:
+        return token
+
+
+def get_sierra_bib_data(sbids: List[int]):
     """
     Queries NYPL Platform by Sierra bib number
 
     Args:
         sbids:                  list of Sierra bib numbers withough "b" prefix
                                 or last digit check
+        session:                NYPL Platform session
     """
 
     # split sierra bib numbers into batches of 50
     batches = split_into_batches(sbids)
 
-    token = PlatformToken(
-        client_id=os.environ["platform-client-id"],
-        client_secret=os.environ["platform-client-secret"],
-        oauth_server=os.environ["platform-oauth-server"],
-        agent=f"{__title__}/{__version__}",
-    )
+    token = get_access_token()
+
     with PlatformSession(
         authorization=token, agent=f"{__title__}/{__version__}"
     ) as session:
@@ -343,8 +354,12 @@ def get_bibs(sbids: List[int]):
                 responses = session.get_bib_list(batch, deleted=None)
             except BookopsPlatformError as exc:
                 # log errors
-                raise NightShiftError(f"{exc}")
+                raise NightShiftError(f"Platform request error: {exc}")
 
-            reader = PlatformResponseReader(responses)
-            for meta in reader:
-                yield meta
+            try:
+                reader = PlatformResponseReader(responses)
+            except NightShiftError:
+                raise
+            else:
+                for meta in reader:
+                    yield meta

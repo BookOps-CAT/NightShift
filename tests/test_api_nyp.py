@@ -7,33 +7,15 @@ import datetime
 
 import pytest
 
-from nightshift.api_nyp import split_into_batches, PlatformResponseReader
-from nightshift.errors import NightShiftError
 
-
-@pytest.mark.parametrize(
-    "arg,size,expectation",
-    [
-        (
-            [1, 2, 3, 4, 5, 6, 7],
-            2,
-            [
-                [1, 2],
-                [3, 4],
-                [5, 6],
-                [7],
-            ],
-        ),
-        ([1], 2, [[1]]),
-        ([1, 2], 2, [[1, 2]]),
-    ],
+from bookops_nypl_platform.errors import BookopsPlatformError
+from nightshift.api_nyp import (
+    get_access_token,
+    get_sierra_bib_data,
+    split_into_batches,
+    PlatformResponseReader,
 )
-def test_split_into_batches(arg, size, expectation):
-    assert split_into_batches(arg, size) == expectation
-
-
-def test_split_into_batches_default_size():
-    assert split_into_batches([1] * 125) == [[1] * 50, [1] * 50, [1] * 25]
+from nightshift.errors import NightShiftError
 
 
 class TestPlatformResponseReader:
@@ -281,3 +263,87 @@ class TestPlatformResponseReader:
             elif loop == 2:
                 assert record.did == "4E7547BF-6D42-43F4-9180-8FCF302497F3"
         assert loop == 2
+
+
+@pytest.mark.parametrize(
+    "arg,size,expectation",
+    [
+        (
+            [1, 2, 3, 4, 5, 6, 7],
+            2,
+            [
+                [1, 2],
+                [3, 4],
+                [5, 6],
+                [7],
+            ],
+        ),
+        ([1], 2, [[1]]),
+        ([1, 2], 2, [[1, 2]]),
+    ],
+)
+def test_split_into_batches(arg, size, expectation):
+    assert split_into_batches(arg, size) == expectation
+
+
+def test_split_into_batches_default_size():
+    assert split_into_batches([1] * 125) == [[1] * 50, [1] * 50, [1] * 25]
+
+
+def test_get_access_token_success(
+    mock_keys, mock_successful_platform_post_token_response
+):
+    token = get_access_token()
+    assert token.token_str == "token_string_here"
+
+
+def test_get_access_token_error(mock_keys, mock_failed_platform_post_token_response):
+    with pytest.raises(NightShiftError) as exc:
+        get_access_token()
+    assert "Platform autorization error:" in str(exc.value)
+
+
+def test_get_sierra_bib_data_mocked(
+    mock_keys,
+    mock_successful_platform_post_token_response,
+    mock_successful_platform_session_get_request,
+):
+    sbids = [22259002, 22259003]
+    records = get_sierra_bib_data(sbids)
+    loop = 0
+    for rec in records:
+        loop += 1
+        if loop == 1:
+            assert rec.did == "40CC3B3F-4C30-4685-B391-DB7B2EA91455"
+        elif loop == 2:
+            assert rec.did == "4E7547BF-6D42-43F4-9180-8FCF302497F3"
+    assert loop == 2
+
+
+def test_get_sierra_bib_data_request_error(
+    mock_keys,
+    mock_successful_platform_post_token_response,
+    mock_bookops_platform_error,
+):
+
+    # mock_successful_platform_session_get_request,
+    err_msg = "Platform request error:"
+    sbids = [22259002, 22259003]
+    with pytest.raises(NightShiftError) as exc:
+        for m in get_sierra_bib_data(sbids):
+            pass
+    assert err_msg in str(exc.value)
+
+
+def test_get_sierra_bib_data_response_reader_error(
+    mock_keys,
+    mock_successful_platform_post_token_response,
+    mock_platform_401_error_response,
+):
+    err_msg = "Platform 401 error: {'statusCode': 401, 'type': 'unauthorized', 'message': 'Unauthorized'}"
+    sbids = [22259002, 22259003]
+    with pytest.raises(NightShiftError) as exc:
+        for m in get_sierra_bib_data(sbids):
+            pass
+
+    assert err_msg in str(exc.value)
