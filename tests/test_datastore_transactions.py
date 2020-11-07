@@ -4,28 +4,32 @@
 Tests datastore transactions
 """
 
-from datetime import date
+from datetime import date, datetime
 
 import pytest
 
 from nightshift.datastore import (
+    BibCategory,
     dal,
     ExportFile,
     LibrarySystem,
-    BibCategory,
-    UpgradeSource,
-    UrlType,
     Resource,
+    UpgradeSource,
+    UrlField,
+    UrlType,
 )
 from nightshift.datastore_transactions import (
+    construct_url_records,
     create_datastore,
     enhance_resource,
     insert,
-    insert_resource,
     insert_export_file,
+    insert_resource,
     retrieve_bibnos,
     retrieve_records,
 )
+
+from nightshift.models import SierraMeta
 
 
 def test_init_in_memory_db(init_dataset):
@@ -60,10 +64,49 @@ def test_create_datastore():
     assert len(session.query(Resource).all()) == 0
 
 
+def test_construct_url_records():
+    sbid = 12345678
+    urls = [
+        dict(uTypeId=1, url="content_url"),
+    ]
+    assert (
+        str(construct_url_records(sbid, urls)[0])
+        == "<UrlField(ufid=symbol('NO_VALUE'), sBibId=12345678, uTypeId=1, url='content_url')>"
+    )
+
+
 def test_enhance_resource_nyp(brief_bib_dataset):
+    # setup
     session = brief_bib_dataset
-    # enhance_resource(session, record, "nyp")
-    # assert session.query().one() ==
+    sbid = 12345678
+    data = SierraMeta(
+        sbid=sbid,
+        sbn="isbns1,isbn2",
+        lcn="lccn1",
+        did="resourceId1",
+        sid="upc1",
+        wcn="oclc1",
+        title="title_here",
+        author="author_here",
+        pubDate="2016",
+        upgradeStamp=datetime(2020, 1, 1, 17, 0, 0),
+        upgraded=True,
+        upgradeSourceId=2,
+        urls=[
+            dict(uTypeId=1, url="content_url"),
+            dict(
+                uTypeId=2,
+                url="sample_url",
+            ),
+            dict(uTypeId=3, url="image_url"),
+            dict(uTypeId=4, url="thumbnail_url"),
+        ],
+    )
+    # act
+    enhance_resource(session, data, "nyp")
+
+    # verify
+    print(session.query(Resource).filter_by(sbid=sbid).one())
 
 
 def test_insert(init_dataset):

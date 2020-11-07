@@ -19,6 +19,22 @@ from .datastore import (
 from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
 
 
+def construct_url_records(sbid, data):
+    """
+    Prepares list of url data dictionaries as datastore UrlField records
+
+    Args:
+        sbid:               sierra bib number
+        data:               list of url dictionaries where key is uTypeId
+                            and value is the url
+
+    Returns:
+        list of UrlField records
+    """
+    urls = [(UrlField(sBibId=sbid, uTypeId=x["uTypeId"], url=x["url"])) for x in data]
+    return urls
+
+
 def enhance_resource(
     session,
     data,
@@ -37,12 +53,8 @@ def enhance_resource(
         session.query(Resource).filter_by(sbid=data.sbid, librarySystemId=lsid).one()
     )
 
-    urls = [
-        UrlField(sBibId=data.sbid, uTypeId=x["uTypeId"], url=x["url"])
-        for x in data["urls"]
-    ]
+    urls = construct_url_records(data.sbid, data.urls)
     record = dict(
-        cno=data.cno,
         sbn=data.sbn,
         lcn=data.lcn,
         did=data.did,
@@ -53,7 +65,7 @@ def enhance_resource(
         pubDate=data.pubDate,
         upgradeStamp=data.upgradeStamp,
         upgraded=data.upgraded,
-        upgradedSourceId=data.upgradedSourceId,
+        upgradeSourceId=data.upgradeSourceId,
         urls=urls,
     )
     for key, value in record.items():
