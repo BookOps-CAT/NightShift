@@ -8,6 +8,7 @@ from typing import List, Type
 
 import sqlalchemy
 
+import nightshift
 from .api_nyp import get_sierra_bib_data
 from .export_file_parser import SierraExportReader
 from .datastore_transactions import (
@@ -19,7 +20,9 @@ from .datastore_transactions import (
 from .datastore_values import LIB_SYS, BIB_CAT
 
 
-def import_export_file_data(fh: str, session: Type[sqlalchemy.orm.session.Session]):
+def import_export_file_data(
+    fh: str, session: Type[sqlalchemy.orm.session.Session]
+) -> Type[nightshift.datastore.ExportFile]:
     """
     Inserts export file record to ExportFile table
 

@@ -96,7 +96,7 @@ def brief_bib_dataset(init_dataset):
     # two nypl eresources
     session.add(
         Resource(
-            sbid=12345678,
+            sbid=22259002,
             librarySystemId=1,
             bibCategoryId=1,
             exportFileId=1,
@@ -106,7 +106,7 @@ def brief_bib_dataset(init_dataset):
     )
     session.add(
         Resource(
-            sbid=12345679,
+            sbid=22259003,
             librarySystemId=1,
             bibCategoryId=1,
             exportFileId=1,

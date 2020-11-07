@@ -79,7 +79,7 @@ def test_construct_url_records():
 def test_enhance_resource_nyp(brief_bib_dataset):
     # setup
     session = brief_bib_dataset
-    sbid = 12345678
+    sbid = 22259002
     data = SierraMeta(
         sbid=sbid,
         sbn="isbns1,isbn2",
@@ -195,7 +195,7 @@ def test_retrieve_records(init_dataset):
 @pytest.mark.parametrize(
     "lsid,bcid,expectation",
     [
-        (1, 1, [12345678, 12345679]),
+        (1, 1, [22259002, 22259003]),
         (1, 2, [12345670, 12345671]),
         (2, 1, [22345678, 22345679]),
         (2, 2, [22345670, 22345671]),

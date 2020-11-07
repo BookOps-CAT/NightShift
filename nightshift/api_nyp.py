@@ -253,7 +253,7 @@ class PlatformResponseReader:
             if uid is None:
                 pass
             else:
-                url_data.append(dict(urlTypeId=uid, url=url))
+                url_data.append(dict(uTypeId=uid, url=url))
 
         return url_data
 

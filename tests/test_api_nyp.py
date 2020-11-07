@@ -135,11 +135,7 @@ class TestPlatformResponseReader:
         assert reader._parse_standard_numbers(stub_platform_record_missing) is None
 
     @pytest.mark.parametrize(
-        "arg,expectation",
-        [
-            ("bt123456", None),
-            ("123456789", "123456789"),
-        ],
+        "arg,expectation", [("bt123456", None), ("123456789", "123456789"),],
     )
     def test_parse_worldcat_number(
         self, arg, expectation, stub_nyp_platform_200_response
@@ -166,18 +162,9 @@ class TestPlatformResponseReader:
         "url,expectation",
         [
             ("http://link.overdrive.com/?content", 1),
-            (
-                "https://samples.overdrive.com/?sample_url",
-                2,
-            ),
-            (
-                "https://img1.od-cdn.com/ImageType-100/image.jpg",
-                3,
-            ),
-            (
-                "https://img1.od-cdn.com/ImageType-200/thumbnail.jpg",
-                4,
-            ),
+            ("https://samples.overdrive.com/?sample_url", 2,),
+            ("https://img1.od-cdn.com/ImageType-100/image.jpg", 3,),
+            ("https://img1.od-cdn.com/ImageType-200/thumbnail.jpg", 4,),
             ("http://example.com", None),
         ],
     )
@@ -195,22 +182,22 @@ class TestPlatformResponseReader:
         for u in urls:
             if loop == 1:
                 assert u == {
-                    "urlTypeId": 1,
+                    "uTypeId": 1,
                     "url": "http://link.overdrive.com/?content",
                 }
             elif loop == 2:
                 assert u == {
-                    "urlTypeId": 2,
+                    "uTypeId": 2,
                     "url": "https://samples.overdrive.com/?sample_url",
                 }
             elif loop == 3:
                 assert u == {
-                    "urlTypeId": 3,
+                    "uTypeId": 3,
                     "url": "https://img1.od-cdn.com/ImageType-100/image.jpg",
                 }
             elif loop == 4:
                 assert u == {
-                    "urlTypeId": 4,
+                    "uTypeId": 4,
                     "url": "https://img1.od-cdn.com/ImageType-200/thumbnail.jpg",
                 }
             loop += 1
@@ -240,20 +227,11 @@ class TestPlatformResponseReader:
         assert meta.upgraded is False
         assert meta.upgradeSourceId is None
         assert meta.urls == [
+            {"uTypeId": 1, "url": "http://link.overdrive.com/?content",},
+            {"uTypeId": 2, "url": "https://samples.overdrive.com/?sample_url",},
+            {"uTypeId": 3, "url": "https://img1.od-cdn.com/ImageType-100/image.jpg",},
             {
-                "urlTypeId": 1,
-                "url": "http://link.overdrive.com/?content",
-            },
-            {
-                "urlTypeId": 2,
-                "url": "https://samples.overdrive.com/?sample_url",
-            },
-            {
-                "urlTypeId": 3,
-                "url": "https://img1.od-cdn.com/ImageType-100/image.jpg",
-            },
-            {
-                "urlTypeId": 4,
+                "uTypeId": 4,
                 "url": "https://img1.od-cdn.com/ImageType-200/thumbnail.jpg",
             },
         ]
@@ -275,16 +253,7 @@ class TestPlatformResponseReader:
 @pytest.mark.parametrize(
     "arg,size,expectation",
     [
-        (
-            [1, 2, 3, 4, 5, 6, 7],
-            2,
-            [
-                [1, 2],
-                [3, 4],
-                [5, 6],
-                [7],
-            ],
-        ),
+        ([1, 2, 3, 4, 5, 6, 7], 2, [[1, 2], [3, 4], [5, 6], [7],],),
         ([1], 2, [[1]]),
         ([1, 2], 2, [[1, 2]]),
     ],
