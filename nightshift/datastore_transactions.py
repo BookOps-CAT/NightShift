@@ -1,11 +1,13 @@
 """
 This modules contains methods for transactions with data.db
 """
+import datetime
 
 from typing import List, Type
 
+import nightshift
 
-from .models import *
+# from .models import *
 import sqlalchemy
 from .datastore import (
     ExportFile,
@@ -17,6 +19,20 @@ from .datastore import (
     Resource,
 )
 from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
+
+
+def calculate_date_using_days_from_today(days: int) -> datetime.date:
+    """
+    Calculate date x days from today
+
+    Args:
+        days:               number of days
+
+    Returns:
+        datetime.date
+    """
+    days = datetime.timedelta(days=days)
+    return datetime.date.today() - days
 
 
 def construct_url_records(sbid, lsid, data):
@@ -151,6 +167,26 @@ def retrieve_bibnos(
         sbids.append(rec.sbid)
 
     return sbids
+
+
+def retrieve_reserve_ids(
+    session: Type[sqlalchemy.orm.session.Session], lsid: int, days_old: int
+):
+    """
+    Retrievs records from datastore that need full Worldcat bib and 
+    were loaded certain number of days since now
+
+    Args:
+        session:            sqlalchemy session
+        lsid:               library system id
+        days_old            number of days since today
+
+    Returns:
+        orm response?
+    """
+    records = session.query(Resource).filter_by(
+        librarySystemId=lsid, bibDate=datetime.date()
+    )
 
 
 def create_datastore(dal):

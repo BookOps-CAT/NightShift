@@ -4,7 +4,7 @@
 Tests datastore transactions
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import pytest
 
@@ -19,6 +19,7 @@ from nightshift.datastore import (
     UrlType,
 )
 from nightshift.datastore_transactions import (
+    calculate_date_using_days_from_today,
     construct_url_records,
     create_datastore,
     enhance_resource,
@@ -30,6 +31,14 @@ from nightshift.datastore_transactions import (
 )
 
 from nightshift.models import SierraMeta
+
+
+@pytest.mark.parametrize(
+    "arg,expectation",
+    [(1, date.today() - timedelta(days=1)), (30, date.today() - timedelta(days=30))],
+)
+def test_calculate_date_using_days(arg, expectation):
+    assert calculate_date_using_days_from_today(arg) == expectation
 
 
 def test_init_in_memory_db(init_dataset):
@@ -104,7 +113,47 @@ def test_enhance_resource_nyp(brief_bib_dataset):
     enhance_resource(session, data, "nyp")
 
     # verify
-    print(session.query(Resource).filter_by(sbid=sbid).one())
+    rec = session.query(Resource).filter_by(sbid=sbid).one()
+    assert rec.sbid == 22259002
+    assert rec.sbn == "isbns1,isbn2"
+    assert rec.lcn == "lccn1"
+    assert rec.did == "resourceId1"
+    assert rec.sid == "upc1"
+    assert rec.wcn == "oclc1"
+    assert rec.title == "title_here"
+    assert rec.author == "author_here"
+    assert rec.pubDate == "2016"
+    assert rec.upgradeStamp == datetime(2020, 1, 1, 17, 0, 0)
+    assert rec.upgraded is True
+    assert rec.upgradeSourceId == 2
+
+    content = (
+        session.query(UrlField)
+        .filter_by(sBibId=22259002, librarySystemId=1, uTypeId=1)
+        .one()
+    )
+    assert content.url == "content_url"
+
+    sample = (
+        session.query(UrlField)
+        .filter_by(sBibId=22259002, librarySystemId=1, uTypeId=2)
+        .one()
+    )
+    assert sample.url == "sample_url"
+
+    image = (
+        session.query(UrlField)
+        .filter_by(sBibId=22259002, librarySystemId=1, uTypeId=3)
+        .one()
+    )
+    assert image.url == "image_url"
+
+    thumbnail = (
+        session.query(UrlField)
+        .filter_by(sBibId=22259002, librarySystemId=1, uTypeId=4)
+        .one()
+    )
+    assert thumbnail.url == "thumbnail_url"
 
 
 def test_insert(init_dataset):
