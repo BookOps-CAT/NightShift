@@ -107,6 +107,7 @@ class UrlField(Base):
 
     ufid = Column(Integer, primary_key=True)
     sBibId = Column(Integer, ForeignKey("resource.sbid"), nullable=False)
+    librarySystemId = Column(Integer, ForeignKey("library_syste.lsid"), nullable=False)
     uTypeId = Column(Integer, ForeignKey("url_type.utid"), nullable=False)
     url = Column(String(120), nullable=False)
 
@@ -134,13 +135,17 @@ class Resource(Base):
     bibDate = Column(Date, nullable=False)
     title = Column(String(50))
     author = Column(String(50))
-    pubDate = Column(Date)
+    pubDate = Column(String(10))
     upgradeStamp = Column(DateTime)
     upgraded = Column(Boolean, default=False)
     upgradeSourceId = Column(Integer, ForeignKey("upgrade_source.usid"))
 
-    urls = relationship("UrlField", cascade="all, delete-orphan")
-    wqueries = relationship("WorldcatQuery", cascade="all, delete-orphan")
+    urls = relationship(
+        "UrlField", uselist=True, cascade="all, delete-orphan", lazy="joined"
+    )
+    wqueries = relationship(
+        "WorldcatQuery", uselist=True, cascade="all, delete-orphan", lazy="joined"
+    )
 
     def __repr__(self):
         state = inspect(self)
