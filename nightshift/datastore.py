@@ -107,7 +107,7 @@ class UrlField(Base):
 
     ufid = Column(Integer, primary_key=True)
     sBibId = Column(Integer, ForeignKey("resource.sbid"), nullable=False)
-    librarySystemId = Column(Integer, ForeignKey("library_syste.lsid"), nullable=False)
+    librarySystemId = Column(Integer, ForeignKey("library_system.lsid"), nullable=False)
     uTypeId = Column(Integer, ForeignKey("url_type.utid"), nullable=False)
     url = Column(String(120), nullable=False)
 

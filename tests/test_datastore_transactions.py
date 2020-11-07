@@ -66,12 +66,13 @@ def test_create_datastore():
 
 def test_construct_url_records():
     sbid = 12345678
+    lsid = 1
     urls = [
         dict(uTypeId=1, url="content_url"),
     ]
     assert (
-        str(construct_url_records(sbid, urls)[0])
-        == "<UrlField(ufid=symbol('NO_VALUE'), sBibId=12345678, uTypeId=1, url='content_url')>"
+        str(construct_url_records(sbid, lsid, urls)[0])
+        == "<UrlField(ufid=symbol('NO_VALUE'), sBibId=12345678, librarySystemId=1, uTypeId=1, url='content_url')>"
     )
 
 
@@ -94,10 +95,7 @@ def test_enhance_resource_nyp(brief_bib_dataset):
         upgradeSourceId=2,
         urls=[
             dict(uTypeId=1, url="content_url"),
-            dict(
-                uTypeId=2,
-                url="sample_url",
-            ),
+            dict(uTypeId=2, url="sample_url",),
             dict(uTypeId=3, url="image_url"),
             dict(uTypeId=4, url="thumbnail_url"),
         ],

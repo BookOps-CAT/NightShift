@@ -19,26 +19,32 @@ from .datastore import (
 from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
 
 
-def construct_url_records(sbid, data):
+def construct_url_records(sbid, lsid, data):
     """
     Prepares list of url data dictionaries as datastore UrlField records
 
     Args:
         sbid:               sierra bib number
+        lsid:               library system id
         data:               list of url dictionaries where key is uTypeId
                             and value is the url
 
     Returns:
         list of UrlField records
     """
-    urls = [(UrlField(sBibId=sbid, uTypeId=x["uTypeId"], url=x["url"])) for x in data]
+    urls = [
+        (
+            UrlField(
+                sBibId=sbid, librarySystemId=lsid, uTypeId=x["uTypeId"], url=x["url"]
+            )
+        )
+        for x in data
+    ]
     return urls
 
 
 def enhance_resource(
-    session,
-    data,
-    library_system,
+    session, data, library_system,
 ):
     """
     Updates records in datastore wih extra data pulled from library API
@@ -53,7 +59,7 @@ def enhance_resource(
         session.query(Resource).filter_by(sbid=data.sbid, librarySystemId=lsid).one()
     )
 
-    urls = construct_url_records(data.sbid, data.urls)
+    urls = construct_url_records(data.sbid, lsid, data.urls)
     record = dict(
         sbn=data.sbn,
         lcn=data.lcn,

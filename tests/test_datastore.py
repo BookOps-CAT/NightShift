@@ -140,7 +140,7 @@ def test_UrlFieldTable_str():
     assert table.__tablename__ == "url_field"
     assert (
         str(table)
-        == "<UrlField(ufid=symbol('NO_VALUE'), sBibId=symbol('NO_VALUE'), uTypeId=symbol('NO_VALUE'), url=symbol('NO_VALUE'))>"
+        == "<UrlField(ufid=symbol('NO_VALUE'), sBibId=symbol('NO_VALUE'), librarySystemId=symbol('NO_VALUE'), uTypeId=symbol('NO_VALUE'), url=symbol('NO_VALUE'))>"
     )
 
 
