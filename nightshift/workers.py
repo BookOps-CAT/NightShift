@@ -4,7 +4,7 @@
 This module includes individual bot's operations
 """
 import os
-from typing import List, Type
+from typing import List, Type, Tuple
 
 import sqlalchemy
 
@@ -16,6 +16,7 @@ from .datastore_transactions import (
     insert_resource,
     insert_export_file,
     retrieve_bibnos,
+    retrieve_reserve_ids,
 )
 from .datastore_values import LIB_SYS, BIB_CAT
 
@@ -78,6 +79,21 @@ def retrieve_bibnos_for_enhancement(
     sierra_bibnos = retrieve_bibnos(session, lsid, bcid)
 
     return sierra_bibnos
+
+
+def retrive_records_for_worldcat_queries(
+    lib_sys: str, age: int, session: Type[sqlalchemy.orm.session.Session]
+) -> Tuple[int, str]:
+    """
+    Retrieves library system's records of indicated age that require
+    update to full bib
+
+    Args:
+        lib_sys:                library system: 'nyp' or 'bpl'
+        age:                    age in days
+        session:                sqlalchemy session
+    """
+    pass
 
 
 def import_platform_data(

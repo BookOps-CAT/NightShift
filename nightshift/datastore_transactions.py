@@ -31,8 +31,7 @@ def calculate_date_using_days_from_today(days: int) -> datetime.date:
     Returns:
         datetime.date
     """
-    days = datetime.timedelta(days=days)
-    return datetime.date.today() - days
+    return datetime.date.today() - datetime.timedelta(days=days)
 
 
 def construct_url_records(sbid, lsid, data):
