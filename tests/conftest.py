@@ -101,6 +101,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=1,
             exportFileId=1,
             cno="ODN123456789",
+            did="reserve-id-1",
             bibDate=datetime.date(2020, 9, 30),
         )
     )
@@ -111,6 +112,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=1,
             exportFileId=1,
             cno="ODN123456780",
+            did="reserve-id-2",
             bibDate=datetime.date(2020, 9, 30),
         )
     )
@@ -144,6 +146,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=1,
             exportFileId=3,
             cno="ODN223456789",
+            did="reserve-id-3",
             bibDate=datetime.date(2020, 9, 30),
         )
     )
@@ -154,6 +157,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=1,
             exportFileId=3,
             cno="ODN223456780",
+            did="reserve-id-4",
             bibDate=datetime.date(2020, 9, 30),
         )
     )

@@ -7,8 +7,9 @@ from typing import List, Type
 
 import nightshift
 
-# from .models import *
+
 import sqlalchemy
+
 from .datastore import (
     ExportFile,
     LibrarySystem,
@@ -17,6 +18,7 @@ from .datastore import (
     UrlField,
     UrlType,
     Resource,
+    WorldcatQuery,
 )
 from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
 
@@ -34,7 +36,9 @@ def calculate_date_using_days_from_today(days: int) -> datetime.date:
     return datetime.date.today() - datetime.timedelta(days=days)
 
 
-def construct_url_records(sbid, lsid, data):
+def construct_url_records(
+    sbid: int, lsid: int, data: List[dict]
+) -> List[nightshift.datastore.UrlField]:
     """
     Prepares list of url data dictionaries as datastore UrlField records
 
@@ -59,7 +63,9 @@ def construct_url_records(sbid, lsid, data):
 
 
 def enhance_resource(
-    session, data, library_system,
+    session,
+    data,
+    library_system,
 ):
     """
     Updates records in datastore wih extra data pulled from library API
@@ -168,24 +174,31 @@ def retrieve_bibnos(
     return sbids
 
 
-def retrieve_reserve_ids(
-    session: Type[sqlalchemy.orm.session.Session], lsid: int, days_old: int
-):
+def retrieve_never_queried_reserve_ids(
+    session: Type[sqlalchemy.orm.session.Session], lsid: int
+) -> List[Resource]:
     """
-    Retrievs records from datastore that need full Worldcat bib and 
-    were loaded certain number of days since now
+    Retrieves reserve ids of e-resource records from datastore that need full
+    Worldcat bib and were never queried before
 
     Args:
         session:            sqlalchemy session
         lsid:               library system id
-        days_old            number of days since today
 
     Returns:
-        orm response?
+        records
     """
-    records = session.query(Resource).filter_by(
-        librarySystemId=lsid, bibDate=datetime.date()
+    records = (
+        session.query(Resource)
+        .outerjoin(WorldcatQuery)
+        .filter(
+            Resource.librarySystemId == lsid,
+            Resource.bibCategoryId == 1,
+            WorldcatQuery.sBibId == None,
+        )
+        .all()
     )
+    return records
 
 
 def create_datastore(dal):

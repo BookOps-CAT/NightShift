@@ -17,6 +17,7 @@ from nightshift.datastore import (
     UpgradeSource,
     UrlField,
     UrlType,
+    WorldcatQuery,
 )
 from nightshift.datastore_transactions import (
     calculate_date_using_days_from_today,
@@ -27,6 +28,7 @@ from nightshift.datastore_transactions import (
     insert_export_file,
     insert_resource,
     retrieve_bibnos,
+    retrieve_never_queried_reserve_ids,
     retrieve_records,
 )
 
@@ -104,7 +106,10 @@ def test_enhance_resource_nyp(brief_bib_dataset):
         upgradeSourceId=2,
         urls=[
             dict(uTypeId=1, url="content_url"),
-            dict(uTypeId=2, url="sample_url",),
+            dict(
+                uTypeId=2,
+                url="sample_url",
+            ),
             dict(uTypeId=3, url="image_url"),
             dict(uTypeId=4, url="thumbnail_url"),
         ],
@@ -235,12 +240,6 @@ def test_insert_export_file_dup(init_dataset):
     assert rec.handle == "test.txt"
 
 
-def test_retrieve_records(init_dataset):
-    session = init_dataset
-    recs = retrieve_records(session, LibrarySystem, code="nyp")
-    assert len(recs) == 1
-
-
 @pytest.mark.parametrize(
     "lsid,bcid,expectation",
     [
@@ -253,3 +252,59 @@ def test_retrieve_records(init_dataset):
 def test_retrieve_bibnos(lsid, bcid, expectation, brief_bib_dataset):
     session = brief_bib_dataset
     assert retrieve_bibnos(session, lsid, bcid) == expectation
+
+
+def test_retrieve_records(init_dataset):
+    session = init_dataset
+    recs = retrieve_records(session, LibrarySystem, code="nyp")
+    assert len(recs) == 1
+
+
+@pytest.mark.parametrize("lsid", [1, 2])
+def test_retrieve_never_queried_reserve_ids(
+    lsid, brief_bib_dataset, stub_nyp_platform_404_response
+):
+    session = brief_bib_dataset
+
+    # add some fake data
+    session.add(
+        Resource(
+            sbid=22259004,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN1",
+            did="reserve-id-5",
+            bibDate=date(2020, 9, 30),
+            wqueries=[
+                WorldcatQuery(
+                    sBibId=22259004,
+                    found=False,
+                    wcResponse=stub_nyp_platform_404_response,
+                )
+            ],
+        )
+    )
+
+    session.add(
+        Resource(
+            sbid=22345673,
+            librarySystemId=2,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN2",
+            did="reserve-id-5",
+            bibDate=date(2020, 9, 30),
+            wqueries=[
+                WorldcatQuery(
+                    sBibId=22345673,
+                    found=False,
+                    wcResponse=stub_nyp_platform_404_response,
+                )
+            ],
+        )
+    )
+    session.commit()
+
+    records = retrieve_never_queried_reserve_ids(session=session, lsid=lsid)
+    assert len(records) == 2

@@ -16,7 +16,7 @@ from .datastore_transactions import (
     insert_resource,
     insert_export_file,
     retrieve_bibnos,
-    retrieve_reserve_ids,
+    retrieve_never_queried_reserve_ids,
 )
 from .datastore_values import LIB_SYS, BIB_CAT
 
