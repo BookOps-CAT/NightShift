@@ -15,7 +15,7 @@ from sqlalchemy import (
     Integer,
     PickleType,
     String,
-    UniqueConstraint,
+    PrimaryKeyConstraint,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.inspection import inspect
@@ -119,9 +119,12 @@ class UrlField(Base):
 
 class Resource(Base):
     __tablename__ = "resource"
-    __table_args__ = (UniqueConstraint("sbid", "librarySystemId", name="uix_resource"),)
+    __table_args__ = (
+        PrimaryKeyConstraint("sbid", "librarySystemId"),
+        {},
+    )
 
-    sbid = Column(Integer, primary_key=True, autoincrement=False)
+    sbid = Column(Integer, nullable=False)
     librarySystemId = Column(Integer, ForeignKey("library_system.lsid"), nullable=False)
     bibCategoryId = Column(Integer, ForeignKey("bib_category.bcid"), nullable=False)
     exportFileId = Column(Integer, ForeignKey("export_file.efid"), nullable=False)

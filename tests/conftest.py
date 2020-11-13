@@ -116,6 +116,19 @@ def brief_bib_dataset(init_dataset):
             bibDate=datetime.date(2020, 9, 30),
         )
     )
+    # deleted record
+    session.add(
+        Resource(
+            sbid=19099433,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN123456783",
+            did="reserve-id-5",
+            bibDate=datetime.date(2020, 9, 30),
+        )
+    )
+
     # two nypl English print
     session.add(
         Resource(
@@ -158,6 +171,18 @@ def brief_bib_dataset(init_dataset):
             exportFileId=3,
             cno="ODN223456780",
             did="reserve-id-4",
+            bibDate=datetime.date(2020, 9, 30),
+        )
+    )
+    # deleted record
+    session.add(
+        Resource(
+            sbid=19099433,
+            librarySystemId=2,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN123456784",
+            did="reserve-id-6",
             bibDate=datetime.date(2020, 9, 30),
         )
     )

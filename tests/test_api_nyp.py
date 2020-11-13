@@ -135,7 +135,11 @@ class TestPlatformResponseReader:
         assert reader._parse_standard_numbers(stub_platform_record_missing) is None
 
     @pytest.mark.parametrize(
-        "arg,expectation", [("bt123456", None), ("123456789", "123456789"),],
+        "arg,expectation",
+        [
+            ("bt123456", None),
+            ("123456789", "123456789"),
+        ],
     )
     def test_parse_worldcat_number(
         self, arg, expectation, stub_nyp_platform_200_response
@@ -162,9 +166,18 @@ class TestPlatformResponseReader:
         "url,expectation",
         [
             ("http://link.overdrive.com/?content", 1),
-            ("https://samples.overdrive.com/?sample_url", 2,),
-            ("https://img1.od-cdn.com/ImageType-100/image.jpg", 3,),
-            ("https://img1.od-cdn.com/ImageType-200/thumbnail.jpg", 4,),
+            (
+                "https://samples.overdrive.com/?sample_url",
+                2,
+            ),
+            (
+                "https://img1.od-cdn.com/ImageType-100/image.jpg",
+                3,
+            ),
+            (
+                "https://img1.od-cdn.com/ImageType-200/thumbnail.jpg",
+                4,
+            ),
             ("http://example.com", None),
         ],
     )
@@ -227,9 +240,18 @@ class TestPlatformResponseReader:
         assert meta.upgraded is False
         assert meta.upgradeSourceId is None
         assert meta.urls == [
-            {"uTypeId": 1, "url": "http://link.overdrive.com/?content",},
-            {"uTypeId": 2, "url": "https://samples.overdrive.com/?sample_url",},
-            {"uTypeId": 3, "url": "https://img1.od-cdn.com/ImageType-100/image.jpg",},
+            {
+                "uTypeId": 1,
+                "url": "http://link.overdrive.com/?content",
+            },
+            {
+                "uTypeId": 2,
+                "url": "https://samples.overdrive.com/?sample_url",
+            },
+            {
+                "uTypeId": 3,
+                "url": "https://img1.od-cdn.com/ImageType-100/image.jpg",
+            },
             {
                 "uTypeId": 4,
                 "url": "https://img1.od-cdn.com/ImageType-200/thumbnail.jpg",
@@ -247,13 +269,25 @@ class TestPlatformResponseReader:
             elif loop == 2:
                 assert record.sbid == 22259003
                 assert record.did == "4E7547BF-6D42-43F4-9180-8FCF302497F3"
-        assert loop == 2
+            elif loop == 3:
+                assert record.sbid == 19099433
+                assert record.did is None
+        assert loop == 3
 
 
 @pytest.mark.parametrize(
     "arg,size,expectation",
     [
-        ([1, 2, 3, 4, 5, 6, 7], 2, [[1, 2], [3, 4], [5, 6], [7],],),
+        (
+            [1, 2, 3, 4, 5, 6, 7],
+            2,
+            [
+                [1, 2],
+                [3, 4],
+                [5, 6],
+                [7],
+            ],
+        ),
         ([1], 2, [[1]]),
         ([1, 2], 2, [[1, 2]]),
     ],
@@ -284,7 +318,7 @@ def test_get_sierra_bib_data_mocked(
     mock_successful_platform_post_token_response,
     mock_successful_platform_session_get_request,
 ):
-    sbids = [22259002, 22259003]
+    sbids = [22259002, 22259003, 19099433]
     records = get_sierra_bib_data(sbids)
     loop = 0
     for rec in records:
@@ -295,7 +329,10 @@ def test_get_sierra_bib_data_mocked(
         elif loop == 2:
             assert rec.sbid == 22259003
             assert rec.did == "4E7547BF-6D42-43F4-9180-8FCF302497F3"
-    assert loop == 2
+        elif loop == 3:
+            assert rec.sbid == 19099433
+            assert rec.did is None
+    assert loop == 3
 
 
 def test_get_sierra_bib_data_request_error(

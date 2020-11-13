@@ -15,7 +15,7 @@ from .datastore_transactions import (
     enhance_resource,
     insert_resource,
     insert_export_file,
-    retrieve_bibnos,
+    retrieve_brief_records_bibnos,
     retrieve_never_queried_records,
 )
 from .datastore_values import LIB_SYS, BIB_CAT
@@ -92,7 +92,7 @@ def retrieve_bibnos_for_enhancement(
     lsid = LIB_SYS[lib_sys]["lsid"]
     bcid = BIB_CAT[bib_cat]["bcid"]
 
-    sierra_bibnos = retrieve_bibnos(session, lsid, bcid)
+    sierra_bibnos = retrieve_brief_records_bibnos(session, lsid, bcid)
 
     return sierra_bibnos
 

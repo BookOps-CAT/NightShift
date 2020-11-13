@@ -27,7 +27,7 @@ from nightshift.datastore_transactions import (
     insert,
     insert_export_file,
     insert_resource,
-    retrieve_bibnos,
+    retrieve_brief_records_bibnos,
     retrieve_never_queried_records,
     retrieve_records,
 )
@@ -58,7 +58,7 @@ def test_brief_bib_dataset(brief_bib_dataset):
     assert len(session.query(UpgradeSource).all()) == 2
     assert len(session.query(UrlType).all()) == 4
     assert len(session.query(ExportFile).all()) == 4
-    assert len(session.query(Resource).all()) == 8
+    assert len(session.query(Resource).all()) == 10
 
 
 def test_create_datastore():
@@ -243,15 +243,15 @@ def test_insert_export_file_dup(init_dataset):
 @pytest.mark.parametrize(
     "lsid,bcid,expectation",
     [
-        (1, 1, [22259002, 22259003]),
+        (1, 1, [22259002, 22259003, 19099433]),
         (1, 2, [12345670, 12345671]),
-        (2, 1, [22345678, 22345679]),
+        (2, 1, [22345678, 22345679, 19099433]),
         (2, 2, [22345670, 22345671]),
     ],
 )
-def test_retrieve_bibnos(lsid, bcid, expectation, brief_bib_dataset):
+def test_retrieve_brief_records_bibnos(lsid, bcid, expectation, brief_bib_dataset):
     session = brief_bib_dataset
-    assert retrieve_bibnos(session, lsid, bcid) == expectation
+    assert retrieve_brief_records_bibnos(session, lsid, bcid) == expectation
 
 
 def test_retrieve_records(init_dataset):
@@ -307,4 +307,4 @@ def test_retrieve_never_queried_records(
     session.commit()
 
     records = retrieve_never_queried_records(session=session, lsid=lsid, bcid=bcid)
-    assert len(records) == 2
+    assert len(records) == 3

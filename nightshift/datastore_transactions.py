@@ -149,7 +149,7 @@ def retrieve_records(session, model, **kwargs):
     return instances
 
 
-def retrieve_bibnos(
+def retrieve_brief_records_bibnos(
     session: Type[sqlalchemy.orm.session.Session], lsid: int, bcid: int
 ) -> List[int]:
     """
@@ -180,7 +180,7 @@ def retrieve_never_queried_records(
     bcid: int,
 ) -> List[Resource]:
     """
-    Retrieves reserve ids of e-resource records from datastore that need full
+    Retrieves records from datastore that need full
     Worldcat bib and were never queried before
 
     Args:
@@ -202,6 +202,34 @@ def retrieve_never_queried_records(
         .all()
     )
     return records
+
+
+def retrieve_last_queried_records_x_days(
+    session: Type[sqlalchemy.orm.session.Session], lsid: int, bcid: int, days: int
+) -> List[Resource]:
+    """
+    Retrieves records from datastore that were queried x days ago
+
+    Args:
+        session:            sqlalchemy session
+        lsid:               library system id
+        bcid:               bib category id
+        days:               number of days since today
+
+    Returns:
+        records
+    """
+    records = (
+        session.query(Resource)
+        .outerjoin(WorlcatQuery)
+        .filter(
+            Resource.librarySystemId == lsid,
+            Resource.bibCategoryId == bcid,
+            WorldcatQuery.queryStamp <= last_query_date,
+            WorldcatQuery.queryStamp > last_query_date - timedelta(days=1),
+        )
+        .all()
+    )
 
 
 def create_datastore(dal):

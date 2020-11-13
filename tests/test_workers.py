@@ -36,9 +36,9 @@ def test_import_sierra_data(init_dataset):
 @pytest.mark.parametrize(
     "lib_sys,bib_cat,expectation",
     [
-        ("nyp", "ere", [22259002, 22259003]),
+        ("nyp", "ere", [22259002, 22259003, 19099433]),
         ("nyp", "pre", [12345670, 12345671]),
-        ("bpl", "ere", [22345678, 22345679]),
+        ("bpl", "ere", [22345678, 22345679, 19099433]),
         ("bpl", "pre", [22345670, 22345671]),
     ],
 )
