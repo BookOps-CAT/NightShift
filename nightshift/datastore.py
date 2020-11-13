@@ -133,6 +133,7 @@ class Resource(Base):
     sid = Column(String(15))  # other standard number, ex. UPC
     wcn = Column(Integer)  # Worldcat OCLC number
     bibDate = Column(Date, nullable=False)
+    deleted = Column(Boolean, default=False)
     title = Column(String(50))
     author = Column(String(50))
     pubDate = Column(String(10))

@@ -96,6 +96,7 @@ def test_UpgradeSourceTable_str():
         "sid",
         "wcn",
         "bibDate",
+        "deleted",
         "title",
         "author",
         "pubDate",
@@ -113,7 +114,7 @@ def test_ResourceTable_str():
     assert table.__tablename__ == "resource"
     assert (
         str(table)
-        == "<Resource(urls=symbol('NO_VALUE'), wqueries=symbol('NO_VALUE'), sbid=symbol('NO_VALUE'), librarySystemId=symbol('NO_VALUE'), bibCategoryId=symbol('NO_VALUE'), exportFileId=symbol('NO_VALUE'), outputFileId=symbol('NO_VALUE'), cno=symbol('NO_VALUE'), sbn=symbol('NO_VALUE'), lcn=symbol('NO_VALUE'), did=symbol('NO_VALUE'), sid=symbol('NO_VALUE'), wcn=symbol('NO_VALUE'), bibDate=symbol('NO_VALUE'), title=symbol('NO_VALUE'), author=symbol('NO_VALUE'), pubDate=symbol('NO_VALUE'), upgradeStamp=symbol('NO_VALUE'), upgraded=symbol('NO_VALUE'), upgradeSourceId=symbol('NO_VALUE'))>"
+        == "<Resource(urls=symbol('NO_VALUE'), wqueries=symbol('NO_VALUE'), sbid=symbol('NO_VALUE'), librarySystemId=symbol('NO_VALUE'), bibCategoryId=symbol('NO_VALUE'), exportFileId=symbol('NO_VALUE'), outputFileId=symbol('NO_VALUE'), cno=symbol('NO_VALUE'), sbn=symbol('NO_VALUE'), lcn=symbol('NO_VALUE'), did=symbol('NO_VALUE'), sid=symbol('NO_VALUE'), wcn=symbol('NO_VALUE'), bibDate=symbol('NO_VALUE'), deleted=symbol('NO_VALUE'), title=symbol('NO_VALUE'), author=symbol('NO_VALUE'), pubDate=symbol('NO_VALUE'), upgradeStamp=symbol('NO_VALUE'), upgraded=symbol('NO_VALUE'), upgradeSourceId=symbol('NO_VALUE'))>"
     )
 
 
