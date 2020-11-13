@@ -16,7 +16,7 @@ from .datastore_transactions import (
     insert_resource,
     insert_export_file,
     retrieve_bibnos,
-    retrieve_never_queried_reserve_ids,
+    retrieve_never_queried_records,
 )
 from .datastore_values import LIB_SYS, BIB_CAT
 
@@ -38,6 +38,22 @@ def import_export_file_data(
     record = insert_export_file(session, handle=handle)
     session.commit()
     return record
+
+
+def import_platform_data(
+    bibnos: List[int], session: Type[sqlalchemy.orm.session.Session]
+):
+    """
+    Queries NYPL Platform retrieving records with particular Sierra bib numbers
+    and imports data to datastore
+
+    Args:
+        sbids:                  list of Sierra bib numbers without 'b' prefix and
+                                last digit check
+    """
+    datas = get_sierra_bib_data(bibnos)
+    for d in datas:
+        enhance_resource(session, data=d, library_system="nyp")
 
 
 def import_sierra_data(fh: str, session: Type[sqlalchemy.orm.session.Session]):
@@ -96,17 +112,7 @@ def retrive_records_for_worldcat_queries(
     pass
 
 
-def import_platform_data(
-    bibnos: List[int], session: Type[sqlalchemy.orm.session.Session]
+def query_worldcat_eresouces(
+    dids: List[str],
 ):
-    """
-    Queries NYPL Platform retrieving records with particular Sierra bib numbers
-    and imports data to datastore
-
-    Args:
-        sbids:                  list of Sierra bib numbers without 'b' prefix and
-                                last digit check
-    """
-    datas = get_sierra_bib_data(bibnos)
-    for d in datas:
-        enhance_resource(session, data=d, library_system="nyp")
+    pass

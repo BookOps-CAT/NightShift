@@ -28,7 +28,7 @@ from nightshift.datastore_transactions import (
     insert_export_file,
     insert_resource,
     retrieve_bibnos,
-    retrieve_never_queried_reserve_ids,
+    retrieve_never_queried_records,
     retrieve_records,
 )
 
@@ -260,9 +260,9 @@ def test_retrieve_records(init_dataset):
     assert len(recs) == 1
 
 
-@pytest.mark.parametrize("lsid", [1, 2])
-def test_retrieve_never_queried_reserve_ids(
-    lsid, brief_bib_dataset, stub_nyp_platform_404_response
+@pytest.mark.parametrize("lsid,bcid", [(1, 1), (2, 1)])
+def test_retrieve_never_queried_records(
+    lsid, bcid, brief_bib_dataset, stub_nyp_platform_404_response
 ):
     session = brief_bib_dataset
 
@@ -306,5 +306,5 @@ def test_retrieve_never_queried_reserve_ids(
     )
     session.commit()
 
-    records = retrieve_never_queried_reserve_ids(session=session, lsid=lsid)
+    records = retrieve_never_queried_records(session=session, lsid=lsid, bcid=bcid)
     assert len(records) == 2

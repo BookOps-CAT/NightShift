@@ -174,8 +174,10 @@ def retrieve_bibnos(
     return sbids
 
 
-def retrieve_never_queried_reserve_ids(
-    session: Type[sqlalchemy.orm.session.Session], lsid: int
+def retrieve_never_queried_records(
+    session: Type[sqlalchemy.orm.session.Session],
+    lsid: int,
+    bcid: int,
 ) -> List[Resource]:
     """
     Retrieves reserve ids of e-resource records from datastore that need full
@@ -184,6 +186,7 @@ def retrieve_never_queried_reserve_ids(
     Args:
         session:            sqlalchemy session
         lsid:               library system id
+        bcid:               bib category id
 
     Returns:
         records
@@ -193,7 +196,7 @@ def retrieve_never_queried_reserve_ids(
         .outerjoin(WorldcatQuery)
         .filter(
             Resource.librarySystemId == lsid,
-            Resource.bibCategoryId == 1,
+            Resource.bibCategoryId == bcid,
             WorldcatQuery.sBibId == None,
         )
         .all()
