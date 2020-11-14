@@ -106,7 +106,6 @@ def test_import_platform_data(
     assert rec2.wqueries == []
 
     # record 3 (deleted)
-    print(rec3)
     assert rec3.sbid == 19099433
     assert rec3.bibDate == datetime.date(2020, 9, 30)
     assert rec3.sbn is None

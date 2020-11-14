@@ -282,7 +282,8 @@ def test_retrieve_never_queried_records(
                 WorldcatQuery(
                     sBibId=22259004,
                     found=False,
-                    wcResponse=stub_nyp_platform_404_response,
+                    httpCode=404,
+                    response=stub_nyp_platform_404_response,
                 )
             ],
         )
@@ -301,7 +302,8 @@ def test_retrieve_never_queried_records(
                 WorldcatQuery(
                     sBibId=22345673,
                     found=False,
-                    wcResponse=stub_nyp_platform_404_response,
+                    httpCode=404,
+                    response=stub_nyp_platform_404_response,
                 )
             ],
         )
