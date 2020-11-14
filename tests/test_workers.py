@@ -56,10 +56,11 @@ def test_import_platform_data(
     mock_successful_platform_session_get_request,
 ):
     session = brief_bib_dataset
-    bibnos = [22259002, 22259003]
+    bibnos = [22259002, 22259003, 19099433]
     import_platform_data(bibnos, session)
-    rec1 = session.query(Resource).filter_by(sbid=bibnos[0]).one()
-    rec2 = session.query(Resource).filter_by(sbid=bibnos[1]).one()
+    rec1 = session.query(Resource).filter_by(sbid=bibnos[0], librarySystemId=1).one()
+    rec2 = session.query(Resource).filter_by(sbid=bibnos[1], librarySystemId=1).one()
+    rec3 = session.query(Resource).filter_by(sbid=bibnos[2], librarySystemId=1).one()
 
     # record 1
     assert rec1.bibDate == datetime.date(2020, 9, 30)
@@ -68,6 +69,7 @@ def test_import_platform_data(
     assert rec1.did == "40CC3B3F-4C30-4685-B391-DB7B2EA91455"
     assert rec1.sid == "1111111111,2222222222"
     assert rec1.wcn is None
+    assert rec1.deleted is False
     assert rec1.title == "saddest words electronic resource william faulkners civil war"
     assert rec1.pubDate == "2020"
     assert rec1.author == "gorra michael"
@@ -87,6 +89,7 @@ def test_import_platform_data(
     assert rec2.did == "4E7547BF-6D42-43F4-9180-8FCF302497F3"
     assert rec2.sid is None
     assert rec2.wcn is None
+    assert rec2.deleted is False
     assert (
         rec2.title
         == "passion of the western mind electronic resource understanding the ideas that have shaped our world view"
@@ -101,3 +104,22 @@ def test_import_platform_data(
         == "[<UrlField(ufid=5, sBibId=22259003, librarySystemId=1, uTypeId=1, url='http://link.overdrive.com/?websiteID=37&titleID=647341')>, <UrlField(ufid=6, sBibId=22259003, librarySystemId=1, uTypeId=2, url='https://samples.overdrive.com/?crid=4E7547BF-6D42-43F4-9180-8FCF302497F3&.epub-sample.overdrive.com')>, <UrlField(ufid=7, sBibId=22259003, librarySystemId=1, uTypeId=3, url='https://img1.od-cdn.com/ImageType-100/0111-1/%7B4E7547BF-6D42-43F4-9180-8FCF302497F3%7DImg100.jpg')>, <UrlField(ufid=8, sBibId=22259003, librarySystemId=1, uTypeId=4, url='https://img1.od-cdn.com/ImageType-200/0111-1/%7B4E7547BF-6D42-43F4-9180-8FCF302497F3%7DImg200.jpg')>]"
     )
     assert rec2.wqueries == []
+
+    # record 3 (deleted)
+    print(rec3)
+    assert rec3.sbid == 19099433
+    assert rec3.bibDate == datetime.date(2020, 9, 30)
+    assert rec3.sbn is None
+    assert rec3.lcn is None
+    assert rec3.did is None
+    assert rec3.sid is None
+    assert rec3.wcn is None
+    assert rec3.deleted is True
+    assert rec3.title is None
+    assert rec3.pubDate is None
+    assert rec3.author is None
+    assert rec3.upgradeStamp is None
+    assert rec3.upgraded is False
+    assert rec3.upgradeSourceId is None
+    assert rec3.urls == []
+    assert rec3.wqueries == []

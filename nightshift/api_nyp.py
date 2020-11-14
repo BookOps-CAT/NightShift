@@ -31,6 +31,32 @@ class PlatformResponseReader:
                 f"Platform {responses.status_code} error: {responses.json()}"
             )
 
+    def __iter__(self):
+        for data in self.datas:
+            record = self._map_data(data)
+            yield record
+
+    def _determine_url_type_id(self, url: str) -> Dict:
+        """
+        Determines type of url based on the pattern:
+
+        Args:
+            url:            url string
+
+        Returns:
+            url type id
+        """
+        if "link.overdrive.com" in url:
+            return URL_TYPE["content"]["utid"]
+        elif "samples.overdrive.com" in url:
+            return URL_TYPE["excerpt"]["utid"]
+        elif "ImageType-100" in url:
+            return URL_TYPE["image"]["utid"]
+        elif "ImageType-200" in url:
+            return URL_TYPE["thumbnail"]["utid"]
+        else:
+            return None
+
     def _get_variable_field_content(self, tag, subfield, data: Dict) -> str:
         """
         Generator. Parses variable field subfield $a for specified MARC tag
@@ -49,6 +75,18 @@ class PlatformResponseReader:
                     if sub["tag"] == subfield:
                         content.append(sub["content"].strip())
         return content
+
+    def _is_deleted(self, data: Dict) -> bool:
+        """
+        Parses deleted status of the bib
+
+        Args:
+            data:           single Platform record
+
+        Returns:
+            bool
+        """
+        return data["deleted"]
 
     def _is_upgraded(self, control_number: str) -> Tuple:
         wcn = self._parse_worldcat_number(control_number)
@@ -69,6 +107,7 @@ class PlatformResponseReader:
         lcn = self._parse_lccn(data)
         did = self._parse_distributor_number(data)
         sid = self._parse_standard_numbers(data)
+        deleted = self._is_deleted(data)
         title = self._parse_title(data)
         author = self._parse_author(data)
         pubDate = self._parse_publication_date(data)
@@ -85,6 +124,7 @@ class PlatformResponseReader:
             did,
             sid,
             wcn,
+            deleted,
             title,
             author,
             pubDate,
@@ -183,7 +223,11 @@ class PlatformResponseReader:
         """
         Parses publication date
         """
-        return str(data["publishYear"])
+        pubDate = data["publishYear"]
+        if pubDate:
+            return str(pubDate)
+        else:
+            return None
 
     def _parse_standard_numbers(self, data: Dict) -> str:
         """
@@ -211,26 +255,9 @@ class PlatformResponseReader:
         Returns:
             title
         """
-        return data["normTitle"]
-
-    def _determine_url_type_id(self, url: str) -> Dict:
-        """
-        Determines type of url based on the pattern:
-
-        Args:
-            url:            url string
-
-        Returns:
-            url type id
-        """
-        if "link.overdrive.com" in url:
-            return URL_TYPE["content"]["utid"]
-        elif "samples.overdrive.com" in url:
-            return URL_TYPE["excerpt"]["utid"]
-        elif "ImageType-100" in url:
-            return URL_TYPE["image"]["utid"]
-        elif "ImageType-200" in url:
-            return URL_TYPE["thumbnail"]["utid"]
+        title = data["normTitle"]
+        if title:
+            return title
         else:
             return None
 
@@ -274,11 +301,6 @@ class PlatformResponseReader:
             return control_number
         else:
             return None
-
-    def __iter__(self):
-        for data in self.datas:
-            record = self._map_data(data)
-            yield record
 
 
 def split_into_batches(sbids: List[int], size: int = 50) -> List[List]:

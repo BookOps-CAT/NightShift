@@ -65,6 +65,10 @@ class TestPlatformResponseReader:
             reader._get_variable_field_content(tag, sub, reader.datas[0]) == expectation
         )
 
+    def test_is_deleted(self, stub_nyp_platform_200_response):
+        reader = PlatformResponseReader(stub_nyp_platform_200_response)
+        assert reader._is_deleted(reader.datas[2]) is True
+
     @pytest.mark.parametrize(
         "arg,expectation",
         [

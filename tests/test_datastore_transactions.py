@@ -98,6 +98,7 @@ def test_enhance_resource_nyp(brief_bib_dataset):
         did="resourceId1",
         sid="upc1",
         wcn="oclc1",
+        deleted=False,
         title="title_here",
         author="author_here",
         pubDate="2016",
@@ -125,6 +126,7 @@ def test_enhance_resource_nyp(brief_bib_dataset):
     assert rec.did == "resourceId1"
     assert rec.sid == "upc1"
     assert rec.wcn == "oclc1"
+    assert rec.deleted is False
     assert rec.title == "title_here"
     assert rec.author == "author_here"
     assert rec.pubDate == "2016"

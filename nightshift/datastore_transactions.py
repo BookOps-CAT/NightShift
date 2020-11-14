@@ -87,6 +87,7 @@ def enhance_resource(
         did=data.did,
         sid=data.sid,
         wcn=data.wcn,
+        deleted=data.deleted,
         title=data.title,
         author=data.author,
         pubDate=data.pubDate,

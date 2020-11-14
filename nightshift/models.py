@@ -15,6 +15,7 @@ SierraMeta = namedtuple(
         "did",
         "sid",
         "wcn",
+        "deleted",
         "title",
         "author",
         "pubDate",
