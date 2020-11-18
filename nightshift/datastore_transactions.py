@@ -236,29 +236,33 @@ def recent_worldcat_query_records(
     return subq
 
 
-def retrieve_unqueried_one_month_old_records(
+def retrieve_records_not_queried_in_days(
     session: Type[sqlalchemy.orm.session.Session],
     lsid: int,
     bcid: int,
-    cutoff_days: int = 6,
+    bib_min_age: int = 0,
+    bib_max_age: int = 28,
+    query_cutoff_age: int = 6,
 ) -> List:
-    #
     """
     Retrieves records from datastore that were not queried in n days.
-    By default finds records not queried for the past week (7 days).
+    By default finds 28 days old or younger records not queried for
+    the past week (7 days).
 
     Args:
         session:            sqlalchemy session
         lsid:               library system id
         bcid:               bib category id
-        cutoff_days:        number of days since today for the most
-                            recent Worldcat query to be exclude from
-                            the search
+        bib_min_age:        minimal age of record in days to limit the search
+        bib_max_age:        max age of the record in days to limit the search
+        query_cutoff_age:   number of days since today for the most
+                            recent Worldcat query (to be excluded from
+                            the search)
 
     Returns:
         list of records
     """
-    cutoff_date = calculate_date_using_days_from_today(cutoff_days)
+    cutoff_date = calculate_date_using_days_from_today(query_cutoff_age)
     last_query = recent_worldcat_query_records(session)
 
     records = (
@@ -270,7 +274,10 @@ def retrieve_unqueried_one_month_old_records(
             Resource.librarySystemId == lsid,
             Resource.bibCategoryId == bcid,
             Resource.wcn == None,
-            Resource.bibDate >= datetime.date.today() - datetime.timedelta(days=28),
+            Resource.bibDate
+            <= datetime.date.today() - datetime.timedelta(days=bib_min_age),
+            Resource.bibDate
+            > datetime.date.today() - datetime.timedelta(days=bib_max_age),
             last_query.c.wqStamp <= cutoff_date,
         )
         .all()

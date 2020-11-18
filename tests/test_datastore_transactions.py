@@ -29,7 +29,7 @@ from nightshift.datastore_transactions import (
     insert_resource,
     recent_worldcat_query_records,
     retrieve_brief_records_bibnos,
-    retrieve_unqueried_one_month_old_records,
+    retrieve_records_not_queried_in_days,
     retrieve_never_queried_records,
     retrieve_records,
 )
@@ -316,7 +316,7 @@ def test_retrieve_never_queried_records(
     assert len(records) == 3
 
 
-def test_retrieve_unqueried_one_month_old_records_default_past_7_days_mode(
+def test_retrieve_records_not_queried_in_days_default_mode(
     brief_bib_dataset, stub_nyp_platform_404_response
 ):
     session = brief_bib_dataset
@@ -369,7 +369,7 @@ def test_retrieve_unqueried_one_month_old_records_default_past_7_days_mode(
         )
     )
     session.commit()
-    records = retrieve_unqueried_one_month_old_records(session, lsid=1, bcid=1)
+    records = retrieve_records_not_queried_in_days(session, lsid=1, bcid=1)
 
     assert [r.sbid for r in records] == [10000001]
 
@@ -488,11 +488,116 @@ def test_retrieve_unqueried_one_month_old_records(
     )
     session.commit()
 
-    records = retrieve_unqueried_one_month_old_records(
-        session, lsid=1, bcid=1, cutoff_days=arg
+    records = retrieve_records_not_queried_in_days(
+        session, lsid=1, bcid=1, query_cutoff_age=arg
     )
-    for r in records:
-        print(r.sbid)
+
+    assert [r.sbid for r in records] == expectation
+
+
+@pytest.mark.parametrize(
+    "bib_min,bib_max,query_age,expectation",
+    [(29, 57, 28, [10000001]), (58, 86, 57, []), (87, 142, 86, [10000004])],
+)
+def test_retrieve_records_not_queried_in_days_custom(
+    bib_min,
+    bib_max,
+    query_age,
+    expectation,
+    brief_bib_dataset,
+    stub_nyp_platform_404_response,
+):
+    session = brief_bib_dataset
+
+    # + one month old bib not queried in the last month
+    session.add(
+        Resource(
+            sbid=10000001,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN10",
+            did="reserve-id-10",
+            bibDate=date.today() - timedelta(days=40),
+            wqueries=[
+                WorldcatQuery(
+                    wqid=1,
+                    sBibId=10000001,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=30),
+                ),
+                WorldcatQuery(
+                    wqid=2,
+                    sBibId=10000001,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=40),
+                ),
+            ],
+        )
+    )
+
+    # younger than one month bib
+    session.add(
+        Resource(
+            sbid=10000002,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN11",
+            did="reserve-id-11",
+            bibDate=date.today() - timedelta(days=6),
+            wqueries=[
+                WorldcatQuery(
+                    wqid=3,
+                    sBibId=10000002,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=6),
+                ),
+                WorldcatQuery(
+                    wqid=4,
+                    sBibId=10000002,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=2),
+                ),
+            ],
+        )
+    )
+    # older than 3 months bib not queried for 2 months
+    session.add(
+        Resource(
+            sbid=10000004,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN13",
+            did="reserve-id-13",
+            bibDate=date.today() - timedelta(days=120),
+            wqueries=[
+                WorldcatQuery(
+                    wqid=5,
+                    sBibId=10000004,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=90),
+                )
+            ],
+        )
+    )
+    session.commit()
+
+    records = retrieve_records_not_queried_in_days(
+        session,
+        lsid=1,
+        bcid=1,
+        bib_min_age=bib_min,
+        bib_max_age=bib_max,
+        query_cutoff_age=query_age,
+    )
+
     assert [r.sbid for r in records] == expectation
 
 
