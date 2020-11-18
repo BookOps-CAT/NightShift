@@ -27,7 +27,9 @@ from nightshift.datastore_transactions import (
     insert,
     insert_export_file,
     insert_resource,
+    recent_worldcat_query_records,
     retrieve_brief_records_bibnos,
+    retrieve_unqueried_one_month_old_records,
     retrieve_never_queried_records,
     retrieve_records,
 )
@@ -312,3 +314,196 @@ def test_retrieve_never_queried_records(
 
     records = retrieve_never_queried_records(session=session, lsid=lsid, bcid=bcid)
     assert len(records) == 3
+
+
+def test_retrieve_unqueried_one_month_old_records_default_past_7_days_mode(
+    brief_bib_dataset, stub_nyp_platform_404_response
+):
+    session = brief_bib_dataset
+
+    session.add(
+        Resource(
+            sbid=10000001,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN10",
+            did="reserve-id-10",
+            bibDate=date.today() - timedelta(days=14),
+            wqueries=[
+                WorldcatQuery(
+                    wqid=1,
+                    sBibId=10000001,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=7),
+                ),
+            ],
+        )
+    )
+    session.add(
+        Resource(
+            sbid=10000002,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN11",
+            did="reserve-id-11",
+            bibDate=date.today() - timedelta(days=6),
+            wqueries=[
+                WorldcatQuery(
+                    wqid=2,
+                    sBibId=10000002,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=6),
+                ),
+                WorldcatQuery(
+                    wqid=3,
+                    sBibId=10000002,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=2),
+                ),
+            ],
+        )
+    )
+    session.commit()
+    records = retrieve_unqueried_one_month_old_records(session, lsid=1, bcid=1)
+
+    assert [r.sbid for r in records] == [10000001]
+
+
+@pytest.mark.parametrize(
+    "arg,expectation",
+    [
+        (1, [10000001, 10000002, 10000003]),
+        (6, [10000001, 10000003]),
+        (13, [10000003]),
+        (19, [10000003]),
+        (25, []),
+    ],
+)
+def test_retrieve_unqueried_one_month_old_records(
+    arg, expectation, brief_bib_dataset, stub_nyp_platform_404_response
+):
+    session = brief_bib_dataset
+
+    session.add(
+        Resource(
+            sbid=10000001,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN10",
+            did="reserve-id-10",
+            bibDate=date.today() - timedelta(days=14),
+            wqueries=[
+                WorldcatQuery(
+                    wqid=1,
+                    sBibId=10000001,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=7),
+                ),
+                WorldcatQuery(
+                    wqid=2,
+                    sBibId=10000001,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=28),
+                ),
+            ],
+        )
+    )
+    session.add(
+        Resource(
+            sbid=10000002,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN11",
+            did="reserve-id-11",
+            bibDate=date.today() - timedelta(days=6),
+            wqueries=[
+                WorldcatQuery(
+                    wqid=3,
+                    sBibId=10000002,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=6),
+                ),
+                WorldcatQuery(
+                    wqid=4,
+                    sBibId=10000002,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=2),
+                ),
+            ],
+        )
+    )
+
+    session.add(
+        Resource(
+            sbid=10000003,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN12",
+            did="reserve-id-12",
+            bibDate=date.today() - timedelta(days=20),
+            wqueries=[
+                WorldcatQuery(
+                    wqid=5,
+                    sBibId=10000003,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=21),
+                )
+            ],
+        )
+    )
+
+    # this record should always be excluded - older than one month
+    session.add(
+        Resource(
+            sbid=10000004,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN13",
+            did="reserve-id-13",
+            bibDate=date.today() - timedelta(days=60),
+            wqueries=[
+                WorldcatQuery(
+                    wqid=6,
+                    sBibId=10000004,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.now() - timedelta(days=30),
+                )
+            ],
+        )
+    )
+    session.commit()
+
+    records = retrieve_unqueried_one_month_old_records(
+        session, lsid=1, bcid=1, cutoff_days=arg
+    )
+    for r in records:
+        print(r.sbid)
+    assert [r.sbid for r in records] == expectation
+
+
+def test_recent_worldcat_query_records(brief_bib_dataset):
+    session = brief_bib_dataset
+
+    subquery = recent_worldcat_query_records(session)
+    assert str(type(subquery)) == "<class 'sqlalchemy.sql.selectable.Alias'>"
+    assert (
+        str(subquery)
+        == '''SELECT worldcat_query."sBibId", worldcat_query.wqid AS wqid, max(worldcat_query."queryStamp") AS "wqStamp" 
+FROM worldcat_query 
+WHERE worldcat_query.found = false GROUP BY worldcat_query."sBibId"'''
+    )

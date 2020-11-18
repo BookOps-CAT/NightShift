@@ -10,6 +10,8 @@ import nightshift
 
 import sqlalchemy
 
+from sqlalchemy import func
+
 from .datastore import (
     ExportFile,
     LibrarySystem,
@@ -198,6 +200,8 @@ def retrieve_never_queried_records(
         .filter(
             Resource.librarySystemId == lsid,
             Resource.bibCategoryId == bcid,
+            Resource.wcn == None,
+            Resource.deleted == False,
             WorldcatQuery.sBibId == None,
         )
         .all()
@@ -205,32 +209,74 @@ def retrieve_never_queried_records(
     return records
 
 
-def retrieve_last_queried_records_x_days(
-    session: Type[sqlalchemy.orm.session.Session], lsid: int, bcid: int, days: int
-) -> List[Resource]:
+def recent_worldcat_query_records(
+    session: Type[sqlalchemy.orm.session.Session],
+) -> Type[sqlalchemy.sql.selectable.Alias]:
     """
-    Retrieves records from datastore that were queried x days ago
+    Creates a subquery with only the most recent worldcat query record
+
+    Args:
+        session:            sqlalchemy session
+
+    Returns:
+        subquery
+    """
+    subq = (
+        session.query(
+            WorldcatQuery.sBibId,
+            WorldcatQuery.wqid.label("wqid"),
+            func.max(WorldcatQuery.queryStamp).label("wqStamp"),
+        )
+        .filter(
+            WorldcatQuery.found == False,
+        )
+        .group_by(WorldcatQuery.sBibId)
+        .subquery()
+    )
+    return subq
+
+
+def retrieve_unqueried_one_month_old_records(
+    session: Type[sqlalchemy.orm.session.Session],
+    lsid: int,
+    bcid: int,
+    cutoff_days: int = 6,
+) -> List:
+    #
+    """
+    Retrieves records from datastore that were not queried in n days.
+    By default finds records not queried for the past week (7 days).
 
     Args:
         session:            sqlalchemy session
         lsid:               library system id
         bcid:               bib category id
-        days:               number of days since today
+        cutoff_days:        number of days since today for the most
+                            recent Worldcat query to be exclude from
+                            the search
 
     Returns:
-        records
+        list of records
     """
+    cutoff_date = calculate_date_using_days_from_today(cutoff_days)
+    last_query = recent_worldcat_query_records(session)
+
     records = (
-        session.query(Resource)
-        .outerjoin(WorlcatQuery)
+        session.query(
+            Resource.sbid, Resource.did, last_query.c.wqid, last_query.c.wqStamp
+        )
+        .join(last_query)
         .filter(
             Resource.librarySystemId == lsid,
             Resource.bibCategoryId == bcid,
-            WorldcatQuery.queryStamp <= last_query_date,
-            WorldcatQuery.queryStamp > last_query_date - timedelta(days=1),
+            Resource.wcn == None,
+            Resource.bibDate >= datetime.date.today() - datetime.timedelta(days=28),
+            last_query.c.wqStamp <= cutoff_date,
         )
         .all()
     )
+
+    return records
 
 
 def create_datastore(dal):
