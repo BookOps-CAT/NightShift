@@ -10,6 +10,7 @@ import sqlalchemy
 
 import nightshift
 from .api_nyp import get_sierra_bib_data
+from .api_worldcat import get_token
 from .export_file_parser import SierraExportReader
 from .datastore_transactions import (
     enhance_resource,
@@ -136,11 +137,11 @@ def query_worldcat_eresources(
     query_data: List[Tuple], session: Type[sqlalchemy.orm.session.Session]
 ):
     """
-    Retrieves eligiable records from datastore and runs queries in Worldcat
+    Retrieves eligible records from datastore and runs queries in Worldcat
 
     Args:
         query_data:             list of bib #, reserve # tuples to be used to query
                                 Worldcat
 
     """
-    pass
+    token = get_token()
