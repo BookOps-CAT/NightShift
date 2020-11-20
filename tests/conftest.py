@@ -333,7 +333,7 @@ def mixed_dataset(init_dataset, mock_datetime_now):
     yield session
 
 
-class FakeHTTP200SessionResponse:
+class FakePlatformHTTP200SessionResponse:
     def __init__(self):
         self.status_code = 200
 
@@ -341,7 +341,7 @@ class FakeHTTP200SessionResponse:
         return RESP
 
 
-class FakeHTTP404SessionResponse:
+class FakePlatformHTTP404SessionResponse:
     def __init__(self):
         self.status_code = 404
 
@@ -355,7 +355,7 @@ class FakeHTTP404SessionResponse:
         }
 
 
-class FakeHTTP401SessionResponse:
+class FakePlatformHTTP401SessionResponse:
     def __init__(self):
         self.status_code = 401
 
@@ -403,7 +403,7 @@ def mock_failed_platform_post_token_response(monkeypatch):
 @pytest.fixture
 def mock_successful_platform_session_get_request(monkeypatch):
     def mock_api_response(*args, **kwargs):
-        return FakeHTTP200SessionResponse()
+        return FakePlatformHTTP200SessionResponse()
 
     monkeypatch.setattr(requests.Session, "get", mock_api_response)
 
@@ -419,24 +419,24 @@ def mock_bookops_platform_error(monkeypatch):
 @pytest.fixture
 def mock_platform_401_error_response(monkeypatch):
     def mock_api_response(*args, **kwargs):
-        return FakeHTTP401SessionResponse()
+        return FakePlatformHTTP401SessionResponse()
 
     monkeypatch.setattr(requests.Session, "get", mock_api_response)
 
 
 @pytest.fixture
 def stub_nyp_platform_200_response():
-    return FakeHTTP200SessionResponse()
+    return FakePlatformHTTP200SessionResponse()
 
 
 @pytest.fixture
 def stub_nyp_platform_401_response():
-    return FakeHTTP401SessionResponse()
+    return FakePlatformHTTP401SessionResponse()
 
 
 @pytest.fixture
 def stub_nyp_platform_404_response():
-    return FakeHTTP404SessionResponse()
+    return FakePlatformHTTP404SessionResponse()
 
 
 @pytest.fixture
@@ -458,6 +458,11 @@ def mock_keys():
     os.environ["platform-client-id"] = "app_client_id"
     os.environ["platform-client-secret"] = "app_client_secret"
     os.environ["platform-oauth-server"] = "app_oauth-server"
+    os.environ["worldcat-key"] = "app_worldcat_key"
+    os.environ["worldcat-secret"] = "app_worldcat_secret"
+    os.environ["worldcat-scopes"] = "app_worldcat_scopes"
+    os.environ["worldcat-principal-id"] = "app_worldcat_principal_id"
+    os.environ["worldcat-principal-idns"] = "app_worldcat_principal_idns"
 
 
 @pytest.fixture
