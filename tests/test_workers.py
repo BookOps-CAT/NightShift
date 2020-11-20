@@ -14,7 +14,7 @@ from nightshift.workers import (
     import_export_file_data,
     import_platform_data,
     retrieve_bibnos_for_enhancement,
-    retrieve_records_for_worldcat_queries,
+    retrieve_eresource_records_for_worldcat_queries,
 )
 
 
@@ -133,7 +133,7 @@ def test_retrieve_records_for_worldcat_queries(
     mock_successful_platform_session_get_request,
 ):
     session = mixed_dataset
-    records = retrieve_records_for_worldcat_queries("nyp", "ere", session)
+    records = retrieve_eresource_records_for_worldcat_queries("nyp", session)
 
     exp1 = (1, "reserve-id-1")  # never queried
     exp2 = (2, "reserve-id-2")  # month old not queried in the last week

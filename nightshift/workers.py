@@ -98,8 +98,8 @@ def retrieve_bibnos_for_enhancement(
     return sierra_bibnos
 
 
-def retrieve_records_for_worldcat_queries(
-    lib_sys: str, bib_category: str, session: Type[sqlalchemy.orm.session.Session]
+def retrieve_eresource_records_for_worldcat_queries(
+    lib_sys: str, session: Type[sqlalchemy.orm.session.Session]
 ) -> Tuple[int, str]:
     """
     Retrieves library system's records of indicated age that require
@@ -107,7 +107,6 @@ def retrieve_records_for_worldcat_queries(
 
     Args:
         lib_sys:                library system: 'nyp' or 'bpl'
-        age:                    age in days
         session:                sqlalchemy session
 
     Returns:
@@ -116,7 +115,7 @@ def retrieve_records_for_worldcat_queries(
 
     # determine ids of library system and bib category
     lsid = LIB_SYS[lib_sys]["lsid"]
-    bcid = BIB_CAT[bib_category]["bcid"]
+    bcid = BIB_CAT["ere"]["bcid"]
 
     # 1st batch - never queried records
     for record in retrieve_never_queried_records(session, lsid, bcid):
@@ -134,6 +133,14 @@ def retrieve_records_for_worldcat_queries(
 
 
 def query_worldcat_eresouces(
-    dids: List[str],
+    query_data: List[Tuple], session: Type[sqlalchemy.orm.session.Session]
 ):
+    """
+    Retrieves eligiable records from datastore and runs queries in Worldcat
+
+    Args:
+        query_data:             list of bib #, reserve # tuples to be used to query
+                                Worldcat
+
+    """
     pass
