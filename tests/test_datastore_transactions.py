@@ -247,9 +247,9 @@ def test_insert_export_file_dup(init_dataset):
 @pytest.mark.parametrize(
     "lsid,bcid,expectation",
     [
-        (1, 1, [22259002, 22259003, 19099433]),
+        (1, 1, [22259002, 22259003]),
         (1, 2, [12345670, 12345671]),
-        (2, 1, [22345678, 22345679, 19099433]),
+        (2, 1, [22345678, 22345679]),
         (2, 2, [22345670, 22345671]),
     ],
 )
@@ -274,11 +274,11 @@ def test_retrieve_never_queried_records(
     session.add(
         Resource(
             sbid=22259004,
-            librarySystemId=1,
+            librarySystemId=2,
             bibCategoryId=1,
             exportFileId=1,
             cno="ODN1",
-            did="reserve-id-5",
+            did="reserve-id-14",
             bibDate=date(2020, 9, 30),
             wqueries=[
                 WorldcatQuery(
@@ -313,7 +313,7 @@ def test_retrieve_never_queried_records(
     session.commit()
 
     records = retrieve_never_queried_records(session=session, lsid=lsid, bcid=bcid)
-    assert len(records) == 3
+    assert len(records) == 2
 
 
 def test_retrieve_records_not_queried_in_days_default_mode(
@@ -370,6 +370,7 @@ def test_retrieve_records_not_queried_in_days_default_mode(
     )
     session.commit()
     records = retrieve_records_not_queried_in_days(session, lsid=1, bcid=1)
+    print(str(records))
 
     assert [r.sbid for r in records] == [10000001]
 

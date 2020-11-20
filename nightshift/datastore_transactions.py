@@ -169,7 +169,12 @@ def retrieve_brief_records_bibnos(
     """
     sbids = []
     records = retrieve_records(
-        session, Resource, librarySystemId=lsid, bibCategoryId=bcid, title=None
+        session,
+        Resource,
+        librarySystemId=lsid,
+        bibCategoryId=bcid,
+        title=None,
+        deleted=False,
     )
     for rec in records:
         sbids.append(rec.sbid)
@@ -265,7 +270,7 @@ def retrieve_records_not_queried_in_days(
     cutoff_date = calculate_date_using_days_from_today(query_cutoff_age)
     last_query = recent_worldcat_query_records(session)
 
-    records = (
+    query = (
         session.query(
             Resource.sbid, Resource.did, last_query.c.wqid, last_query.c.wqStamp
         )
@@ -273,15 +278,16 @@ def retrieve_records_not_queried_in_days(
         .filter(
             Resource.librarySystemId == lsid,
             Resource.bibCategoryId == bcid,
-            Resource.wcn == None,
+            Resource.upgraded == False,
             Resource.bibDate
             <= datetime.date.today() - datetime.timedelta(days=bib_min_age),
             Resource.bibDate
             > datetime.date.today() - datetime.timedelta(days=bib_max_age),
             last_query.c.wqStamp <= cutoff_date,
         )
-        .all()
     )
+    # print(str(query.statement.compile(compile_kwargs={"literal_binds": True})))
+    records = query.all()
 
     return records
 

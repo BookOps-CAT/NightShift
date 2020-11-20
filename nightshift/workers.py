@@ -17,6 +17,7 @@ from .datastore_transactions import (
     insert_export_file,
     retrieve_brief_records_bibnos,
     retrieve_never_queried_records,
+    retrieve_records_not_queried_in_days,
 )
 from .datastore_values import LIB_SYS, BIB_CAT
 
@@ -97,8 +98,8 @@ def retrieve_bibnos_for_enhancement(
     return sierra_bibnos
 
 
-def retrive_records_for_worldcat_queries(
-    lib_sys: str, age: int, session: Type[sqlalchemy.orm.session.Session]
+def retrieve_records_for_worldcat_queries(
+    lib_sys: str, bib_category: str, session: Type[sqlalchemy.orm.session.Session]
 ) -> Tuple[int, str]:
     """
     Retrieves library system's records of indicated age that require
@@ -109,7 +110,23 @@ def retrive_records_for_worldcat_queries(
         age:                    age in days
         session:                sqlalchemy session
     """
-    pass
+    # determine ids of library system and bib category
+    lsid = LIB_SYS[lib_sys]["lsid"]
+    bcid = BIB_CAT[bib_category]["bcid"]
+
+    # 1st batch - never queried records
+    for record in retrieve_never_queried_records(session, lsid, bcid):
+        yield (record.sbid, record.did)
+
+    # 2nd batch - one month old records
+    for record in retrieve_records_not_queried_in_days(session, lsid, bcid):
+        yield (record.sbid, record.did)
+
+    # 3rd batch - 2 to 5 months records
+    for record in retrieve_records_not_queried_in_days(
+        session, lsid, bcid, bib_min_age=29, bib_max_age=173, query_cutoff_age=29
+    ):
+        yield (record.sbid, record.did)
 
 
 def query_worldcat_eresouces(

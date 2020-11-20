@@ -27,15 +27,26 @@ from nightshift.errors import NightShiftError
 from .nyp_resp import RESP
 
 
-class FakeDate(datetime.datetime):
+class FakeDateTime(datetime.datetime):
     @classmethod
     def now(cls):
         return cls(2019, 1, 1, 17, 0, 0)
 
 
+class FakeDate(datetime.datetime):
+    @classmethod
+    def today(cls):
+        return cls(2019, 1, 1)
+
+
 @pytest.fixture
 def mock_datetime_now(monkeypatch):
-    monkeypatch.setattr(datetime, "datetime", FakeDate)
+    monkeypatch.setattr(datetime, "datetime", FakeDateTime)
+
+
+@pytest.fixture
+def mock_date_today(monkeypatch):
+    monkeypatch.setattr(datetime, "date", FakeDate)
 
 
 @pytest.fixture(scope="function")
@@ -125,6 +136,7 @@ def brief_bib_dataset(init_dataset):
             exportFileId=1,
             cno="ODN123456783",
             did="reserve-id-5",
+            deleted=True,
             bibDate=datetime.date(2020, 9, 30),
         )
     )
@@ -177,12 +189,13 @@ def brief_bib_dataset(init_dataset):
     # deleted record
     session.add(
         Resource(
-            sbid=19099433,
+            sbid=29099433,
             librarySystemId=2,
             bibCategoryId=1,
             exportFileId=1,
             cno="ODN123456784",
             did="reserve-id-6",
+            deleted=True,
             bibDate=datetime.date(2020, 9, 30),
         )
     )
@@ -207,6 +220,114 @@ def brief_bib_dataset(init_dataset):
             bibDate=datetime.date(2020, 9, 29),
         )
     )
+    session.commit()
+
+    yield session
+
+
+@pytest.fixture(scope="function")
+def mixed_dataset(init_dataset, mock_datetime_now):
+    """
+    Populate database with mixed of brief, enhanced, and
+    full records.
+    """
+    session = init_dataset
+
+    # export files
+    session.add(ExportFile(handle="nyp-ere-20200930.txt"))
+    session.commit()
+
+    session.add(
+        Resource(
+            sbid=1,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN1",
+            did="reserve-id-1",
+            bibDate=datetime.date(2018, 12, 31),
+        )
+    )
+
+    # one month record
+    rec = session.add(
+        Resource(
+            sbid=2,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="OD2",
+            did="reserve-id-2",
+            bibDate=datetime.date(2018, 12, 15),
+            title="test title 1",
+            wqueries=[
+                WorldcatQuery(
+                    sBibId=2,
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.datetime.now() - datetime.timedelta(days=7),
+                ),
+            ],
+        )
+    )
+
+    # found full bib
+    session.add(
+        Resource(
+            sbid=3,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            wcn="003",
+            cno="ODN-3",
+            bibDate=datetime.date(2018, 11, 1),
+            title="test title 2",
+            wqueries=[
+                WorldcatQuery(
+                    sBibId=3,
+                    found=True,
+                    httpCode=200,
+                    queryStamp=datetime.datetime.now() - datetime.timedelta(days=7),
+                )
+            ],
+        )
+    )
+
+    # deleted record
+    session.add(
+        Resource(
+            sbid=4,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="ODN4",
+            did="reserve-id-4",
+            deleted=True,
+            bibDate=datetime.date(2018, 12, 15),
+        )
+    )
+
+    # enhanced record between 2-6 months old not queried in the last month
+    session.add(
+        Resource(
+            sbid=5,
+            librarySystemId=1,
+            bibCategoryId=1,
+            exportFileId=1,
+            cno="OD5",
+            did="reserve-id-5",
+            bibDate=datetime.date(2018, 8, 1),
+            title="test title 1",
+            wqueries=[
+                WorldcatQuery(
+                    found=False,
+                    httpCode=404,
+                    queryStamp=datetime.datetime.now() - datetime.timedelta(days=35),
+                ),
+            ],
+        )
+    )
+
     session.commit()
 
     yield session

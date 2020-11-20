@@ -14,6 +14,7 @@ from nightshift.workers import (
     import_export_file_data,
     import_platform_data,
     retrieve_bibnos_for_enhancement,
+    retrieve_records_for_worldcat_queries,
 )
 
 
@@ -36,9 +37,9 @@ def test_import_sierra_data(init_dataset):
 @pytest.mark.parametrize(
     "lib_sys,bib_cat,expectation",
     [
-        ("nyp", "ere", [22259002, 22259003, 19099433]),
+        ("nyp", "ere", [22259002, 22259003]),
         ("nyp", "pre", [12345670, 12345671]),
-        ("bpl", "ere", [22345678, 22345679, 19099433]),
+        ("bpl", "ere", [22345678, 22345679]),
         ("bpl", "pre", [22345670, 22345671]),
     ],
 )
@@ -122,3 +123,22 @@ def test_import_platform_data(
     assert rec3.upgradeSourceId is None
     assert rec3.urls == []
     assert rec3.wqueries == []
+
+
+def test_retrieve_records_for_worldcat_queries(
+    mixed_dataset,
+    mock_date_today,
+    mock_keys,
+    mock_successful_platform_post_token_response,
+    mock_successful_platform_session_get_request,
+):
+    session = mixed_dataset
+    records = retrieve_records_for_worldcat_queries("nyp", "ere", session)
+
+    exp1 = (1, "reserve-id-1")  # never queried
+    exp2 = (2, "reserve-id-2")  # month old not queried in the last week
+    exp3 = (5, "reserve-id-5")  # 2-5 months old not queried in the last month
+    records = [x for x in records]
+    assert records[0] == exp1
+    assert records[1] == exp2
+    assert records[2] == exp3
