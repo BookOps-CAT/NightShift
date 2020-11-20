@@ -30,10 +30,10 @@ from .nyp_resp import RESP
 class FakeDateTime(datetime.datetime):
     @classmethod
     def now(cls):
-        return cls(2019, 1, 1, 17, 0, 0)
+        return cls(2019, 1, 1, 17, 0, 0, 0)
 
 
-class FakeDate(datetime.datetime):
+class FakeDate(datetime.date):
     @classmethod
     def today(cls):
         return cls(2019, 1, 1)
@@ -250,7 +250,7 @@ def mixed_dataset(init_dataset, mock_datetime_now):
     )
 
     # one month record
-    rec = session.add(
+    session.add(
         Resource(
             sbid=2,
             librarySystemId=1,

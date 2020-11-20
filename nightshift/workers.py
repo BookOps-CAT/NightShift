@@ -109,7 +109,11 @@ def retrieve_records_for_worldcat_queries(
         lib_sys:                library system: 'nyp' or 'bpl'
         age:                    age in days
         session:                sqlalchemy session
+
+    Returns:
+        list of sbid & did tuples
     """
+
     # determine ids of library system and bib category
     lsid = LIB_SYS[lib_sys]["lsid"]
     bcid = BIB_CAT[bib_category]["bcid"]
