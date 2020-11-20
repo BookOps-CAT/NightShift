@@ -6,6 +6,7 @@ import pytest
 import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from bookops_worldcat.errors import WorldcatAuthorizationError
 
 from bookops_nypl_platform.errors import BookopsPlatformError
 from nightshift.datastore import (
@@ -500,3 +501,48 @@ def stub_platform_record_missing():
 
     data["varFields"] = new_fields
     return data
+
+
+class MockWorldcatAuthServerResponseSuccess:
+    """Simulates oauth server response to successful token request"""
+
+    def __init__(self):
+        self.status_code = 200
+
+    def json(self):
+        expires_at = datetime.datetime.strftime(
+            datetime.datetime.utcnow() + datetime.timedelta(0, 1199),
+            "%Y-%m-%d %H:%M:%SZ",
+        )
+
+        return {
+            "access_token": "tk_Yebz4BpEp9dAsghA7KpWx6dYD1OZKWBlHjqW",
+            "token_type": "bearer",
+            "expires_in": "1199",
+            "principalID": "",
+            "principalIDNS": "",
+            "scopes": "scope1",
+            "contextInstitutionId": "00001",
+            "expires_at": expires_at,
+        }
+
+
+class MockWorldcatAuthorizatonError:
+    def __init__(self, *args, **kwargs):
+        raise WorldcatAuthorizationError
+
+
+@pytest.fixture
+def mock_successful_worldcat_post_token_response(monkeypatch):
+    def mock_oauth_server_response(*args, **kwargs):
+        return MockWorldcatAuthServerResponseSuccess()
+
+    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
+
+
+@pytest.fixture
+def mock_failed_worldcat_post_token_response(monkeypatch):
+    def mock_oauth_server_response(*args, **kwargs):
+        return MockWorldcatAuthorizatonError()
+
+    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
