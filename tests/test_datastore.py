@@ -155,7 +155,6 @@ def test_WorlcatQueryTable_columns(column):
 def test_WorlcatQueryTable_str():
     table = WorldcatQuery()
     assert table.__tablename__ == "worldcat_query"
-    print(str(table))
     assert (
         str(table)
         == "<WorldcatQuery(wqid=symbol('NO_VALUE'), sBibId=symbol('NO_VALUE'), queryStamp=symbol('NO_VALUE'), found=symbol('NO_VALUE'), httpCode=symbol('NO_VALUE'), response=symbol('NO_VALUE'))>"
