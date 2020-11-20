@@ -134,7 +134,7 @@ class Resource(Base):
     lcn = Column(String(15))  # lccn
     did = Column(String(50))  # distributor number, ex. Overdrive reserve no.
     sid = Column(String(15))  # other standard number, ex. UPC
-    wcn = Column(Integer)  # Worldcat OCLC number
+    wcn = Column(String)  # Worldcat OCLC number
     bibDate = Column(Date, nullable=False)
     deleted = Column(Boolean, default=False)
     title = Column(String(50))
