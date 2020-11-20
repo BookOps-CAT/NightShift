@@ -132,7 +132,7 @@ def retrieve_eresource_records_for_worldcat_queries(
         yield (record.sbid, record.did)
 
 
-def query_worldcat_eresouces(
+def query_worldcat_eresources(
     query_data: List[Tuple], session: Type[sqlalchemy.orm.session.Session]
 ):
     """
