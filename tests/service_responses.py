@@ -1,5 +1,28 @@
 # -*- coding: utf-8 -*-
-RESP = {
+
+WSRESP = {
+    "numberOfRecords": 1,
+    "briefRecords": [
+        {
+            "oclcNumber": "1190756389",
+            "title": "The saddest words : William Faulkner's Civil War",
+            "creator": "Michael Edward Gorra",
+            "date": "2020",
+            "language": "eng",
+            "generalFormat": "Book",
+            "specificFormat": "Digital",
+            "edition": "First edition.",
+            "publisher": "Liveright Publishing Corporation",
+            "catalogingInfo": {
+                "catalogingAgency": "TEFOD",
+                "transcribingAgency": "TEFOD",
+            },
+        }
+    ],
+}
+
+
+NPRESP = {
     "data": [
         {
             "id": "22259002",

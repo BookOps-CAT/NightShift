@@ -25,7 +25,7 @@ from nightshift.datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
 from nightshift.errors import NightShiftError
 
 
-from .nyp_resp import RESP
+from .service_responses import NPRESP, WSRESP
 
 
 class FakeDateTime(datetime.datetime):
@@ -339,7 +339,7 @@ class FakePlatformHTTP200SessionResponse:
         self.status_code = 200
 
     def json(self):
-        return RESP
+        return NPRESP
 
 
 class FakePlatformHTTP404SessionResponse:
@@ -468,18 +468,18 @@ def mock_keys():
 
 @pytest.fixture
 def stub_nyp_responses():
-    return RESP
+    return NPRESP
 
 
 @pytest.fixture
 def stub_platform_record():
-    return RESP["data"][0]
+    return NPRESP["data"][0]
 
 
 @pytest.fixture
 def stub_platform_record_missing():
     # dict is mutable so make a copy
-    data = RESP["data"][0].copy()
+    data = NPRESP["data"][0].copy()
 
     # remove isbn tags
     new_fields = []
