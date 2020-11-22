@@ -284,8 +284,6 @@ def test_retrieve_never_queried_records(
                 WorldcatQuery(
                     sBibId=22259004,
                     found=False,
-                    httpCode=404,
-                    response=stub_nyp_platform_404_response,
                 )
             ],
         )
@@ -304,8 +302,6 @@ def test_retrieve_never_queried_records(
                 WorldcatQuery(
                     sBibId=22345673,
                     found=False,
-                    httpCode=404,
-                    response=stub_nyp_platform_404_response,
                 )
             ],
         )
@@ -335,7 +331,6 @@ def test_retrieve_records_not_queried_in_days_default_mode(
                     wqid=1,
                     sBibId=10000001,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=7),
                 ),
             ],
@@ -355,14 +350,12 @@ def test_retrieve_records_not_queried_in_days_default_mode(
                     wqid=2,
                     sBibId=10000002,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=6),
                 ),
                 WorldcatQuery(
                     wqid=3,
                     sBibId=10000002,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=2),
                 ),
             ],
@@ -370,7 +363,6 @@ def test_retrieve_records_not_queried_in_days_default_mode(
     )
     session.commit()
     records = retrieve_records_not_queried_in_days(session, lsid=1, bcid=1)
-    print(str(records))
 
     assert [r.sbid for r in records] == [10000001]
 
@@ -404,14 +396,12 @@ def test_retrieve_unqueried_one_month_old_records(
                     wqid=1,
                     sBibId=10000001,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=7),
                 ),
                 WorldcatQuery(
                     wqid=2,
                     sBibId=10000001,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=28),
                 ),
             ],
@@ -431,14 +421,12 @@ def test_retrieve_unqueried_one_month_old_records(
                     wqid=3,
                     sBibId=10000002,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=6),
                 ),
                 WorldcatQuery(
                     wqid=4,
                     sBibId=10000002,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=2),
                 ),
             ],
@@ -459,7 +447,6 @@ def test_retrieve_unqueried_one_month_old_records(
                     wqid=5,
                     sBibId=10000003,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=21),
                 )
             ],
@@ -481,7 +468,6 @@ def test_retrieve_unqueried_one_month_old_records(
                     wqid=6,
                     sBibId=10000004,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=30),
                 )
             ],
@@ -525,14 +511,12 @@ def test_retrieve_records_not_queried_in_days_custom(
                     wqid=1,
                     sBibId=10000001,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=30),
                 ),
                 WorldcatQuery(
                     wqid=2,
                     sBibId=10000001,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=40),
                 ),
             ],
@@ -554,14 +538,12 @@ def test_retrieve_records_not_queried_in_days_custom(
                     wqid=3,
                     sBibId=10000002,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=6),
                 ),
                 WorldcatQuery(
                     wqid=4,
                     sBibId=10000002,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=2),
                 ),
             ],
@@ -582,7 +564,6 @@ def test_retrieve_records_not_queried_in_days_custom(
                     wqid=5,
                     sBibId=10000004,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.now() - timedelta(days=90),
                 )
             ],

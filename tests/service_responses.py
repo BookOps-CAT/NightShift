@@ -853,3 +853,259 @@ NPRESP = {
     "statusCode": 200,
     "debugInfo": [],
 }
+
+
+WFRESP = """
+<?xml version='1.0' encoding='UTF-8'?>
+<entry xmlns="http://www.w3.org/2005/Atom">
+    <content type="application/xml">
+        <response xmlns="http://worldcat.org/rb" mimeType="application/vnd.oclc.marc21+xml">
+            <record xmlns="http://www.loc.gov/MARC21/slim">
+                <leader>00000cam a2200000Ka 4500</leader>
+                <controlfield tag="001">ocn773692015</controlfield>
+                <controlfield tag="003">OCoLC</controlfield>
+                <controlfield tag="005">20200913002011.8</controlfield>
+                <controlfield tag="006">m     o  d        </controlfield>
+                <controlfield tag="007">cr cnu---unuuu</controlfield>
+                <controlfield tag="008">120124s2010    cau     o     000 f eng d</controlfield>
+                <datafield tag="040" ind1=" " ind2=" ">
+                    <subfield code="a">TEFOD</subfield>
+                    <subfield code="b">eng</subfield>
+                    <subfield code="e">pn</subfield>
+                    <subfield code="c">TEFOD</subfield>
+                    <subfield code="d">EBLCP</subfield>
+                </datafield>
+                <datafield tag="019" ind1=" " ind2=" ">
+                    <subfield code="a">892798675</subfield>
+                </datafield>
+                <datafield tag="020" ind1=" " ind2=" ">
+                    <subfield code="a">9781597802598</subfield>
+                    <subfield code="q">(electronic bk.)</subfield>
+                </datafield>
+                <datafield tag="020" ind1=" " ind2=" ">
+                    <subfield code="a">159780259X</subfield>
+                    <subfield code="q">(electronic bk.)</subfield>
+                </datafield>
+                <datafield tag="020" ind1=" " ind2=" ">
+                    <subfield code="z">9781597801744</subfield>
+                </datafield>
+                <datafield tag="020" ind1=" " ind2=" ">
+                    <subfield code="z">1597801747</subfield>
+                </datafield>
+                <datafield tag="035" ind1=" " ind2=" ">
+                    <subfield code="a">(OCoLC)773692015</subfield>
+                    <subfield code="z">(OCoLC)892798675</subfield>
+                </datafield>
+                <datafield tag="037" ind1=" " ind2=" ">
+                    <subfield code="a">12A4FF4F-9F66-4AD7-81C8-ECAF552F09AB</subfield>
+                    <subfield code="b">OverDrive, Inc.</subfield>
+                    <subfield code="n">http://www.overdrive.com</subfield>
+                </datafield>
+                <datafield tag="043" ind1=" " ind2=" ">
+                    <subfield code="a">a-ir---</subfield>
+                </datafield>
+                <datafield tag="050" ind1=" " ind2="4">
+                    <subfield code="a">PR9619.3.E35</subfield>
+                    <subfield code="b">Z46 2010eb</subfield>
+                </datafield>
+                <datafield tag="072" ind1=" " ind2="7">
+                    <subfield code="a">FIC</subfield>
+                    <subfield code="x">000000</subfield>
+                    <subfield code="2">bisacsh</subfield>
+                </datafield>
+                <datafield tag="082" ind1="0" ind2="4">
+                    <subfield code="a">813.54</subfield>
+                    <subfield code="2">22</subfield>
+                </datafield>
+                <datafield tag="049" ind1=" " ind2=" ">
+                    <subfield code="a">NYPP</subfield>
+                </datafield>
+                <datafield tag="100" ind1="1" ind2=" ">
+                    <subfield code="a">Egan, Greg,</subfield>
+                    <subfield code="d">1961-</subfield>
+                </datafield>
+                <datafield tag="245" ind1="1" ind2="0">
+                    <subfield code="a">Zendegi /</subfield>
+                    <subfield code="c">Greg Egan.</subfield>
+                </datafield>
+                <datafield tag="250" ind1=" " ind2=" ">
+                    <subfield code="a">1st ed.</subfield>
+                </datafield>
+                <datafield tag="260" ind1=" " ind2=" ">
+                    <subfield code="a">San Francisco, Calif. :</subfield>
+                    <subfield code="b">Night Shade Books,</subfield>
+                    <subfield code="c">©2010.</subfield>
+                </datafield>
+                <datafield tag="300" ind1=" " ind2=" ">
+                    <subfield code="a">1 online resource (279 pages)</subfield>
+                </datafield>
+                <datafield tag="336" ind1=" " ind2=" ">
+                    <subfield code="a">text</subfield>
+                    <subfield code="b">txt</subfield>
+                    <subfield code="2">rdacontent</subfield>
+                </datafield>
+                <datafield tag="337" ind1=" " ind2=" ">
+                    <subfield code="a">computer</subfield>
+                    <subfield code="b">c</subfield>
+                    <subfield code="2">rdamedia</subfield>
+                </datafield>
+                <datafield tag="338" ind1=" " ind2=" ">
+                    <subfield code="a">online resource</subfield>
+                    <subfield code="b">cr</subfield>
+                    <subfield code="2">rdacarrier</subfield>
+                </datafield>
+                <datafield tag="520" ind1=" " ind2=" ">
+                    <subfield code="a">"In the near future, journalist Martin Seymour travels to Iran to cover the parliamentary elections. Most would-be opposition candidates are disqualified and the election becomes the non-event the world expects. But shortly afterward a compromising image of a government official captured on a mobile phone triggers a revolutionary movement that overthrows the old theocracy. Nasim Golestani, a young Iranian scientist living in exile in the United States, is hoping to work on the Human Connectome Project--which aims to construct a detailed map of the wiring of the human brain--but when government funding for the project is canceled and a chance comes to return to her homeland, she chooses to head back to Iran. Fifteen years after the revolution, Martin is living in Iran with his wife and young son, while Nasim is in charge of the virtual world known as Zendegi, used by millions of people for entertainment and business. When Zendegi comes under threat from powerful competitors, Nasim draws on her old skills, and data from the now-completed Human Connectome Project, to embark on a program to create more lifelike virtual characters and five the company an unbeatable edge. As controversy grows over the nature and rights of these software characters, tragedy strikes Martin's family. Martin turns to Nasim, seeking a solution that no one else can offer ... but Zendegi is about to become a battlefield."--Dust cover flap.</subfield>
+                </datafield>
+                <datafield tag="588" ind1="0" ind2=" ">
+                    <subfield code="a">Print version record.</subfield>
+                </datafield>
+                <datafield tag="505" ind1="0" ind2=" ">
+                    <subfield code="a">Intro; PART ONE 2012; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; PART TWO 2027-2028; 11; 12; 13; 14; 15; 16; 17; 18; 19; 20; 21; 22; 23; 24; 25; 26; 27; 28; 29; 30; Afterword</subfield>
+                </datafield>
+                <datafield tag="650" ind1=" " ind2="0">
+                    <subfield code="a">Virtual reality</subfield>
+                    <subfield code="v">Fiction.</subfield>
+                </datafield>
+                <datafield tag="650" ind1=" " ind2="0">
+                    <subfield code="a">Brain</subfield>
+                    <subfield code="x">Computer simulation</subfield>
+                    <subfield code="v">Fiction.</subfield>
+                </datafield>
+                <datafield tag="650" ind1=" " ind2="0">
+                    <subfield code="a">Ethics</subfield>
+                    <subfield code="v">Fiction.</subfield>
+                </datafield>
+                <datafield tag="651" ind1=" " ind2="0">
+                    <subfield code="a">Iran</subfield>
+                    <subfield code="v">Fiction.</subfield>
+                </datafield>
+                <datafield tag="650" ind1=" " ind2="7">
+                    <subfield code="a">FICTION</subfield>
+                    <subfield code="x">General.</subfield>
+                    <subfield code="2">bisacsh</subfield>
+                </datafield>
+                <datafield tag="650" ind1=" " ind2="7">
+                    <subfield code="a">Brain</subfield>
+                    <subfield code="x">Computer simulation.</subfield>
+                    <subfield code="2">fast</subfield>
+                    <subfield code="0">(OCoLC)fst00837599</subfield>
+                </datafield>
+                <datafield tag="650" ind1=" " ind2="7">
+                    <subfield code="a">Ethics.</subfield>
+                    <subfield code="2">fast</subfield>
+                    <subfield code="0">(OCoLC)fst00915833</subfield>
+                </datafield>
+                <datafield tag="650" ind1=" " ind2="7">
+                    <subfield code="a">Virtual reality.</subfield>
+                    <subfield code="2">fast</subfield>
+                    <subfield code="0">(OCoLC)fst01167688</subfield>
+                </datafield>
+                <datafield tag="651" ind1=" " ind2="7">
+                    <subfield code="a">Iran.</subfield>
+                    <subfield code="2">fast</subfield>
+                    <subfield code="0">(OCoLC)fst01204889</subfield>
+                </datafield>
+                <datafield tag="655" ind1=" " ind2="0">
+                    <subfield code="a">Science fiction, Australian.</subfield>
+                </datafield>
+                <datafield tag="655" ind1=" " ind2="4">
+                    <subfield code="a">Electronic books.</subfield>
+                </datafield>
+                <datafield tag="655" ind1=" " ind2="7">
+                    <subfield code="a">Fiction.</subfield>
+                    <subfield code="2">fast</subfield>
+                    <subfield code="0">(OCoLC)fst01423787</subfield>
+                </datafield>
+                <datafield tag="655" ind1=" " ind2="7">
+                    <subfield code="a">Science fiction.</subfield>
+                    <subfield code="2">gsafd</subfield>
+                </datafield>
+                <datafield tag="776" ind1="0" ind2="8">
+                    <subfield code="i">Print version:</subfield>
+                    <subfield code="a">Egan, Greg, 1961-</subfield>
+                    <subfield code="t">Zendegi.</subfield>
+                    <subfield code="b">1st ed.</subfield>
+                    <subfield code="d">San Francisco, Calif. : Night Shade Books, ©2010</subfield>
+                    <subfield code="z">9781597801744</subfield>
+                    <subfield code="w">(OCoLC)430840771</subfield>
+                </datafield>
+                <datafield tag="856" ind1="4" ind2="0">
+                    <subfield code="3">EBSCOhost</subfield>
+                    <subfield code="u">http://search.ebscohost.com/login.aspx?direct=true&amp;scope=site&amp;db=nlebk&amp;db=nlabk&amp;AN=859845</subfield>
+                </datafield>
+                <datafield tag="856" ind1="4" ind2="0">
+                    <subfield code="3">OverDrive</subfield>
+                    <subfield code="u">https://www.overdrive.com/search?q=12A4FF4F-9F66-4AD7-81C8-ECAF552F09AB</subfield>
+                </datafield>
+                <datafield tag="856" ind1="4" ind2="0">
+                    <subfield code="u">http://rbdigital.oneclickdigital.com</subfield>
+                </datafield>
+                <datafield tag="856" ind1="4" ind2=" ">
+                    <subfield code="3">Excerpt</subfield>
+                    <subfield code="u">http://excerpts.cdn.overdrive.com/FormatType-410/1486-1/12A/4FF/4F/Zendegi9781597802598.epub</subfield>
+                </datafield>
+                <datafield tag="856" ind1="4" ind2=" ">
+                    <subfield code="3">Excerpt</subfield>
+                    <subfield code="u">https://samples.overdrive.com/?crid=12A4FF4F-9F66-4AD7-81C8-ECAF552F09AB&amp;.epub-sample.overdrive.com</subfield>
+                </datafield>
+                <datafield tag="856" ind1="4" ind2=" ">
+                    <subfield code="3">Image</subfield>
+                    <subfield code="u">http://images.contentreserve.com/ImageType-100/1872-1/{12A4FF4F-9F66-4AD7-81C8-ECAF552F09AB}Img100.jpg</subfield>
+                </datafield>
+                <datafield tag="856" ind1="4" ind2="0">
+                    <subfield code="u">https://hclib.overdrive.com/media/12A4FF4F-9F66-4AD7-81C8-ECAF552F09AB</subfield>
+                </datafield>
+                <datafield tag="856" ind1="4" ind2="0">
+                    <subfield code="u">http://spl.lib.overdrive.com/ContentDetails.htm?ID=12A4FF4F-9F66-4AD7-81C8-ECAF552F09AB</subfield>
+                    <subfield code="y">Click here to access this electronic item</subfield>
+                </datafield>
+                <datafield tag="856" ind1="4" ind2="0">
+                    <subfield code="z">Click here to view book</subfield>
+                    <subfield code="u">http://public.ebookcentral.proquest.com/choice/publicfullrecord.aspx?p=5515471</subfield>
+                </datafield>
+                <datafield tag="856" ind1="4" ind2="0">
+                    <subfield code="u">https://archive.org/details/zendegi0000egan_k0p4</subfield>
+                    <subfield code="z">Free eBook from the Internet Archive</subfield>
+                </datafield>
+                <datafield tag="856" ind1="4" ind2="0">
+                    <subfield code="u">https://openlibrary.org/books/OL27120357M</subfield>
+                    <subfield code="z">Additional information and access via Open Library</subfield>
+                </datafield>
+                <datafield tag="938" ind1=" " ind2=" ">
+                    <subfield code="a">Internet Archive</subfield>
+                    <subfield code="b">INAR</subfield>
+                    <subfield code="n">zendegi0000egan_k0p4</subfield>
+                </datafield>
+                <datafield tag="938" ind1=" " ind2=" ">
+                    <subfield code="a">ProQuest Ebook Central</subfield>
+                    <subfield code="b">EBLB</subfield>
+                    <subfield code="n">EBL5515471</subfield>
+                </datafield>
+                <datafield tag="938" ind1=" " ind2=" ">
+                    <subfield code="a">ProQuest Ebook Central</subfield>
+                    <subfield code="b">EBLB</subfield>
+                    <subfield code="n">EBL845088</subfield>
+                </datafield>
+                <datafield tag="938" ind1=" " ind2=" ">
+                    <subfield code="a">EBSCOhost</subfield>
+                    <subfield code="b">EBSC</subfield>
+                    <subfield code="n">859845</subfield>
+                </datafield>
+                <datafield tag="938" ind1=" " ind2=" ">
+                    <subfield code="a">Recorded Books, LLC</subfield>
+                    <subfield code="b">RECE</subfield>
+                    <subfield code="n">rbeEB00674940</subfield>
+                </datafield>
+                <datafield tag="938" ind1=" " ind2=" ">
+                    <subfield code="a">YBP Library Services</subfield>
+                    <subfield code="b">YANK</subfield>
+                    <subfield code="n">7469076</subfield>
+                </datafield>
+            </record>
+        </response>
+    </content>
+    <id>http://worldcat.org/oclc/773692015</id>
+    <link href="http://worldcat.org/oclc/773692015"/>
+</entry>
+"""

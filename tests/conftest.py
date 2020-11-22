@@ -1,6 +1,8 @@
 import datetime
-import os
 import json
+import os
+import pickle
+
 
 import pytest
 import requests
@@ -265,7 +267,6 @@ def mixed_dataset(init_dataset, mock_datetime_now):
                 WorldcatQuery(
                     sBibId=2,
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.datetime.now() - datetime.timedelta(days=7),
                 ),
             ],
@@ -287,7 +288,6 @@ def mixed_dataset(init_dataset, mock_datetime_now):
                 WorldcatQuery(
                     sBibId=3,
                     found=True,
-                    httpCode=200,
                     queryStamp=datetime.datetime.now() - datetime.timedelta(days=7),
                 )
             ],
@@ -322,7 +322,6 @@ def mixed_dataset(init_dataset, mock_datetime_now):
             wqueries=[
                 WorldcatQuery(
                     found=False,
-                    httpCode=404,
                     queryStamp=datetime.datetime.now() - datetime.timedelta(days=35),
                 ),
             ],
@@ -533,6 +532,20 @@ class MockWorldcatAuthorizatonError:
 
 
 @pytest.fixture
+def fake_successful_worldcat_metadata_search_response():
+    with open("tests/wcsearch_resp.pickle", "rb") as f:
+        response = pickle.load(f)
+        return response
+
+
+@pytest.fixture
+def fake_failed_worldcat_metadata_search_response():
+    with open("tests/wcsearch_fail_resp.pickle", "rb") as f:
+        response = pickle.load(f)
+        return response
+
+
+@pytest.fixture
 def mock_successful_worldcat_post_token_response(monkeypatch):
     def mock_oauth_server_response(*args, **kwargs):
         return MockWorldcatAuthServerResponseSuccess()
@@ -546,3 +559,23 @@ def mock_failed_worldcat_post_token_response(monkeypatch):
         return MockWorldcatAuthorizatonError()
 
     monkeypatch.setattr(requests, "post", mock_oauth_server_response)
+
+
+@pytest.fixture
+def mock_successful_worldcat_metadata_search_response(
+    monkeypatch, fake_successful_worldcat_metadata_search_response
+):
+    def mock_worldcat_metadata_server_response(*args, **kwargs):
+        return fake_successful_worldcat_metadata_search_response
+
+    monkeypatch.setattr(requests.Session, "get", mock_worldcat_metadata_server_response)
+
+
+@pytest.fixture
+def mock_failed_worldcat_metadata_search_response(
+    monkeypatch, fake_worldcat_metadata_search_response
+):
+    def mock_worldcat_metadata_server_response(*args, **kwargs):
+        return fake_failed_worldcat_metadata_search_response
+
+    monkeypatch.setattr(requests.Session, "get", mock_worldcat_metadata_server_response)

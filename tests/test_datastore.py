@@ -145,9 +145,7 @@ def test_UrlFieldTable_str():
     )
 
 
-@pytest.mark.parametrize(
-    "column", ["wqid", "sBibId", "queryStamp", "found", "httpCode", "response"]
-)
+@pytest.mark.parametrize("column", ["wqid", "sBibId", "queryStamp", "found", "record"])
 def test_WorlcatQueryTable_columns(column):
     assert hasattr(WorldcatQuery(), column) is True
 
@@ -157,5 +155,5 @@ def test_WorlcatQueryTable_str():
     assert table.__tablename__ == "worldcat_query"
     assert (
         str(table)
-        == "<WorldcatQuery(wqid=symbol('NO_VALUE'), sBibId=symbol('NO_VALUE'), queryStamp=symbol('NO_VALUE'), found=symbol('NO_VALUE'), httpCode=symbol('NO_VALUE'), response=symbol('NO_VALUE'))>"
+        == "<WorldcatQuery(wqid=symbol('NO_VALUE'), sBibId=symbol('NO_VALUE'), queryStamp=symbol('NO_VALUE'), found=symbol('NO_VALUE'), record=symbol('NO_VALUE'))>"
     )
