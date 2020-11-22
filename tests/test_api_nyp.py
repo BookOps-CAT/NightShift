@@ -35,7 +35,7 @@ class TestPlatformResponseReader:
         err_msg = "Platform 401 error: {'statusCode': 401, 'type': 'unauthorized', 'message': 'Unauthorized'}"
         with pytest.raises(NightShiftError) as exc:
             PlatformResponseReader(stub_nyp_platform_401_response)
-            assert err_msg in str(exc.value)
+        assert err_msg in str(exc.value)
 
     @pytest.mark.parametrize(
         "tag,sub,expectation",

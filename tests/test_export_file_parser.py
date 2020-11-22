@@ -41,7 +41,7 @@ class TestSierraExportReader:
     def test_determine_library_system_id_exceptions(self, handle, err_msg):
         with pytest.raises(SierraExportReaderError) as exc:
             SierraExportReader(handle)
-            assert err_msg in str(exc.value)
+        assert err_msg in str(exc.value)
 
     @pytest.mark.parametrize(
         "handle,expectation",
@@ -59,7 +59,7 @@ class TestSierraExportReader:
         err_msg = "Sierra export file handle has invalid bib category."
         with pytest.raises(SierraExportReaderError) as exc:
             SierraExportReader(handle)
-            assert err_msg in str(exc.value)
+        assert err_msg in str(exc.value)
 
     @pytest.mark.parametrize(
         "handle,date_arg,expectation",
@@ -88,7 +88,7 @@ class TestSierraExportReader:
         reader = SierraExportReader("nyp-ere-201001.txt")
         with pytest.raises(SierraExportReaderError) as exc:
             reader._prep_sierra_bibno(arg)
-            assert err_msg in str(exc.value)
+        assert err_msg in str(exc.value)
 
     @pytest.mark.parametrize(
         "fh,row,expectation",
