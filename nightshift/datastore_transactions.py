@@ -1,9 +1,10 @@
 """
 This modules contains methods for transactions with data.db
 """
+import collections
 import datetime
-
 from typing import List, Type
+import xml
 
 import nightshift
 
@@ -25,7 +26,7 @@ from .datastore import (
 from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
 
 
-def calculate_date_using_days_from_today(days: int) -> datetime.date:
+def calculate_date_using_days_from_today(days: int) -> Type[datetime.date]:
     """
     Calculate date x days from today
 
@@ -36,6 +37,30 @@ def calculate_date_using_days_from_today(days: int) -> datetime.date:
         datetime.date
     """
     return datetime.date.today() - datetime.timedelta(days=days)
+
+
+def create_datastore(dal: Type[nightshift.datastore.DataAccessLayer]):
+    """
+    Creates and prepopulates with initial data new datastore (data.db)
+    Args:
+        dal:                data access layer
+    """
+    dal.connect()
+
+    session = dal.Session()
+
+    # insert data
+    for values in LIB_SYS.values():
+        insert(session, LibrarySystem, **values)
+    for values in BIB_CAT.values():
+        insert(session, BibCategory, **values)
+    for values in UPGRADE_SRC.values():
+        insert(session, UpgradeSource, **values)
+    for values in URL_TYPE.values():
+        insert(session, UrlType, **values)
+
+    session.commit()
+    session.close()
 
 
 def construct_url_records(
@@ -65,9 +90,9 @@ def construct_url_records(
 
 
 def enhance_resource(
-    session,
-    data,
-    library_system,
+    session: Type[sqlalchemy.orm.session.Session],
+    data: Type[collections.namedtuple],
+    library_system: str,
 ):
     """
     Updates records in datastore wih extra data pulled from library API
@@ -102,7 +127,7 @@ def enhance_resource(
         setattr(instance, key, value)
 
 
-def insert(session, model, **kwargs):
+def insert(session: Type[sqlalchemy.orm.session.Session], model: object, **kwargs):
     """
     Inserts a record into the datastore
 
@@ -119,7 +144,9 @@ def insert(session, model, **kwargs):
     return instance
 
 
-def insert_resource(session, **kwargs):
+def insert_resource(
+    session: Type[sqlalchemy.orm.session.Session], **kwargs
+) -> Type[nightshift.datastore.Resource]:
     """
     Inserts to Resource table if new record or returns instance of exisitng
 
@@ -136,7 +163,9 @@ def insert_resource(session, **kwargs):
     return instance
 
 
-def insert_export_file(session, **kwargs):
+def insert_export_file(
+    session: Type[sqlalchemy.orm.session.Session], **kwargs
+) -> Type[nightshift.datastore.ExportFile]:
     """
     Inserts to ExportFile table
     """
@@ -147,7 +176,9 @@ def insert_export_file(session, **kwargs):
     return instance
 
 
-def retrieve_records(session, model, **kwargs):
+def retrieve_records(
+    session: Type[sqlalchemy.orm.session.Session], model: object, **kwargs
+) -> List:
     instances = session.query(model).filter_by(**kwargs).all()
     return instances
 
@@ -292,25 +323,18 @@ def retrieve_records_not_queried_in_days(
     return records
 
 
-def create_datastore(dal):
+def update_resource(
+    session: Type[sqlalchemy.orm.session.Session],
+    sbid: int,
+    oclcNumber: str,
+    bib: Type[xml.etree.ElementTree.Element],
+):
     """
-    Creates and prepopulates with initial data new datastore (data.db)
+    Updates Resource & WorldcatQuery records after running queries in Worldcat
+
     Args:
-        dal:                data access layer
+        sbid:                   Resource record id (Sierra bib number)
+        oclcNumber:             OCLC number as string without a prefix
+        bib:                    MARC XML of full bib
     """
-    dal.connect()
-
-    session = dal.Session()
-
-    # insert data
-    for values in LIB_SYS.values():
-        insert(session, LibrarySystem, **values)
-    for values in BIB_CAT.values():
-        insert(session, BibCategory, **values)
-    for values in UPGRADE_SRC.values():
-        insert(session, UpgradeSource, **values)
-    for values in URL_TYPE.values():
-        insert(session, UrlType, **values)
-
-    session.commit()
-    session.close()
+    pass
