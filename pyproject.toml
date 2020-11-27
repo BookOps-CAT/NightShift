@@ -18,7 +18,7 @@ bookops-bpl-solr = { git = "https://github.com/BookOps-CAT/bookops-bpl-solr.git"
 bookops-worldcat = "^0.3.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^6.1.0"
 pytest-cov = "^2.10.1"
 pytest-mock = "^3.3.1"
 mkdocs = "^1.1.2"
