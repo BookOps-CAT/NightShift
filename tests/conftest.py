@@ -8,7 +8,8 @@ import pytest
 import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from bookops_worldcat.errors import WorldcatAuthorizationError
+from bookops_worldcat import WorldcatAccessToken, MetadataSession
+from bookops_worldcat.errors import WorldcatAuthorizationError, WorldcatSessionError
 
 from bookops_nypl_platform.errors import BookopsPlatformError
 from nightshift.datastore import (
@@ -23,11 +24,14 @@ from nightshift.datastore import (
     UrlField,
     WorldcatQuery,
 )
+import nightshift
+from nightshift import __title__, __version__
 from nightshift.datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
 from nightshift.errors import NightShiftError
+from nightshift.api_worldcat import search_for_brief_eresource
 
 
-from .service_responses import NPRESP, WSRESP
+from .service_responses import NPRESP, WSRESP, WFRESP
 
 
 class FakeDateTime(datetime.datetime):
@@ -531,6 +535,11 @@ class MockWorldcatAuthorizatonError:
         raise WorldcatAuthorizationError
 
 
+class MockWorldcatSessionError:
+    def __init__(self, *args, **kwargs):
+        raise WorldcatSessionError
+
+
 @pytest.fixture
 def fake_successful_worldcat_metadata_search_response():
     with open("tests/wcsearch_resp.pickle", "rb") as f:
@@ -539,8 +548,15 @@ def fake_successful_worldcat_metadata_search_response():
 
 
 @pytest.fixture
-def fake_failed_worldcat_metadata_search_response():
+def fake_no_match_worldcat_metadata_search_response():
     with open("tests/wcsearch_fail_resp.pickle", "rb") as f:
+        response = pickle.load(f)
+        return response
+
+
+@pytest.fixture
+def fake_successful_worldcat_full_bib_response():
+    with open("tests/wcbib_resp.pickle", "rb") as f:
         response = pickle.load(f)
         return response
 
@@ -562,6 +578,14 @@ def mock_failed_worldcat_post_token_response(monkeypatch):
 
 
 @pytest.fixture
+def mock_failed_worldcat_metadata_search_response(monkeypatch):
+    def mock_worldcat_metadata_server_response(*args, **kwargs):
+        return MockWorldcatSessionError()
+
+    monkeypatch.setattr(requests.Session, "get", mock_worldcat_metadata_server_response)
+
+
+@pytest.fixture
 def mock_successful_worldcat_metadata_search_response(
     monkeypatch, fake_successful_worldcat_metadata_search_response
 ):
@@ -572,10 +596,74 @@ def mock_successful_worldcat_metadata_search_response(
 
 
 @pytest.fixture
-def mock_failed_worldcat_metadata_search_response(
+def mock_worldcat_metadata_search_response_no_results(
     monkeypatch, fake_worldcat_metadata_search_response
 ):
     def mock_worldcat_metadata_server_response(*args, **kwargs):
-        return fake_failed_worldcat_metadata_search_response
+        return fake_no_match_worldcat_metadata_search_response
 
     monkeypatch.setattr(requests.Session, "get", mock_worldcat_metadata_server_response)
+
+
+@pytest.fixture
+def mock_successful_worldcat_metadata_full_bib_response(
+    monkeypatch, fake_successful_worldcat_full_bib_response
+):
+    def mock_worldcat_metadata_server_response(*args, **kwargs):
+        return fake_successful_worldcat_full_bib_response
+
+    monkeypatch.setattr(requests.Session, "get", mock_worldcat_metadata_server_response)
+
+
+@pytest.fixture
+def fake_xml_response():
+    return WFRESP
+
+
+@pytest.fixture
+def fake_metadata_session(mock_successful_worldcat_post_token_response):
+    token = WorldcatAccessToken(
+        key="app_worldcat-key",
+        secret="app_worldcat-secret",
+        scopes="app_worldcat-scopes",
+        principal_id="app_worldcat-principal-id",
+        principal_idns="app_worldcat-principal-idns",
+        agent=f"{__title__}/{__version__}",
+    )
+    with MetadataSession(authorization=token) as session:
+        return session
+
+
+@pytest.fixture
+def mock_search_for_brief_eresource_success(
+    monkeypatch, fake_successful_worldcat_metadata_search_response
+):
+    def mock_response(
+        *args,
+        **kwargs,
+    ):
+        return fake_successful_worldcat_metadata_search_response
+
+    monkeypatch.setattr(
+        nightshift.api_worldcat, "search_for_brief_eresource", mock_response
+    )
+
+
+@pytest.fixture
+def mock_get_full_bib(monkeypatch, fake_successful_worldcat_full_bib_response):
+    def mock_response(*args, **kwargs):
+        return fake_successful_worldcat_full_bib_response
+
+    monkeypatch.setattr(nightshift.api_worldcat, "get_full_bib", mock_response)
+
+
+@pytest.fixture
+def mock_search_for_brief_eresource_fail(
+    monkeypatch, fake_no_match_worldcat_metadata_search_response
+):
+    def mock_response(*arg, **kwargs):
+        return fake_no_match_worldcat_metadata_search_response
+
+    monkeypatch.setattr(
+        nightshift.api_worldcat, "search_for_brief_eresource", mock_response
+    )
