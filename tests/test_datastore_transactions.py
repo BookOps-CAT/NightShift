@@ -5,6 +5,7 @@ Tests datastore transactions
 """
 
 from datetime import date, datetime, timedelta
+import xml
 
 import pytest
 
@@ -32,6 +33,7 @@ from nightshift.datastore_transactions import (
     retrieve_records_not_queried_in_days,
     retrieve_never_queried_records,
     retrieve_records,
+    update_resource,
 )
 
 from nightshift.models import SierraMeta
@@ -594,3 +596,43 @@ def test_recent_worldcat_query_records(brief_bib_dataset):
 FROM worldcat_query 
 WHERE worldcat_query.found = false GROUP BY worldcat_query."sBibId"'''
     )
+
+
+def test_update_resource_match_found(brief_bib_dataset, fake_xml_bib):
+    session = brief_bib_dataset
+    update_resource(
+        session,
+        sbid=22259002,
+        library_system="nyp",
+        upgrade_src="bot",
+        oclcNumber="1190756389",
+        bib=fake_xml_bib,
+    )
+    record = session.query(Resource).filter_by(sbid=22259002, librarySystemId=1).one()
+
+    assert record.wcn == "1190756389"
+    assert record.upgraded is True
+    assert record.upgradeSourceId == 1
+    assert len(record.wqueries) == 1
+    assert record.wqueries[0].sBibId == 22259002
+    assert record.wqueries[0].found is True
+    assert type(record.wqueries[0].record) == xml.etree.ElementTree.Element
+
+
+def test_update_resource_no_match(brief_bib_dataset):
+    session = brief_bib_dataset
+    update_resource(
+        session,
+        sbid=22259002,
+        library_system="nyp",
+        upgrade_src="bot",
+        oclcNumber=None,
+        bib=None,
+    )
+    record = session.query(Resource).filter_by(sbid=22259002, librarySystemId=1).one()
+    assert record.wcn is None
+    assert record.upgraded is False
+    assert record.upgradeSourceId is None
+    assert len(record.wqueries) == 1
+    assert record.wqueries[0].found is False
+    assert record.wqueries[0].record is None

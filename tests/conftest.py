@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import pickle
+import xml.etree.ElementTree as ET
 
 
 import pytest
@@ -27,10 +28,8 @@ from nightshift.datastore import (
 import nightshift
 from nightshift import __title__, __version__
 from nightshift.datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
-from nightshift.errors import NightShiftError
-from nightshift.api_worldcat import search_for_brief_eresource
 
-
+# from nightshift.errors import NightShiftError
 from .service_responses import NPRESP, WSRESP, WFRESP
 
 
@@ -667,3 +666,8 @@ def mock_search_for_brief_eresource_fail(
     monkeypatch.setattr(
         nightshift.api_worldcat, "search_for_brief_eresource", mock_response
     )
+
+
+@pytest.fixture
+def fake_xml_bib(fake_successful_worldcat_full_bib_response):
+    return ET.fromstring((fake_successful_worldcat_full_bib_response.content))

@@ -326,6 +326,8 @@ def retrieve_records_not_queried_in_days(
 def update_resource(
     session: Type[sqlalchemy.orm.session.Session],
     sbid: int,
+    library_system: str,
+    upgrade_src: str,
     oclcNumber: str,
     bib: Type[xml.etree.ElementTree.Element],
 ):
@@ -337,4 +339,20 @@ def update_resource(
         oclcNumber:             OCLC number as string without a prefix
         bib:                    MARC XML of full bib
     """
-    pass
+    upgrade_src_id = UPGRADE_SRC[upgrade_src]["usid"]
+    lsid = LIB_SYS[library_system]["lsid"]
+
+    if oclcNumber:
+        query = session.query(Resource).filter_by(sbid=sbid, librarySystemId=lsid)
+        query.update(
+            dict(
+                wcn=oclcNumber,
+                upgradeStamp=datetime.datetime.now(),
+                upgraded=True,
+                upgradeSourceId=upgrade_src_id,
+            )
+        )
+        insert(session, WorldcatQuery, **dict(sBibId=sbid, found=True, record=bib))
+
+    else:
+        insert(session, WorldcatQuery, **dict(sBibId=sbid))
