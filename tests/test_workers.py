@@ -125,7 +125,7 @@ def test_import_platform_data(
     assert rec3.wqueries == []
 
 
-def test_retrieve_records_for_worldcat_queries(
+def test_retrieve_eresource_records_for_worldcat_queries(
     mixed_dataset,
     mock_date_today,
     mock_keys,

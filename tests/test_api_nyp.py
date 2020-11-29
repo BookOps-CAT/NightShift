@@ -11,7 +11,7 @@ import pytest
 from bookops_nypl_platform.errors import BookopsPlatformError
 from nightshift.api_nyp import (
     get_access_token,
-    get_sierra_bib_data,
+    get_nyp_sierra_bib_data,
     split_into_batches,
     PlatformResponseReader,
 )
@@ -317,13 +317,13 @@ def test_get_access_token_error(mock_keys, mock_failed_platform_post_token_respo
     assert "Platform autorization error:" in str(exc.value)
 
 
-def test_get_sierra_bib_data_mocked(
+def test_get_nyp_sierra_bib_data_mocked(
     mock_keys,
     mock_successful_platform_post_token_response,
     mock_successful_platform_session_get_request,
 ):
     sbids = [22259002, 22259003, 19099433]
-    records = get_sierra_bib_data(sbids)
+    records = get_nyp_sierra_bib_data(sbids)
     loop = 0
     for rec in records:
         loop += 1
@@ -339,7 +339,7 @@ def test_get_sierra_bib_data_mocked(
     assert loop == 3
 
 
-def test_get_sierra_bib_data_request_error(
+def test_get_nyp_sierra_bib_data_request_error(
     mock_keys,
     mock_successful_platform_post_token_response,
     mock_bookops_platform_error,
@@ -349,12 +349,12 @@ def test_get_sierra_bib_data_request_error(
     err_msg = "Platform request error:"
     sbids = [22259002, 22259003]
     with pytest.raises(NightShiftError) as exc:
-        for m in get_sierra_bib_data(sbids):
+        for m in get_nyp_sierra_bib_data(sbids):
             pass
     assert err_msg in str(exc.value)
 
 
-def test_get_sierra_bib_data_response_reader_error(
+def test_get_nyp_sierra_bib_data_response_reader_error(
     mock_keys,
     mock_successful_platform_post_token_response,
     mock_platform_401_error_response,
@@ -362,7 +362,7 @@ def test_get_sierra_bib_data_response_reader_error(
     err_msg = "Platform 401 error: {'statusCode': 401, 'type': 'unauthorized', 'message': 'Unauthorized'}"
     sbids = [22259002, 22259003]
     with pytest.raises(NightShiftError) as exc:
-        for m in get_sierra_bib_data(sbids):
+        for m in get_nyp_sierra_bib_data(sbids):
             pass
 
     assert err_msg in str(exc.value)

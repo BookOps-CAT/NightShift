@@ -348,14 +348,15 @@ def get_access_token():
         return token
 
 
-def get_sierra_bib_data(sbids: List[int]):
+def get_nyp_sierra_bib_data(sbids: List[int]) -> Type[namedtuple]:
     """
     Queries NYPL Platform by Sierra bib number
 
     Args:
-        sbids:                  list of Sierra bib numbers withough "b" prefix
+        sbids:                  list of Sierra bib numbers without "b" prefix
                                 or last digit check
-        session:                NYPL Platform session
+    Yields:
+        meta
     """
 
     # split sierra bib numbers into batches of 50

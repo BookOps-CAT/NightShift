@@ -9,8 +9,10 @@ from typing import List, Type, Tuple
 import sqlalchemy
 
 import nightshift
-from .api_nyp import get_sierra_bib_data
-from .api_worldcat import get_token
+import bookops_worldcat
+from .api_nyp import get_nyp_sierra_bib_data
+
+# from .api_worldcat import get_token
 from .export_file_parser import SierraExportReader
 from .datastore_transactions import (
     enhance_resource,
@@ -53,7 +55,7 @@ def import_platform_data(
         sbids:                  list of Sierra bib numbers without 'b' prefix and
                                 last digit check
     """
-    datas = get_sierra_bib_data(bibnos)
+    datas = get_nyp_sierra_bib_data(bibnos)
     for d in datas:
         enhance_resource(session, data=d, library_system="nyp")
 
@@ -133,15 +135,25 @@ def retrieve_eresource_records_for_worldcat_queries(
         yield (record.sbid, record.did)
 
 
-def query_worldcat_eresources(
-    query_data: List[Tuple], session: Type[sqlalchemy.orm.session.Session]
+def query_and_store_worldcat_eresources(
+    query_data: Tuple,
+    lib_sys: str,
+    db_session: Type[sqlalchemy.orm.session.Session],
+    wc_session: Type[bookops_worldcat.metadata_api.MetadataSession],
 ):
     """
     Retrieves eligible records from datastore and runs queries in Worldcat
 
     Args:
-        query_data:             list of bib #, reserve # tuples to be used to query
-                                Worldcat
+        query_data:             tuple Resourse.sbid, Resource.did
+        lib_sys:                library system: 'nyp' or 'bpl'
+        db_session:             sqlalechemy session
+        wc_session:             bookops_worldcat MetadataSession
 
     """
-    token = get_token()
+    bibNo, reserve_id = query_data
+    response = query_eresource(wc_session, reserve_id)
+    if response:
+        oclcNumber, full_bib = response
+        # save full bib & update Resource record of given bibNo
+        # code here
