@@ -11,8 +11,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from bookops_worldcat import WorldcatAccessToken, MetadataSession
 from bookops_worldcat.errors import WorldcatAuthorizationError, WorldcatSessionError
-
 from bookops_nypl_platform.errors import BookopsPlatformError
+from bookops_bpl_solr.session import BookopsSolrError
+
 from nightshift.datastore import (
     Base,
     LibrarySystem,
@@ -30,7 +31,7 @@ from nightshift import __title__, __version__
 from nightshift.datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
 
 # from nightshift.errors import NightShiftError
-from .service_responses import NPRESP, WSRESP, WFRESP
+from .service_responses import NPRESP, BSRESP, WFRESP
 
 
 class FakeDateTime(datetime.datetime):
@@ -466,6 +467,8 @@ def mock_keys():
     os.environ["worldcat-scopes"] = "app_worldcat_scopes"
     os.environ["worldcat-principal-id"] = "app_worldcat_principal_id"
     os.environ["worldcat-principal-idns"] = "app_worldcat_principal_idns"
+    os.environ["solr-client-key"] = "app_client_key"
+    os.environ["solr-endpoint"] = "sorl_endpoint"
 
 
 @pytest.fixture
@@ -671,3 +674,54 @@ def mock_search_for_brief_eresource_fail(
 @pytest.fixture
 def fake_xml_bib(fake_successful_worldcat_full_bib_response):
     return ET.fromstring((fake_successful_worldcat_full_bib_response.content))
+
+
+class FakeSolrHTTP200SessionResponse:
+    def __init__(self):
+        self.status_code = 200
+
+    def json(self):
+        return BSRESP
+
+
+class FakeSolrHTTP200NoHitsSessionResponse:
+    def __init__(self):
+        self.status_code = 200
+
+    def json(self):
+        return {
+            "response": {"numFound": 0, "start": 0, "numFoundExact": True, "docs": []}
+        }
+
+
+class FakeSolrHTTP401SessionResponse:
+    def __init__(self):
+        self.status_code = 401
+
+    def json(self):
+        return {"statusCode": 401, "type": "unauthorized", "message": "Unauthorized"}
+
+
+class MockBookopsSolrError:
+    def __init__(self, *args, **kwargs):
+        raise BookopsSolrError
+
+
+@pytest.fixture
+def stub_bpl_solr_200_response():
+    return FakeSolrHTTP200SessionResponse()
+
+
+@pytest.fixture
+def stub_bpl_solr_401_response():
+    return FakeSolrHTTP401SessionResponse()
+
+
+@pytest.fixture
+def stub_bpl_solr_no_hits_response():
+    return FakeSolrHTTP200NoHitsSessionResponse()
+
+
+@pytest.fixture
+def stub_solr_response():
+    return BSRESP
