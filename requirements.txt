@@ -1,10 +1,10 @@
-bookops-bpl-solr @ git+https://github.com/BookOps-CAT/bookops-bpl-solr.git@v0.1.1
-bookops-nypl-platform @ git+https://github.com/BookOps-CAT/bookops-nypl-platform.git@v0.2.1
-bookops-worldcat==0.3.0
-certifi==2020.11.8
-chardet==3.0.4
-idna==2.10
-pymarc==4.0.0
-requests==2.25.0
-sqlalchemy==1.3.20
-urllib3==1.26.2
+bookops-bpl-solr @ git+https://github.com/BookOps-CAT/bookops-bpl-solr.git@v0.1.1 ; python_version >= "3.7" and python_version < "4.0"
+bookops-nypl-platform @ git+https://github.com/BookOps-CAT/bookops-nypl-platform.git@v0.2.1 ; python_version >= "3.7" and python_version < "4.0"
+bookops-worldcat==0.3.2; python_version >= "3.7" and python_version < "4.0"
+certifi==2020.11.8; python_version >= "3.7" and python_full_version < "3.0.0" and python_version < "4.0" or python_version >= "3.7" and python_version < "4.0" and python_full_version >= "3.5.0"
+chardet==3.0.4; python_version >= "3.7" and python_full_version < "3.0.0" and python_version < "4.0" or python_version >= "3.7" and python_version < "4.0" and python_full_version >= "3.5.0"
+idna==2.10; python_version >= "3.7" and python_full_version < "3.0.0" and python_version < "4.0" or python_version >= "3.7" and python_version < "4.0" and python_full_version >= "3.5.0"
+pymarc==4.0.0; python_version >= "3.6"
+requests==2.25.0; (python_version >= "2.7" and python_full_version < "3.0.0") or (python_full_version >= "3.5.0")
+sqlalchemy==1.3.20; (python_version >= "2.7" and python_full_version < "3.0.0") or (python_full_version >= "3.4.0")
+urllib3==1.26.2; python_version >= "3.7" and python_full_version < "3.0.0" and python_version < "4.0" or python_full_version >= "3.5.0" and python_version < "4" and python_version >= "3.7"
