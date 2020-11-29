@@ -854,6 +854,69 @@ NPRESP = {
     "debugInfo": [],
 }
 
+BSRESP = {
+    "response": {
+        "numFound": 13092,
+        "start": 0,
+        "numFoundExact": True,
+        "docs": [
+            {
+                "id": "12014671",
+                "title": "Reporting war : how foreign correspondents risked capture, torture and death to cover World War II",
+                "author_raw": "Moseley, Ray, 1932-",
+                "author_alt": "Ray Moseley.",
+                "author": "Ray Moseley",
+                "opac_label": "ONLINE",
+                "suppressed": False,
+                "deleted": False,
+                "publishYear": 2017,
+                "material_type": "eBook",
+                "ss_type": "catalog",
+                "call_number": "eBOOK",
+                "isbn": ["9780300226348", "978-0300226348", "0300226349"],
+                "subjects": [
+                    "20th century",
+                    "History",
+                    "Journalism",
+                    "Journalists",
+                    "LANGUAGE ARTS & DISCIPLINES",
+                    "Mass media and the war",
+                    "Mass media and war",
+                    "Press coverage",
+                    "Radio broadcasting and the war",
+                    "Radio broadcasting and war",
+                    "War correspondents",
+                    "World War, 1939-1945",
+                ],
+                "language": ["English"],
+                "target_age": ["Adults"],
+                "item_locations": ["Electronic Resource, ONLINE"],
+                "popularity": 0,
+                "publisher": "New Haven : Yale University Press, [2017] ",
+                "available": True,
+                "fiction_status": "Nonfiction",
+                "eprovider": "OverDrive, Inc.",
+                "econtrolnumber": "8A4A1B86-E456-48D3-99DA-DF8FAD8946F1",
+                "eurl": "https://link.overdrive.com/?websiteID=89&titleID=3151352",
+                "esampleurl": "https://samples.overdrive.com/?crid=8a4a1b86-e456-48d3-99da-df8fad8946f1&.epub-sample.overdrive.com",
+                "eformat": ["Adobe EPUB eBook", "Kindle Book", "OverDrive Read"],
+                "digital_avail_type": "Normal",
+                "digital_copies_owned": 1,
+                "digital_copies_available": 1,
+                "digital_holds": 0,
+                "digital_cover_image": "https://img1.od-cdn.com/ImageType-100/2363-1/{8A4A1B86-E456-48D3-99DA-DF8FAD8946F1}Img100.jpg",
+                "ss_marc_tag_001": "ocn971018433",
+                "ss_marc_tag_005": "20170223101013.3",
+                "ss_marc_tag_010_a": "111111",
+                "sm_marc_tag_024_a": ["222222", "333333"],
+                "ss_child": "child",
+                "_version_": 1684383028584906752,
+                "timestamp": "2020-11-26T01:07:13.244Z",
+            },
+        ],
+    }
+}
+
 
 WFRESP = """<?xml version='1.0' encoding='UTF-8'?>
 <entry xmlns="http://www.w3.org/2005/Atom">
