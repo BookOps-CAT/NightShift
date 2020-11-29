@@ -36,7 +36,7 @@ class PlatformResponseReader:
             record = self._map_data(data)
             yield record
 
-    def _determine_url_type_id(self, url: str) -> Dict:
+    def _determine_url_type_id(self, url: str) -> int:
         """
         Determines type of url based on the pattern:
 
