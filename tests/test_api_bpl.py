@@ -227,3 +227,75 @@ class TestSolrResponseReader:
                 "url": "https://img1.od-cdn.com/ImageType-200/2363-1/{8A4A1B86-E456-48D3-99DA-DF8FAD8946F1}Img200.jpg",
             },
         ]
+
+
+def test_get_bpl_sierra_bib_data_success(
+    mock_keys, mock_successful_solr_session_get_request, mock_datetime_now
+):
+    metas = get_bpl_sierra_bib_data([12014671])
+    loop = 0
+    for meta in metas:
+        assert meta.sbid == 12014671
+        assert meta.sbn == "9780300226348,0300226349"
+        assert meta.lcn == "111111"
+        assert meta.did == "8A4A1B86-E456-48D3-99DA-DF8FAD8946F1"
+        assert meta.sid == "222222,333333"
+        assert meta.wcn == "971018433"
+        assert meta.deleted is False
+        assert meta.title == "reporting war : how foreign correspondents risked"
+        assert meta.author == "moseley, ray, 1932-"
+        assert meta.pubDate == "2017"
+        assert meta.upgradeStamp == datetime.datetime.now()
+        assert meta.upgraded is True
+        assert meta.upgradeSourceId == 2
+        assert meta.urls == [
+            {
+                "uTypeId": 1,
+                "url": "https://link.overdrive.com/?websiteID=89&titleID=3151352",
+            },
+            {
+                "uTypeId": 2,
+                "url": "https://samples.overdrive.com/?crid=8a4a1b86-e456-48d3-99da-df8fad8946f1&.epub-sample.overdrive.com",
+            },
+            {
+                "uTypeId": 3,
+                "url": "https://img1.od-cdn.com/ImageType-100/2363-1/{8A4A1B86-E456-48D3-99DA-DF8FAD8946F1}Img100.jpg",
+            },
+            {
+                "uTypeId": 4,
+                "url": "https://img1.od-cdn.com/ImageType-200/2363-1/{8A4A1B86-E456-48D3-99DA-DF8FAD8946F1}Img200.jpg",
+            },
+        ]
+        loop += 1
+    assert loop == 1
+
+
+def test_get_bpl_sierra_bib_data_solr_timeout(mock_keys, mock_timeout):
+    err_msg = "Solr request error:"
+    with pytest.raises(NightShiftError) as exc:
+        metas = get_bpl_sierra_bib_data([12014671])
+        for m in metas:  # since get_bpl_sierra is a generator it must be triggered
+            pass
+
+    assert err_msg in str(exc.value)
+
+
+def test_get_bpl_sierra_bib_data_401_error(
+    mock_keys, mock_401_error_solr_session_get_request
+):
+    with pytest.raises(NightShiftError):
+        metas = get_bpl_sierra_bib_data([12014671])
+        for m in metas:
+            pass
+
+
+def test_get_bpl_sierra_bib_data_no_match(
+    mock_keys, mock_no_hits_solr_session_get_request
+):
+    metas = get_bpl_sierra_bib_data([12014671])
+    loop = 0
+    for m in metas:
+        assert m is None
+        loop += 1
+
+    assert loop == 1

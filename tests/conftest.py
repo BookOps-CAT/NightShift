@@ -56,6 +56,16 @@ def mock_date_today(monkeypatch):
     monkeypatch.setattr(datetime, "date", FakeDate)
 
 
+class MockTimeout:
+    def __init__(self, *args, **kwargs):
+        raise requests.exceptions.Timeout
+
+
+@pytest.fixture
+def mock_timeout(monkeypatch):
+    monkeypatch.setattr("requests.Session.get", MockTimeout)
+
+
 @pytest.fixture(scope="function")
 def db_setup():
     """
@@ -725,3 +735,27 @@ def stub_bpl_solr_no_hits_response():
 @pytest.fixture
 def stub_solr_response():
     return BSRESP
+
+
+@pytest.fixture
+def mock_successful_solr_session_get_request(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return FakeSolrHTTP200SessionResponse()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def mock_no_hits_solr_session_get_request(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return FakeSolrHTTP200NoHitsSessionResponse()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def mock_401_error_solr_session_get_request(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return FakeSolrHTTP401SessionResponse()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)

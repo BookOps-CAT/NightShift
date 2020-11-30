@@ -8,7 +8,7 @@ import datetime
 import os
 from typing import Dict, List, Type, Tuple
 
-from bookops_bpl_solr.session import BookopsSolrError, SolrSession
+from bookops_bpl_solr.session import SolrSession, BookopsSolrError
 import requests
 
 from . import __title__, __version__
@@ -260,9 +260,8 @@ def get_bpl_sierra_bib_data(sbids: List[int]) -> Type[namedtuple]:
                 )
             except BookopsSolrError as exc:
                 raise NightShiftError(f"Solr request error: {exc}")
-
             try:
-                meta = SolrResponseReader(response)
+                meta = SolrResponseReader(response).meta
             except NightShiftError:
                 raise
             else:
