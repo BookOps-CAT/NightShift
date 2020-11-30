@@ -7,12 +7,11 @@ import os
 from typing import List, Type, Tuple
 
 import sqlalchemy
+import bookops_worldcat
 
 import nightshift
-import bookops_worldcat
 from .api_nyp import get_nyp_sierra_bib_data
 
-# from .api_worldcat import get_token
 from .export_file_parser import SierraExportReader
 from .datastore_transactions import (
     enhance_resource,
@@ -21,6 +20,7 @@ from .datastore_transactions import (
     retrieve_brief_records_bibnos,
     retrieve_never_queried_records,
     retrieve_records_not_queried_in_days,
+    update_resource,
 )
 from .datastore_values import LIB_SYS, BIB_CAT
 
@@ -137,7 +137,7 @@ def retrieve_eresource_records_for_worldcat_queries(
 
 def query_and_store_worldcat_eresources(
     query_data: Tuple,
-    lib_sys: str,
+    library_system: str,
     db_session: Type[sqlalchemy.orm.session.Session],
     wc_session: Type[bookops_worldcat.metadata_api.MetadataSession],
 ):
@@ -152,8 +152,11 @@ def query_and_store_worldcat_eresources(
 
     """
     bibNo, reserve_id = query_data
-    response = query_eresource(wc_session, reserve_id)
+    response = nightshift.api_worldcat.find_matching_eresource(wc_session, reserve_id)
     if response:
         oclcNumber, full_bib = response
         # save full bib & update Resource record of given bibNo
-        # code here
+        update_resource(db_session, bibNo, library_system, "bot", oclcNumber, full_bib)
+
+    else:
+        update_resource(db_session, bibNo, library_system, "bot", None, None)

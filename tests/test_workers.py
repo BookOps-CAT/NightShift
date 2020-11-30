@@ -5,6 +5,7 @@ worker module tests
 
 """
 import datetime
+import xml.etree.ElementTree as ET
 
 import pytest
 
@@ -13,6 +14,7 @@ from nightshift.workers import (
     import_sierra_data,
     import_export_file_data,
     import_platform_data,
+    query_and_store_worldcat_eresources,
     retrieve_bibnos_for_enhancement,
     retrieve_eresource_records_for_worldcat_queries,
 )
@@ -142,3 +144,28 @@ def test_retrieve_eresource_records_for_worldcat_queries(
     assert records[0] == exp1
     assert records[1] == exp2
     assert records[2] == exp3
+
+
+def test_query_and_store_worldcat_eresources_hit(
+    mixed_dataset, fake_metadata_session, mock_find_matching_eresource_hit, fake_xml_bib
+):
+    query_and_store_worldcat_eresources(
+        (1, "reserve-id-1"), "nyp", mixed_dataset, fake_metadata_session
+    )
+    rec = mixed_dataset.query(Resource).filter_by(sbid=1, librarySystemId=1).one()
+    assert rec.wcn == "773692015"
+    assert rec.upgraded is True
+    assert rec.wqueries[0].found is True
+    assert ET.tostring(rec.wqueries[0].record) == ET.tostring(fake_xml_bib)
+
+
+def test_query_and_store_worldcat_eresources_no_hit(
+    mixed_dataset, fake_metadata_session, mock_find_matching_eresource_no_hit
+):
+    query_and_store_worldcat_eresources(
+        (1, "reserve-id-1"), "nyp", mixed_dataset, fake_metadata_session
+    )
+    rec = mixed_dataset.query(Resource).filter_by(sbid=1, librarySystemId=1).one()
+    assert rec.wcn is None
+    assert rec.upgraded is False
+    assert rec.wqueries[0].found is False

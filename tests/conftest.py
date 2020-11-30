@@ -34,6 +34,13 @@ from nightshift.datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
 from .service_responses import NPRESP, BSRESP, WFRESP
 
 
+"""
+=========================================================
+General fixtures
+=========================================================
+"""
+
+
 class FakeDateTime(datetime.datetime):
     @classmethod
     def now(cls):
@@ -64,6 +71,27 @@ class MockTimeout:
 @pytest.fixture
 def mock_timeout(monkeypatch):
     monkeypatch.setattr("requests.Session.get", MockTimeout)
+
+
+@pytest.fixture
+def mock_keys():
+    os.environ["platform-client-id"] = "app_client_id"
+    os.environ["platform-client-secret"] = "app_client_secret"
+    os.environ["platform-oauth-server"] = "app_oauth-server"
+    os.environ["worldcat-key"] = "app_worldcat_key"
+    os.environ["worldcat-secret"] = "app_worldcat_secret"
+    os.environ["worldcat-scopes"] = "app_worldcat_scopes"
+    os.environ["worldcat-principal-id"] = "app_worldcat_principal_id"
+    os.environ["worldcat-principal-idns"] = "app_worldcat_principal_idns"
+    os.environ["solr-client-key"] = "app_client_key"
+    os.environ["solr-endpoint"] = "sorl_endpoint"
+
+
+"""
+============================================================
+Datastore fixtures
+============================================================
+"""
 
 
 @pytest.fixture(scope="function")
@@ -347,6 +375,13 @@ def mixed_dataset(init_dataset, mock_datetime_now):
     yield session
 
 
+"""
+====================================================
+NYPL Platform fixtures
+====================================================
+"""
+
+
 class FakePlatformHTTP200SessionResponse:
     def __init__(self):
         self.status_code = 200
@@ -468,20 +503,6 @@ def live_keys():
 
 
 @pytest.fixture
-def mock_keys():
-    os.environ["platform-client-id"] = "app_client_id"
-    os.environ["platform-client-secret"] = "app_client_secret"
-    os.environ["platform-oauth-server"] = "app_oauth-server"
-    os.environ["worldcat-key"] = "app_worldcat_key"
-    os.environ["worldcat-secret"] = "app_worldcat_secret"
-    os.environ["worldcat-scopes"] = "app_worldcat_scopes"
-    os.environ["worldcat-principal-id"] = "app_worldcat_principal_id"
-    os.environ["worldcat-principal-idns"] = "app_worldcat_principal_idns"
-    os.environ["solr-client-key"] = "app_client_key"
-    os.environ["solr-endpoint"] = "sorl_endpoint"
-
-
-@pytest.fixture
 def stub_nyp_responses():
     return NPRESP
 
@@ -516,6 +537,13 @@ def stub_platform_record_missing():
 
     data["varFields"] = new_fields
     return data
+
+
+"""
+================================================================
+Worldcat fixtures
+================================================================
+"""
 
 
 class MockWorldcatAuthServerResponseSuccess:
@@ -684,6 +712,29 @@ def mock_search_for_brief_eresource_fail(
 @pytest.fixture
 def fake_xml_bib(fake_successful_worldcat_full_bib_response):
     return ET.fromstring((fake_successful_worldcat_full_bib_response.content))
+
+
+@pytest.fixture
+def mock_find_matching_eresource_hit(fake_xml_bib, monkeypatch):
+    def func_output(*arg, **kwargs):
+        return ("773692015", fake_xml_bib)
+
+    monkeypatch.setattr("nightshift.api_worldcat.find_matching_eresource", func_output)
+
+
+@pytest.fixture
+def mock_find_matching_eresource_no_hit(monkeypatch):
+    def func_output(*arg, **kwargs):
+        return None
+
+    monkeypatch.setattr("nightshift.api_worldcat.find_matching_eresource", func_output)
+
+
+"""
+=====================================================
+BPL Solr fixtures
+=====================================================
+"""
 
 
 class FakeSolrHTTP200SessionResponse:
