@@ -4,19 +4,14 @@
 This module reads and parses exports to a file from Siera ILS
 """
 
-import csv
 from collections import namedtuple
+import csv
 import datetime
 from typing import List, Type
 
 from .datastore_values import LIB_SYS, BIB_CAT
 from .errors import SierraExportReaderError
-
-
-ResourceMeta = namedtuple(
-    "ResourceMeta",
-    ["sbid", "librarySystemId", "bibCategoryId", "cno", "bibDate"],
-)
+from .models import FileMeta
 
 
 class SierraExportReader:
@@ -117,7 +112,8 @@ class SierraExportReader:
         bid = self._prep_sierra_bibno(row[0])
         created = self._determine_bib_created_date(row[1])
         cno = row[2].strip()
-        return ResourceMeta(bid, self.lsid, self.bcid, cno, created)
+        sierraFormatId = 1
+        return FileMeta(bid, self.lsid, sierraFormatId, self.bcid, cno, created)
 
     def __iter__(self):
         with open(self.fh, "r") as src_file:

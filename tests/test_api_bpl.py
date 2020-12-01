@@ -146,6 +146,45 @@ class TestSolrResponseReader:
     @pytest.mark.parametrize(
         "arg,expectation",
         [
+            (
+                {
+                    "material_type": "Serial",
+                },
+                1,
+            ),
+            (
+                {
+                    "material_type": "eBook",
+                },
+                2,
+            ),
+            (
+                {
+                    "material_type": "eAudiobook",
+                },
+                3,
+            ),
+            (
+                {
+                    "material_type": "eVideo",
+                },
+                4,
+            ),
+            (
+                {
+                    "material_type": "Book",
+                },
+                5,
+            ),
+        ],
+    )
+    def test_parse_sierra_format_id(self, arg, expectation, stub_bpl_solr_200_response):
+        reader = SolrResponseReader(stub_bpl_solr_200_response)
+        assert reader._parse_sierra_format_id(arg) == expectation
+
+    @pytest.mark.parametrize(
+        "arg,expectation",
+        [
             ({"author_raw": "Doe, John, 1976-"}, "doe, john, 1976-"),
             ({"author_raw": "A" * 55}, "a" * 50),
             ({}, None),

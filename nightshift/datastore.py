@@ -25,19 +25,6 @@ from sqlalchemy.orm import relationship, sessionmaker
 Base = declarative_base()
 
 
-class LibrarySystem(Base):
-    __tablename__ = "library_system"
-
-    lsid = Column(Integer, primary_key=True, autoincrement=False)
-    code = Column(String(3), nullable=False, unique=True)
-    name = Column(String(25))
-
-    def __repr__(self):
-        state = inspect(self)
-        attrs = ", ".join([f"{attr.key}={attr.loaded_value!r}" for attr in state.attrs])
-        return f"<LibrarySystem({attrs})>"
-
-
 class BibCategory(Base):
     __tablename__ = "bib_category"
 
@@ -64,6 +51,19 @@ class ExportFile(Base):
         return f"<ExportFile({attrs})>"
 
 
+class LibrarySystem(Base):
+    __tablename__ = "library_system"
+
+    lsid = Column(Integer, primary_key=True, autoincrement=False)
+    code = Column(String(3), nullable=False, unique=True)
+    name = Column(String(25))
+
+    def __repr__(self):
+        state = inspect(self)
+        attrs = ", ".join([f"{attr.key}={attr.loaded_value!r}" for attr in state.attrs])
+        return f"<LibrarySystem({attrs})>"
+
+
 class OutputFile(Base):
     __tablename__ = "output_file"
 
@@ -75,6 +75,61 @@ class OutputFile(Base):
         state = inspect(self)
         attrs = ", ".join([f"{attr.key}={attr.loaded_value!r}" for attr in state.attrs])
         return f"<OutputFile({attrs})>"
+
+
+class Resource(Base):
+    __tablename__ = "resource"
+    __table_args__ = (
+        PrimaryKeyConstraint("sbid", "librarySystemId"),
+        {},
+    )
+
+    sbid = Column(Integer, nullable=False)
+    librarySystemId = Column(Integer, ForeignKey("library_system.lsid"), nullable=False)
+    bibCategoryId = Column(Integer, ForeignKey("bib_category.bcid"), nullable=False)
+    exportFileId = Column(Integer, ForeignKey("export_file.efid"), nullable=False)
+    outputFileId = Column(Integer, ForeignKey("output_file.ofid"))
+    cno = Column(String(20))  # bib control number
+    sbn = Column(String(13))  # isbn
+    lcn = Column(String(15))  # lccn
+    did = Column(String(50))  # distributor number, ex. Overdrive reserve no.
+    sid = Column(String(15))  # other standard number, ex. UPC
+    wcn = Column(String)  # Worldcat OCLC number
+    bibDate = Column(Date, nullable=False)
+    deleted = Column(Boolean, default=False)
+    sierraFormatId = Column(
+        Integer, ForeignKey("sierra_format.sfid"), nullable=False, default=1
+    )
+    title = Column(String(50))
+    author = Column(String(50))
+    pubDate = Column(String(10))
+    upgradeStamp = Column(DateTime)
+    upgraded = Column(Boolean, default=False)
+    upgradeSourceId = Column(Integer, ForeignKey("upgrade_source.usid"))
+
+    urls = relationship(
+        "UrlField", uselist=True, cascade="all, delete-orphan", lazy="joined"
+    )
+    wqueries = relationship(
+        "WorldcatQuery", uselist=True, cascade="all, delete-orphan", lazy="joined"
+    )
+
+    def __repr__(self):
+        state = inspect(self)
+        attrs = ", ".join([f"{attr.key}={attr.loaded_value!r}" for attr in state.attrs])
+        return f"<Resource({attrs})>"
+
+
+class SierraFormat(Base):
+    __tablename__ = "sierra_format"
+
+    sfid = Column(Integer, primary_key=True, autoincrement=False)
+    name = Column(String(10), nullable=False, unique=True)
+
+    def __repr__(self):
+        state = inspect(self)
+        attrs = ", ".join([f"{attr.key}={attr.loaded_value!r}" for attr in state.attrs])
+        return f"<SierraFormat({attrs})>"
 
 
 class UpgradeSource(Base):
@@ -115,46 +170,6 @@ class UrlField(Base):
         state = inspect(self)
         attrs = ", ".join([f"{attr.key}={attr.loaded_value!r}" for attr in state.attrs])
         return f"<UrlField({attrs})>"
-
-
-class Resource(Base):
-    __tablename__ = "resource"
-    __table_args__ = (
-        PrimaryKeyConstraint("sbid", "librarySystemId"),
-        {},
-    )
-
-    sbid = Column(Integer, nullable=False)
-    librarySystemId = Column(Integer, ForeignKey("library_system.lsid"), nullable=False)
-    bibCategoryId = Column(Integer, ForeignKey("bib_category.bcid"), nullable=False)
-    exportFileId = Column(Integer, ForeignKey("export_file.efid"), nullable=False)
-    outputFileId = Column(Integer, ForeignKey("output_file.ofid"))
-    cno = Column(String(20))  # bib control number
-    sbn = Column(String(13))  # isbn
-    lcn = Column(String(15))  # lccn
-    did = Column(String(50))  # distributor number, ex. Overdrive reserve no.
-    sid = Column(String(15))  # other standard number, ex. UPC
-    wcn = Column(String)  # Worldcat OCLC number
-    bibDate = Column(Date, nullable=False)
-    deleted = Column(Boolean, default=False)
-    title = Column(String(50))
-    author = Column(String(50))
-    pubDate = Column(String(10))
-    upgradeStamp = Column(DateTime)
-    upgraded = Column(Boolean, default=False)
-    upgradeSourceId = Column(Integer, ForeignKey("upgrade_source.usid"))
-
-    urls = relationship(
-        "UrlField", uselist=True, cascade="all, delete-orphan", lazy="joined"
-    )
-    wqueries = relationship(
-        "WorldcatQuery", uselist=True, cascade="all, delete-orphan", lazy="joined"
-    )
-
-    def __repr__(self):
-        state = inspect(self)
-        attrs = ", ".join([f"{attr.key}={attr.loaded_value!r}" for attr in state.attrs])
-        return f"<Resource({attrs})>"
 
 
 class WorldcatQuery(Base):

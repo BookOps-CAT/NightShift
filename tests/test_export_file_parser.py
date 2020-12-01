@@ -8,7 +8,8 @@ from datetime import date
 import pytest
 
 from nightshift.datastore_values import LIB_SYS, BIB_CAT
-from nightshift.export_file_parser import ResourceMeta, SierraExportReader
+from nightshift.export_file_parser import SierraExportReader
+from nightshift.models import FileMeta
 from nightshift.errors import SierraExportReaderError
 
 
@@ -96,12 +97,12 @@ class TestSierraExportReader:
             (
                 "nyp-ere-201001.txt",
                 ["b123530271", "09-30-2020 17:22", "ODN0004408595"],
-                ResourceMeta(12353027, 1, 1, "ODN0004408595", date(2020, 9, 30)),
+                FileMeta(12353027, 1, 1, 1, "ODN0004408595", date(2020, 9, 30)),
             ),
             (
                 "bpl-pre-201001.txt",
                 ["b123530283", "09-30-2020", "ODN0005151593"],
-                ResourceMeta(12353028, 2, 2, "ODN0005151593", date(2020, 9, 30)),
+                FileMeta(12353028, 2, 1, 2, "ODN0005151593", date(2020, 9, 30)),
             ),
         ],
     )

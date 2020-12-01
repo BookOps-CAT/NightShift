@@ -22,13 +22,20 @@ from nightshift.datastore import (
     OutputFile,
     UpgradeSource,
     Resource,
+    SierraFormat,
     UrlType,
     UrlField,
     WorldcatQuery,
 )
 import nightshift
 from nightshift import __title__, __version__
-from nightshift.datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
+from nightshift.datastore_values import (
+    LIB_SYS,
+    BIB_CAT,
+    UPGRADE_SRC,
+    URL_TYPE,
+    SIERRA_FORMAT,
+)
 
 # from nightshift.errors import NightShiftError
 from .service_responses import NPRESP, BSRESP, WFRESP
@@ -132,6 +139,10 @@ def init_dataset(db_setup):
         rec = UrlType(**values)
         session.add(rec)
 
+    for values in SIERRA_FORMAT.values():
+        rec = SierraFormat(**values)
+        session.add(rec)
+
     yield session
 
 
@@ -158,6 +169,7 @@ def brief_bib_dataset(init_dataset):
             exportFileId=1,
             cno="ODN123456789",
             did="reserve-id-1",
+            sierraFormatId=1,
             bibDate=datetime.date(2020, 9, 30),
         )
     )
@@ -169,6 +181,7 @@ def brief_bib_dataset(init_dataset):
             exportFileId=1,
             cno="ODN123456780",
             did="reserve-id-2",
+            sierraFormatId=2,
             bibDate=datetime.date(2020, 9, 30),
         )
     )
@@ -182,6 +195,7 @@ def brief_bib_dataset(init_dataset):
             cno="ODN123456783",
             did="reserve-id-5",
             deleted=True,
+            sierraFormatId=1,
             bibDate=datetime.date(2020, 9, 30),
         )
     )
@@ -194,6 +208,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=2,
             exportFileId=2,
             cno="ODN123456781",
+            sierraFormatId=4,
             bibDate=datetime.date(2020, 9, 29),
         )
     )
@@ -204,6 +219,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=2,
             exportFileId=2,
             cno="ODN123456782",
+            sierraFormatId=4,
             bibDate=datetime.date(2020, 9, 29),
         )
     )
@@ -217,6 +233,7 @@ def brief_bib_dataset(init_dataset):
             exportFileId=3,
             cno="ODN223456789",
             did="reserve-id-3",
+            sierraFormatId=1,
             bibDate=datetime.date(2020, 9, 30),
         )
     )
@@ -228,6 +245,7 @@ def brief_bib_dataset(init_dataset):
             exportFileId=3,
             cno="ODN223456780",
             did="reserve-id-4",
+            sierraFormatId=2,
             bibDate=datetime.date(2020, 9, 30),
         )
     )
@@ -241,6 +259,7 @@ def brief_bib_dataset(init_dataset):
             cno="ODN123456784",
             did="reserve-id-6",
             deleted=True,
+            sierraFormatId=1,
             bibDate=datetime.date(2020, 9, 30),
         )
     )
@@ -252,6 +271,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=2,
             exportFileId=4,
             cno="bt223456789",
+            sierraFormatId=4,
             bibDate=datetime.date(2020, 9, 29),
         )
     )
@@ -262,6 +282,7 @@ def brief_bib_dataset(init_dataset):
             bibCategoryId=2,
             exportFileId=4,
             cno="bt223456780",
+            sierraFormatId=4,
             bibDate=datetime.date(2020, 9, 29),
         )
     )
@@ -290,6 +311,7 @@ def mixed_dataset(init_dataset, mock_datetime_now):
             exportFileId=1,
             cno="ODN1",
             did="reserve-id-1",
+            sierraFormatId=1,
             bibDate=datetime.date(2018, 12, 31),
         )
     )
@@ -303,6 +325,7 @@ def mixed_dataset(init_dataset, mock_datetime_now):
             exportFileId=1,
             cno="OD2",
             did="reserve-id-2",
+            sierraFormatId=1,
             bibDate=datetime.date(2018, 12, 15),
             title="test title 1",
             wqueries=[
@@ -324,6 +347,7 @@ def mixed_dataset(init_dataset, mock_datetime_now):
             exportFileId=1,
             wcn="003",
             cno="ODN-3",
+            sierraFormatId=1,
             bibDate=datetime.date(2018, 11, 1),
             title="test title 2",
             wqueries=[
@@ -346,6 +370,7 @@ def mixed_dataset(init_dataset, mock_datetime_now):
             cno="ODN4",
             did="reserve-id-4",
             deleted=True,
+            sierraFormatId=1,
             bibDate=datetime.date(2018, 12, 15),
         )
     )
@@ -359,6 +384,7 @@ def mixed_dataset(init_dataset, mock_datetime_now):
             exportFileId=1,
             cno="OD5",
             did="reserve-id-5",
+            sierraFormatId=1,
             bibDate=datetime.date(2018, 8, 1),
             title="test title 1",
             wqueries=[

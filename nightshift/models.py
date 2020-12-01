@@ -6,6 +6,11 @@ This module provide data models used by NightShift bot
 
 from collections import namedtuple
 
+FileMeta = namedtuple(
+    "FileMeta",
+    ["sbid", "librarySystemId", "sierraFormatId", "bibCategoryId", "cno", "bibDate"],
+)
+
 SierraMeta = namedtuple(
     "SierraMeta",
     [
@@ -16,6 +21,7 @@ SierraMeta = namedtuple(
         "sid",
         "wcn",
         "deleted",
+        "sierraFormatId",
         "title",
         "author",
         "pubDate",

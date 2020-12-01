@@ -191,6 +191,22 @@ class TestPlatformResponseReader:
         reader = PlatformResponseReader(stub_nyp_platform_200_response)
         assert reader._determine_url_type_id(url) == expectation
 
+    @pytest.mark.parametrize(
+        "arg,expectation",
+        [
+            ({"materialType": {"code": "5  ", "value": "other"}}, 1),
+            ({"materialType": {"code": "z  ", "value": "E-BOOK"}}, 2),
+            ({"materialType": {"code": "n  ", "value": "E-AUDIOBOOK"}}, 3),
+            ({"materialType": {"code": "3  ", "value": "E-VIDEO"}}, 4),
+            ({"materialType": {"code": "a  ", "value": "BOOK"}}, 5),
+        ],
+    )
+    def test_parse_sierra_format_id(
+        self, arg, expectation, stub_nyp_platform_200_response
+    ):
+        reader = PlatformResponseReader(stub_nyp_platform_200_response)
+        assert reader._parse_sierra_format_id(arg) == expectation
+
     def test_parse_urls(self, stub_nyp_platform_200_response):
         reader = PlatformResponseReader(stub_nyp_platform_200_response)
         urls = reader._parse_urls(reader.datas[0])

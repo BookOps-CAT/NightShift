@@ -15,7 +15,7 @@ from bookops_nypl_platform.errors import BookopsPlatformError
 
 from . import __version__, __title__
 from .errors import NightShiftError
-from .datastore_values import UPGRADE_SRC, URL_TYPE
+from .datastore_values import UPGRADE_SRC, URL_TYPE, SIERRA_FORMAT
 from .models import SierraMeta
 
 
@@ -108,6 +108,7 @@ class PlatformResponseReader:
         did = self._parse_distributor_number(data)
         sid = self._parse_standard_numbers(data)
         deleted = self._is_deleted(data)
+        sierraFormatId = self._parse_sierra_format_id(data)
         title = self._parse_title(data)
         author = self._parse_author(data)
         pubDate = self._parse_publication_date(data)
@@ -125,6 +126,7 @@ class PlatformResponseReader:
             sid,
             wcn,
             deleted,
+            sierraFormatId,
             title,
             author,
             pubDate,
@@ -260,6 +262,24 @@ class PlatformResponseReader:
             return title
         else:
             return None
+
+    def _parse_sierra_format_id(self, data: Dict) -> int:
+        """Parses bib's sierra format"""
+        try:
+            mat_type = data["materialType"]["code"][0]
+        except (KeyError, TypeError):
+            mat_type = "unknown"
+
+        if mat_type == "a":
+            return SIERRA_FORMAT["book"]["sfid"]
+        elif mat_type == "z":
+            return SIERRA_FORMAT["ebook"]["sfid"]
+        elif mat_type == "n":
+            return SIERRA_FORMAT["eaudio"]["sfid"]
+        elif mat_type == "3":
+            return SIERRA_FORMAT["evideo"]["sfid"]
+        else:
+            return SIERRA_FORMAT["unknown"]["sfid"]
 
     def _parse_urls(self, data: Dict) -> List[Dict]:
         """

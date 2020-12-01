@@ -5,14 +5,22 @@ Predefined datastore values
 """
 
 
+BIB_CAT = {
+    "ere": {"code": "ere", "bcid": 1, "description": "Overdrive e-resources"},
+    "pre": {"code": "pre", "bcid": 2, "description": "English print monograph"},
+}
+
 LIB_SYS = {
     "nyp": {"code": "nyp", "lsid": 1, "name": "New York Public Library"},
     "bpl": {"code": "bpl", "lsid": 2, "name": "Brooklyn Public Library"},
 }
 
-BIB_CAT = {
-    "ere": {"code": "ere", "bcid": 1, "description": "Overdrive e-resources"},
-    "pre": {"code": "pre", "bcid": 2, "description": "English print monograph"},
+SIERRA_FORMAT = {
+    "unknown": {"name": "unknown", "sfid": 1},
+    "ebook": {"name": "ebook", "sfid": 2},
+    "eaudio": {"name": "eaudio", "sfid": 3},
+    "evideo": {"name": "evideo", "sfid": 4},
+    "book": {"name": "print", "sfid": 5},
 }
 
 UPGRADE_SRC = {

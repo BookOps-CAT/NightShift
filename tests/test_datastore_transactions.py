@@ -15,6 +15,7 @@ from nightshift.datastore import (
     ExportFile,
     LibrarySystem,
     Resource,
+    SierraFormat,
     UpgradeSource,
     UrlField,
     UrlType,
@@ -53,6 +54,7 @@ def test_init_in_memory_db(init_dataset):
     assert len(session.query(BibCategory).all()) == 2
     assert len(session.query(UpgradeSource).all()) == 2
     assert len(session.query(UrlType).all()) == 4
+    assert len(session.query(SierraFormat).all()) == 5
 
 
 def test_brief_bib_dataset(brief_bib_dataset):
@@ -63,6 +65,7 @@ def test_brief_bib_dataset(brief_bib_dataset):
     assert len(session.query(UrlType).all()) == 4
     assert len(session.query(ExportFile).all()) == 4
     assert len(session.query(Resource).all()) == 10
+    assert len(session.query(SierraFormat).all()) == 5
 
 
 def test_create_datastore():
@@ -77,6 +80,7 @@ def test_create_datastore():
     assert len(session.query(UrlType).all()) == 4
     assert len(session.query(ExportFile).all()) == 0
     assert len(session.query(Resource).all()) == 0
+    assert len(session.query(SierraFormat).all()) == 5
 
 
 def test_construct_url_records():
@@ -103,6 +107,7 @@ def test_enhance_resource_nyp(brief_bib_dataset):
         sid="upc1",
         wcn="oclc1",
         deleted=False,
+        sierraFormatId=1,
         title="title_here",
         author="author_here",
         pubDate="2016",
@@ -185,6 +190,7 @@ def test_insert_or_ignore_new(init_dataset):
         bibCategoryId=1,
         exportFileId=1,
         cno="ODN123456789",
+        sierraFormatId=1,
         bibDate=date(2020, 9, 30),
     )
     rec = insert_resource(session, **resource)
@@ -204,6 +210,7 @@ def test_insert_or_ingore_dup(init_dataset):
         bibCategoryId=1,
         exportFileId=1,
         cno="ODN123456789",
+        sierraFormatId=1,
         bibDate=date(2020, 9, 30),
     )
     # insert for the first time
@@ -281,6 +288,7 @@ def test_retrieve_never_queried_records(
             exportFileId=1,
             cno="ODN1",
             did="reserve-id-14",
+            sierraFormatId=1,
             bibDate=date(2020, 9, 30),
             wqueries=[
                 WorldcatQuery(
@@ -299,6 +307,7 @@ def test_retrieve_never_queried_records(
             exportFileId=1,
             cno="ODN2",
             did="reserve-id-5",
+            sierraFormatId=1,
             bibDate=date(2020, 9, 30),
             wqueries=[
                 WorldcatQuery(
@@ -327,6 +336,7 @@ def test_retrieve_records_not_queried_in_days_default_mode(
             exportFileId=1,
             cno="ODN10",
             did="reserve-id-10",
+            sierraFormatId=1,
             bibDate=date.today() - timedelta(days=14),
             wqueries=[
                 WorldcatQuery(
@@ -346,6 +356,7 @@ def test_retrieve_records_not_queried_in_days_default_mode(
             exportFileId=1,
             cno="ODN11",
             did="reserve-id-11",
+            sierraFormatId=1,
             bibDate=date.today() - timedelta(days=6),
             wqueries=[
                 WorldcatQuery(
@@ -392,6 +403,7 @@ def test_retrieve_unqueried_one_month_old_records(
             exportFileId=1,
             cno="ODN10",
             did="reserve-id-10",
+            sierraFormatId=1,
             bibDate=date.today() - timedelta(days=14),
             wqueries=[
                 WorldcatQuery(
@@ -417,6 +429,7 @@ def test_retrieve_unqueried_one_month_old_records(
             exportFileId=1,
             cno="ODN11",
             did="reserve-id-11",
+            sierraFormatId=1,
             bibDate=date.today() - timedelta(days=6),
             wqueries=[
                 WorldcatQuery(
@@ -443,6 +456,7 @@ def test_retrieve_unqueried_one_month_old_records(
             exportFileId=1,
             cno="ODN12",
             did="reserve-id-12",
+            sierraFormatId=1,
             bibDate=date.today() - timedelta(days=20),
             wqueries=[
                 WorldcatQuery(
@@ -464,6 +478,7 @@ def test_retrieve_unqueried_one_month_old_records(
             exportFileId=1,
             cno="ODN13",
             did="reserve-id-13",
+            sierraFormatId=1,
             bibDate=date.today() - timedelta(days=60),
             wqueries=[
                 WorldcatQuery(
@@ -507,6 +522,7 @@ def test_retrieve_records_not_queried_in_days_custom(
             exportFileId=1,
             cno="ODN10",
             did="reserve-id-10",
+            sierraFormatId=1,
             bibDate=date.today() - timedelta(days=40),
             wqueries=[
                 WorldcatQuery(
@@ -534,6 +550,7 @@ def test_retrieve_records_not_queried_in_days_custom(
             exportFileId=1,
             cno="ODN11",
             did="reserve-id-11",
+            sierraFormatId=1,
             bibDate=date.today() - timedelta(days=6),
             wqueries=[
                 WorldcatQuery(
@@ -560,6 +577,7 @@ def test_retrieve_records_not_queried_in_days_custom(
             exportFileId=1,
             cno="ODN13",
             did="reserve-id-13",
+            sierraFormatId=1,
             bibDate=date.today() - timedelta(days=120),
             wqueries=[
                 WorldcatQuery(

@@ -14,16 +14,17 @@ import sqlalchemy
 from sqlalchemy import func
 
 from .datastore import (
+    BibCategory,
     ExportFile,
     LibrarySystem,
-    BibCategory,
+    SierraFormat,
+    Resource,
     UpgradeSource,
     UrlField,
     UrlType,
-    Resource,
     WorldcatQuery,
 )
-from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE
+from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE, SIERRA_FORMAT
 
 
 def calculate_date_using_days_from_today(days: int) -> Type[datetime.date]:
@@ -58,6 +59,8 @@ def create_datastore(dal: Type[nightshift.datastore.DataAccessLayer]):
         insert(session, UpgradeSource, **values)
     for values in URL_TYPE.values():
         insert(session, UrlType, **values)
+    for values in SIERRA_FORMAT.values():
+        insert(session, SierraFormat, **values)
 
     session.commit()
     session.close()
