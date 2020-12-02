@@ -292,7 +292,7 @@ def brief_bib_dataset(init_dataset):
 
 
 @pytest.fixture(scope="function")
-def mixed_dataset(init_dataset, mock_datetime_now):
+def mixed_dataset(init_dataset, mock_datetime_now, fake_xml_bib):
     """
     Populate database with mixed of brief, enhanced, and
     full records.
@@ -350,11 +350,15 @@ def mixed_dataset(init_dataset, mock_datetime_now):
             sierraFormatId=1,
             bibDate=datetime.date(2018, 11, 1),
             title="test title 2",
+            upgraded=True,
+            upgradeSourceId=1,
+            upgradeStamp=datetime.datetime(2019, 1, 1, 17, 0, 0, 0),
             wqueries=[
                 WorldcatQuery(
                     sBibId=3,
                     found=True,
                     queryStamp=datetime.datetime.now() - datetime.timedelta(days=7),
+                    record=fake_xml_bib,
                 )
             ],
         )

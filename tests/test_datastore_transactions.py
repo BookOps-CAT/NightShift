@@ -32,6 +32,7 @@ from nightshift.datastore_transactions import (
     recent_worldcat_query_records,
     retrieve_brief_records_bibnos,
     retrieve_records_not_queried_in_days,
+    retrieve_resources_with_new_full_bib,
     retrieve_never_queried_records,
     retrieve_records,
     update_resource,
@@ -654,3 +655,10 @@ def test_update_resource_no_match(brief_bib_dataset):
     assert len(record.wqueries) == 1
     assert record.wqueries[0].found is False
     assert record.wqueries[0].record is None
+
+
+def test_retrieve_resources_with_new_full_bib(mixed_dataset):
+    session = mixed_dataset
+    records = retrieve_resources_with_new_full_bib(session, "nyp", "ere")
+    assert len(records) == 1
+    assert records[0].sbid == 3

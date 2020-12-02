@@ -359,3 +359,25 @@ def update_resource(
 
     else:
         insert(session, WorldcatQuery, **dict(sBibId=sbid))
+
+
+def retrieve_resources_with_new_full_bib(
+    session: Type[sqlalchemy.orm.session.Session],
+    library_system: str,
+    bib_category: str,
+):
+    lsid = LIB_SYS[library_system]["lsid"]
+    bcid = BIB_CAT[bib_category]["bcid"]
+
+    records = (
+        session.query(Resource)
+        .filter(
+            Resource.librarySystemId == lsid,
+            Resource.bibCategoryId == bcid,
+            Resource.upgraded == True,
+            Resource.upgradeSourceId != 2,
+            Resource.outputFileId == None,
+        )
+        .all()
+    )
+    return records
