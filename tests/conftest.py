@@ -5,6 +5,7 @@ import pickle
 import xml.etree.ElementTree as ET
 
 
+from pymarc import Record, Field
 import pytest
 import requests
 from sqlalchemy import create_engine
@@ -292,7 +293,7 @@ def brief_bib_dataset(init_dataset):
 
 
 @pytest.fixture(scope="function")
-def mixed_dataset(init_dataset, mock_datetime_now, fake_xml_bib):
+def mixed_dataset(init_dataset, mock_datetime_now, fake_xml_response):
     """
     Populate database with mixed of brief, enhanced, and
     full records.
@@ -338,14 +339,14 @@ def mixed_dataset(init_dataset, mock_datetime_now, fake_xml_bib):
         )
     )
 
-    # found full bib
+    # found full bib (generic)
     session.add(
         Resource(
             sbid=3,
             librarySystemId=1,
             bibCategoryId=1,
             exportFileId=1,
-            wcn="003",
+            wcn="001",
             cno="ODN-3",
             sierraFormatId=1,
             bibDate=datetime.date(2018, 11, 1),
@@ -358,7 +359,7 @@ def mixed_dataset(init_dataset, mock_datetime_now, fake_xml_bib):
                     sBibId=3,
                     found=True,
                     queryStamp=datetime.datetime.now() - datetime.timedelta(days=7),
-                    record=fake_xml_bib,
+                    record=fake_xml_response,
                 )
             ],
         )
@@ -691,6 +692,11 @@ def fake_xml_response():
 
 
 @pytest.fixture
+def fake_xml_response_content(fake_successful_worldcat_full_bib_response):
+    return fake_successful_worldcat_full_bib_response.content
+
+
+@pytest.fixture
 def fake_metadata_session(mock_successful_worldcat_post_token_response):
     token = WorldcatAccessToken(
         key="app_worldcat-key",
@@ -745,9 +751,9 @@ def fake_xml_bib(fake_successful_worldcat_full_bib_response):
 
 
 @pytest.fixture
-def mock_find_matching_eresource_hit(fake_xml_bib, monkeypatch):
+def mock_find_matching_eresource_hit(fake_xml_response, monkeypatch):
     def func_output(*arg, **kwargs):
-        return ("773692015", fake_xml_bib)
+        return ("773692015", fake_xml_response)
 
     monkeypatch.setattr("nightshift.api_worldcat.find_matching_eresource", func_output)
 
@@ -840,3 +846,93 @@ def mock_401_error_solr_session_get_request(monkeypatch):
         return FakeSolrHTTP401SessionResponse()
 
     monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+"""
+======================================================================
+Pymarc
+======================================================================
+"""
+
+
+@pytest.fixture
+def stub_marc_bib():
+    tags = []
+    marc_bib = Record()
+    marc_bib.leader = "00000nam a2200000u  4500"
+    tags.append(Field(tag="001", data="ocm0001"))
+    tags.append(Field(tag="245", indicators=["0", "0"], subfields=["a", "Test title"]))
+    tags.append(
+        Field(
+            tag="019",
+            indicators=[" ", " "],
+            subfields=["a", "some-id-001"],
+        )
+    )
+    tags.append(
+        Field(
+            tag="020",
+            indicators=[" ", " "],
+            subfields=["a", "isbn001", "b", "isbn002"],
+        )
+    )
+    tags.append(
+        Field(
+            tag="024",
+            indicators=[" ", " "],
+            subfields=["a", "upc001"],
+        )
+    )
+    tags.append(
+        Field(
+            tag="037",
+            indicators=[" ", " "],
+            subfields=["a", "some-id-0001", "b", "test-distributor"],
+        )
+    )
+    tags.append(
+        Field(
+            tag="037",
+            indicators=[" ", " "],
+            subfields=["a", "some-id-0002", "b", "Overdrive, Inc."],
+        )
+    )
+    tags.append(
+        Field(
+            tag="084",
+            indicators=[" ", " "],
+            subfields=["a", "some-classification", "2", "test-thesaurus"],
+        )
+    )
+    tags.append(
+        Field(
+            tag="856",
+            indicators=[" ", "3"],
+            subfields=["u", "url1", "3", "public-note-1"],
+        )
+    )
+    tags.append(
+        Field(
+            tag="856",
+            indicators=[" ", "3"],
+            subfields=["u", "url2", "3", "public-note-2"],
+        )
+    )
+    tags.append(
+        Field(
+            tag="856",
+            indicators=[" ", "3"],
+            subfields=["u", "url3", "3", "public-note-3"],
+        )
+    )
+    tags.append(
+        Field(
+            tag="838",
+            indicators=[" ", " "],
+            subfields=["u", "EBSCOhost", "b", "EBSC", "n", "11111"],
+        )
+    )
+    for tag in tags:
+        marc_bib.add_ordered_field(tag)
+
+    return marc_bib

@@ -161,8 +161,9 @@ def find_matching_eresource(
 
     # if found request full bib
     if oclcNumber:
-        get_bib_response = get_full_bib(session, oclcNumber)
-        record = parse_record_from_full_bib_response(get_bib_response)
+        full_bib_response = get_full_bib(session, oclcNumber)
+        # record = parse_record_from_full_bib_response(full_bib_response)
+        record = full_bib_response.content
         return (oclcNumber, record)
     else:
         return None

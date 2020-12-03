@@ -332,7 +332,7 @@ def update_resource(
     library_system: str,
     upgrade_src: str,
     oclcNumber: str,
-    bib: Type[xml.etree.ElementTree.Element],
+    bib: str,
 ):
     """
     Updates Resource & WorldcatQuery records after running queries in Worldcat
@@ -340,7 +340,7 @@ def update_resource(
     Args:
         sbid:                   Resource record id (Sierra bib number)
         oclcNumber:             OCLC number as string without a prefix
-        bib:                    MARC XML of full bib
+        bib:                    MARC XML string of full bib encoded as UTF-8
     """
     upgrade_src_id = UPGRADE_SRC[upgrade_src]["usid"]
     lsid = LIB_SYS[library_system]["lsid"]

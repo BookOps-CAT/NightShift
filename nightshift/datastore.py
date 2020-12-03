@@ -179,7 +179,7 @@ class WorldcatQuery(Base):
     sBibId = Column(Integer, ForeignKey("resource.sbid"), nullable=False)
     queryStamp = Column(DateTime, nullable=False, default=datetime.now())
     found = Column(Boolean, nullable=False, default=False)
-    record = Column(PickleType)
+    record = Column(String)
 
     def __repr__(self):
         state = inspect(self)

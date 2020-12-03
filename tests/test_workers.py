@@ -147,7 +147,10 @@ def test_retrieve_eresource_records_for_worldcat_queries(
 
 
 def test_query_and_store_worldcat_eresources_hit(
-    mixed_dataset, fake_metadata_session, mock_find_matching_eresource_hit, fake_xml_bib
+    mixed_dataset,
+    fake_metadata_session,
+    mock_find_matching_eresource_hit,
+    fake_xml_response,
 ):
     query_and_store_worldcat_eresources(
         (1, "reserve-id-1"), "nyp", mixed_dataset, fake_metadata_session
@@ -156,7 +159,7 @@ def test_query_and_store_worldcat_eresources_hit(
     assert rec.wcn == "773692015"
     assert rec.upgraded is True
     assert rec.wqueries[0].found is True
-    assert ET.tostring(rec.wqueries[0].record) == ET.tostring(fake_xml_bib)
+    assert rec.wqueries[0].record == fake_xml_response
 
 
 def test_query_and_store_worldcat_eresources_no_hit(

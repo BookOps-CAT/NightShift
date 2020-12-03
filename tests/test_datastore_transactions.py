@@ -617,7 +617,7 @@ WHERE worldcat_query.found = false GROUP BY worldcat_query."sBibId"'''
     )
 
 
-def test_update_resource_match_found(brief_bib_dataset, fake_xml_bib):
+def test_update_resource_match_found(brief_bib_dataset, fake_xml_response):
     session = brief_bib_dataset
     update_resource(
         session,
@@ -625,7 +625,7 @@ def test_update_resource_match_found(brief_bib_dataset, fake_xml_bib):
         library_system="nyp",
         upgrade_src="bot",
         oclcNumber="1190756389",
-        bib=fake_xml_bib,
+        bib=fake_xml_response,
     )
     record = session.query(Resource).filter_by(sbid=22259002, librarySystemId=1).one()
 
@@ -635,7 +635,7 @@ def test_update_resource_match_found(brief_bib_dataset, fake_xml_bib):
     assert len(record.wqueries) == 1
     assert record.wqueries[0].sBibId == 22259002
     assert record.wqueries[0].found is True
-    assert type(record.wqueries[0].record) == xml.etree.ElementTree.Element
+    assert type(record.wqueries[0].record) == str
 
 
 def test_update_resource_no_match(brief_bib_dataset):

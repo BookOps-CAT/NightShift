@@ -116,7 +116,7 @@ def test_find_matching_eresource_success(
     response = find_matching_eresource(session, "40CC3B3F-4C30-4685-B391-DB7B2EA91455")
     assert type(response) is tuple
     assert response[0] == "1190756389"
-    assert type(response[1]) == xml.etree.ElementTree.Element
+    assert type(response[1]) == bytes
 
 
 def test_find_matching_eresource_fail(
