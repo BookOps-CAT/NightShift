@@ -199,7 +199,7 @@ def construct_overdrive_reserve_id_tag(reserve_id: str) -> pymarc.field.Field:
         )
 
 
-def has_overdrive_access_point_tag(record):
+def has_overdrive_access_point_tag(record: pymarc.record.Record) -> bool:
     """
     Determines if the record has 710 2 $a Overdrive, Inc. tag
 
@@ -336,6 +336,15 @@ def construct_content_url_tag(
     )
 
 
+def construct_overdrive_access_point_tag() -> pymarc.field.Field:
+    """Construct 710 access point for OverDrive"""
+    return Field(
+        tag="710",
+        indicators=["2", " "],
+        subfields=["a", "OverDrive, Inc."],
+    )
+
+
 def prepare_output_record(resource: Type[nightshift.datastore.Resource]):
     record = response2pymarc(resource.wqueries[0].record)
 
@@ -374,12 +383,16 @@ def prepare_output_record(resource: Type[nightshift.datastore.Resource]):
         # 020 tag
         new_tags.extend(resource.sbn)
 
+        # 024 tag
+        new_tags.extend(construct_upc_tags(resource.sid))
+
         # 037 tag
         if resource.did is not None:
             new_tags.append(construct_overdrive_reserve_id_tag(resource.did))
 
-        # 024 tag
-        new_tags.extend(construct_upc_tags(resource.sid))
+        # 710 OverDrive, Inc. tag
+        if not has_overdrive_access_point_tag(record):
+            new_tags.append(construct_overdrive_access_point_tag())
 
         # 856 tags
         new_tags.extend(construct_generic_url_tags(resource.urls))

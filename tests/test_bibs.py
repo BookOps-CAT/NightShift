@@ -12,6 +12,7 @@ from nightshift.bibs import (
     construct_content_url_tag,
     construct_generic_url_tags,
     construct_isbn_tags,
+    construct_overdrive_access_point_tag,
     construct_overdrive_reserve_id_tag,
     construct_upc_tags,
     determine_url_label,
@@ -219,3 +220,9 @@ def test_has_overdrive_access_point_tag_true(stub_marc_bib):
         )
     )
     assert has_overdrive_access_point_tag(stub_marc_bib) is True
+
+
+def test_construct_overdrive_access_point_tag():
+    outcome = construct_overdrive_access_point_tag()
+    assert type(outcome) == pymarc.field.Field
+    assert str(outcome) == "=710  2\\$aOverDrive, Inc."
