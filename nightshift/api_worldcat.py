@@ -67,7 +67,7 @@ def parse_oclcNumber_from_brief_bib_response(
     data = response.json()
 
     try:
-        return data["briefRecords"][0]["oclcNumber"]
+        return data["briefRecords"][0]["oclcNumber"].strip()
     except KeyError:
         return None
 
