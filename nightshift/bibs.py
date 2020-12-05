@@ -103,6 +103,7 @@ def remove_unwanted_tags(record: Type[pymarc.record.Record], material_type: str)
         "084",
         "099",
         "091",
+        "263",
         "856",
         "938",  # is there a way to remove all 9xxs?
         "949",
@@ -112,6 +113,7 @@ def remove_unwanted_tags(record: Type[pymarc.record.Record], material_type: str)
         "084",
         "099",
         "091",
+        "263",
         "938",
         "949",
     ]
@@ -345,7 +347,7 @@ def prepare_output_record(resource: Type[nightshift.datastore.Resource]):
                 )
 
     # call number (091/099)
-    tags.append(
+    new_tags.append(
         construct_callnumber_tag(resource.sierraFormatId, resource.librarySystemId)
     )
 
