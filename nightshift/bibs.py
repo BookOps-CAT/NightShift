@@ -88,6 +88,48 @@ def response2pymarc(response_content: bytes) -> Type[pymarc.record.Record]:
     return parse_xml_record(record)
 
 
+def add_oclc_prefix(control_number: str) -> str:
+    """
+    Adds appropriate OCLC prefix to OCLC's control number.
+
+    Args:
+        control_number:             OCLC control number without a prefix
+
+    Returns:
+        control_number with prefix
+    """
+    if len(control_number) <= 8:
+        # left pad with zeros
+        control_number = add_zeros_to_oclc_number(control_number)
+        control_number = f"ocm{control_number}"
+    elif len(control_number) == 9:
+        control_number = f"ocn{control_number}"
+    elif len(control_number) >= 10:
+        control_number = f"on{control_number}"
+    else:
+        raise NightShiftError(
+            "Looks OCLC number is invalid. Unable to add a prefix to it."
+        )
+
+    return control_number
+
+
+def add_zeros_to_oclc_number(control_number: str) -> str:
+    """
+    Pads with zeros 8 digit OCLC numbers
+
+    Args:
+        control_number:             OCLC control number without a prefix
+
+    Returns:
+        control_number
+    """
+    if len(control_number) < 8:
+        return control_number.zfill(8)
+    else:
+        return control_number
+
+
 def remove_unwanted_tags(record: Type[pymarc.record.Record], material_type: str):
     """Removes tags that will be replaced with MarcExpress tags or are
     simply not desired.
@@ -370,8 +412,27 @@ def construct_overdrive_control_number_tag(control_number: str) -> pymarc.field.
     )
 
 
-# def construct_oclc_control_number_tag():
-#     pass
+def construct_oclc_control_number_tag(
+    control_number: str, librarySystemId: int
+) -> pymarc.field.Field:
+    """
+    Constructs library specific OCLC control number
+
+    Args:
+        control_number:             OCLC control number without a prefix
+        librarySystemId:            datastore Resource librarySystemId
+
+    Returns:
+        `pymarc.field.Field` object
+    """
+    # NYPL
+    if librarySystemId == 1:
+        control_number = add_zeros_to_oclc_number(control_number)
+    # BPL
+    elif librarySystemId == 2:
+        control_number = add_oclc_prefix(control_number)
+
+    return Field(tag="001", data=control_number)
 
 
 def prepare_output_record(resource: Type[nightshift.datastore.Resource]):

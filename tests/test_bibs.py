@@ -8,10 +8,13 @@ import pytest
 
 
 from nightshift.bibs import (
+    add_oclc_prefix,
+    add_zeros_to_oclc_number,
     construct_callnumber_tag,
     construct_content_url_tag,
     construct_generic_url_tags,
     construct_isbn_tags,
+    construct_oclc_control_number_tag,
     construct_overdrive_access_point_tag,
     construct_overdrive_control_number_tag,
     construct_overdrive_reserve_id_tag,
@@ -239,3 +242,53 @@ def test_construct_overdrive_control_number_tag():
     outcome = construct_overdrive_control_number_tag("ODN123")
     assert type(outcome) == pymarc.field.Field
     assert str(outcome) == "=019  \\\\$aODN123"
+
+
+@pytest.mark.parametrize(
+    "arg,expectation",
+    [
+        ("1", "00000001"),
+        ("12345", "00012345"),
+        ("12345678", "12345678"),
+        ("123456789", "123456789"),
+    ],
+)
+def test_add_zeros_to_oclc_number(arg, expectation):
+    assert add_zeros_to_oclc_number(arg) == expectation
+
+
+@pytest.mark.parametrize(
+    "arg,expectation",
+    [
+        ("1", "ocm00000001"),
+        ("12", "ocm00000012"),
+        ("123", "ocm00000123"),
+        ("1234", "ocm00001234"),
+        ("12345", "ocm00012345"),
+        ("123456", "ocm00123456"),
+        ("1234567", "ocm01234567"),
+        ("12345678", "ocm12345678"),
+        ("123456789", "ocn123456789"),
+        ("1234567890", "on1234567890"),
+        ("12345678901", "on12345678901"),
+    ],
+)
+def test_add_oclc_prefix(arg, expectation):
+    assert add_oclc_prefix(arg) == expectation
+
+
+@pytest.mark.parametrize(
+    "arg1,arg2,expectation",
+    [
+        ("1", 1, "00000001"),
+        ("1234567", 1, "01234567"),
+        ("123456789", 1, "123456789"),
+        ("1", 2, "ocm00000001"),
+        ("123456789", 2, "ocn123456789"),
+        ("1234567890", 2, "on1234567890"),
+    ],
+)
+def test_construct_oclc_control_number_tag(arg1, arg2, expectation):
+    output = construct_oclc_control_number_tag(arg1, arg2)
+    assert type(output) == pymarc.field.Field
+    assert str(output) == f"=001  {expectation}"
