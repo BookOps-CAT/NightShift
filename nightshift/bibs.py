@@ -337,11 +337,34 @@ def construct_content_url_tag(
 
 
 def construct_overdrive_access_point_tag() -> pymarc.field.Field:
-    """Construct 710 access point for OverDrive"""
+    """
+    Construct 710 access point for OverDrive
+
+    Returns:
+        `pymarc.field.Field` object
+    """
     return Field(
         tag="710",
         indicators=["2", " "],
         subfields=["a", "OverDrive, Inc."],
+    )
+
+
+def construct_overdrive_control_number_tag(control_number: str) -> pymarc.field.Field:
+    """
+    Constructs 019 MARC tag with provided OverDrive control number
+
+    Args:
+        control_number:             OverdDrive MarcExpress control number
+
+    Returns:
+        `pymarc.field.Field` object
+    """
+
+    return Field(
+        tag="019",
+        indicators=[" ", " "],
+        subfields=["a", control_number],
     )
 
 
@@ -380,6 +403,10 @@ def prepare_output_record(resource: Type[nightshift.datastore.Resource]):
 
     # OverDrive reserve ID tag
     if material_type == "eresources":
+        # 019 tag
+        if resource.cno:
+            new_tags.append(construct_overdrive_control_number_tag(resource.cno))
+
         # 020 tag
         new_tags.extend(resource.sbn)
 

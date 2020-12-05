@@ -13,6 +13,7 @@ from nightshift.bibs import (
     construct_generic_url_tags,
     construct_isbn_tags,
     construct_overdrive_access_point_tag,
+    construct_overdrive_control_number_tag,
     construct_overdrive_reserve_id_tag,
     construct_upc_tags,
     determine_url_label,
@@ -226,3 +227,9 @@ def test_construct_overdrive_access_point_tag():
     outcome = construct_overdrive_access_point_tag()
     assert type(outcome) == pymarc.field.Field
     assert str(outcome) == "=710  2\\$aOverDrive, Inc."
+
+
+def test_construct_overdrive_control_number_tag():
+    outcome = construct_overdrive_control_number_tag("ODN123")
+    assert type(outcome) == pymarc.field.Field
+    assert str(outcome) == "=019  \\\\$aODN123"
