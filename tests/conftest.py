@@ -920,6 +920,27 @@ def stub_marc_bib():
     )
     tags.append(
         Field(
+            tag="091",
+            indicators=[" ", " "],
+            subfields=["a", "some-callnumber"],
+        )
+    )
+    tags.append(
+        Field(
+            tag="099",
+            indicators=[" ", " "],
+            subfields=["a", "some-callnumber"],
+        )
+    )
+    tags.append(
+        Field(
+            tag="263",
+            indicators=[" ", " "],
+            subfields=["a", "some-date"],
+        )
+    )
+    tags.append(
+        Field(
             tag="856",
             indicators=[" ", "3"],
             subfields=["u", "url1", "3", "public-note-1"],
