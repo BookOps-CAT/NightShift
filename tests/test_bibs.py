@@ -15,6 +15,7 @@ from nightshift.bibs import (
     construct_overdrive_reserve_id_tag,
     construct_upc_tags,
     determine_url_label,
+    has_overdrive_access_point_tag,
     parse_xml_record,
     response2pymarc,
     remove_unwanted_tags,
@@ -203,3 +204,18 @@ def test_construct_callnumber_tag_print_exception(arg1, arg2):
     with pytest.raises(NightShiftError) as exc:
         construct_callnumber_tag(arg1, arg2)
     assert err_msg in str(exc.value)
+
+
+def test_has_overdrive_access_point_tag_false(stub_marc_bib):
+    assert has_overdrive_access_point_tag(stub_marc_bib) is False
+
+
+def test_has_overdrive_access_point_tag_true(stub_marc_bib):
+    stub_marc_bib.add_field(
+        pymarc.field.Field(
+            tag="710",
+            indicators=["2", " "],
+            subfields=["a", "OverDrive, Inc."],
+        )
+    )
+    assert has_overdrive_access_point_tag(stub_marc_bib) is True

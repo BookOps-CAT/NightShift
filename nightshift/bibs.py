@@ -199,6 +199,24 @@ def construct_overdrive_reserve_id_tag(reserve_id: str) -> pymarc.field.Field:
         )
 
 
+def has_overdrive_access_point_tag(record):
+    """
+    Determines if the record has 710 2 $a Overdrive, Inc. tag
+
+    Args:
+        record:                     pymarc.field.Field instance
+
+    Returns:
+        bool
+    """
+    found = False
+    for tag in record.get_fields("710"):
+        if "overdrive" in tag.value().lower():
+            found = True
+            break
+    return found
+
+
 def determine_url_label(uTypeId: int) -> str:
     """
     Maps UrlField urlTypeId param to public label subfield in subfield 3
