@@ -40,6 +40,7 @@ def test_marcxml2pymarc(fake_xml_response_content):
 def test_remove_unwanted_tags_eresources(stub_marc_bib):
     # before
     record = stub_marc_bib
+    assert "001" in record
     assert "020" in record
     assert "037" in record
     assert "856" in record
@@ -48,6 +49,7 @@ def test_remove_unwanted_tags_eresources(stub_marc_bib):
     remove_unwanted_tags(record, "eresources")
 
     # after
+    assert "001" not in record
     assert "019" not in record
     assert "020" not in record
     assert "024" not in record
@@ -63,10 +65,12 @@ def test_remove_unwanted_tags_eresources(stub_marc_bib):
 
 def test_remove_unwanted_tags_eresources_no_tag_found(stub_marc_bib):
     record = stub_marc_bib
+    assert "001" in record
     assert "019" in record
     record.remove_fields("019", "024", "084")
     assert "019" not in record
     remove_unwanted_tags(record, "eresources")
+    assert "001" not in record
     assert "020" not in record
     assert "037" not in record
     assert "856" not in record
@@ -75,10 +79,12 @@ def test_remove_unwanted_tags_eresources_no_tag_found(stub_marc_bib):
 def test_remove_unwanted_tags_print(stub_marc_bib):
     # before
     record = stub_marc_bib
+    assert "001" in record
     assert "263" in record
     remove_unwanted_tags(record, "print")
 
     # after
+    assert "001" not in record
     assert "019" not in record
     assert "020" in record
     assert "024" in record

@@ -96,6 +96,7 @@ def remove_unwanted_tags(record: Type[pymarc.record.Record], material_type: str)
         record:                 full Worldcat record as pymarc object
     """
     eresource_tags = [
+        "001",  # will be re-generated insted bc sys diffs
         "019",
         "020",
         "024",
@@ -109,6 +110,7 @@ def remove_unwanted_tags(record: Type[pymarc.record.Record], material_type: str)
         "949",
     ]
     print_tags = [
+        "001",  # will be re-generated instead bc sys diffs
         "019",
         "084",
         "099",
@@ -366,6 +368,10 @@ def construct_overdrive_control_number_tag(control_number: str) -> pymarc.field.
         indicators=[" ", " "],
         subfields=["a", control_number],
     )
+
+
+# def construct_oclc_control_number_tag():
+#     pass
 
 
 def prepare_output_record(resource: Type[nightshift.datastore.Resource]):

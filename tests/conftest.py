@@ -876,6 +876,7 @@ def stub_marc_bib():
     marc_bib.leader = "00000nam a2200000u  4500"
     tags.append(Field(tag="001", data="ocm0001"))
     tags.append(Field(tag="245", indicators=["0", "0"], subfields=["a", "Test title"]))
+    tags.append(Field(tag="001", data="ocn1111"))
     tags.append(
         Field(
             tag="019",
