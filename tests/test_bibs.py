@@ -19,6 +19,7 @@ from nightshift.bibs import (
     construct_overdrive_control_number_tag,
     construct_overdrive_reserve_id_tag,
     construct_upc_tags,
+    determine_material_type,
     determine_url_label,
     has_overdrive_access_point_tag,
     parse_xml_record,
@@ -292,3 +293,17 @@ def test_construct_oclc_control_number_tag(arg1, arg2, expectation):
     output = construct_oclc_control_number_tag(arg1, arg2)
     assert type(output) == pymarc.field.Field
     assert str(output) == f"=001  {expectation}"
+
+
+@pytest.mark.parametrize(
+    "arg,expectation",
+    [
+        (1, "unknown"),
+        (2, "eresources"),
+        (3, "eresources"),
+        (4, "eresources"),
+        (5, "print"),
+    ],
+)
+def test_determine_material_type(arg, expectation):
+    assert determine_material_type(arg) == expectation

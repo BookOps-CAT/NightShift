@@ -435,24 +435,48 @@ def construct_oclc_control_number_tag(
     return Field(tag="001", data=control_number)
 
 
-def prepare_output_record(resource: Type[nightshift.datastore.Resource]):
-    record = response2pymarc(resource.wqueries[0].record)
+def determine_material_type(bibCategoryId: int) -> str:
+    """
+    Maps datastore Resource bibCategoryId to more readable labels - just
+    to add some readability to code
 
-    # clean up record from data that will not be passed to the catalog
-    if resource.bibCategoryId in (2, 3, 4):
+    Args:
+        bibCategoryId:              datastore bibCategoryId value
+
+    Returns:
+        material_type label
+    """
+
+    if bibCategoryId in (2, 3, 4):
         material_type = "eresources"
-    elif resource.bibCategoryId == 5:
+    elif bibCategoryId == 5:
         material_type = "print"
     else:
         material_type = "unknown"
+    return material_type
 
+
+def prepare_output_record(resource: Type[nightshift.datastore.Resource]):
+    record = response2pymarc(resource.wqueries[0].record)
+
+    material_type = determine_material_type(resource.bibCategoryId)
+
+    # clean up record from data that will not be passed to the catalog
     remove_unwanted_tags(record, material_type)
 
     # add new tags
-    # 020 tag
     new_tags = []
 
-    # library specific tags
+    # control number (001)
+    new_tags.append(
+        construct_oclc_control_number_tag(resource.wcn, resource.librarySystemId)
+    )
+
+    # call number (091/099)
+    new_tags.append(
+        construct_callnumber_tag(resource.sierraFormatId, resource.librarySystemId)
+    )
+
     # content url (856)
     if material_type == "eresources":
         for url_data in resource.urls:
@@ -462,11 +486,6 @@ def prepare_output_record(resource: Type[nightshift.datastore.Resource]):
                 new_tags.append(
                     construct_content_url_tag(url_data.url, url_data.librarySystemId)
                 )
-
-    # call number (091/099)
-    new_tags.append(
-        construct_callnumber_tag(resource.sierraFormatId, resource.librarySystemId)
-    )
 
     # OverDrive reserve ID tag
     if material_type == "eresources":
@@ -490,6 +509,8 @@ def prepare_output_record(resource: Type[nightshift.datastore.Resource]):
 
         # 856 tags
         new_tags.extend(construct_generic_url_tags(resource.urls))
+
+    # library specific tags here
 
     elif material_type == "print":
         raise NightShiftError("Processing of print materials not implemented yet.")
