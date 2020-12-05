@@ -362,6 +362,20 @@ def mixed_dataset(init_dataset, mock_datetime_now, fake_xml_response):
                     record=fake_xml_response,
                 )
             ],
+            urls=[
+                UrlField(
+                    ufid=1, sBibId=3, librarySystemId=1, uTypeId=1, url="content_url"
+                ),
+                UrlField(
+                    ufid=2, sBibId=3, librarySystemId=1, uTypeId=2, url="excerpt_url"
+                ),
+                UrlField(
+                    ufid=3, sBibId=3, librarySystemId=1, uTypeId=3, url="image_url"
+                ),
+                UrlField(
+                    ufid=4, sBibId=3, librarySystemId=1, uTypeId=4, url="thumbnail_url"
+                ),
+            ],
         )
     )
 
