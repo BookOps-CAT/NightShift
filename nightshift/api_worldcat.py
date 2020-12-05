@@ -4,7 +4,7 @@
 This module includes methods to authenticate and query OCLC Worlcat
 """
 import os
-from typing import Type
+from typing import Type, Tuple
 import xml.etree.ElementTree as ET
 
 import bookops_worldcat
@@ -144,7 +144,7 @@ def get_full_bib(
 
 def find_matching_eresource(
     session: Type[bookops_worldcat.metadata_api.MetadataSession], reserve_id: str
-):
+) -> Tuple[str, bytes]:
     """
 
 
@@ -154,7 +154,7 @@ def find_matching_eresource(
                                     example: 40CC3B3F-4C30-4685-B391-DB7B2EA91455
 
     Returns:
-        tuple:                  oclcNo str & response as xml.etree.ElementTree.Element
+        tuple:                  oclcNo str & response as bytes
     """
     search_response = search_for_brief_eresource(session, reserve_id)
     oclcNumber = parse_oclcNumber_from_brief_bib_response(search_response)
