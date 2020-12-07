@@ -43,15 +43,15 @@ Use OCLC matching record as a base
 """
 
 from io import BytesIO
-from typing import List, Type
+from typing import List
 
 # import xml.etree.ElementTree as ET
 
-import pymarc
-from pymarc import Field, XmlHandler, parse_xml
+# import pymarc
+from pymarc import Field, Record, XmlHandler, parse_xml
 
 
-import nightshift
+from nightshift.datastore import Resource, UrlField
 from nightshift.errors import NightShiftError
 
 
@@ -75,7 +75,7 @@ def parse_xml_record(xml_file, strict=False, normalize_form=None):
     return handler.records
 
 
-def response2pymarc(response_content: bytes) -> Type[pymarc.record.Record]:
+def response2pymarc(response_content: bytes) -> Record:
     """
     Serializes full record xml Worldcat response to pymarc record object
 
@@ -130,12 +130,15 @@ def add_zeros_to_oclc_number(control_number: str) -> str:
         return control_number
 
 
-def remove_unwanted_tags(record: Type[pymarc.record.Record], material_type: str):
+def remove_unwanted_tags(record: Record, material_type: str) -> List[str]:
     """Removes tags that will be replaced with MarcExpress tags or are
     simply not desired.
 
     Args:
         record:                 full Worldcat record as pymarc object
+
+    Returns:
+        list of tags
     """
     eresource_tags = [
         "001",  # will be re-generated insted bc sys diffs
@@ -171,7 +174,7 @@ def remove_unwanted_tags(record: Type[pymarc.record.Record], material_type: str)
         )
 
 
-def construct_isbn_tags(isbns: str) -> List[pymarc.field.Field]:
+def construct_isbn_tags(isbns: str) -> List[Field]:
     """Converts a comma separated string of ISBNs to list of ISBN fields
 
     Args:
@@ -194,7 +197,7 @@ def construct_isbn_tags(isbns: str) -> List[pymarc.field.Field]:
     return tags
 
 
-def construct_upc_tags(upcs: str) -> List[pymarc.field.Field]:
+def construct_upc_tags(upcs: str) -> List[Field]:
     """
     Converst a comma separated string of UPCs to list of 024 fields
 
@@ -218,7 +221,7 @@ def construct_upc_tags(upcs: str) -> List[pymarc.field.Field]:
     return tags
 
 
-def construct_overdrive_reserve_id_tag(reserve_id: str) -> pymarc.field.Field:
+def construct_overdrive_reserve_id_tag(reserve_id: str) -> Field:
     """
     Converts reserve id into a MARC tag
 
@@ -243,7 +246,7 @@ def construct_overdrive_reserve_id_tag(reserve_id: str) -> pymarc.field.Field:
         )
 
 
-def has_overdrive_access_point_tag(record: pymarc.record.Record) -> bool:
+def has_overdrive_access_point_tag(record: Record) -> bool:
     """
     Determines if the record has 710 2 $a Overdrive, Inc. tag
 
@@ -279,9 +282,7 @@ def determine_url_label(uTypeId: int) -> str:
         return "Thumbnail"
 
 
-def construct_callnumber_tag(
-    sierraFormatId: int, librarySystemId: int
-) -> Type[pymarc.field.Field]:
+def construct_callnumber_tag(sierraFormatId: int, librarySystemId: int) -> Field:
     """
     Creates call number (091 for NYPL or 099 for BPL) tag
 
@@ -326,8 +327,8 @@ def construct_callnumber_tag(
 
 
 def construct_generic_url_tags(
-    url_data: List[nightshift.datastore.UrlField],
-) -> List[pymarc.field.Field]:
+    url_data: List[UrlField],
+) -> List[Field]:
     """
     Converts datastore url records into 856 tags
 
@@ -353,9 +354,7 @@ def construct_generic_url_tags(
     return tags
 
 
-def construct_content_url_tag(
-    url: str, librarySystemId: int
-) -> Type[pymarc.field.Field]:
+def construct_content_url_tag(url: str, librarySystemId: int) -> Field:
     """Creates library specific content url
 
     Args:
@@ -380,7 +379,7 @@ def construct_content_url_tag(
     )
 
 
-def construct_overdrive_access_point_tag() -> pymarc.field.Field:
+def construct_overdrive_access_point_tag() -> Field:
     """
     Construct 710 access point for OverDrive
 
@@ -394,7 +393,7 @@ def construct_overdrive_access_point_tag() -> pymarc.field.Field:
     )
 
 
-def construct_overdrive_control_number_tag(control_number: str) -> pymarc.field.Field:
+def construct_overdrive_control_number_tag(control_number: str) -> Field:
     """
     Constructs 019 MARC tag with provided OverDrive control number
 
@@ -414,7 +413,7 @@ def construct_overdrive_control_number_tag(control_number: str) -> pymarc.field.
 
 def construct_oclc_control_number_tag(
     control_number: str, librarySystemId: int
-) -> pymarc.field.Field:
+) -> Field:
     """
     Constructs library specific OCLC control number
 
@@ -456,13 +455,24 @@ def determine_material_type(bibCategoryId: int) -> str:
     return material_type
 
 
-def prepare_output_record(resource: Type[nightshift.datastore.Resource]):
+def filter_subject_headings(record: Record):
+    """
+    Removes subject heading tags that are not supported by our systems
+
+    Args:
+        record:                     pymarc.record.Record object
+    """
+    pass
+
+
+def prepare_output_record(resource: Resource) -> Record:
     record = response2pymarc(resource.wqueries[0].record)
 
     material_type = determine_material_type(resource.bibCategoryId)
 
     # clean up record from data that will not be passed to the catalog
     remove_unwanted_tags(record, material_type)
+    filter_subject_headings(record)
 
     # add new tags
     new_tags = []
