@@ -729,7 +729,8 @@ def mock_search_for_brief_eresource_success(
     monkeypatch, fake_successful_worldcat_metadata_search_response
 ):
     def mock_response(
-        *args, **kwargs,
+        *args,
+        **kwargs,
     ):
         return fake_successful_worldcat_metadata_search_response
 
@@ -877,7 +878,11 @@ def stub_marc_bib():
     tags.append(Field(tag="245", indicators=["0", "0"], subfields=["a", "Test title"]))
     tags.append(Field(tag="001", data="ocn1111"))
     tags.append(
-        Field(tag="019", indicators=[" ", " "], subfields=["a", "some-id-001"],)
+        Field(
+            tag="019",
+            indicators=[" ", " "],
+            subfields=["a", "some-id-001"],
+        )
     )
     tags.append(
         Field(
@@ -886,7 +891,13 @@ def stub_marc_bib():
             subfields=["a", "isbn001", "b", "isbn002"],
         )
     )
-    tags.append(Field(tag="024", indicators=[" ", " "], subfields=["a", "upc001"],))
+    tags.append(
+        Field(
+            tag="024",
+            indicators=[" ", " "],
+            subfields=["a", "upc001"],
+        )
+    )
     tags.append(
         Field(
             tag="037",
@@ -909,12 +920,26 @@ def stub_marc_bib():
         )
     )
     tags.append(
-        Field(tag="091", indicators=[" ", " "], subfields=["a", "some-callnumber"],)
+        Field(
+            tag="091",
+            indicators=[" ", " "],
+            subfields=["a", "some-callnumber"],
+        )
     )
     tags.append(
-        Field(tag="099", indicators=[" ", " "], subfields=["a", "some-callnumber"],)
+        Field(
+            tag="099",
+            indicators=[" ", " "],
+            subfields=["a", "some-callnumber"],
+        )
     )
-    tags.append(Field(tag="263", indicators=[" ", " "], subfields=["a", "some-date"],))
+    tags.append(
+        Field(
+            tag="263",
+            indicators=[" ", " "],
+            subfields=["a", "some-date"],
+        )
+    )
     tags.append(
         Field(
             tag="856",

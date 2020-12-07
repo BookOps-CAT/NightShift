@@ -23,7 +23,7 @@ from nightshift.bibs import (
     determine_url_label,
     filter_subject_headings,
     has_overdrive_access_point_tag,
-    is_approved_vocabulary,
+    is_approved_vacabulary,
     parse_xml_record,
     response2pymarc,
     remove_unwanted_tags,
@@ -227,7 +227,9 @@ def test_has_overdrive_access_point_tag_false(stub_marc_bib):
 def test_has_overdrive_access_point_tag_true(stub_marc_bib):
     stub_marc_bib.add_field(
         pymarc.field.Field(
-            tag="710", indicators=["2", " "], subfields=["a", "OverDrive, Inc."],
+            tag="710",
+            indicators=["2", " "],
+            subfields=["a", "OverDrive, Inc."],
         )
     )
     assert has_overdrive_access_point_tag(stub_marc_bib) is True
@@ -323,12 +325,222 @@ def test_determine_material_type(arg, expectation):
     ],
 )
 def test_is_approved_vocabulary(arg1, arg2, expectation):
-    assert is_approved_vocabulary(arg1, arg2) == expectation
+    assert is_approved_vacabulary(arg1, arg2) == expectation
 
 
-# def test_filter_subject_headings(stub_marc_bib):
-#     record = stub_marc_bib
-#     record.add_field(
-#         pymarc.field.Field(tag="650", indicators=[" ", "0"], subfields=["a", "LCSH"],)
-#     )
-#     filter_subject_headings(record.subjects(), 1)
+def test_filter_subject_headings_nyp_lcsh(stub_marc_bib):
+    record = stub_marc_bib
+    assert "650" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="650",
+            indicators=[" ", "0"],
+            subfields=["a", "LCSH heading"],
+        )
+    )
+    assert "650" in record
+    output = filter_subject_headings(record, 1)
+    assert type(output) is list
+    assert type(output[0]) == pymarc.field.Field
+    assert str(output[0]) == "=650  \\0$aLCSH heading"
+
+
+def test_filter_subject_headings_nyp_children_lcsh(stub_marc_bib):
+    record = stub_marc_bib
+    assert "650" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="650",
+            indicators=[" ", "1"],
+            subfields=["a", "Children's LCSH heading"],
+        )
+    )
+    assert "650" in record
+    output = filter_subject_headings(record, 1)
+    assert type(output) is list
+    assert type(output[0]) == pymarc.field.Field
+    assert str(output[0]) == "=650  \\1$aChildren's LCSH heading"
+
+
+def test_filter_subject_headings_nyp_lcgft(stub_marc_bib):
+    record = stub_marc_bib
+    assert "655" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="655",
+            indicators=[" ", "7"],
+            subfields=["a", "LC heading", "2", "lcgft"],
+        )
+    )
+    assert "655" in record
+    output = filter_subject_headings(record, 1)
+    assert type(output) is list
+    assert type(output[0]) == pymarc.field.Field
+    assert str(output[0]) == "=655  \\7$aLC heading$2lcgft"
+
+
+def test_filter_subject_headings_nyp_gsafd(stub_marc_bib):
+    record = stub_marc_bib
+    assert "655" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="655",
+            indicators=[" ", "7"],
+            subfields=["a", "GSAFD heading", "2", "gsafd"],
+        )
+    )
+    assert "655" in record
+    output = filter_subject_headings(record, 1)
+    assert type(output) is list
+    assert type(output[0]) == pymarc.field.Field
+    assert str(output[0]) == "=655  \\7$aGSAFD heading$2gsafd"
+
+
+def test_filter_subject_headings_nyp_bisac(stub_marc_bib):
+    record = stub_marc_bib
+    assert "655" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="655",
+            indicators=[" ", "7"],
+            subfields=["a", "BISAC heading", "2", "bisacsh"],
+        )
+    )
+    assert "655" in record
+    output = filter_subject_headings(record, 1)
+    assert type(output) is list
+    assert type(output[0]) == pymarc.field.Field
+    assert str(output[0]) == "=655  \\7$aBISAC heading$2bisacsh"
+
+
+def test_filter_subject_headings_nyp_fast(stub_marc_bib):
+    record = stub_marc_bib
+    assert "655" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="655",
+            indicators=[" ", "7"],
+            subfields=["a", "FAST heading", "2", "fast"],
+        )
+    )
+    assert "655" in record
+    output = filter_subject_headings(record, 1)
+    assert type(output) is list
+    assert type(output[0]) == pymarc.field.Field
+    assert str(output[0]) == "=655  \\7$aFAST heading$2fast"
+
+
+def test_filter_subject_headings_nyp_other(stub_marc_bib):
+    record = stub_marc_bib
+    assert "655" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="655",
+            indicators=[" ", "7"],
+            subfields=["a", "LOCAL heading", "2", "local"],
+        )
+    )
+    assert "655" in record
+    output = filter_subject_headings(record, 1)
+    assert type(output) is list
+    assert output == []
+
+
+def test_filter_subject_headings_bpl_lcsh(stub_marc_bib):
+    record = stub_marc_bib
+    assert "650" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="650",
+            indicators=[" ", "0"],
+            subfields=["a", "LCSH heading"],
+        )
+    )
+    assert "650" in record
+    output = filter_subject_headings(record, 2)
+    assert type(output) is list
+    assert type(output[0]) == pymarc.field.Field
+    assert str(output[0]) == "=650  \\0$aLCSH heading"
+
+
+def test_filter_subject_headings_bpl_children_lcsh(stub_marc_bib):
+    record = stub_marc_bib
+    assert "650" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="650",
+            indicators=[" ", "1"],
+            subfields=["a", "Children LCSH heading"],
+        )
+    )
+    assert "650" in record
+    output = filter_subject_headings(record, 2)
+    assert type(output) is list
+    assert output == []
+
+
+def test_filter_subject_headings_bpl_fast(stub_marc_bib):
+    record = stub_marc_bib
+    assert "655" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="655",
+            indicators=[" ", "7"],
+            subfields=["a", "FAST heading", "2", "fast"],
+        )
+    )
+    assert "655" in record
+    output = filter_subject_headings(record, 2)
+    assert type(output) is list
+    assert type(output[0]) == pymarc.field.Field
+    assert str(output[0]) == "=655  \\7$aFAST heading$2fast"
+
+
+def test_filter_subject_headings_bpl_gsafd(stub_marc_bib):
+    record = stub_marc_bib
+    assert "655" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="655",
+            indicators=[" ", "7"],
+            subfields=["a", "GSAFD heading", "2", "gsafd"],
+        )
+    )
+    assert "655" in record
+    output = filter_subject_headings(record, 2)
+    assert type(output) is list
+    assert type(output[0]) == pymarc.field.Field
+    assert str(output[0]) == "=655  \\7$aGSAFD heading$2gsafd"
+
+
+def test_filter_subject_headings_bpl_lcgft(stub_marc_bib):
+    record = stub_marc_bib
+    assert "655" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="655",
+            indicators=[" ", "7"],
+            subfields=["a", "LCGFT heading", "2", "lcgft"],
+        )
+    )
+    assert "655" in record
+    output = filter_subject_headings(record, 2)
+    assert type(output) is list
+    assert type(output[0]) == pymarc.field.Field
+    assert str(output[0]) == "=655  \\7$aLCGFT heading$2lcgft"
+
+
+def test_filter_subject_headings_bpl_other(stub_marc_bib):
+    record = stub_marc_bib
+    assert "655" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="655",
+            indicators=[" ", "7"],
+            subfields=["a", "LOCAL heading", "2", "local"],
+        )
+    )
+    assert "655" in record
+    output = filter_subject_headings(record, 2)
+    assert type(output) is list
+    assert output == []

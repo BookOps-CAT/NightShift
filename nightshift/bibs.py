@@ -36,7 +36,7 @@ Use OCLC matching record as a base
         - 001  includes OCLC number with a prefix
         - create 099  $a eBook/eAudio/eVideo based on Sierra format value
         - create 949 command line to set Sierra format, target bib
-        - add BPL specific 856s based on ME 
+        - add BPL specific 856s based on ME
             - content: 856 40 $u link $z An electronic book accessible online
         - add 947 $a NightShift staff
 
@@ -55,7 +55,10 @@ from nightshift.datastore import Resource, UrlField
 from nightshift.errors import NightShiftError
 
 
-APPROVED_VOCAB = {"nyp": ["fast", "gsafd", "lcgft"], "bpl": ["fast", "gsafd", "lcgft"]}
+APPROVED_VOCAB = {
+    "nyp": ["fast", "gsafd", "lcgft", "bisacsh"],
+    "bpl": ["fast", "gsafd", "lcgft"],
+}
 # lctgm?
 
 
@@ -110,10 +113,6 @@ def add_oclc_prefix(control_number: str) -> str:
         control_number = f"ocn{control_number}"
     elif len(control_number) >= 10:
         control_number = f"on{control_number}"
-    else:
-        raise NightShiftError(
-            "Looks OCLC number is invalid. Unable to add a prefix to it."
-        )
 
     return control_number
 
@@ -215,7 +214,13 @@ def construct_upc_tags(upcs: str) -> List[Field]:
     if upcs is not None:
         upcs = upcs.split(",")
         for upc in upcs:
-            tags.append(Field(tag="024", indicators=["1", " "], subfields=["a", upc],))
+            tags.append(
+                Field(
+                    tag="024",
+                    indicators=["1", " "],
+                    subfields=["a", upc],
+                )
+            )
     return tags
 
 
@@ -317,10 +322,16 @@ def construct_callnumber_tag(sierraFormatId: int, librarySystemId: int) -> Field
         elif sierraFormatId == 5:
             raise NightShiftError("Processing of print materials not implemented yet.")
 
-    return Field(tag=tag, indicators=[" ", " "], subfields=["a", call_number],)
+    return Field(
+        tag=tag,
+        indicators=[" ", " "],
+        subfields=["a", call_number],
+    )
 
 
-def construct_generic_url_tags(url_data: List[UrlField],) -> List[Field]:
+def construct_generic_url_tags(
+    url_data: List[UrlField],
+) -> List[Field]:
     """
     Converts datastore url records into 856 tags
 
@@ -365,7 +376,9 @@ def construct_content_url_tag(url: str, librarySystemId: int) -> Field:
         subfield_tag = "z"
 
     return Field(
-        tag="856", indicators=["4", "0"], subfields=["u", url, subfield_tag, label],
+        tag="856",
+        indicators=["4", "0"],
+        subfields=["u", url, subfield_tag, label],
     )
 
 
@@ -376,7 +389,11 @@ def construct_overdrive_access_point_tag() -> Field:
     Returns:
         `pymarc.field.Field` object
     """
-    return Field(tag="710", indicators=["2", " "], subfields=["a", "OverDrive, Inc."],)
+    return Field(
+        tag="710",
+        indicators=["2", " "],
+        subfields=["a", "OverDrive, Inc."],
+    )
 
 
 def construct_overdrive_control_number_tag(control_number: str) -> Field:
@@ -390,7 +407,11 @@ def construct_overdrive_control_number_tag(control_number: str) -> Field:
         `pymarc.field.Field` object
     """
 
-    return Field(tag="019", indicators=[" ", " "], subfields=["a", control_number],)
+    return Field(
+        tag="019",
+        indicators=[" ", " "],
+        subfields=["a", control_number],
+    )
 
 
 def construct_oclc_control_number_tag(
@@ -437,7 +458,7 @@ def determine_material_type(bibCategoryId: int) -> str:
     return material_type
 
 
-def is_approved_vocabulary(value: str, librarySystemId: int) -> bool:
+def is_approved_vacabulary(value: str, librarySystemId: int) -> bool:
     """
     Checks if value of subfield $2 is part of approved by system thesauri
 
@@ -479,12 +500,17 @@ def filter_subject_headings(record: Record, librarySystemId: int) -> List[Field]
         # LCSH
         if tag.indicator2 == "0":
             approved_tags.append(tag)
+
+        # Children's LCSH
+        elif tag.indicator2 == "1":
+            if librarySystemId == 1:
+                approved_tags.append(tag)
         # source specified in $2
         elif tag.indicator2 == "7":
             src_vocab = tag["2"]
             if src_vocab:
                 if is_approved_vacabulary(src_vocab, librarySystemId):
-                    approved_tags.append(Field)
+                    approved_tags.append(tag)
 
     return approved_tags
 
@@ -510,6 +536,9 @@ def prepare_output_record(resource: Resource) -> Record:
     new_tags.append(
         construct_callnumber_tag(resource.sierraFormatId, resource.librarySystemId)
     )
+
+    # subject tags (6xx)
+    new_tags.extend(filter_subject_headings(record, resource.librarySystemId))
 
     # content url (856)
     if material_type == "eresources":
