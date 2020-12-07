@@ -6,9 +6,10 @@ This module provides methods for the bot to communicate with NYPL Platform (Sier
 from collections import namedtuple
 import datetime
 import os
-from typing import Dict, List, Tuple, Type
+from typing import Any, Dict, List, Iterator, Optional, Tuple
 
 import requests
+from requests import Response
 from bookops_nypl_platform import PlatformToken, PlatformSession
 from bookops_nypl_platform.errors import BookopsPlatformError
 
@@ -20,7 +21,7 @@ from .models import SierraMeta
 
 
 class PlatformResponseReader:
-    def __init__(self, responses: Type[requests.Response]):
+    def __init__(self, responses: Response) -> None:
 
         if responses.status_code == requests.codes.ok:
             self.datas = responses.json()["data"]
@@ -31,12 +32,12 @@ class PlatformResponseReader:
                 f"Platform {responses.status_code} error: {responses.json()}"
             )
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[namedtuple]:
         for data in self.datas:
             record = self._map_data(data)
             yield record
 
-    def _determine_url_type_id(self, url: str) -> int:
+    def _determine_url_type_id(self, url: str) -> Optional[int]:
         """
         Determines type of url based on the pattern:
 
@@ -57,7 +58,9 @@ class PlatformResponseReader:
         else:
             return None
 
-    def _get_variable_field_content(self, tag, subfield, data: Dict) -> str:
+    def _get_variable_field_content(
+        self, tag: str, subfield: str, data: Dict[str, Any]
+    ) -> List[str]:
         """
         Generator. Parses variable field subfield $a for specified MARC tag
 
@@ -76,7 +79,7 @@ class PlatformResponseReader:
                         content.append(sub["content"].strip())
         return content
 
-    def _is_deleted(self, data: Dict) -> bool:
+    def _is_deleted(self, data: Dict[str, Any]) -> bool:
         """
         Parses deleted status of the bib
 
@@ -88,7 +91,9 @@ class PlatformResponseReader:
         """
         return data["deleted"]
 
-    def _is_upgraded(self, control_number: str) -> Tuple:
+    def _is_upgraded(
+        self, control_number: str
+    ) -> Tuple[Optional[str], Optional[datetime.datetime], bool, Optional[int]]:
         wcn = self._parse_worldcat_number(control_number)
         if wcn:
             upgradeStamp = datetime.datetime.now()
@@ -101,7 +106,7 @@ class PlatformResponseReader:
 
         return (wcn, upgradeStamp, upgraded, upgradeSourceId)
 
-    def _map_data(self, data: Dict) -> Type[namedtuple]:
+    def _map_data(self, data: Dict[str, Any]) -> namedtuple:
         sbid = self._parse_bib_id(data)
         sbn = self._parse_isbns(data)
         lcn = self._parse_lccn(data)
@@ -136,7 +141,7 @@ class PlatformResponseReader:
             urls,
         )
 
-    def _parse_author(self, data: Dict) -> str:
+    def _parse_author(self, data: Dict[str, Any]) -> str:
         """
         Parses normalized author
 
@@ -148,7 +153,7 @@ class PlatformResponseReader:
         """
         return data["normAuthor"]
 
-    def _parse_bib_id(self, data: Dict) -> int:
+    def _parse_bib_id(self, data: Dict[str, Any]) -> int:
         """
         Parses Sierra bib number
 
@@ -160,7 +165,7 @@ class PlatformResponseReader:
         """
         return int(data["id"])
 
-    def _parse_control_number(self, data: Dict) -> str:
+    def _parse_control_number(self, data: Dict[str, Any]) -> str:
         """
         Parses Sierra control number (tag 001)
 
@@ -172,7 +177,7 @@ class PlatformResponseReader:
         """
         return data["controlNumber"]
 
-    def _parse_distributor_number(self, data: Dict) -> str:
+    def _parse_distributor_number(self, data: Dict[str, Any]) -> Optional[str]:
         """
         Parses distributor number (tag 037$a - repeatable but enforce one
         per record)
@@ -189,7 +194,7 @@ class PlatformResponseReader:
         else:
             return None
 
-    def _parse_isbns(self, data: Dict) -> str:
+    def _parse_isbns(self, data: Dict[str, Any]) -> Optional[str]:
         """
         Parses ISBN (tag 020)
 
@@ -205,7 +210,7 @@ class PlatformResponseReader:
         else:
             return None
 
-    def _parse_lccn(self, data: Dict) -> str:
+    def _parse_lccn(self, data: Dict[str, Any]) -> Optional[str]:
         """
         Parses LCCN from data (tag 010 - is not repeatable)
 
@@ -221,7 +226,7 @@ class PlatformResponseReader:
         else:
             return None
 
-    def _parse_publication_date(self, data: Dict) -> str:
+    def _parse_publication_date(self, data: Dict[str, Any]) -> Optional[str]:
         """
         Parses publication date
         """
@@ -231,7 +236,7 @@ class PlatformResponseReader:
         else:
             return None
 
-    def _parse_standard_numbers(self, data: Dict) -> str:
+    def _parse_standard_numbers(self, data: Dict[str, Any]) -> Optional[str]:
         """
         Parses standard number (tag 024$a)
 
@@ -247,7 +252,7 @@ class PlatformResponseReader:
         else:
             return None
 
-    def _parse_title(self, data: Dict) -> str:
+    def _parse_title(self, data: Dict[str, Any]) -> Optional[str]:
         """
         Parses normalized title (tag 245 without subfield $c)
 
@@ -263,7 +268,7 @@ class PlatformResponseReader:
         else:
             return None
 
-    def _parse_sierra_format_id(self, data: Dict) -> int:
+    def _parse_sierra_format_id(self, data: Dict[str, Any]) -> int:
         """Parses bib's sierra format"""
         try:
             mat_type = data["materialType"]["code"][0]
@@ -281,7 +286,7 @@ class PlatformResponseReader:
         else:
             return SIERRA_FORMAT["unknown"]["sfid"]
 
-    def _parse_urls(self, data: Dict) -> List[Dict]:
+    def _parse_urls(self, data: Dict) -> List[Dict[int, str]]:
         """
         Parses URLs found in MARC record
 
@@ -304,7 +309,7 @@ class PlatformResponseReader:
 
         return url_data
 
-    def _parse_worldcat_number(self, control_number: str) -> str:
+    def _parse_worldcat_number(self, control_number: str) -> Optional[str]:
         """
         Determines if control number is OCLC/Worldcat number and if
         so it returns it as pure digits number
@@ -323,7 +328,7 @@ class PlatformResponseReader:
             return None
 
 
-def split_into_batches(sbids: List[int], size: int = 50) -> List[List]:
+def split_into_batches(sbids: List[int], size: int = 50) -> List[List[int]]:
     """
     Splits list of Sierra bib numbers for querying into batches of
     desired size
@@ -354,7 +359,7 @@ def split_into_batches(sbids: List[int], size: int = 50) -> List[List]:
     return batches
 
 
-def get_access_token():
+def get_access_token() -> PlatformToken:
     try:
         token = PlatformToken(
             client_id=os.environ["platform-client-id"],
@@ -368,7 +373,7 @@ def get_access_token():
         return token
 
 
-def get_nyp_sierra_bib_data(sbids: List[int]) -> Type[namedtuple]:
+def get_nyp_sierra_bib_data(sbids: List[int]) -> Iterator[namedtuple]:
     """
     Queries NYPL Platform by Sierra bib number
 
