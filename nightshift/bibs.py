@@ -41,7 +41,7 @@ Use OCLC matching record as a base
         - add 947 $a NightShift staff
 
 """
-
+import datetime
 from io import BytesIO
 from typing import List
 
@@ -664,6 +664,32 @@ def prepare_output_record(resource: Resource) -> Record:
         raise NightShiftError("Processing of print materials not implemented yet.")
 
     return record
+
+
+def name_marc_file(library_system: int, sierraFormatId: int) -> str:
+    """
+    Names output MARC files
+
+    Args:
+        library_system:         library system: 'nyp' or 'bpl'
+        sierraFormatId:         datastore Resrouce.sierraFormatId
+
+    returns:
+        file_name
+    """
+    today = datetime.date.today().strftime("%Y%m%d")
+    if sierraFormatId == 1:
+        sform = "UNKNOWN"
+    elif sierraFormatId == 2:
+        sform = "eBook"
+    elif sierraFormatId == 3:
+        sform = "eAudio"
+    elif sierraFormatId == 4:
+        sform = "eVideo"
+    elif sierraFormatId == 5:
+        sform = "print"
+
+    return f"{library_system}-{sform}-{today}.mrc"
 
 
 def save2marc(outfile: str, record: Record) -> None:

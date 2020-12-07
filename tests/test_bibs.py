@@ -26,6 +26,7 @@ from nightshift.bibs import (
     filter_subject_headings,
     has_overdrive_access_point_tag,
     is_approved_vacabulary,
+    name_marc_file,
     parse_xml_record,
     response2pymarc,
     remove_unwanted_tags,
@@ -577,3 +578,17 @@ def test_costruct_initials_tag(arg, expectation):
     output = construct_initials_tag(arg)
     assert type(output) == pymarc.field.Field
     assert str(output) == expectation
+
+
+@pytest.mark.parametrize(
+    "arg1,arg2,expectation",
+    [
+        ("nyp", 1, "nyp-UNKNOWN-20190101.mrc"),
+        ("nyp", 2, "nyp-eBook-20190101.mrc"),
+        ("nyp", 3, "nyp-eAudio-20190101.mrc"),
+        ("nyp", 4, "nyp-eVideo-20190101.mrc"),
+        ("nyp", 5, "nyp-print-20190101.mrc"),
+    ],
+)
+def test_name_marc_file(arg1, arg2, expectation, mock_date_today):
+    assert name_marc_file(arg1, arg2) == expectation
