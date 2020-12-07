@@ -13,6 +13,7 @@ from nightshift.bibs import (
     construct_callnumber_tag,
     construct_content_url_tag,
     construct_generic_url_tags,
+    construct_initials_tag,
     construct_isbn_tags,
     construct_oclc_control_number_tag,
     construct_overdrive_access_point_tag,
@@ -564,5 +565,15 @@ def test_filter_subject_headings_bpl_other(stub_marc_bib):
 )
 def test_construct_sierra_command_tag(arg1, arg2, arg3, expectation):
     output = construct_sierra_command_tag(arg1, arg2, arg3)
+    assert type(output) == pymarc.field.Field
+    assert str(output) == expectation
+
+
+@pytest.mark.parametrize(
+    "arg,expectation",
+    [(1, "=901  \\\\$aNightShift staff"), (2, "=947  \\\\$aNightShift staff")],
+)
+def test_costruct_initials_tag(arg, expectation):
+    output = construct_initials_tag(arg)
     assert type(output) == pymarc.field.Field
     assert str(output) == expectation

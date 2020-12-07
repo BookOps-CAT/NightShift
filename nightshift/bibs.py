@@ -48,7 +48,7 @@ from typing import List
 # import xml.etree.ElementTree as ET
 
 # import pymarc
-from pymarc import Field, Record, XmlHandler, parse_xml
+from pymarc import Field, MARCWriter, Record, XmlHandler, parse_xml
 
 
 from nightshift.datastore import Resource, UrlField
@@ -382,6 +382,25 @@ def construct_content_url_tag(url: str, librarySystemId: int) -> Field:
     )
 
 
+def construct_initials_tag(librarySystemId: int) -> Field:
+    """
+    Creates 901 or 947 tag with NightShift marker
+
+    Args:                           datastore.Resrouce.librarySystemId
+
+    Returns:
+        `pymarc.field.Field` object
+    """
+
+    # NYPL
+    if librarySystemId == 1:
+        tag = "901"
+    elif librarySystemId == 2:
+        tag = "947"
+
+    return Field(tag=tag, indicators=[" ", " "], subfields=["a", "NightShift staff"])
+
+
 def construct_overdrive_access_point_tag() -> Field:
     """
     Construct 710 access point for OverDrive
@@ -608,6 +627,9 @@ def prepare_output_record(resource: Resource) -> Record:
                     construct_content_url_tag(url_data.url, url_data.librarySystemId)
                 )
 
+    # initials (901/947)
+    new_tags.append(construct_initials_tag(resource.librarySystemId))
+
     # Sierra command line (949)
     new_tags.append(
         construct_sierra_command_tag(resource.bibCategoryId, resource.librarySystemId)
@@ -642,3 +664,20 @@ def prepare_output_record(resource: Resource) -> Record:
         raise NightShiftError("Processing of print materials not implemented yet.")
 
     return record
+
+
+def save2marc(outfile: str, record: Record) -> None:
+    """
+    Appends MARC records to outfile
+
+    Args:
+        outfile:                    file path
+        record:                     MARC record as pymarc object
+    """
+    try:
+        writer = MARCWriter(open(outfile, "ab"))
+        writer.write(record)
+    except:
+        raise
+    finally:
+        writer.close()
