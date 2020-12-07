@@ -4,13 +4,13 @@
 This module includes methods to authenticate and query OCLC Worlcat
 """
 import os
-from typing import Type, Tuple
+from typing import Optional, Tuple
 import xml.etree.ElementTree as ET
 
-import bookops_worldcat
-from bookops_worldcat import WorldcatAccessToken
+from bookops_worldcat import WorldcatAccessToken, MetadataSession
 from bookops_worldcat.errors import WorldcatAuthorizationError, WorldcatSessionError
 import requests
+from requests import Response
 
 
 from . import __version__, __title__
@@ -26,11 +26,11 @@ ONS = {
 }
 
 
-def string2xml(marcxml_as_string: str) -> Type[ET.Element]:
+def string2xml(marcxml_as_string: str) -> ET.Element:
     return ET.fromstring(marcxml_as_string)
 
 
-def get_token() -> Type[bookops_worldcat.authorize.WorldcatAccessToken]:
+def get_token() -> WorldcatAccessToken:
     """
     Aquires Worldcat access token.
 
@@ -53,8 +53,8 @@ def get_token() -> Type[bookops_worldcat.authorize.WorldcatAccessToken]:
 
 
 def parse_oclcNumber_from_brief_bib_response(
-    response: Type[requests.models.Response],
-) -> str:
+    response: Response,
+) -> Optional[str]:
     """
     Parses response and returns OCLC # of the returned record
 
@@ -73,8 +73,8 @@ def parse_oclcNumber_from_brief_bib_response(
 
 
 def parse_record_from_full_bib_response(
-    response: Type[requests.models.Response],
-) -> Type[ET.Element]:
+    response: Response,
+) -> ET.Element:
     """
     Parses full record response returned by Worldcat server
 
@@ -89,9 +89,7 @@ def parse_record_from_full_bib_response(
     return record
 
 
-def search_for_brief_eresource(
-    session: Type[bookops_worldcat.metadata_api.MetadataSession], reserve_id: str
-) -> Type[requests.models.Response]:
+def search_for_brief_eresource(session: MetadataSession, reserve_id: str) -> Response:
     """
     Makes a search request to Metadata API using reserve_id phrase and returns
     OCLC number of the match.
@@ -117,9 +115,7 @@ def search_for_brief_eresource(
         raise NightShiftError(f"Worldcat eresource ({reserve_id}) search error: {exc}")
 
 
-def get_full_bib(
-    session: Type[bookops_worldcat.metadata_api.MetadataSession], oclcNumber: str
-) -> Type[requests.models.Response]:
+def get_full_bib(session: MetadataSession, oclcNumber: str) -> Response:
     """
     Retrieves full MARC XML encoded record from Worldcat based given OCLC number
 
@@ -143,7 +139,7 @@ def get_full_bib(
 
 
 def find_matching_eresource(
-    session: Type[bookops_worldcat.metadata_api.MetadataSession], reserve_id: str
+    session: MetadataSession, reserve_id: str
 ) -> Tuple[str, bytes]:
     """
 
