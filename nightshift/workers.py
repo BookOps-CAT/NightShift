@@ -4,12 +4,14 @@
 This module includes individual bot's operations
 """
 import os
-from typing import List, Type, Tuple
+from typing import List, Tuple
 
-import sqlalchemy
-import bookops_worldcat
+from sqlalchemy.orm.session import Session as DatastoreSession
+from bookops_worldcat import MetadataSession
 
 import nightshift
+from nightshift.bibs import name_marc_file, prepare_output_record, save2marc
+from nightshift.datastore import ExportFile
 from .api_nyp import get_nyp_sierra_bib_data
 
 from .export_file_parser import SierraExportReader
@@ -20,14 +22,13 @@ from .datastore_transactions import (
     retrieve_brief_records_bibnos,
     retrieve_never_queried_records,
     retrieve_records_not_queried_in_days,
+    retrieve_resources_with_new_full_bib,
     update_resource,
 )
 from .datastore_values import LIB_SYS, BIB_CAT
 
 
-def import_export_file_data(
-    fh: str, session: Type[sqlalchemy.orm.session.Session]
-) -> Type[nightshift.datastore.ExportFile]:
+def import_export_file_data(fh: str, session: DatastoreSession) -> ExportFile:
     """
     Inserts export file record to ExportFile table
 
@@ -44,9 +45,7 @@ def import_export_file_data(
     return record
 
 
-def import_platform_data(
-    bibnos: List[int], session: Type[sqlalchemy.orm.session.Session]
-):
+def import_platform_data(bibnos: List[int], session: DatastoreSession) -> None:
     """
     Queries NYPL Platform retrieving records with particular Sierra bib numbers
     and imports data to datastore
@@ -60,7 +59,7 @@ def import_platform_data(
         enhance_resource(session, data=d, library_system="nyp")
 
 
-def import_sierra_data(fh: str, session: Type[sqlalchemy.orm.session.Session]):
+def import_sierra_data(fh: str, session: DatastoreSession) -> None:
     """
     Reads content of Sierra export and imports it to data.db
 
@@ -78,7 +77,7 @@ def import_sierra_data(fh: str, session: Type[sqlalchemy.orm.session.Session]):
 
 
 def retrieve_bibnos_for_enhancement(
-    lib_sys: str, bib_cat: str, session: Type[sqlalchemy.orm.session.Session]
+    lib_sys: str, bib_cat: str, session: DatastoreSession
 ) -> List[int]:
     """
     Queries datastore and returns Sierra bib numbers (sbid) of records
@@ -102,7 +101,7 @@ def retrieve_bibnos_for_enhancement(
 
 
 def retrieve_eresource_records_for_worldcat_queries(
-    lib_sys: str, session: Type[sqlalchemy.orm.session.Session]
+    lib_sys: str, session: DatastoreSession
 ) -> Tuple[int, str]:
     """
     Retrieves library system's records of indicated age that require
@@ -138,8 +137,8 @@ def retrieve_eresource_records_for_worldcat_queries(
 def query_and_store_worldcat_eresources(
     query_data: Tuple,
     library_system: str,
-    db_session: Type[sqlalchemy.orm.session.Session],
-    wc_session: Type[bookops_worldcat.metadata_api.MetadataSession],
+    db_session: DatastoreSession,
+    wc_session: MetadataSession,
 ):
     """
     Retrieves eligible records from datastore and runs queries in Worldcat
@@ -160,3 +159,27 @@ def query_and_store_worldcat_eresources(
 
     else:
         update_resource(db_session, bibNo, library_system, "bot", None, None)
+
+
+def save_upgraded_records(
+    db_session: DatastoreSession, library_system: str, bib_category: str
+) -> None:
+    """
+    Retrieves ready/upgraded full records from datastore, manipulates them and
+    saves MARC21 records to a file
+
+    Args:
+        db_session:             sqlalchemy session
+        library_system:         library system: 'nyp' or 'bpl'
+        bib_category:           category of bibs: 'ere' (e-resources) or 'pre' (print)
+    """
+    resources = retrieve_resources_with_new_full_bib(
+        db_session, library_system, bib_category
+    )
+
+    for resource in resources:
+        marc_record = prepare_output_record(resource)
+        outfile = name_marc_file(library_system, resource.sierraFormatId)
+        save2marc(f"/temp_files/{outfile}", marc_record)
+
+        # update resource
