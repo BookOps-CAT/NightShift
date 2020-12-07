@@ -3,7 +3,7 @@ This modules contains methods for transactions with data.db
 """
 from collections import namedtuple
 import datetime
-from typing import List, Iterator, Type
+from typing import List, Iterator
 
 from sqlalchemy import func
 from sqlalchemy.orm.session import Session as DatastoreSession
@@ -114,6 +114,7 @@ def enhance_resource(
         sid=data.sid,
         wcn=data.wcn,
         deleted=data.deleted,
+        sierraFormatId=data.sierraFormatId,
         title=data.title,
         author=data.author,
         pubDate=data.pubDate,
