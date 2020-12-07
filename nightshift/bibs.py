@@ -437,6 +437,62 @@ def construct_oclc_control_number_tag(
     return Field(tag="001", data=control_number)
 
 
+def construct_sierra_command_tag(
+    sbid: int, bibCategoryId: int, librarySystemId: int
+) -> Field:
+    """
+    Creates Sierra command line tag with sierra format, load table, etc. info
+    Args:
+        sbid:                       Sierra bib number, datastore Resource sbid
+        bibCategoryId:              datastore Resource bibCategoryId
+        librarySystemId:            datastore Resource librarySystemId
+
+    Returns:
+        `pymarc.field.Field` object
+    """
+    commands = []
+    # NYPL
+    if librarySystemId == 1:
+        if bibCategoryId == 1:
+            pass
+        elif bibCategoryId == 2:
+            commands.append("b2=z")
+        elif bibCategoryId == 3:
+            commands.append("b2=n")
+        elif bibCategoryId == 4:
+            commands.append("b2=3")
+        elif bibCategoryId == 5:
+            commands.append("b2=a")
+
+        # location code
+        if bibCategoryId in (2, 3, 4):
+            commands.append(
+                "bn=ia"
+            )  # is it really needed, the loc should be already set
+
+        # bib code3
+        commands.append("b3=a")  # value for Backastage processing?
+
+    # BPL
+    elif librarySystemId == 2:
+        if bibCategoryId == 1:
+            pass
+        elif bibCategoryId == 2:
+            commands.append("b2=x")
+        elif bibCategoryId == 3:
+            commands.append("b2=z")
+        elif bibCategoryId == 4:
+            commands.append("b2=v")
+        elif bibCategoryId == 5:
+            commands.append("b2=a")
+
+    # overlay match point
+    commands.append(f"ov=.b{sbid}a")
+
+    command_str = f"*{';'.join(commands)};"
+    return Field(tag="949", indicators=[" ", " "], subfields=["a", command_str])
+
+
 def determine_material_type(bibCategoryId: int) -> str:
     """
     Maps datastore Resource bibCategoryId to more readable labels - just
@@ -455,6 +511,8 @@ def determine_material_type(bibCategoryId: int) -> str:
         material_type = "print"
     else:
         material_type = "unknown"
+        # what would be appropriate course for this type of scenario?
+        # log? raise exception?
     return material_type
 
 
@@ -549,6 +607,11 @@ def prepare_output_record(resource: Resource) -> Record:
                 new_tags.append(
                     construct_content_url_tag(url_data.url, url_data.librarySystemId)
                 )
+
+    # Sierra command line (949)
+    new_tags.append(
+        construct_sierra_command_tag(resource.bibCategoryId, resource.librarySystemId)
+    )
 
     # OverDrive reserve ID tag
     if material_type == "eresources":

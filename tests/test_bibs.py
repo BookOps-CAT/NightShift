@@ -18,6 +18,7 @@ from nightshift.bibs import (
     construct_overdrive_access_point_tag,
     construct_overdrive_control_number_tag,
     construct_overdrive_reserve_id_tag,
+    construct_sierra_command_tag,
     construct_upc_tags,
     determine_material_type,
     determine_url_label,
@@ -544,3 +545,24 @@ def test_filter_subject_headings_bpl_other(stub_marc_bib):
     output = filter_subject_headings(record, 2)
     assert type(output) is list
     assert output == []
+
+
+@pytest.mark.parametrize(
+    "arg1,arg2,arg3,expectation",
+    [
+        (999, 1, 1, "=949  \\\\$a*b3=a;ov=.b999a;"),
+        (999, 2, 1, "=949  \\\\$a*b2=z;bn=ia;b3=a;ov=.b999a;"),
+        (999, 3, 1, "=949  \\\\$a*b2=n;bn=ia;b3=a;ov=.b999a;"),
+        (999, 4, 1, "=949  \\\\$a*b2=3;bn=ia;b3=a;ov=.b999a;"),
+        (999, 5, 1, "=949  \\\\$a*b2=a;b3=a;ov=.b999a;"),
+        (999, 1, 2, "=949  \\\\$a*ov=.b999a;"),
+        (999, 2, 2, "=949  \\\\$a*b2=x;ov=.b999a;"),
+        (999, 3, 2, "=949  \\\\$a*b2=z;ov=.b999a;"),
+        (999, 4, 2, "=949  \\\\$a*b2=v;ov=.b999a;"),
+        (999, 5, 2, "=949  \\\\$a*b2=a;ov=.b999a;"),
+    ],
+)
+def test_construct_sierra_command_tag(arg1, arg2, arg3, expectation):
+    output = construct_sierra_command_tag(arg1, arg2, arg3)
+    assert type(output) == pymarc.field.Field
+    assert str(output) == expectation
