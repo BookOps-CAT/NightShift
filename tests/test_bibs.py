@@ -21,7 +21,9 @@ from nightshift.bibs import (
     construct_upc_tags,
     determine_material_type,
     determine_url_label,
+    filter_subject_headings,
     has_overdrive_access_point_tag,
+    is_approved_vocabulary,
     parse_xml_record,
     response2pymarc,
     remove_unwanted_tags,
@@ -225,9 +227,7 @@ def test_has_overdrive_access_point_tag_false(stub_marc_bib):
 def test_has_overdrive_access_point_tag_true(stub_marc_bib):
     stub_marc_bib.add_field(
         pymarc.field.Field(
-            tag="710",
-            indicators=["2", " "],
-            subfields=["a", "OverDrive, Inc."],
+            tag="710", indicators=["2", " "], subfields=["a", "OverDrive, Inc."],
         )
     )
     assert has_overdrive_access_point_tag(stub_marc_bib) is True
@@ -307,3 +307,28 @@ def test_construct_oclc_control_number_tag(arg1, arg2, expectation):
 )
 def test_determine_material_type(arg, expectation):
     assert determine_material_type(arg) == expectation
+
+
+@pytest.mark.parametrize(
+    "arg1,arg2,expectation",
+    [
+        ("gsafd", 1, True),
+        ("LCGFT", 1, True),
+        ("FAST", 1, True),
+        ("gsafd", 2, True),
+        ("LCGFT", 2, True),
+        ("FAST", 2, True),
+        ("local", 1, False),
+        ("local", 2, False),
+    ],
+)
+def test_is_approved_vocabulary(arg1, arg2, expectation):
+    assert is_approved_vocabulary(arg1, arg2) == expectation
+
+
+# def test_filter_subject_headings(stub_marc_bib):
+#     record = stub_marc_bib
+#     record.add_field(
+#         pymarc.field.Field(tag="650", indicators=[" ", "0"], subfields=["a", "LCSH"],)
+#     )
+#     filter_subject_headings(record.subjects(), 1)

@@ -55,6 +55,10 @@ from nightshift.datastore import Resource, UrlField
 from nightshift.errors import NightShiftError
 
 
+APPROVED_VOCAB = {"nyp": ["fast", "gsafd", "lcgft"], "bpl": ["fast", "gsafd", "lcgft"]}
+# lctgm?
+
+
 class NightShiftXmlHandler(XmlHandler):
     """
     Subclass of pymarc's XmlHandler that deals with single record only.
@@ -211,13 +215,7 @@ def construct_upc_tags(upcs: str) -> List[Field]:
     if upcs is not None:
         upcs = upcs.split(",")
         for upc in upcs:
-            tags.append(
-                Field(
-                    tag="024",
-                    indicators=["1", " "],
-                    subfields=["a", upc],
-                )
-            )
+            tags.append(Field(tag="024", indicators=["1", " "], subfields=["a", upc],))
     return tags
 
 
@@ -319,16 +317,10 @@ def construct_callnumber_tag(sierraFormatId: int, librarySystemId: int) -> Field
         elif sierraFormatId == 5:
             raise NightShiftError("Processing of print materials not implemented yet.")
 
-    return Field(
-        tag=tag,
-        indicators=[" ", " "],
-        subfields=["a", call_number],
-    )
+    return Field(tag=tag, indicators=[" ", " "], subfields=["a", call_number],)
 
 
-def construct_generic_url_tags(
-    url_data: List[UrlField],
-) -> List[Field]:
+def construct_generic_url_tags(url_data: List[UrlField],) -> List[Field]:
     """
     Converts datastore url records into 856 tags
 
@@ -373,9 +365,7 @@ def construct_content_url_tag(url: str, librarySystemId: int) -> Field:
         subfield_tag = "z"
 
     return Field(
-        tag="856",
-        indicators=["4", "0"],
-        subfields=["u", url, subfield_tag, label],
+        tag="856", indicators=["4", "0"], subfields=["u", url, subfield_tag, label],
     )
 
 
@@ -386,11 +376,7 @@ def construct_overdrive_access_point_tag() -> Field:
     Returns:
         `pymarc.field.Field` object
     """
-    return Field(
-        tag="710",
-        indicators=["2", " "],
-        subfields=["a", "OverDrive, Inc."],
-    )
+    return Field(tag="710", indicators=["2", " "], subfields=["a", "OverDrive, Inc."],)
 
 
 def construct_overdrive_control_number_tag(control_number: str) -> Field:
@@ -404,11 +390,7 @@ def construct_overdrive_control_number_tag(control_number: str) -> Field:
         `pymarc.field.Field` object
     """
 
-    return Field(
-        tag="019",
-        indicators=[" ", " "],
-        subfields=["a", control_number],
-    )
+    return Field(tag="019", indicators=[" ", " "], subfields=["a", control_number],)
 
 
 def construct_oclc_control_number_tag(
@@ -455,14 +437,56 @@ def determine_material_type(bibCategoryId: int) -> str:
     return material_type
 
 
-def filter_subject_headings(record: Record):
+def is_approved_vocabulary(value: str, librarySystemId: int) -> bool:
+    """
+    Checks if value of subfield $2 is part of approved by system thesauri
+
+    Args:
+        value:                      value of subfield $2 of the MARC record
+        librarySystemId:            datastore Resource librarySystemId value
+
+    Returns:
+        bool
+    """
+    found = False
+    # NYPL
+    if librarySystemId == 1:
+        for src in APPROVED_VOCAB["nyp"]:
+            if src in value.lower():
+                found = True
+                break
+    elif librarySystemId == 2:
+        for src in APPROVED_VOCAB["bpl"]:
+            if src in value.lower():
+                found = True
+                break
+    return found
+
+
+def filter_subject_headings(record: Record, librarySystemId: int) -> List[Field]:
     """
     Removes subject heading tags that are not supported by our systems
 
     Args:
         record:                     pymarc.record.Record object
+
+    Returns:
+        list of tags
     """
-    pass
+    approved_tags = []
+    subjects = record.subjects()
+    for tag in subjects:
+        # LCSH
+        if tag.indicator2 == "0":
+            approved_tags.append(tag)
+        # source specified in $2
+        elif tag.indicator2 == "7":
+            src_vocab = tag["2"]
+            if src_vocab:
+                if is_approved_vacabulary(src_vocab, librarySystemId):
+                    approved_tags.append(Field)
+
+    return approved_tags
 
 
 def prepare_output_record(resource: Resource) -> Record:
