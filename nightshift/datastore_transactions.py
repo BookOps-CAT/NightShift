@@ -1,19 +1,17 @@
 """
 This modules contains methods for transactions with data.db
 """
-import collections
+from collections import namedtuple
 import datetime
-from typing import List, Type
-import xml
-
-import nightshift
-
-
-import sqlalchemy
+from typing import List, Iterator, Type
 
 from sqlalchemy import func
+from sqlalchemy.orm.session import Session as DatastoreSession
+from sqlalchemy.sql.selectable import Alias
+
 
 from .datastore import (
+    DataAccessLayer,
     BibCategory,
     ExportFile,
     LibrarySystem,
@@ -27,7 +25,7 @@ from .datastore import (
 from .datastore_values import LIB_SYS, BIB_CAT, UPGRADE_SRC, URL_TYPE, SIERRA_FORMAT
 
 
-def calculate_date_using_days_from_today(days: int) -> Type[datetime.date]:
+def calculate_date_using_days_from_today(days: int) -> datetime.date:
     """
     Calculate date x days from today
 
@@ -40,7 +38,7 @@ def calculate_date_using_days_from_today(days: int) -> Type[datetime.date]:
     return datetime.date.today() - datetime.timedelta(days=days)
 
 
-def create_datastore(dal: Type[nightshift.datastore.DataAccessLayer]):
+def create_datastore(dal: DataAccessLayer):
     """
     Creates and prepopulates with initial data new datastore (data.db)
     Args:
@@ -66,9 +64,7 @@ def create_datastore(dal: Type[nightshift.datastore.DataAccessLayer]):
     session.close()
 
 
-def construct_url_records(
-    sbid: int, lsid: int, data: List[dict]
-) -> List[nightshift.datastore.UrlField]:
+def construct_url_records(sbid: int, lsid: int, data: List[dict]) -> UrlField:
     """
     Prepares list of url data dictionaries as datastore UrlField records
 
@@ -93,8 +89,8 @@ def construct_url_records(
 
 
 def enhance_resource(
-    session: Type[sqlalchemy.orm.session.Session],
-    data: Type[collections.namedtuple],
+    session: DatastoreSession,
+    data: namedtuple,
     library_system: str,
 ):
     """
@@ -130,7 +126,7 @@ def enhance_resource(
         setattr(instance, key, value)
 
 
-def insert(session: Type[sqlalchemy.orm.session.Session], model: object, **kwargs):
+def insert(session: DatastoreSession, model: object, **kwargs):
     """
     Inserts a record into the datastore
 
@@ -147,9 +143,7 @@ def insert(session: Type[sqlalchemy.orm.session.Session], model: object, **kwarg
     return instance
 
 
-def insert_resource(
-    session: Type[sqlalchemy.orm.session.Session], **kwargs
-) -> Type[nightshift.datastore.Resource]:
+def insert_resource(session: DatastoreSession, **kwargs) -> Resource:
     """
     Inserts to Resource table if new record or returns instance of exisitng
 
@@ -166,9 +160,7 @@ def insert_resource(
     return instance
 
 
-def insert_export_file(
-    session: Type[sqlalchemy.orm.session.Session], **kwargs
-) -> Type[nightshift.datastore.ExportFile]:
+def insert_export_file(session: DatastoreSession, **kwargs) -> ExportFile:
     """
     Inserts to ExportFile table
     """
@@ -179,15 +171,13 @@ def insert_export_file(
     return instance
 
 
-def retrieve_records(
-    session: Type[sqlalchemy.orm.session.Session], model: object, **kwargs
-) -> List:
+def retrieve_records(session: DatastoreSession, model: object, **kwargs) -> List:
     instances = session.query(model).filter_by(**kwargs).all()
     return instances
 
 
 def retrieve_brief_records_bibnos(
-    session: Type[sqlalchemy.orm.session.Session], lsid: int, bcid: int
+    session: DatastoreSession, lsid: int, bcid: int
 ) -> List[int]:
     """
     Retrieves records from datastore with matching library system id, bib category id,
@@ -217,7 +207,7 @@ def retrieve_brief_records_bibnos(
 
 
 def retrieve_never_queried_records(
-    session: Type[sqlalchemy.orm.session.Session],
+    session: DatastoreSession,
     lsid: int,
     bcid: int,
 ) -> List[Resource]:
@@ -249,8 +239,8 @@ def retrieve_never_queried_records(
 
 
 def recent_worldcat_query_records(
-    session: Type[sqlalchemy.orm.session.Session],
-) -> Type[sqlalchemy.sql.selectable.Alias]:
+    session: DatastoreSession,
+) -> Alias:
     """
     Creates a subquery with only the most recent worldcat query record
 
@@ -276,7 +266,7 @@ def recent_worldcat_query_records(
 
 
 def retrieve_records_not_queried_in_days(
-    session: Type[sqlalchemy.orm.session.Session],
+    session: DatastoreSession,
     lsid: int,
     bcid: int,
     bib_min_age: int = 0,
@@ -327,7 +317,7 @@ def retrieve_records_not_queried_in_days(
 
 
 def update_resource(
-    session: Type[sqlalchemy.orm.session.Session],
+    session: DatastoreSession,
     sbid: int,
     library_system: str,
     upgrade_src: str,
@@ -362,10 +352,10 @@ def update_resource(
 
 
 def retrieve_resources_with_new_full_bib(
-    session: Type[sqlalchemy.orm.session.Session],
+    session: DatastoreSession,
     library_system: str,
     bib_category: str,
-):
+) -> Iterator:
     lsid = LIB_SYS[library_system]["lsid"]
     bcid = BIB_CAT[bib_category]["bcid"]
 
