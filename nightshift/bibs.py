@@ -457,13 +457,13 @@ def construct_oclc_control_number_tag(
 
 
 def construct_sierra_command_tag(
-    sbid: int, bibCategoryId: int, librarySystemId: int
+    sbid: int, sierraFormatId: int, librarySystemId: int
 ) -> Field:
     """
     Creates Sierra command line tag with sierra format, load table, etc. info
     Args:
         sbid:                       Sierra bib number, datastore Resource sbid
-        bibCategoryId:              datastore Resource bibCategoryId
+        sierraFormatId:             datastore Resource sierraFormatId
         librarySystemId:            datastore Resource librarySystemId
 
     Returns:
@@ -472,19 +472,19 @@ def construct_sierra_command_tag(
     commands = []
     # NYPL
     if librarySystemId == 1:
-        if bibCategoryId == 1:
+        if sierraFormatId == 1:
             pass
-        elif bibCategoryId == 2:
+        elif sierraFormatId == 2:
             commands.append("b2=z")
-        elif bibCategoryId == 3:
+        elif sierraFormatId == 3:
             commands.append("b2=n")
-        elif bibCategoryId == 4:
+        elif sierraFormatId == 4:
             commands.append("b2=3")
-        elif bibCategoryId == 5:
+        elif sierraFormatId == 5:
             commands.append("b2=a")
 
         # location code
-        if bibCategoryId in (2, 3, 4):
+        if sierraFormatId in (2, 3, 4):
             commands.append(
                 "bn=ia"
             )  # is it really needed, the loc should be already set
@@ -494,15 +494,15 @@ def construct_sierra_command_tag(
 
     # BPL
     elif librarySystemId == 2:
-        if bibCategoryId == 1:
+        if sierraFormatId == 1:
             pass
-        elif bibCategoryId == 2:
+        elif sierraFormatId == 2:
             commands.append("b2=x")
-        elif bibCategoryId == 3:
+        elif sierraFormatId == 3:
             commands.append("b2=z")
-        elif bibCategoryId == 4:
+        elif sierraFormatId == 4:
             commands.append("b2=v")
-        elif bibCategoryId == 5:
+        elif sierraFormatId == 5:
             commands.append("b2=a")
 
     # overlay match point
@@ -524,9 +524,9 @@ def determine_material_type(bibCategoryId: int) -> str:
         material_type label
     """
 
-    if bibCategoryId in (2, 3, 4):
+    if bibCategoryId == 1:
         material_type = "eresources"
-    elif bibCategoryId == 5:
+    elif bibCategoryId == 2:
         material_type = "print"
     else:
         material_type = "unknown"
@@ -599,7 +599,7 @@ def prepare_output_record(resource: Resource) -> Record:
 
     # clean up record from data that will not be passed to the catalog
     remove_unwanted_tags(record, material_type)
-    filter_subject_headings(record)
+    filter_subject_headings(record, resource.librarySystemId)
 
     # add new tags
     new_tags = []
@@ -632,7 +632,9 @@ def prepare_output_record(resource: Resource) -> Record:
 
     # Sierra command line (949)
     new_tags.append(
-        construct_sierra_command_tag(resource.bibCategoryId, resource.librarySystemId)
+        construct_sierra_command_tag(
+            resource.sbid, resource.sierraFormatId, resource.librarySystemId
+        )
     )
 
     # OverDrive reserve ID tag
@@ -642,7 +644,7 @@ def prepare_output_record(resource: Resource) -> Record:
             new_tags.append(construct_overdrive_control_number_tag(resource.cno))
 
         # 020 tag
-        new_tags.extend(resource.sbn)
+        new_tags.extend(construct_isbn_tags(resource.sbn))
 
         # 024 tag
         new_tags.extend(construct_upc_tags(resource.sid))
@@ -658,10 +660,13 @@ def prepare_output_record(resource: Resource) -> Record:
         # 856 tags
         new_tags.extend(construct_generic_url_tags(resource.urls))
 
-    # library specific tags here
-
     elif material_type == "print":
         raise NightShiftError("Processing of print materials not implemented yet.")
+
+    # add tags to the record
+    for tag in new_tags:
+        if tag is not None:
+            record.add_ordered_field(tag)
 
     return record
 

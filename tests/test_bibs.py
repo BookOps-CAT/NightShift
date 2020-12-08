@@ -303,11 +303,8 @@ def test_construct_oclc_control_number_tag(arg1, arg2, expectation):
 @pytest.mark.parametrize(
     "arg,expectation",
     [
-        (1, "unknown"),
-        (2, "eresources"),
-        (3, "eresources"),
-        (4, "eresources"),
-        (5, "print"),
+        (1, "eresources"),
+        (2, "print"),
     ],
 )
 def test_determine_material_type(arg, expectation):
