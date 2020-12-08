@@ -12,7 +12,7 @@ from bookops_worldcat import MetadataSession
 import nightshift
 from nightshift.bibs import name_marc_file, prepare_output_record, save2marc
 from nightshift.datastore import ExportFile
-from .api_nyp import get_nyp_sierra_bib_data
+from nightshift.api_nyp import get_nyp_sierra_bib_data
 
 from .export_file_parser import SierraExportReader
 from .datastore_transactions import (
@@ -177,9 +177,10 @@ def save_upgraded_records(
         db_session, library_system, bib_category
     )
 
+    print(f"Retrieved {len(resources)} to be written to a file.")
     for resource in resources:
         marc_record = prepare_output_record(resource)
         outfile = name_marc_file(library_system, resource.sierraFormatId)
-        save2marc(f"/temp_files/{outfile}", marc_record)
+        save2marc(f"./temp_files/{outfile}", marc_record)
 
         # update resource

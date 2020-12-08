@@ -73,6 +73,7 @@ def test_import_platform_data(
     assert rec1.sid == "1111111111,2222222222"
     assert rec1.wcn is None
     assert rec1.deleted is False
+    assert rec1.sierraFormatId == 2
     assert rec1.title == "saddest words electronic resource william faulkners civil war"
     assert rec1.pubDate == "2020"
     assert rec1.author == "gorra michael"
@@ -93,6 +94,7 @@ def test_import_platform_data(
     assert rec2.sid is None
     assert rec2.wcn is None
     assert rec2.deleted is False
+    assert rec2.sierraFormatId == 2
     assert (
         rec2.title
         == "passion of the western mind electronic resource understanding the ideas that have shaped our world view"
@@ -117,6 +119,7 @@ def test_import_platform_data(
     assert rec3.sid is None
     assert rec3.wcn is None
     assert rec3.deleted is True
+    assert rec3.sierraFormatId is 1
     assert rec3.title is None
     assert rec3.pubDate is None
     assert rec3.author is None
