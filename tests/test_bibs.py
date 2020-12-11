@@ -345,6 +345,25 @@ def test_filter_subject_headings_nyp_lcsh(stub_marc_bib):
     assert str(output[0]) == "=650  \\0$aLCSH heading"
 
 
+def test_filter_subject_headings_nyp_no_duplicates(stub_marc_bib):
+    record = stub_marc_bib
+    assert "650" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="650",
+            indicators=[" ", "0"],
+            subfields=["a", "LCSH heading"],
+        )
+    )
+    assert "650" in record
+    output = filter_subject_headings(record, 1)
+    assert type(output) is list
+    assert type(output[0]) == pymarc.field.Field
+    assert str(output[0]) == "=650  \\0$aLCSH heading"
+
+    assert record.subjects() == []
+
+
 def test_filter_subject_headings_nyp_children_lcsh(stub_marc_bib):
     record = stub_marc_bib
     assert "650" not in record
@@ -461,6 +480,25 @@ def test_filter_subject_headings_bpl_lcsh(stub_marc_bib):
     assert type(output) is list
     assert type(output[0]) == pymarc.field.Field
     assert str(output[0]) == "=650  \\0$aLCSH heading"
+
+
+def test_filter_subject_headings_bpl_no_duplicates(stub_marc_bib):
+    record = stub_marc_bib
+    assert "650" not in record
+    record.add_field(
+        pymarc.field.Field(
+            tag="650",
+            indicators=[" ", "0"],
+            subfields=["a", "LCSH heading"],
+        )
+    )
+    assert "650" in record
+    output = filter_subject_headings(record, 2)
+    assert type(output) is list
+    assert type(output[0]) == pymarc.field.Field
+    assert str(output[0]) == "=650  \\0$aLCSH heading"
+
+    assert record.subjects() == []
 
 
 def test_filter_subject_headings_bpl_children_lcsh(stub_marc_bib):

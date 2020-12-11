@@ -589,6 +589,7 @@ def filter_subject_headings(record: Record, librarySystemId: int) -> List[Field]
                 if is_approved_vacabulary(src_vocab, librarySystemId):
                     approved_tags.append(tag)
 
+        record.remove_field(tag)
     return approved_tags
 
 
