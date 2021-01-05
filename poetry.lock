@@ -88,7 +88,7 @@ resolved_reference = "0a5cbf826d9d98b8d47737237a53c61f12ac456a"
 
 [[package]]
 name = "bookops-worldcat"
-version = "0.3.2"
+version = "0.3.3"
 description = "OCLC WorldCat Metadata APIs wrapper"
 category = "main"
 optional = false
@@ -582,8 +582,8 @@ black = [
 bookops-bpl-solr = []
 bookops-nypl-platform = []
 bookops-worldcat = [
-    {file = "bookops-worldcat-0.3.2.tar.gz", hash = "sha256:af2cedb0108514581b608165faa89c58acf6d716aba214b2239be8ac458561f6"},
-    {file = "bookops_worldcat-0.3.2-py3-none-any.whl", hash = "sha256:d2b23460ed36ac0e733ad958b4cb284c08c14e026ab360822d894a2bf8e97761"},
+    {file = "bookops-worldcat-0.3.3.tar.gz", hash = "sha256:1e13a4b081b77b7744d2c8d012fa5a84d9e781f2d157a85b2864deed5e460f19"},
+    {file = "bookops_worldcat-0.3.3-py3-none-any.whl", hash = "sha256:ae0e9afd6bc23ac56659395234fd080f8289034b2ed777b0c2e72229b3b8bc51"},
 ]
 certifi = [
     {file = "certifi-2020.11.8-py2.py3-none-any.whl", hash = "sha256:1f422849db327d534e3d0c5f02a263458c3955ec0aae4ff09b95f195c59f4edd"},
