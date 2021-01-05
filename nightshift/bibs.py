@@ -8,7 +8,7 @@ Use OCLC matching record as a base
 
     shared:
         - remove 020 from OCLC full bib
-        - remove 024 from OCLc full bib
+        - remove 024 from OCLC full bib (?)
         - remove 037s from OCLC full bib
         - remove local fields 019, 084, 938
         - remove subject heading tags different than LCSH, LCGN, GSAFD, FAST, (BISACSH?)
@@ -398,7 +398,7 @@ def construct_initials_tag(librarySystemId: int) -> Field:
     elif librarySystemId == 2:
         tag = "947"
 
-    return Field(tag=tag, indicators=[" ", " "], subfields=["a", "NightShift staff"])
+    return Field(tag=tag, indicators=[" ", " "], subfields=["a", "NightShift"])
 
 
 def construct_overdrive_access_point_tag() -> Field:
@@ -600,7 +600,6 @@ def prepare_output_record(resource: Resource) -> Record:
 
     # clean up record from data that will not be passed to the catalog
     remove_unwanted_tags(record, material_type)
-    filter_subject_headings(record, resource.librarySystemId)
 
     # add new tags
     new_tags = []

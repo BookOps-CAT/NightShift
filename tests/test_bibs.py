@@ -28,6 +28,7 @@ from nightshift.bibs import (
     is_approved_vacabulary,
     name_marc_file,
     parse_xml_record,
+    prepare_output_record,
     response2pymarc,
     remove_unwanted_tags,
 )
@@ -607,7 +608,7 @@ def test_construct_sierra_command_tag(arg1, arg2, arg3, expectation):
 
 @pytest.mark.parametrize(
     "arg,expectation",
-    [(1, "=901  \\\\$aNightShift staff"), (2, "=947  \\\\$aNightShift staff")],
+    [(1, "=901  \\\\$aNightShift"), (2, "=947  \\\\$aNightShift")],
 )
 def test_costruct_initials_tag(arg, expectation):
     output = construct_initials_tag(arg)
@@ -627,3 +628,68 @@ def test_costruct_initials_tag(arg, expectation):
 )
 def test_name_marc_file(arg1, arg2, expectation, mock_date_today):
     assert name_marc_file(arg1, arg2) == expectation
+
+
+def test_prepare_output_record_nypl_ebook(
+    full_resource_dataset, fake_xml_response_content
+):
+    session = full_resource_dataset
+
+    resource = session.query(Resource).filter_by(sbid=1, librarySystemId=1).one()
+    record = prepare_output_record(resource)
+
+    print(record)
+    # print(response2pymarc(fake_xml_response_content))
+
+    assert len(record.get_fields("001")) == 1
+    assert (str(record["001"])) == "=001  773692015"
+
+    assert len(record.get_fields("019")) == 1
+    assert (str(record["019"])) == "=019  \\\\$aODN1"
+
+    assert len(record.get_fields("020")) == 1
+    assert (str(record["020"])) == "=020  \\\\$a9781$q(electronic bk.)"
+
+    assert len(record.get_fields("037")) == 1
+    assert (
+        str(record["037"])
+    ) == "=037  \\\\$areserve-id-1$bOverDrive, Inc.$nhttp://www.overdrive.com"
+
+    assert len(record.get_fields("091")) == 1
+    assert str(record["091"]) == "=091  \\\\$aeNYPL Book"
+
+    assert len(record.subjects()) == 12
+
+    found = False
+    for tag in record.get_fields("710"):
+        if str(tag) == "=710  2\\$aOverDrive, Inc.":
+            found = True
+    assert found is True
+
+    # urls
+    assert len(record.get_fields("856")) == 4
+    content_tag = None
+    excerpt_tag = None
+    image_tag = None
+    thumbnail_tag = None
+    for tag in record.get_fields("856"):
+        if "content_url" in str(tag):
+            content_tag = tag
+        if "excerpt_url" in str(tag):
+            excerpt_tag = tag
+        if "image_url" in str(tag):
+            image_tag = tag
+        if "thumbnail_url" in str(tag):
+            thumbnail_tag = tag
+    assert str(content_tag) == "=856  40$uhttps://content_url$yAccess eNYPL"
+    assert str(excerpt_tag) == "=856  4\\$uhttps://excerpt_url$3Excerpt"
+    assert str(image_tag) == "=856  4\\$uhttps://image_url$3Image"
+    assert str(thumbnail_tag) == "=856  4\\$uhttps://thumbnail_url$3Thumbnail"
+
+    assert len(record.get_fields("901")) == 1
+    assert str(record["901"]) == "=901  \\\\$aNightShift"
+
+    assert len(record.get_fields("938")) == 0
+
+    assert len(record.get_fields("949")) == 1
+    assert str(record["949"]) == "=949  \\\\$a*b2=z;bn=ia;b3=a;ov=.b1a;"

@@ -420,6 +420,51 @@ def mixed_dataset(init_dataset, mock_datetime_now, fake_xml_response):
     yield session
 
 
+@pytest.fixture(scope="function")
+def full_resource_dataset(init_dataset, fake_xml_response_content):
+    session = init_dataset
+
+    # export files
+    session.add(ExportFile(handle="nyp-ere-20200101.txt"))
+    session.commit()
+
+    # nypl eBook record
+    session.add(
+        Resource(
+            sbid=1,
+            librarySystemId=1,
+            bibCategoryId=1,  # eResource
+            exportFileId=1,
+            cno="ODN1",
+            sbn="9781",
+            did="reserve-id-1",
+            wcn="773692015",
+            sierraFormatId=2,  # ebook
+            bibDate=datetime.date(2020, 9, 30),
+            title="Zendegi",
+            author="Egan, Greg",
+            upgradeStamp=datetime.date(2020, 9, 30),
+            upgradeSourceId=1,
+            urls=[
+                UrlField(librarySystemId=1, uTypeId=1, url="https://content_url"),
+                UrlField(librarySystemId=1, uTypeId=2, url="https://excerpt_url"),
+                UrlField(librarySystemId=1, uTypeId=3, url="https://image_url"),
+                UrlField(librarySystemId=1, uTypeId=4, url="https://thumbnail_url"),
+            ],
+            wqueries=[
+                WorldcatQuery(
+                    queryStamp=datetime.datetime(2020, 9, 30, 15, 0, 0),
+                    found=True,
+                    record=fake_xml_response_content,
+                )
+            ],
+        )
+    )
+    session.commit()
+
+    yield session
+
+
 """
 ====================================================
 NYPL Platform fixtures
