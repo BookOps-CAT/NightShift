@@ -75,6 +75,7 @@ class TestSolrResponseReader:
         "arg,expectation",
         [
             ({"ss_marc_tag_001": "ocn971018433"}, "ocn971018433"),
+            ({"ss_marc_tag_001": "ODN223456789"}, "ODN223456789"),
             ({}, None),
         ],
     )
@@ -84,7 +85,12 @@ class TestSolrResponseReader:
 
     @pytest.mark.parametrize(
         "arg,expectation",
-        [("ocm0001", "0001"), ("ocn0002", "0002"), ("on2222", "2222")],
+        [
+            ("ocm0001", "0001"),
+            ("ocn0002", "0002"),
+            ("on2222", "2222"),
+            ("ODN123", None),
+        ],
     )
     def test_parse_worldcat_number(self, arg, expectation, stub_bpl_solr_200_response):
         reader = SolrResponseReader(stub_bpl_solr_200_response)
@@ -240,30 +246,30 @@ class TestSolrResponseReader:
         assert meta.lcn == "111111"
         assert meta.did == "8A4A1B86-E456-48D3-99DA-DF8FAD8946F1"
         assert meta.sid == "222222,333333"
-        assert meta.wcn == "971018433"
+        assert meta.wcn is None
         assert meta.deleted is False
         assert meta.title == "reporting war : how foreign correspondents risked"
         assert meta.author == "moseley, ray, 1932-"
         assert meta.pubDate == "2017"
-        assert meta.upgradeStamp == datetime.datetime.now()
-        assert meta.upgraded is True
-        assert meta.upgradeSourceId == 2
+        assert meta.upgradeStamp is None
+        assert meta.upgraded is False
+        assert meta.upgradeSourceId is None
         assert meta.urls == [
             {
                 "uTypeId": 1,
-                "url": "https://link.overdrive.com/?websiteID=89&titleID=3151352",
+                "url": "https://link.overdrive.com/?content",
             },
             {
                 "uTypeId": 2,
-                "url": "https://samples.overdrive.com/?crid=8a4a1b86-e456-48d3-99da-df8fad8946f1&.epub-sample.overdrive.com",
+                "url": "https://samples.overdrive.com/?sample_url",
             },
             {
                 "uTypeId": 3,
-                "url": "https://img1.od-cdn.com/ImageType-100/2363-1/{8A4A1B86-E456-48D3-99DA-DF8FAD8946F1}Img100.jpg",
+                "url": "https://img1.od-cdn.com/ImageType-100/2390-1/%7B8A4A1B86-E456-48D3-99DA-DF8FAD8946F1%7DImg100.jpg",
             },
             {
                 "uTypeId": 4,
-                "url": "https://img1.od-cdn.com/ImageType-200/2363-1/{8A4A1B86-E456-48D3-99DA-DF8FAD8946F1}Img200.jpg",
+                "url": "https://img1.od-cdn.com/ImageType-200/2390-1/%7B8A4A1B86-E456-48D3-99DA-DF8FAD8946F1%7DImg200.jpg",
             },
         ]
 
@@ -279,30 +285,30 @@ def test_get_bpl_sierra_bib_data_success(
         assert meta.lcn == "111111"
         assert meta.did == "8A4A1B86-E456-48D3-99DA-DF8FAD8946F1"
         assert meta.sid == "222222,333333"
-        assert meta.wcn == "971018433"
+        assert meta.wcn is None
         assert meta.deleted is False
         assert meta.title == "reporting war : how foreign correspondents risked"
         assert meta.author == "moseley, ray, 1932-"
         assert meta.pubDate == "2017"
-        assert meta.upgradeStamp == datetime.datetime.now()
-        assert meta.upgraded is True
-        assert meta.upgradeSourceId == 2
+        assert meta.upgradeStamp is None
+        assert meta.upgraded is False
+        assert meta.upgradeSourceId is None
         assert meta.urls == [
             {
                 "uTypeId": 1,
-                "url": "https://link.overdrive.com/?websiteID=89&titleID=3151352",
+                "url": "https://link.overdrive.com/?content",
             },
             {
                 "uTypeId": 2,
-                "url": "https://samples.overdrive.com/?crid=8a4a1b86-e456-48d3-99da-df8fad8946f1&.epub-sample.overdrive.com",
+                "url": "https://samples.overdrive.com/?sample_url",
             },
             {
                 "uTypeId": 3,
-                "url": "https://img1.od-cdn.com/ImageType-100/2363-1/{8A4A1B86-E456-48D3-99DA-DF8FAD8946F1}Img100.jpg",
+                "url": "https://img1.od-cdn.com/ImageType-100/2390-1/%7B8A4A1B86-E456-48D3-99DA-DF8FAD8946F1%7DImg100.jpg",
             },
             {
                 "uTypeId": 4,
-                "url": "https://img1.od-cdn.com/ImageType-200/2363-1/{8A4A1B86-E456-48D3-99DA-DF8FAD8946F1}Img200.jpg",
+                "url": "https://img1.od-cdn.com/ImageType-200/2390-1/%7B8A4A1B86-E456-48D3-99DA-DF8FAD8946F1%7DImg200.jpg",
             },
         ]
         loop += 1

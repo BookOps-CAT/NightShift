@@ -14,6 +14,7 @@ from nightshift.workers import (
     import_sierra_data,
     import_export_file_data,
     import_platform_data,
+    import_solr_data,
     query_and_store_worldcat_eresources,
     retrieve_bibnos_for_enhancement,
     retrieve_eresource_records_for_worldcat_queries,
@@ -41,7 +42,7 @@ def test_import_sierra_data(init_dataset):
     [
         ("nyp", "ere", [22259002, 22259003]),
         ("nyp", "pre", [12345670, 12345671]),
-        ("bpl", "ere", [22345678, 22345679]),
+        ("bpl", "ere", [12014671, 22345679]),
         ("bpl", "pre", [22345670, 22345671]),
     ],
 )
@@ -128,6 +129,36 @@ def test_import_platform_data(
     assert rec3.upgradeSourceId is None
     assert rec3.urls == []
     assert rec3.wqueries == []
+
+
+def test_import_solr_data_success(
+    brief_bib_dataset, mock_keys, mock_successful_solr_session_get_request
+):
+    session = brief_bib_dataset
+    bibnos = [12014671]
+    import_solr_data(bibnos, session)
+    rec1 = session.query(Resource).filter_by(sbid=bibnos[0], librarySystemId=2).one()
+
+    # record 1
+    assert rec1.bibDate == datetime.date(2020, 9, 30)
+    assert rec1.sbn == "9780300226348,0300226349"
+    assert rec1.lcn == "111111"
+    assert rec1.did == "8A4A1B86-E456-48D3-99DA-DF8FAD8946F1"
+    assert rec1.sid == "222222,333333"
+    assert rec1.wcn is None
+    assert rec1.deleted is False
+    assert rec1.sierraFormatId == 2
+    assert rec1.title == "reporting war : how foreign correspondents risked"
+    assert rec1.pubDate == "2017"
+    assert rec1.author == "moseley, ray, 1932-"
+    assert rec1.upgradeStamp is None
+    assert rec1.upgraded is False
+    assert rec1.upgradeSourceId is None
+    assert (
+        str(rec1.urls)
+        == "[<UrlField(ufid=1, sBibId=12014671, librarySystemId=2, uTypeId=1, url='https://link.overdrive.com/?content')>, <UrlField(ufid=2, sBibId=12014671, librarySystemId=2, uTypeId=2, url='https://samples.overdrive.com/?sample_url')>, <UrlField(ufid=3, sBibId=12014671, librarySystemId=2, uTypeId=3, url='https://img1.od-cdn.com/ImageType-100/2390-1/%7B8A4A1B86-E456-48D3-99DA-DF8FAD8946F1%7DImg100.jpg')>, <UrlField(ufid=4, sBibId=12014671, librarySystemId=2, uTypeId=4, url='https://img1.od-cdn.com/ImageType-200/2390-1/%7B8A4A1B86-E456-48D3-99DA-DF8FAD8946F1%7DImg200.jpg')>]"
+    )
+    assert rec1.wqueries == []
 
 
 def test_retrieve_eresource_records_for_worldcat_queries(

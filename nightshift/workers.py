@@ -13,6 +13,7 @@ import nightshift
 from nightshift.bibs import name_marc_file, prepare_output_record, save2marc
 from nightshift.datastore import ExportFile
 from nightshift.api_nyp import get_nyp_sierra_bib_data
+from nightshift.api_bpl import get_bpl_sierra_bib_data
 
 from .export_file_parser import SierraExportReader
 from .datastore_transactions import (
@@ -51,12 +52,26 @@ def import_platform_data(bibnos: List[int], session: DatastoreSession) -> None:
     and imports data to datastore
 
     Args:
-        sbids:                  list of Sierra bib numbers without 'b' prefix and
+        bibNos:                 list of Sierra bib numbers without 'b' prefix and
                                 last digit check
     """
     datas = get_nyp_sierra_bib_data(bibnos)
     for d in datas:
         enhance_resource(session, data=d, library_system="nyp")
+
+
+def import_solr_data(bibnos: List[int], session: DatastoreSession) -> None:
+    """
+    Queries BPL Solr retrieving records with particular Sierra bib numbers
+    and imports data to datastore
+
+    Args:
+        bibNos:                 list of Sierra bib numbers without 'b' prefix and
+                                without last digit check
+    """
+    datas = get_bpl_sierra_bib_data(bibnos)
+    for d in datas:
+        enhance_resource(session, data=d, library_system="bpl")
 
 
 def import_sierra_data(fh: str, session: DatastoreSession) -> None:

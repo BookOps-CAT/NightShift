@@ -233,7 +233,7 @@ def brief_bib_dataset(init_dataset):
     # two bpl eresources
     session.add(
         Resource(
-            sbid=22345678,
+            sbid=12014671,
             librarySystemId=2,
             bibCategoryId=1,
             exportFileId=3,
