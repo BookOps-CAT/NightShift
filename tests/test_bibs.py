@@ -638,7 +638,7 @@ def test_prepare_output_record_nypl_ebook(
     resource = session.query(Resource).filter_by(sbid=1, librarySystemId=1).one()
     record = prepare_output_record(resource)
 
-    print(record)
+    # print(record)
     # print(response2pymarc(fake_xml_response_content))
 
     assert len(record.get_fields("001")) == 1
@@ -693,3 +693,70 @@ def test_prepare_output_record_nypl_ebook(
 
     assert len(record.get_fields("949")) == 1
     assert str(record["949"]) == "=949  \\\\$a*b2=z;bn=ia;b3=a;ov=.b1a;"
+
+
+def test_prepare_output_record_bpl_ebook(
+    full_resource_dataset, fake_xml_response_content
+):
+    session = full_resource_dataset
+    resource = session.query(Resource).filter_by(sbid=2, librarySystemId=2).one()
+    record = prepare_output_record(resource)
+
+    # print(record)
+    print(response2pymarc(fake_xml_response_content))
+
+    assert len(record.get_fields("001")) == 1
+    assert (str(record["001"])) == "=001  ocn773692015"
+
+    assert len(record.get_fields("019")) == 1
+    assert (str(record["019"])) == "=019  \\\\$aODN2"
+
+    assert len(record.get_fields("020")) == 1
+    assert (str(record["020"])) == "=020  \\\\$a9782$q(electronic bk.)"
+
+    assert len(record.get_fields("037")) == 1
+    assert (
+        str(record["037"])
+    ) == "=037  \\\\$areserve-id-2$bOverDrive, Inc.$nhttp://www.overdrive.com"
+
+    assert len(record.get_fields("099")) == 1
+    assert str(record["099"]) == "=099  \\\\$aeBOOK"
+
+    assert len(record.subjects()) == 11
+
+    found = False
+    for tag in record.get_fields("710"):
+        if str(tag) == "=710  2\\$aOverDrive, Inc.":
+            found = True
+    assert found is True
+
+    # urls
+    assert len(record.get_fields("856")) == 4
+    content_tag = None
+    excerpt_tag = None
+    image_tag = None
+    thumbnail_tag = None
+    for tag in record.get_fields("856"):
+        if "content_url" in str(tag):
+            content_tag = tag
+        if "excerpt_url" in str(tag):
+            excerpt_tag = tag
+        if "image_url" in str(tag):
+            image_tag = tag
+        if "thumbnail_url" in str(tag):
+            thumbnail_tag = tag
+    assert (
+        str(content_tag)
+        == "=856  40$uhttps://content_url$zAn electronic book accessible online"
+    )
+    assert str(excerpt_tag) == "=856  4\\$uhttps://excerpt_url$3Excerpt"
+    assert str(image_tag) == "=856  4\\$uhttps://image_url$3Image"
+    assert str(thumbnail_tag) == "=856  4\\$uhttps://thumbnail_url$3Thumbnail"
+
+    assert len(record.get_fields("947")) == 1
+    assert str(record["947"]) == "=947  \\\\$aNightShift"
+
+    assert len(record.get_fields("938")) == 0
+
+    assert len(record.get_fields("949")) == 1
+    assert str(record["949"]) == "=949  \\\\$a*b2=x;ov=.b2a;"
