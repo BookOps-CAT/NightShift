@@ -86,11 +86,16 @@ def mock_keys():
     os.environ["platform-client-id"] = "app_client_id"
     os.environ["platform-client-secret"] = "app_client_secret"
     os.environ["platform-oauth-server"] = "app_oauth-server"
-    os.environ["worldcat-key"] = "app_worldcat_key"
-    os.environ["worldcat-secret"] = "app_worldcat_secret"
-    os.environ["worldcat-scopes"] = "app_worldcat_scopes"
-    os.environ["worldcat-principal-id"] = "app_worldcat_principal_id"
-    os.environ["worldcat-principal-idns"] = "app_worldcat_principal_idns"
+    os.environ["nyp-worldcat-key"] = "app_worldcat_key"
+    os.environ["nyp-worldcat-secret"] = "app_worldcat_secret"
+    os.environ["nyp-worldcat-scopes"] = "app_worldcat_scopes"
+    os.environ["nyp-worldcat-principal-id"] = "app_worldcat_principal_id"
+    os.environ["nyp-worldcat-principal-idns"] = "app_worldcat_principal_idns"
+    os.environ["bpl-worldcat-key"] = "app_worldcat_key"
+    os.environ["bpl-worldcat-secret"] = "app_worldcat_secret"
+    os.environ["bpl-worldcat-scopes"] = "app_worldcat_scopes"
+    os.environ["bpl-worldcat-principal-id"] = "app_worldcat_principal_id"
+    os.environ["bpl-worldcat-principal-idns"] = "app_worldcat_principal_idns"
     os.environ["solr-client-key"] = "app_client_key"
     os.environ["solr-endpoint"] = "sorl_endpoint"
 
@@ -425,7 +430,8 @@ def full_resource_dataset(init_dataset, fake_xml_response_content):
     session = init_dataset
 
     # export files
-    session.add(ExportFile(handle="nyp-ere-20200101.txt"))
+    session.add(ExportFile(handle="nyp-ere-20200930.txt"))
+    session.add(ExportFile(handle="bpl-ere-20200930.txt"))
     session.commit()
 
     # nypl eBook record
@@ -450,6 +456,39 @@ def full_resource_dataset(init_dataset, fake_xml_response_content):
                 UrlField(librarySystemId=1, uTypeId=2, url="https://excerpt_url"),
                 UrlField(librarySystemId=1, uTypeId=3, url="https://image_url"),
                 UrlField(librarySystemId=1, uTypeId=4, url="https://thumbnail_url"),
+            ],
+            wqueries=[
+                WorldcatQuery(
+                    queryStamp=datetime.datetime(2020, 9, 30, 15, 0, 0),
+                    found=True,
+                    record=fake_xml_response_content,
+                )
+            ],
+        )
+    )
+
+    # bpl eBook record
+    session.add(
+        Resource(
+            sbid=2,
+            librarySystemId=2,
+            bibCategoryId=1,  # eResource
+            exportFileId=2,
+            cno="ODN2",
+            sbn="9782",
+            did="reserve-id-2",
+            wcn="773692015",
+            sierraFormatId=2,  # ebook
+            bibDate=datetime.date(2020, 9, 30),
+            title="Zendegi",
+            author="Egan, Greg",
+            upgradeStamp=datetime.date(2020, 9, 30),
+            upgradeSourceId=1,
+            urls=[
+                UrlField(librarySystemId=2, uTypeId=1, url="https://content_url"),
+                UrlField(librarySystemId=2, uTypeId=2, url="https://excerpt_url"),
+                UrlField(librarySystemId=2, uTypeId=3, url="https://image_url"),
+                UrlField(librarySystemId=2, uTypeId=4, url="https://thumbnail_url"),
             ],
             wqueries=[
                 WorldcatQuery(

@@ -30,20 +30,23 @@ def string2xml(marcxml_as_string: str) -> ET.Element:
     return ET.fromstring(marcxml_as_string)
 
 
-def get_token() -> WorldcatAccessToken:
+def get_token(library_system: str) -> WorldcatAccessToken:
     """
     Aquires Worldcat access token.
+
+    Args:
+        library_system:         'nyp' or "bpl"
 
     Returns:
         bookops_worldcat.authorize.WorldcatAccessToken
     """
     try:
         token = WorldcatAccessToken(
-            key=os.environ["worldcat-key"],
-            secret=os.environ["worldcat-secret"],
-            scopes=os.environ["worldcat-scopes"],
-            principal_id=os.environ["worldcat-principal-id"],
-            principal_idns=os.environ["worldcat-principal-idns"],
+            key=os.environ[f"{library_system}-worldcat-key"],
+            secret=os.environ[f"{library_system}-worldcat-secret"],
+            scopes=os.environ[f"{library_system}-worldcat-scopes"],
+            principal_id=os.environ[f"{library_system}-worldcat-principal-id"],
+            principal_idns=os.environ[f"{library_system}-worldcat-principal-idns"],
             agent=f"{__title__}/{__version__}",
         )
     except WorldcatAuthorizationError as exc:
