@@ -1,0 +1,44 @@
+[tool.poetry]
+name = "NightShift"
+version = "0.1.0"
+description = "Copy cataloging bot"
+authors = ["Tomasz Kalata <klingaroo@gmail.com>"]
+license = "MIT"
+
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pymarc = "^4.1.1"
+SQLAlchemy = "^1.4.23"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+black = "^21.8b0"
+pytest-cov = "^2.12.1"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+exclude = '''
+(
+    /(
+        \.eggs
+       | \.git
+       | \.hg
+       | \.mypy_cache
+       | \.tox
+       | \.venv
+       | _build
+       | buck-out
+       | build
+       | dist
+    )/
+    | temp.py
+)
+'''
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
