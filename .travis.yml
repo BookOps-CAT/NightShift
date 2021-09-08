@@ -1,6 +1,8 @@
 # safelist
 branches:
-  only: main
+  only: 
+    - main
+    - develop
 language: python
 python:
   - "3.9"
