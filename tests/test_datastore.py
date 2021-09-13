@@ -7,6 +7,8 @@ from nightshift.datastore import (
     OutputFile,
     Resource,
     ResourceCategory,
+    Status,
+    WorldcatQuery,
 )
 
 
@@ -65,4 +67,33 @@ def test_SourceFile_tbl_repr():
     assert (
         str(SourceFile(nid=1, libraryId=2, handle="foo.mrc", timestamp=stamp))
         == f"<SourceFile(nid='1', libraryId='2', handle='foo.mrc', timestamp='{stamp}')>"
+    )
+
+
+def test_Status_tbl_repr():
+    assert (
+        str(
+            Status(
+                nid=1,
+                name="upgraded-staff",
+                description="Upgraded inhouse by staff before bot",
+            )
+        )
+        == "<Status(nid='1', name='upgraded-staff', description='Upgraded inhouse by staff before bot')>"
+    )
+
+
+def test_WorldcatQuery_tbl_repr():
+    assert (
+        str(
+            WorldcatQuery(
+                nid=1,
+                resourceId=2,
+                libraryId=1,
+                match=False,
+                responseCode="404",
+                response=None,
+            )
+        )
+        == "<WorldcatQuery(nid='1', resourceId='2', libraryId='1', match='False', responseCode='404')>"
     )

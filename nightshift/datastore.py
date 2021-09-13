@@ -168,7 +168,7 @@ class SourceFile(Base):
 class Status(Base):
     """
     Stores different resource statuses
-    option examples: open, deleted, updated-bot, updated-staff
+    option examples: open, deleted, upgraded-bot, upgraded-staff
     """
 
     __tablename__ = "status"
@@ -198,8 +198,8 @@ class WorldcatQuery(Base):
     def __repr__(self):
         return (
             f"<WorldcatQuery(nid='{self.nid}', "
-            f"resouceId='{self.resourceId}', "
+            f"resourceId='{self.resourceId}', "
             f"libraryId='{self.libraryId}', "
-            f"match='{self.match}', ",
-            f"responseCode='{self.responseCode}')>",
+            f"match='{self.match}', "
+            f"responseCode='{self.responseCode}')>"
         )
