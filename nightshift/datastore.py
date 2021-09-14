@@ -83,7 +83,6 @@ class Resource(Base):
         Integer, ForeignKey("resource_category.nid"), nullable=False
     )
 
-    archived = Column(Boolean, default=False)
     bibDate = Column(Date)
     author = Column(String(collation="uft8"))
     title = Column(String(collation="utf8"))
@@ -93,10 +92,14 @@ class Resource(Base):
     controlNumber = Column(String)
     distributorNumber = Column(String)
     otherNumber = Column(String)
-    outputId = Column(Integer, ForeignKey("output_file.nid"))
     sourceId = Column(Integer, ForeignKey("source_file.nid"), nullable=False)
     srcFieldsToKeep = Column(PickleType)
     standardNumber = Column(String)
+
+    deleted = Column(Boolean, nullable=False, default=False)
+    deletedTimestamp = Column(DateTime)
+    oclcMatchNumber = Column(Integer)
+    outputId = Column(Integer, ForeignKey("output_file.nid"))
     status = Column(
         ENUM(
             "open",
@@ -107,8 +110,6 @@ class Resource(Base):
             name="status",
         )
     )
-
-    oclcMatchNumber = Column(Integer)
     upgradeTimestamp = Column(DateTime)
 
     queries = relationship("WorldcatQuery", cascade="all, delete-orphan")
@@ -118,7 +119,6 @@ class Resource(Base):
             f"<Resource(sierraId='{self.sierraId}', libraryId='{self.libraryId}', "
             f"sourceId='{self.sourceId}', "
             f"resourceCategoryId='{self.resourceCategoryId}', "
-            f"archived='{self.archived}', "
             f"bibDate='{self.bibDate}', "
             f"author='{self.author}', "
             f"title='{self.title}', "
@@ -128,6 +128,8 @@ class Resource(Base):
             f"standardNumber='{self.standardNumber}', "
             f"distributorNumber='{self.distributorNumber}', "
             f"status='{self.status}', "
+            f"deleted='{self.deleted}', "
+            f"deletedTimestamp='{self.deletedTimestamp}', "
             f"outputId='{self.outputId}', "
             f"oclcMatchNumber='{self.oclcMatchNumber}', "
             f"upgradeTimestamp='{self.upgradeTimestamp}')>"
