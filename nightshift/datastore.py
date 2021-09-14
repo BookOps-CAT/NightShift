@@ -22,6 +22,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -54,7 +55,7 @@ class OutputFile(Base):
     nid = Column(Integer, primary_key=True)
     libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
     handle = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.now())
+    timestamp = Column(DateTime, default=datetime.utcnow())
 
     def __repr__(self):
         return (
@@ -84,8 +85,8 @@ class Resource(Base):
 
     archived = Column(Boolean, default=False)
     bibDate = Column(Date)
-    author = Column(String(100, collation="uft8"))
-    title = Column(String(100, collation="utf8"))
+    author = Column(String(collation="uft8"))
+    title = Column(String(collation="utf8"))
     pubDate = Column(String)
 
     congressNumber = Column(String)
@@ -96,7 +97,16 @@ class Resource(Base):
     sourceId = Column(Integer, ForeignKey("source_file.nid"), nullable=False)
     srcFieldsToKeep = Column(PickleType)
     standardNumber = Column(String)
-    statusId = Column(Integer, ForeignKey("status.nid"), nullable=False)
+    status = Column(
+        ENUM(
+            "open",
+            "expired",
+            "deleted_staff",
+            "upgraded_bot",
+            "upgraded_staff",
+            name="status",
+        )
+    )
 
     oclcMatchNumber = Column(Integer)
     upgradeTimestamp = Column(DateTime)
@@ -117,7 +127,7 @@ class Resource(Base):
             f"congressNumber='{self.congressNumber}', "
             f"standardNumber='{self.standardNumber}', "
             f"distributorNumber='{self.distributorNumber}', "
-            f"statusId='{self.statusId}', "
+            f"status='{self.status}', "
             f"outputId='{self.outputId}', "
             f"oclcMatchNumber='{self.oclcMatchNumber}', "
             f"upgradeTimestamp='{self.upgradeTimestamp}')>"
@@ -154,7 +164,7 @@ class SourceFile(Base):
     nid = Column(Integer, primary_key=True)
     libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
     handle = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.now())
+    timestamp = Column(DateTime, default=datetime.utcnow())
 
     def __repr__(self):
         return (
@@ -163,22 +173,6 @@ class SourceFile(Base):
             f"handle='{self.handle}', "
             f"timestamp='{self.timestamp}')>"
         )
-
-
-class Status(Base):
-    """
-    Stores different resource statuses
-    option examples: open, deleted, upgraded-bot, upgraded-staff
-    """
-
-    __tablename__ = "status"
-
-    nid = Column(Integer, primary_key=True)
-    name = Column(String(20), unique=True)
-    description = Column(String)
-
-    def __repr__(self):
-        return f"<Status(nid='{self.nid}', name='{self.name}', description='{self.description}')>"
 
 
 class WorldcatQuery(Base):

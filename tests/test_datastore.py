@@ -7,7 +7,6 @@ from nightshift.datastore import (
     OutputFile,
     Resource,
     ResourceCategory,
-    Status,
     WorldcatQuery,
 )
 
@@ -46,12 +45,12 @@ def test_Resource_tbl_repr():
                 sourceId=5,
                 srcFieldsToKeep=None,
                 standardNumber="0005",
-                statusId=6,
+                status="open",
                 oclcMatchNumber=None,
                 upgradeTimestamp=stamp,
             )
         )
-        == f"<Resource(sierraId='1', libraryId='2', sourceId='5', resourceCategoryId='3', archived='False', bibDate='{bibDate}', author='foo', title='spam', pubDate='2021', controlNumber='0002', congressNumber='0001', standardNumber='0005', distributorNumber='0003', statusId='6', outputId='None', oclcMatchNumber='None', upgradeTimestamp='{stamp}')>"
+        == f"<Resource(sierraId='1', libraryId='2', sourceId='5', resourceCategoryId='3', archived='False', bibDate='{bibDate}', author='foo', title='spam', pubDate='2021', controlNumber='0002', congressNumber='0001', standardNumber='0005', distributorNumber='0003', status='open', outputId='None', oclcMatchNumber='None', upgradeTimestamp='{stamp}')>"
     )
 
 
@@ -67,19 +66,6 @@ def test_SourceFile_tbl_repr():
     assert (
         str(SourceFile(nid=1, libraryId=2, handle="foo.mrc", timestamp=stamp))
         == f"<SourceFile(nid='1', libraryId='2', handle='foo.mrc', timestamp='{stamp}')>"
-    )
-
-
-def test_Status_tbl_repr():
-    assert (
-        str(
-            Status(
-                nid=1,
-                name="upgraded-staff",
-                description="Upgraded inhouse by staff before bot",
-            )
-        )
-        == "<Status(nid='1', name='upgraded-staff', description='Upgraded inhouse by staff before bot')>"
     )
 
 
