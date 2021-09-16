@@ -117,3 +117,4 @@ dmypy.json
 # local
 venvcmd.sh
 temp.*
+tests/confdatabase.yaml
