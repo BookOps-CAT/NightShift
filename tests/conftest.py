@@ -29,7 +29,7 @@ def db_config():
 
 
 @pytest.fixture(scope="function")
-def test_session():
+def test_engine():
     # open test db differently on Win an Linux
     if sys.platform == "win32":
         c = db_config()
@@ -39,12 +39,18 @@ def test_session():
         engine = create_engine(
             "postgresql+psycopg2://postgres@127.0.0.1:5433/nightshiftTestDB"
         )
-        pass
+    else:
+        engine = None
+    return engine
 
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
+
+@pytest.fixture(scope="function")
+def test_session(test_engine):
+
+    Base.metadata.create_all(test_engine)
+    Session = sessionmaker(bind=test_engine)
     session = Session()
 
     yield session
     session.close()
-    Base.metadata.drop_all(engine)
+    Base.metadata.drop_all(test_engine)

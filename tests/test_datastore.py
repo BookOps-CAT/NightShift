@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from contextlib import nullcontext as does_not_raise
 from datetime import datetime
 
 from nightshift.datastore import (
@@ -84,3 +85,8 @@ def test_WorldcatQuery_tbl_repr():
         )
         == "<WorldcatQuery(nid='1', resourceId='2', libraryId='1', match='False', responseCode='404')>"
     )
+
+
+def test_datastore_connection(test_engine):
+    with does_not_raise():
+        test_engine.connect()
