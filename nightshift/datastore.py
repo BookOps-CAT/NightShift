@@ -2,11 +2,6 @@
 
 """
 NightShift's database schema.
-
-
-dialect+driver://username:password@host:port/database
-# psycopg2
-engine = create_engine('postgresql+psycopg2://scott:tiger@localhost/mydatabase', client_encoding='utf8')
 """
 from datetime import datetime
 
@@ -72,11 +67,9 @@ class Resource(Base):
     """
 
     __tablename__ = "resource"
-    __table_args__ = (
-        PrimaryKeyConstraint("sierraId", "libraryId"),
-        {},
-    )
+    __table_args__ = (UniqueConstraint("sierraId", "libraryId"),)
 
+    nid = Column(Integer, primary_key=True)
     sierraId = Column(Integer, nullable=False)
     libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
     resourceCategoryId = Column(
@@ -84,8 +77,8 @@ class Resource(Base):
     )
 
     bibDate = Column(Date)
-    author = Column(String(collation="uft8"))
-    title = Column(String(collation="utf8"))
+    author = Column(String)
+    title = Column(String)
     pubDate = Column(String)
 
     congressNumber = Column(String)
@@ -185,7 +178,7 @@ class WorldcatQuery(Base):
     __tablename__ = "worldcat_query"
 
     nid = Column(Integer, primary_key=True)
-    resourceId = Column(Integer, ForeignKey("resource.sierraId"), nullable=False)
+    resourceId = Column(Integer, ForeignKey("resource.nid"), nullable=False)
     libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
     match = Column(Boolean, nullable=False)
     responseCode = Column(Integer)
