@@ -12,12 +12,13 @@ env:
   global:
     # A different port must be used when not using the
     # default PostgreSQL:
-    - PGPORT=5433
+    - PGPORT=5434
 
 services:
   - postgresql
 
 before_install:
+  # - sudo sed -i 's/port = 5433/port = 5432' /etc/postgresql/13/main/postgresql.conf
   # Use trust instead of peer authentication:
   - >-
     sudo sed -i
@@ -38,7 +39,7 @@ install:
 
 before_script:
   # Create the test database:
-  - sudo psql -p 5433 -U postgres -c 'create database nightshiftTestDB;'
+  - sudo psql -p 5434 -U postgres -c 'create database nightshiftTestDB;'
 
 # command to run tests
 script:
