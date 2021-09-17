@@ -5,24 +5,23 @@ python:
 addons:
   postgresql: 13
   apt:
-    update: true
     packages:
       - postgresql-13
-env:
-  global:
-    # A different port must be used when not using the
-    # default PostgreSQL:
-    - PGPORT=5432
+# env:
+#   global:
+#     # A different port must be used when not using the
+#     # default PostgreSQL:
+#     - PGPORT=5432
 
 services:
   - postgresql
 
 before_install:
-  # - sudo apt-get update
-  # - sudo apt-get --yes remove postgresql\*
-  # - sudo apt-get install -y postgresql-13
-  # - sudo sed -e 's/^port.*/port = 5432/' /etc/postgresql/13/main/postgresql.conf > postgresql.conf
-  # - sudo cp /etc/postgresql/{9.6,13}/main/pg_hba.conf
+  - sudo apt-get update
+  - sudo apt-get --yes remove postgresql\*
+  - sudo apt-get install -y postgresql-13
+  - sudo sed -e 's/^port.*/port = 5432/' /etc/postgresql/13/main/postgresql.conf > postgresql.conf
+  - sudo cp /etc/postgresql/{9.6,13}/main/pg_hba.conf
   # Use trust instead of peer authentication:
   - >-
     sudo sed -i
