@@ -5,23 +5,26 @@ python:
 addons:
   postgresql: 13
   apt:
+    update: true
     packages:
       - postgresql-13
-# env:
-#   global:
-#     # A different port must be used when not using the
-#     # default PostgreSQL:
-#     - PGPORT=5432
+env:
+  global:
+    # A different port must be used when not using the
+    # default PostgreSQL:
+    - PGPORT=5432
+  jobs:
+    - DB_PORT=5433 DB_USERNAME=postgres
 
 services:
   - postgresql
 
 before_install:
-  - sudo apt-get update
-  - sudo apt-get --yes remove postgresql\*
-  - sudo apt-get install -y postgresql-13
-  - sudo sed -e 's/^port.*/port = 5432/' /etc/postgresql/13/main/postgresql.conf > postgresql.conf
-  - sudo cp /etc/postgresql/{9.6,13}/main/pg_hba.conf
+  # - sudo apt-get update
+  # - sudo apt-get --yes remove postgresql\*
+  # - sudo apt-get install -y postgresql-13
+  # - sudo sed -e 's/^port.*/port = 5432/' /etc/postgresql/13/main/postgresql.conf > postgresql.conf
+  # - sudo cp /etc/postgresql/{9.6,13}/main/pg_hba.conf
   # Use trust instead of peer authentication:
   - >-
     sudo sed -i
@@ -31,6 +34,9 @@ before_install:
   # Restart the PostgreSQL service:
   - sudo service postgresql@13-main restart
 
+before_script:
+  # Create the test database:
+  - sudo psql -p 5433 -U postgres -c 'create database nightshiftTestDB;'
 
 # command to install dependencies
 install:
@@ -39,10 +45,6 @@ install:
   - pip install pytest-mock
   - pip install pytest-cov
   - pip install coveralls
-
-before_script:
-  # Create the test database:
-  - sudo psql -p 5432 -U postgres -c 'create database nightshiftTestDB;'
 
 # command to run tests
 script:
