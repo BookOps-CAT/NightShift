@@ -7,7 +7,7 @@ services:
 
 before_script:
   # Create the test database:
-  - psql -c 'create database nightshiftTestDB;' -U postgres
+  - psql -c 'create database ns_db;' -U postgres
 
 # command to install dependencies
 install:
