@@ -32,9 +32,9 @@ def mock_db_env(monkeypatch):
     if os.getenv("TRAVIS"):
         data = dict(
             NS_DBUSER="postgres",
-            NS_DBPASSW=None,
+            NS_DBPASSW="",
             NS_DBHOST="127.0.0.1",
-            NS_DBPORT=os.getenv("PGPORT"),
+            NS_DBPORT="5433",
             NS_DBNAME="ns_db",
         )
     else:
