@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sys
-
+import os
 
 import pytest
 from sqlalchemy import create_engine
@@ -30,17 +29,14 @@ def db_config():
 
 @pytest.fixture(scope="function")
 def test_engine():
-    # open test db differently on Win an Linux
-    if sys.platform == "win32":
+    # create db engine differently on local machine or Travis
+    if os.getenv("TRAVIS"):
+        engine = create_engine(
+            "postgresql+psycopg2://postgres@127.0.0.1:5432/ns_db")
+    else:
         c = db_config()
         conn = f"postgresql+psycopg2://{c['user']}:{c['passw']}@{c['host']}:{c['port']}/{c['name']}"
         engine = create_engine(conn)
-    elif sys.platform == "linux":
-        engine = create_engine(
-            "postgresql+psycopg2://postgres@127.0.0.1:5432/ns_db"
-        )
-    else:
-        engine = None
     return engine
 
 
