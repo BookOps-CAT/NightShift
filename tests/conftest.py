@@ -31,11 +31,11 @@ def local_test_db_config():
 def mock_db_env(monkeypatch):
     if os.getenv("TRAVIS"):
         data = dict(
-            user="postgres",
-            passw=None,
-            host="127.0.0.1",
-            port=os.getenv("PGPORT"),
-            name="ns_db",
+            NS_DBUSER="postgres",
+            NS_DBPASSW=None,
+            NS_DBHOST="127.0.0.1",
+            NS_DBPORT=os.getenv("PGPORT"),
+            NS_DBNAME="ns_db",
         )
     else:
         data = local_test_db_config()
