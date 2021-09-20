@@ -32,7 +32,7 @@ def test_engine():
     # create db engine differently on local machine or Travis
     if os.getenv("TRAVIS"):
         engine = create_engine(
-            "postgresql+psycopg2://postgres@127.0.0.1:5432/ns_db")
+            "postgresql+psycopg2://postgres@127.0.0.1:5433/ns_db")
     else:
         c = db_config()
         conn = f"postgresql+psycopg2://{c['user']}:{c['passw']}@{c['host']}:{c['port']}/{c['name']}"
