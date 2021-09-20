@@ -2,14 +2,35 @@
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime
 
+from sqlalchemy import create_engine
+
 from nightshift.datastore import (
-    SourceFile,
+    conf_db,
+    DataAccessLayer,
     Library,
     OutputFile,
     Resource,
     ResourceCategory,
+    SourceFile,
     WorldcatQuery,
 )
+
+
+def test_conf_db(mock_db_env):
+    assert sorted(conf_db().keys()) == [
+        "NS_DBHOST",
+        "NS_DBNAME",
+        "NS_DBPASSW",
+        "NS_DBPORT",
+        "NS_DBUSER",
+    ]
+
+
+def test_DataAccessLayer_connect(test_connection):
+    dal = DataAccessLayer()
+    dal.conn = test_connection
+    with does_not_raise():
+        dal.connect()
 
 
 def test_Library_tbl_repr():
@@ -87,6 +108,7 @@ def test_WorldcatQuery_tbl_repr():
     )
 
 
-def test_datastore_connection(test_engine):
+def test_datastore_connection(test_connection):
     with does_not_raise():
-        test_engine.connect()
+        engine = create_engine(test_connection)
+        engine.connect()
