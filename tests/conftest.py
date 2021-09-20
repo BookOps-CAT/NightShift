@@ -48,20 +48,20 @@ def mock_db_env(monkeypatch):
 
 
 @pytest.fixture(scope="function")
-def test_engine(mock_db_env):
+def test_connection(mock_db_env):
     # create db engine differently on local machine or Travis
     if os.getenv("TRAVIS"):
         conn = f"postgresql+psycopg2://{os.getenv('NS_DBUSER')}@{os.getenv('NS_DBHOST')}:{os.getenv('NS_DBPORT')}/{os.getenv('NS_DBNAME')}"
     else:
         conn = f"postgresql+psycopg2://{os.getenv('NS_DBUSER')}:{os.getenv('NS_DBPASSW')}@{os.getenv('NS_DBHOST')}:{os.getenv('NS_DBPORT')}/{os.getenv('NS_DBNAME')}"
-    engine = create_engine(conn)
-    return engine
+    return conn
 
 
 @pytest.fixture(scope="function")
-def test_session(test_engine):
+def test_session(test_connection):
 
     # setup
+    engine = create_engine(test_connection)
     Base.metadata.create_all(test_engine)
     Session = sessionmaker(bind=test_engine)
     session = Session()
