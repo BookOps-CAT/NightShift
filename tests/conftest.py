@@ -62,12 +62,12 @@ def test_session(test_connection):
 
     # setup
     engine = create_engine(test_connection)
-    Base.metadata.create_all(test_engine)
-    Session = sessionmaker(bind=test_engine)
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
     session = Session()
 
     yield session
     session.close()
 
     # teardown
-    Base.metadata.drop_all(test_engine)
+    Base.metadata.drop_all(engine)
