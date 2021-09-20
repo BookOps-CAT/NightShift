@@ -2,14 +2,13 @@ language: python
 python:
   - "3.9"
 
-services:
-  - postgresql
-
+addons:
   postgresql: 13
   apt:
     update: true
     packages:
       - postgresql-13
+
 env:
   global:
     # A different port must be used when not using the
