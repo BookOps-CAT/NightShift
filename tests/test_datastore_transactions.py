@@ -17,6 +17,8 @@ def test_insert_or_ignore_new(test_session):
 def test_insert_or_ingore_dup(test_session):
     rec1 = insert_or_ignore(test_session, Library, code="bpl")
     test_session.commit()
+    assert rec1.nid == 1
+
     rec2 = insert_or_ignore(test_session, Library, code="bpl")
     test_session.commit()
     assert type(rec2) == Library
