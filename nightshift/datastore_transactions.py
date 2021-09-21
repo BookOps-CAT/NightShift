@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from sqlalchemy.orm import Session
 from nightshift.datastore import Resource
 
 
@@ -14,7 +13,7 @@ def insert_or_ignore(session, model, **kwargs):
         kwargs:                 new record values as dictionary
 
     Returns:
-
+        instance of inserted or duplicate record
     """
     instance = session.query(model).filter_by(**kwargs).first()
     if not instance:
@@ -25,7 +24,7 @@ def insert_or_ignore(session, model, **kwargs):
 
 def update_resource(session, sierraId, libraryId, **kwargs):
     """
-    Updates Resource record
+    Updates Resource record.
 
     Args:
         session:                sqlalchemy.Session instance
@@ -33,6 +32,8 @@ def update_resource(session, sierraId, libraryId, **kwargs):
                                 or check digit)
         libraryId:              datastore.Library.nid
         kwargs:                 Resource table values to be updated as dictionary
+    Returns:
+        instance of updated record
     """
     instance = (
         session.query(Resource).filter_by(sierraId=sierraId, libraryId=libraryId).one()
