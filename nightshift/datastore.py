@@ -6,7 +6,6 @@ NightShift's database schema.
 from contextlib import contextmanager
 from datetime import datetime
 import os
-from typing import Dict
 
 from sqlalchemy import (
     Boolean,
@@ -29,7 +28,7 @@ from sqlalchemy.orm import relationship, sessionmaker
 Base = declarative_base()
 
 
-def conf_db() -> Dict:
+def conf_db():
     """
     Retrieves db configuation from env variables
 
@@ -51,7 +50,7 @@ class DataAccessLayer:
         self.conn = f"postgresql+psycopg2://{db['NS_DBUSER']}:{db['NS_DBPASSW']}@{db['NS_DBHOST']}:{db['NS_DBPORT']}/{db['NS_DBNAME']}"
         self.engine = None
 
-    def connect(self) -> None:
+    def connect(self):
         self.engine = create_engine(self.conn)
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
