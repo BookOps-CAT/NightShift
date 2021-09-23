@@ -49,7 +49,7 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "bookops-marc"
-version = "0.1.0"
+version = "0.3.0"
 description = "A sweetened `pymarc.Record` module for extraction of data from local Sierra records."
 category = "main"
 optional = false
@@ -62,8 +62,8 @@ pymarc = "^4.1.1"
 [package.source]
 type = "git"
 url = "https://github.com/BookOps-CAT/bookops-marc.git"
-reference = "v0.2.0"
-resolved_reference = "b09f4a18e3624be9095910a11bf1eba4bc9e488f"
+reference = "0.3.0"
+resolved_reference = "4fda80344efaf4d8baca6a5a50f0a3007f87b7fa"
 
 [[package]]
 name = "click"
@@ -322,7 +322,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "21ac8d3dc8e07e34190716dbad4342f2dae1cd524832bd5ab5a69a9186e14239"
+content-hash = "b910513959ba8cc693e9c87fa4237f02e1a50e58fd2424ae8a5e4cbb21a519b2"
 
 [metadata.files]
 atomicwrites = [
