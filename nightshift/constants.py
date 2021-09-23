@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-LIBRARIES = {"nyp": 1, "bpl": 2}
+LIBRARIES = {"nyp": {"nid": 1}, "bpl": {"nid": 2}}
 RESOURCE_CATEGORIES = {
     "e_resource": {
         "nid": 1,

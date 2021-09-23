@@ -9,33 +9,16 @@ Source MARC files for e-resources will have a mix of various formats (ebooks, ea
 evideo?)
 """
 # from collections import namedtuple
-from datetime import datetime
 import pickle
-from typing import Any, Iterator, NamedTuple, Optional
+from typing import Any, Iterator
 
 from pymarc import Field
 from bookops_marc import SierraBibReader, Bib
 
 
-from .errors import NightShiftError
 from .constants import LIBRARIES, RESOURCE_CATEGORIES
-
-
-class BibInfo(NamedTuple):
-    sierraId: int
-    libraryId: int
-    resourceCategoryId: int
-    bibDate: datetime.date
-    title: str
-    author: Optional[str] = None
-    pubDate: Optional[str] = None
-    congressNumber: Optional[str] = None
-    controlNumber: Optional[str] = None
-    distributionNumber: Optional[str] = None
-    otherNumber: Optional[str] = None
-    srcFieldsToKeep: list[Field] = []
-    standardNumber: Optional[str] = None
-    status: str = "open"
+from .datastore import Resource
+from .errors import NightShiftError
 
 
 class BibReader:
@@ -67,7 +50,7 @@ class BibReader:
         self.resource_category = resource_category
         self.hide_utf8_warnings = hide_utf8_warnings
 
-    def __iter__(self) -> Iterator[BibInfo]:
+    def __iter__(self) -> Iterator[Resource]:
         with open(self.marc_fh, "rb") as marcfile:
             reader = SierraBibReader(
                 marcfile, hide_utf8_warnings=self.hide_utf8_warnings
@@ -84,46 +67,43 @@ class BibReader:
         Resource category specific MARC tags to be carried over to output records
         """
         keep = []
-        tags2keep = RESOURCE_CATEGORIES[self.resource_category][2]
-        keep.expand(bib.get_fields(*tags2keep))
+        tags2keep = RESOURCE_CATEGORIES[self.resource_category]["src_fields2keep"]
+        keep.extend(bib.get_fields(*tags2keep))
         pickled_keep = self._pickle_obj(keep)
 
         return pickled_keep
 
-    def _map_data(self, bib: Bib) -> BibInfo:
+    def _map_data(self, bib: Bib) -> Resource:
         """
         Maps selected data from bib to `datastore.Resource` table columns
         """
         sierraId = bib.sierra_bib_id_normalized()
-        libraryId = LIBRARIES[self.library]
-        resourceCategoryId = RESOURCE_CATEGORIES[self.resource_category][0]
+        libraryId = LIBRARIES[self.library]["nid"]
+        resourceCategoryId = RESOURCE_CATEGORIES[self.resource_category]["nid"]
         bibDate = bib.created_date()
         author = bib.author()
         title = bib.title()
         pubDate = bib.pubyear()
-        congressNumber = bib.lc_number()
+        congressNumber = bib.lccn()
         controlNumber = bib.control_number()
-        distributionNumber = bib.overdrive_number()
+        distributorNumber = bib.overdrive_number()
         otherNumber = bib.upc_number()
         srcFieldsToKeep = self._fields2keep(bib)
         standardNumber = bib.isbn()
-        status = "open"
 
-        bib_info = BibInfo(
-            sierraId,
-            libraryId,
-            resourceCategoryId,
-            bibDate,
-            title,
-            author,
-            pubDate,
-            congressNumber,
-            controlNumber,
-            distributionNumber,
-            otherNumber,
-            srcFieldsToKeep,
-            standardNumber,
-            status,
+        return Resource(
+            sierraId=sierraId,
+            libraryId=libraryId,
+            resourceCategoryId=resourceCategoryId,
+            bibDate=bibDate,
+            author=author,
+            title=title,
+            pubDate=pubDate,
+            congressNumber=congressNumber,
+            controlNumber=controlNumber,
+            distributorNumber=distributorNumber,
+            otherNumber=otherNumber,
+            srcFieldsToKeep=srcFieldsToKeep,
+            standardNumber=standardNumber,
+            status="open",
         )
-
-        return bib_info
