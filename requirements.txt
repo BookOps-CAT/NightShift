@@ -1,4 +1,4 @@
-bookops-marc @ git+https://github.com/BookOps-CAT/bookops-marc.git@0.3.0 ; python_version >= "3.8" and python_version < "4.0"
+bookops-marc @ git+https://github.com/BookOps-CAT/bookops-marc.git@0.4.0 ; python_version >= "3.8" and python_version < "4.0"
 greenlet==1.1.1; python_version >= "3" and python_full_version < "3.0.0" and platform_machine in "x86_64 X86_64 aarch64 AARCH64 ppc64le PPC64LE amd64 AMD64 win32 WIN32" and (python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.6.0") or python_version >= "3" and platform_machine in "x86_64 X86_64 aarch64 AARCH64 ppc64le PPC64LE amd64 AMD64 win32 WIN32" and (python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.6.0") and python_full_version >= "3.5.0"
 psycopg2==2.9.1; python_version >= "3.6"
 pymarc==4.1.1; python_version >= "3.6"
