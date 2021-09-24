@@ -16,7 +16,6 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     PickleType,
-    PrimaryKeyConstraint,
     String,
     UniqueConstraint,
 )
