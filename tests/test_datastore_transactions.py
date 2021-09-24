@@ -21,19 +21,17 @@ def test_insert_or_ingore_dup(test_session):
 
     rec2 = insert_or_ignore(test_session, Library, code="bpl")
     test_session.commit()
-    assert type(rec2) == Library
-    assert rec2.nid == 1
-    assert rec2.code == "bpl"
+    assert rec2 is None
 
 
 def test_update_resource(test_session):
     lib_rec = insert_or_ignore(test_session, Library, code="nyp")
     cat_rec = insert_or_ignore(test_session, ResourceCategory, code="ebook")
-    test_session.flush()
+    test_session.commit()
     src_rec = insert_or_ignore(
         test_session, SourceFile, libraryId=lib_rec.nid, handle="foo"
     )
-    test_session.flush()
+    test_session.commit()
 
     sierraId = 22222222
     rec1 = insert_or_ignore(
@@ -53,3 +51,10 @@ def test_update_resource(test_session):
     )
     assert rec2.nid == rec1.nid
     assert rec1.status == "expired"
+
+
+def test_update_resource_instance_does_not_exist(test_session):
+    rec = update_resource(
+        test_session, sierraId=22222222, libraryId=1, status="expired"
+    )
+    assert rec is None
