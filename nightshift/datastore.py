@@ -47,7 +47,7 @@ def conf_db():
 class DataAccessLayer:
     def __init__(self):
         db = conf_db()
-        self.conn = f"postgresql+psycopg2://{db['NS_DBUSER']}:{db['NS_DBPASSW']}@{db['NS_DBHOST']}:{db['NS_DBPORT']}/{db['NS_DBNAME']}"
+        self.conn = f"postgresql://{db['NS_DBUSER']}:{db['NS_DBPASSW']}@{db['NS_DBHOST']}:{db['NS_DBPORT']}/{db['NS_DBNAME']}"
         self.engine = None
 
     def connect(self):
