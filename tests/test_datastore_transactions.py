@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
-
 from nightshift.datastore import Library, Resource, ResourceCategory, SourceFile
 from nightshift.datastore_transactions import insert_or_ignore, update_resource
 
