@@ -1,6 +1,37 @@
 language: python
 python:
   - "3.9"
+
+addons:
+  postgresql: 13
+  apt:
+    update: true
+    packages:
+      - postgresql-13
+
+env:
+  global:
+    # A different port must be used when not using the
+    # default PostgreSQL:
+    - PGPORT=5433
+
+services:
+  - postgresql
+
+before_install:
+  # Use trust instead of peer authentication:
+  - >-
+    sudo sed -i
+    -e '/local.*peer/s/postgres/all/'
+    -e 's/peer\|md5/trust/g'
+    /etc/postgresql/13/main/pg_hba.conf
+  # Restart the PostgreSQL service:
+  - sudo service postgresql@13-main restart
+
+before_script:
+  # Create the test database:
+  - psql -c 'create database ns_db;' -U postgres
+
 # command to install dependencies
 install:
   - pip install -r requirements.txt
@@ -8,6 +39,7 @@ install:
   - pip install pytest-mock
   - pip install pytest-cov
   - pip install coveralls
+
 # command to run tests
 script:
   - pytest --cov=nightshift/

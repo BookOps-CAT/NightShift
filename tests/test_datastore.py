@@ -1,14 +1,62 @@
 # -*- coding: utf-8 -*-
+from contextlib import nullcontext as does_not_raise
 from datetime import datetime
 
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm.session import Session
+from sqlalchemy.exc import DataError
+
 from nightshift.datastore import (
-    SourceFile,
+    conf_db,
+    dal,
+    DataAccessLayer,
     Library,
     OutputFile,
     Resource,
     ResourceCategory,
+    session_scope,
+    SourceFile,
     WorldcatQuery,
 )
+
+
+def test_conf_db(mock_db_env):
+    assert sorted(conf_db().keys()) == [
+        "NS_DBHOST",
+        "NS_DBNAME",
+        "NS_DBPASSW",
+        "NS_DBPORT",
+        "NS_DBUSER",
+    ]
+
+
+def test_DataAccessLayer_connect(test_connection):
+    dal = DataAccessLayer()
+    dal.conn = test_connection
+    with does_not_raise():
+        dal.connect()
+
+
+def test_session_scope_success(test_connection, test_session):
+    dal.conn = test_connection
+    with session_scope() as session:
+        assert isinstance(session, Session)
+        session.add(Library(nid=1, code="nyp"))
+
+    # assert record was committed
+    res = test_session.query(Library).filter_by(nid=1).one()
+    assert res.code == "nyp"
+
+
+def test_session_scope_exception_rollback(test_connection, test_session):
+    dal.conn = test_connection
+    with pytest.raises(DataError):
+        with session_scope() as session:
+            session.add(Library(nid=1, code="new york public"))
+
+    res = test_session.query(Library).filter_by(nid=1).one_or_none()
+    assert res is None
 
 
 def test_Library_tbl_repr():
@@ -84,3 +132,9 @@ def test_WorldcatQuery_tbl_repr():
         )
         == "<WorldcatQuery(nid='1', resourceId='2', libraryId='1', match='False', responseCode='404')>"
     )
+
+
+def test_datastore_connection(test_connection):
+    with does_not_raise():
+        engine = create_engine(test_connection)
+        engine.connect()

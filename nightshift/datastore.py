@@ -2,17 +2,15 @@
 
 """
 NightShift's database schema.
-
-
-dialect+driver://username:password@host:port/database
-# psycopg2
-engine = create_engine('postgresql+psycopg2://scott:tiger@localhost/mydatabase', client_encoding='utf8')
 """
+from contextlib import contextmanager
 from datetime import datetime
+import os
 
 from sqlalchemy import (
     Boolean,
     Column,
+    create_engine,
     Date,
     DateTime,
     ForeignKey,
@@ -24,10 +22,58 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, sessionmaker
 
 
 Base = declarative_base()
+
+
+def conf_db():
+    """
+    Retrieves db configuation from env variables
+
+    Returns:
+        db settings as dictionary
+    """
+    return dict(
+        NS_DBUSER=os.getenv("NS_DBUSER"),
+        NS_DBPASSW=os.getenv("NS_DBPASSW"),
+        NS_DBHOST=os.getenv("NS_DBHOST"),
+        NS_DBPORT=os.getenv("NS_DBPORT"),
+        NS_DBNAME=os.getenv("NS_DBNAME"),
+    )
+
+
+class DataAccessLayer:
+    def __init__(self):
+        db = conf_db()
+        self.conn = f"postgresql://{db['NS_DBUSER']}:{db['NS_DBPASSW']}@{db['NS_DBHOST']}:{db['NS_DBPORT']}/{db['NS_DBNAME']}"
+        self.engine = None
+
+    def connect(self):
+        self.engine = create_engine(self.conn)
+        Base.metadata.create_all(self.engine)
+        self.Session = sessionmaker(bind=self.engine)
+
+
+dal = DataAccessLayer()
+
+
+@contextmanager
+def session_scope():
+    """
+    Provides a transactional scope around series of operations.
+    """
+    dal.connect()
+    session = dal.Session()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 class Library(Base):
@@ -72,11 +118,9 @@ class Resource(Base):
     """
 
     __tablename__ = "resource"
-    __table_args__ = (
-        PrimaryKeyConstraint("sierraId", "libraryId"),
-        {},
-    )
+    __table_args__ = (UniqueConstraint("sierraId", "libraryId"),)
 
+    nid = Column(Integer, primary_key=True)
     sierraId = Column(Integer, nullable=False)
     libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
     resourceCategoryId = Column(
@@ -84,8 +128,8 @@ class Resource(Base):
     )
 
     bibDate = Column(Date)
-    author = Column(String(collation="uft8"))
-    title = Column(String(collation="utf8"))
+    author = Column(String)
+    title = Column(String)
     pubDate = Column(String)
 
     congressNumber = Column(String)
@@ -185,7 +229,7 @@ class WorldcatQuery(Base):
     __tablename__ = "worldcat_query"
 
     nid = Column(Integer, primary_key=True)
-    resourceId = Column(Integer, ForeignKey("resource.sierraId"), nullable=False)
+    resourceId = Column(Integer, ForeignKey("resource.nid"), nullable=False)
     libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
     match = Column(Boolean, nullable=False)
     responseCode = Column(Integer)
