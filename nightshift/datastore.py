@@ -68,11 +68,11 @@ def session_scope():
     session = dal.Session()
     try:
         yield session
+        session.commit()
     except:
         session.rollback()
         raise
     finally:
-        session.commit()
         session.close()
 
 
