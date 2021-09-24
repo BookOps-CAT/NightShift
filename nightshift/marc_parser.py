@@ -75,7 +75,13 @@ class BibReader:
 
     def _map_data(self, bib: Bib) -> Resource:
         """
-        Maps selected data from bib to `datastore.Resource` table columns
+        Maps selected data from bib to `datastore.Resource` table columns.
+
+        Args:
+            bib:                            `bookops_marc.Bib` instance
+
+        Returns:
+            Resource:                       `datastore.Resource` instance
         """
         sierraId = bib.sierra_bib_id_normalized()
         libraryId = LIBRARIES[self.library]["nid"]
