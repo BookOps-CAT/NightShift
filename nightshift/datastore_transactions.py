@@ -15,11 +15,13 @@ def insert_or_ignore(session, model, **kwargs):
     Returns:
         instance of inserted or duplicate record
     """
-    instance = session.query(model).filter_by(**kwargs).first()
+    instance = session.query(model).filter_by(**kwargs).one_or_none()
     if not instance:
         instance = model(**kwargs)
         session.add(instance)
-    return instance
+        return instance
+    else:
+        return None
 
 
 def update_resource(session, sierraId, libraryId, **kwargs):
@@ -36,9 +38,13 @@ def update_resource(session, sierraId, libraryId, **kwargs):
         instance of updated record
     """
     instance = (
-        session.query(Resource).filter_by(sierraId=sierraId, libraryId=libraryId).one()
+        session.query(Resource)
+        .filter_by(sierraId=sierraId, libraryId=libraryId)
+        .one_or_none()
     )
     if instance:
         for key, value in kwargs.items():
             setattr(instance, key, value)
-    return instance
+            return instance
+    else:
+        return None
