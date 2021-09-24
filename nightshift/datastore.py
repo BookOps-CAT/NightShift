@@ -72,6 +72,7 @@ def session_scope():
         session.rollback()
         raise
     finally:
+        session.commit()
         session.close()
 
 
