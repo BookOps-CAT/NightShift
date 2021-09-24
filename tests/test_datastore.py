@@ -2,15 +2,20 @@
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime
 
+import pytest
 from sqlalchemy import create_engine
+from sqlalchemy.orm.session import Session
+from sqlalchemy.exc import DataError
 
 from nightshift.datastore import (
     conf_db,
+    dal,
     DataAccessLayer,
     Library,
     OutputFile,
     Resource,
     ResourceCategory,
+    session_scope,
     SourceFile,
     WorldcatQuery,
 )
@@ -31,6 +36,27 @@ def test_DataAccessLayer_connect(test_connection):
     dal.conn = test_connection
     with does_not_raise():
         dal.connect()
+
+
+def test_session_scope_success(test_connection, test_session):
+    dal.conn = test_connection
+    with session_scope() as session:
+        assert isinstance(session, Session)
+        session.add(Library(nid=1, code="nyp"))
+
+    # assert record was committed
+    res = test_session.query(Library).filter_by(nid=1).one()
+    assert res.code == "nyp"
+
+
+def test_session_scope_exception_rollback(test_connection, test_session):
+    dal.conn = test_connection
+    with pytest.raises(DataError):
+        with session_scope() as session:
+            session.add(Library(nid=1, code="new york public"))
+
+    res = test_session.query(Library).filter_by(nid=1).one_or_none()
+    assert res is None
 
 
 def test_Library_tbl_repr():
