@@ -19,7 +19,6 @@ def init_db():
     dal = DataAccessLayer()
 
     dal.engine = create_engine(dal.conn)
-    Base.metadata.drop_all(dal.engine)
     dal.connect()
     session = dal.Session()
 
