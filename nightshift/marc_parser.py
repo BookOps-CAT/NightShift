@@ -3,10 +3,9 @@
 """
 This module reads and parses MARC Sierra records (bibliographic and order data)
 to be inserted into the DB.
-
-
+In case of e-resouces only bib informatin is considered.
 Source MARC files for e-resources will have a mix of various formats (ebooks, eaudio,
-evideo?)
+evideo)
 """
 # from collections import namedtuple
 import pickle
@@ -18,7 +17,6 @@ from bookops_marc import SierraBibReader, Bib
 
 from .constants import LIBRARIES, RESOURCE_CATEGORIES
 from .datastore import Resource
-from .errors import NightShiftError
 
 
 class BibReader:
@@ -37,7 +35,7 @@ class BibReader:
         """
 
         if library not in LIBRARIES.keys():
-            raise NightShiftError("Invalid 'library' argument. Must be 'nyp' or 'bpl'.")
+            raise ValueError("Invalid 'library' argument. Must be 'nyp' or 'bpl'.")
 
         self.marc_fh = marc_fh
         self.library = library
