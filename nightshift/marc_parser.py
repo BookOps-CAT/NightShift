@@ -50,12 +50,12 @@ class BibReader:
                 resource_category = self._determine_resource_category(bib)
 
                 # skip any unmapped resource types from processing
-                if resource_category:
+                if not resource_category:
+                    continue
+                else:
                     bib_info = self._map_data(bib, resource_category)
                     yield bib_info
-                else:
                     # log a warning
-                    continue
 
     def _determine_resource_category(self, bib: Bib) -> Optional[str]:
         """

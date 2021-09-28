@@ -25,7 +25,7 @@ def test_BibReader_iterator():
     reader = BibReader("tests/nyp-ebook-sample.mrc", "nyp")
     with does_not_raise():
         for bib in reader:
-            pass
+            continue
 
 
 @pytest.mark.parametrize(
