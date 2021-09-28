@@ -55,7 +55,7 @@ class BibReader:
                     yield bib_info
                 else:
                     # log a warning
-                    pass
+                    continue
 
     def _determine_resource_category(self, bib: Bib) -> Optional[str]:
         """
