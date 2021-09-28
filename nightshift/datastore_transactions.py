@@ -3,6 +3,39 @@
 from nightshift.datastore import Resource
 
 
+def init_db():
+    """
+    Initiates the database and prepopulates needed tables
+
+    Args:
+        session:                sqlalchemy.Session instance
+    """
+    from sqlalchemy import create_engine
+
+    from .constants import LIBRARIES, RESOURCE_CATEGORIES
+    from .datastore import Base, Library, ResourceCategory, DataAccessLayer
+
+    # make sure to start from scratch
+    dal = DataAccessLayer()
+
+    dal.engine = create_engine(dal.conn)
+    Base.metadata.drop_all(dal.engine)
+    dal.connect()
+    session = dal.Session()
+
+    # recreate schema & prepopulate needed tables
+    for k, v in LIBRARIES.items():
+        session.add(Library(nid=v["nid"], code=k))
+
+    for k, v in RESOURCE_CATEGORIES.items():
+        session.add(
+            ResourceCategory(nid=v["nid"], name=k, description=v["description"]),
+        )
+
+    session.commit()
+    session.close()
+
+
 def insert_or_ignore(session, model, **kwargs):
     """
     Adds a new record to given table (model) or ignores if the same.
