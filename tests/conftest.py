@@ -29,7 +29,7 @@ def local_test_db_config():
         return data
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def mock_db_env(monkeypatch):
     if os.getenv("TRAVIS"):
         data = dict(
