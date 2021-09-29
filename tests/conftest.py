@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import os
 
 from bookops_marc import Bib
 from pymarc import Field
 import pytest
+import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import yaml
 
 from nightshift.datastore import Base
+
+
+# DB fixtures ############
 
 
 def local_test_db_config():
@@ -113,3 +118,70 @@ def stub_marc():
     )
 
     return bib
+
+
+# Worldcat fixtures ########
+
+
+class FakeUtcNow(datetime.datetime):
+    @classmethod
+    def utcnow(cls):
+        return cls(2021, 1, 1, 17, 0, 0, 0)
+
+
+@pytest.fixture
+def mock_utcnow(monkeypatch):
+    monkeypatch.setattr(datetime, "datetime", FakeUtcNow)
+
+
+class MockAuthServerResponseFailure:
+    """Simulates auth server response to failed token request"""
+
+    def __init__(self):
+        self.status_code = 401
+
+    def json(self):
+        return {
+            "code": 401,
+            "message": "Basic Authorization Header - Missing or Invalid WSKey and/or Secret",
+        }
+
+
+class MockAuthServerResponseSuccess:
+    """Simulates auth server response to successful token request"""
+
+    def __init__(self):
+        self.status_code = 200
+
+    def json(self):
+        expires_at = datetime.datetime.strftime(
+            datetime.datetime.utcnow() + datetime.timedelta(0, 1199),
+            "%Y-%m-%d %H:%M:%SZ",
+        )
+
+        return {
+            "access_token": "tk_Yebz4BpEp9dAsghA7KpWx6dYD1OZKWBlHjqW",
+            "token_type": "bearer",
+            "expires_in": "1199",
+            "principalID": "",
+            "principalIDNS": "",
+            "scopes": "scope1",
+            "contextInstitutionId": "00001",
+            "expires_at": expires_at,
+        }
+
+
+@pytest.fixture
+def mock_failed_post_token_response(monkeypatch):
+    def mock_oauth_server_response(*args, **kwargs):
+        return MockAuthServerResponseFailure()
+
+    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
+
+
+@pytest.fixture
+def mock_successful_post_token_response(mock_utcnow, monkeypatch):
+    def mock_oauth_server_response(*args, **kwargs):
+        return MockAuthServerResponseSuccess()
+
+    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
