@@ -4,7 +4,6 @@ from contextlib import nullcontext as does_not_raise
 import pytest
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.engine import reflection
 
 from nightshift.datastore import Base, Library, Resource, ResourceCategory, SourceFile
 from nightshift.datastore_transactions import (
