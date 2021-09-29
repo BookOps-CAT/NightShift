@@ -49,6 +49,16 @@ def mock_db_env(monkeypatch):
     monkeypatch.setenv("NS_DBNAME", data["NS_DBNAME"])
 
 
+@pytest.fixture
+def mock_worldcat_creds(monkeypatch):
+    for lib in ("NYP", "BPL"):
+        monkeypatch.setenv(f"WC{lib}_KEY", "lib_key")
+        monkeypatch.setenv(f"WC{lib}_SECRET", "lib_secret")
+        monkeypatch.setenv(f"WC{lib}_SCOPE", "WorldCatMetadataAPI")
+        monkeypatch.setenv(f"WC{lib}_PRINCIPALID", "lib_principal_id")
+        monkeypatch.setenv(f"WC{lib}_PRINCIPALIDNS", "lib_principal_idns")
+
+
 @pytest.fixture(scope="function")
 def test_connection(mock_db_env):
     # create db engine differently on local machine or Travis
