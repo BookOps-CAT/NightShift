@@ -11,7 +11,6 @@ evideo)
 import pickle
 from typing import Any, Iterator, Optional
 
-from pymarc import Field
 from bookops_marc import SierraBibReader, Bib
 
 
@@ -80,7 +79,7 @@ class BibReader:
     def _pickle_obj(self, obj: Any) -> bytes:
         return pickle.dumps(obj)
 
-    def _fields2keep(self, bib: Bib, resource_category: str) -> list[Field]:
+    def _fields2keep(self, bib: Bib, resource_category: str) -> bytes:
         """
         Resource category specific MARC tags to be carried over to output records
         """
