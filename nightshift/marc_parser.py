@@ -7,7 +7,7 @@ In case of e-resouces only bib informatin is considered.
 Source MARC files for e-resources will have a mix of various formats (ebooks, eaudio,
 evideo)
 """
-# from collections import namedtuple
+
 import pickle
 from typing import Any, Iterator, Optional
 
