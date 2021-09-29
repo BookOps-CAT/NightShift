@@ -20,6 +20,7 @@ pytest = "^6.2.5"
 black = "^21.8b0"
 pytest-cov = "^2.12.1"
 pytest-mock = "^3.6.1"
+mypy = "^0.910"
 
 [tool.black]
 line-length = 88
