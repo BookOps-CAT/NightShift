@@ -13,7 +13,7 @@ def init_db():
     from sqlalchemy import create_engine
 
     from .constants import LIBRARIES, RESOURCE_CATEGORIES
-    from .datastore import Base, Library, ResourceCategory, DataAccessLayer
+    from .datastore import Library, ResourceCategory, DataAccessLayer
 
     # make sure to start from scratch
     dal = DataAccessLayer()
