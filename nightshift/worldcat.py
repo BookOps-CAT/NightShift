@@ -4,10 +4,12 @@
 This module handles WorldCat Metadata API requests.
 """
 import os
+from typing import Iterator
 
 from . import __title__, __version__
 from bookops_worldcat import WorldcatAccessToken, MetadataSession
 from bookops_worldcat.errors import WorldcatAuthorizationError
+from sqlalchemy.engine import Result
 
 
 def get_credentials(library: str) -> dict:
@@ -46,3 +48,12 @@ def get_access_token(credentials: dict) -> WorldcatAccessToken:
         return access_token
     except WorldcatAuthorizationError:
         raise
+
+
+def search_worldat(
+    authorization: WorldcatAccessToken, resources: Result
+) -> Iterator[tuple]:
+    """
+    Searches Worldcat for matching records
+    """
+    pass
