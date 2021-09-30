@@ -1,9 +1,52 @@
 # -*- coding: utf-8 -*-
+from contextlib import nullcontext as does_not_raise
 
-from datetime import datetime
+import pytest
+from sqlalchemy import create_engine, inspect
+from sqlalchemy.orm import sessionmaker
 
-from nightshift.datastore import Library, Resource, ResourceCategory, SourceFile
-from nightshift.datastore_transactions import insert_or_ignore, update_resource
+from nightshift.datastore import Base, Library, Resource, ResourceCategory, SourceFile
+from nightshift.datastore_transactions import (
+    init_db,
+    insert_or_ignore,
+    update_resource,
+)
+
+
+def test_init_db(mock_db_env, test_connection):
+
+    # initiate database
+    with does_not_raise():
+        init_db()
+
+    # verify tables created and populated
+    engine = create_engine(test_connection)
+    insp = inspect(engine)
+    assert sorted(insp.get_table_names()) == sorted(
+        [
+            "library",
+            "output_file",
+            "source_file",
+            "resource",
+            "resource_category",
+            "worldcat_query",
+        ]
+    )
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    res = session.query(Library).all()
+    session.commit()
+    assert len(res) == 2
+
+    res = session.query(ResourceCategory).all()
+    assert len(res) == 9
+    session.commit()
+    session.close()
+
+    # tear db down
+    Base.metadata.drop_all(engine)
 
 
 def test_insert_or_ignore_new(test_session):
@@ -26,7 +69,7 @@ def test_insert_or_ingore_dup(test_session):
 
 def test_update_resource(test_session):
     lib_rec = insert_or_ignore(test_session, Library, code="nyp")
-    cat_rec = insert_or_ignore(test_session, ResourceCategory, code="ebook")
+    cat_rec = insert_or_ignore(test_session, ResourceCategory, name="eresource")
     test_session.commit()
     src_rec = insert_or_ignore(
         test_session, SourceFile, libraryId=lib_rec.nid, handle="foo"

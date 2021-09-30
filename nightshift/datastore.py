@@ -16,7 +16,6 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     PickleType,
-    PrimaryKeyConstraint,
     String,
     UniqueConstraint,
 )
@@ -188,13 +187,13 @@ class ResourceCategory(Base):
     __tablename__ = "resource_category"
 
     nid = Column(Integer, primary_key=True)
-    code = Column(String, unique=True)
+    name = Column(String, unique=True)
     description = Column(String)
 
     def __repr__(self):
         return (
             f"<ResourceCategory(nid='{self.nid}', "
-            f"code='{self.code}', "
+            f"name='{self.name}', "
             f"description='{self.description}')>"
         )
 

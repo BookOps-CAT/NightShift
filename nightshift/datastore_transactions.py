@@ -1,6 +1,36 @@
 # -*- coding: utf-8 -*-
 
-from nightshift.datastore import Resource
+from sqlalchemy import create_engine
+
+from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
+from nightshift.datastore import Library, Resource, ResourceCategory, DataAccessLayer
+
+
+def init_db():
+    """
+    Initiates the database and prepopulates needed tables
+
+    Args:
+        session:                sqlalchemy.Session instance
+    """
+    # make sure to start from scratch
+    dal = DataAccessLayer()
+
+    dal.engine = create_engine(dal.conn)
+    dal.connect()
+    session = dal.Session()
+
+    # recreate schema & prepopulate needed tables
+    for k, v in LIBRARIES.items():
+        session.add(Library(nid=v["nid"], code=k))
+
+    for k, v in RESOURCE_CATEGORIES.items():
+        session.add(
+            ResourceCategory(nid=v["nid"], name=k, description=v["description"]),
+        )
+
+    session.commit()
+    session.close()
 
 
 def insert_or_ignore(session, model, **kwargs):

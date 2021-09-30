@@ -105,8 +105,8 @@ def test_Resource_tbl_repr():
 
 def test_ResourceCategory_tbl_repr():
     assert (
-        str(ResourceCategory(nid=1, code="foo", description="spam"))
-        == "<ResourceCategory(nid='1', code='foo', description='spam')>"
+        str(ResourceCategory(nid=1, name="foo", description="spam"))
+        == "<ResourceCategory(nid='1', name='foo', description='spam')>"
     )
 
 
