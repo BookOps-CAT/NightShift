@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 import yaml
 
 from nightshift.datastore import Base
+from nightshift.marc_parser import BibReader
 
 
 class FakeUtcNow(datetime.datetime):
@@ -101,6 +102,9 @@ def test_session(test_connection):
     Base.metadata.drop_all(engine)
 
 
+# Bibs fixtures ##############
+
+
 @pytest.fixture
 def stub_marc():
     bib = Bib()
@@ -129,6 +133,11 @@ def stub_marc():
     )
 
     return bib
+
+
+@pytest.fixture
+def fake_BibReader():
+    return BibReader("foo.mrc", "nyp")
 
 
 # Worldcat fixtures ########

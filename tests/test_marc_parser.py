@@ -31,18 +31,18 @@ def test_BibReader_iterator():
 @pytest.mark.parametrize(
     "arg,expectation", [("ODN12345", "eresource"), ("BT12345", None)]
 )
-def test_BibReader_determine_resource_category(arg, expectation, stub_marc):
+def test_BibReader_determine_resource_category(
+    arg, expectation, stub_marc, fake_BibReader
+):
     stub_marc.add_field(Field(tag="001", data=arg))
-    reader = BibReader("foo.mrc", "nyp")
-    assert reader._determine_resource_category(stub_marc) == expectation
+    assert fake_BibReader._determine_resource_category(stub_marc) == expectation
 
 
-def test_BibReader_pickle_obj():
-    reader = BibReader("foo.mrc", "nyp")
-    assert isinstance(reader._pickle_obj(["foo"]), bytes)
+def test_BibReader_pickle_obj(fake_BibReader):
+    assert isinstance(fake_BibReader._pickle_obj(["foo"]), bytes)
 
 
-def test_BibReader_fields2keep_eresource(stub_marc):
+def test_BibReader_fields2keep_eresource(stub_marc, fake_BibReader):
     tags = [
         Field(tag="001", data="ODN12345"),
         Field(tag="020", indicators=[" ", " "], subfields=["a", "978111111111x"]),
@@ -59,8 +59,7 @@ def test_BibReader_fields2keep_eresource(stub_marc):
     for tag in tags:
         stub_marc.add_field(tag)
 
-    reader = BibReader("foo.mrc", "nyp")
-    pickled = reader._fields2keep(bib=stub_marc, resource_category="eresource")
+    pickled = fake_BibReader._fields2keep(bib=stub_marc, resource_category="eresource")
     result = pickle.loads(pickled)
     assert len(result) == 5
     assert result[0].tag == "001"
@@ -70,7 +69,7 @@ def test_BibReader_fields2keep_eresource(stub_marc):
     assert result[4].tag == "856"
 
 
-def test_BibReader_map_data_eresource(stub_marc):
+def test_BibReader_map_data_eresource(stub_marc, fake_BibReader):
     bib = stub_marc
     tags = [
         Field(tag="001", data="ODN12345"),
@@ -95,8 +94,7 @@ def test_BibReader_map_data_eresource(stub_marc):
     for tag in tags:
         bib.add_field(tag)
 
-    reader = BibReader("foo.mrc", "nyp")
-    res = reader._map_data(bib=bib, resource_category="eresource")
+    res = fake_BibReader._map_data(bib=bib, resource_category="eresource")
     assert isinstance(res, Resource)
     assert res.sierraId == "22509420"
     assert res.libraryId == 1
