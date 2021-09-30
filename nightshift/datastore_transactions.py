@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from nightshift.datastore import Resource
+from sqlalchemy import create_engine
+
+from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
+from nightshift.datastore import Library, Resource, ResourceCategory, DataAccessLayer
 
 
 def init_db():
@@ -10,11 +13,6 @@ def init_db():
     Args:
         session:                sqlalchemy.Session instance
     """
-    from sqlalchemy import create_engine
-
-    from .constants import LIBRARIES, RESOURCE_CATEGORIES
-    from .datastore import Base, Library, ResourceCategory, DataAccessLayer
-
     # make sure to start from scratch
     dal = DataAccessLayer()
 
