@@ -14,6 +14,17 @@ import yaml
 from nightshift.datastore import Base
 
 
+class FakeUtcNow(datetime.datetime):
+    @classmethod
+    def utcnow(cls):
+        return cls(2021, 1, 1, 17, 0, 0, 0)
+
+
+@pytest.fixture
+def mock_utcnow(monkeypatch):
+    monkeypatch.setattr(datetime, "datetime", FakeUtcNow)
+
+
 # DB fixtures ############
 
 
@@ -121,17 +132,6 @@ def stub_marc():
 
 
 # Worldcat fixtures ########
-
-
-class FakeUtcNow(datetime.datetime):
-    @classmethod
-    def utcnow(cls):
-        return cls(2021, 1, 1, 17, 0, 0, 0)
-
-
-@pytest.fixture
-def mock_utcnow(monkeypatch):
-    monkeypatch.setattr(datetime, "datetime", FakeUtcNow)
 
 
 class MockAuthServerResponseFailure:
