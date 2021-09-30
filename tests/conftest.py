@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 import yaml
 
 from nightshift.datastore import Base
+from nightshift.marc_parser import BibReader
 
 
 def local_test_db_config():
@@ -103,3 +104,8 @@ def stub_marc():
     )
 
     return bib
+
+
+@pytest.fixture
+def fake_BibReader():
+    return BibReader("foo.mrc", "nyp")
