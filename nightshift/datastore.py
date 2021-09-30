@@ -231,8 +231,8 @@ class WorldcatQuery(Base):
     resourceId = Column(Integer, ForeignKey("resource.nid"), nullable=False)
     libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
     match = Column(Boolean, nullable=False)
-    responseCode = Column(Integer)
     response = Column(PickleType)  # save as requests.Response object?
+    timestamp = Column(DateTime, default=datetime.now(), nullable=False)
 
     def __repr__(self):
         return (
@@ -240,5 +240,5 @@ class WorldcatQuery(Base):
             f"resourceId='{self.resourceId}', "
             f"libraryId='{self.libraryId}', "
             f"match='{self.match}', "
-            f"responseCode='{self.responseCode}')>"
+            f"timestamp='{self.timestamp}')>"
         )

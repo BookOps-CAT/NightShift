@@ -119,6 +119,7 @@ def test_SourceFile_tbl_repr():
 
 
 def test_WorldcatQuery_tbl_repr():
+    stamp = datetime.now()
     assert (
         str(
             WorldcatQuery(
@@ -126,11 +127,11 @@ def test_WorldcatQuery_tbl_repr():
                 resourceId=2,
                 libraryId=1,
                 match=False,
-                responseCode="404",
                 response=None,
+                timestamp=stamp,
             )
         )
-        == "<WorldcatQuery(nid='1', resourceId='2', libraryId='1', match='False', responseCode='404')>"
+        == f"<WorldcatQuery(nid='1', resourceId='2', libraryId='1', match='False', timestamp='{stamp}')>"
     )
 
 
