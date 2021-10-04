@@ -29,12 +29,20 @@ def test_BibReader_iterator():
 
 
 @pytest.mark.parametrize(
-    "arg,expectation", [("ODN12345", "eresource"), ("BT12345", None)]
+    "arg1,arg2,expectation",
+    [
+        ("a", "ODN12345", "ebook"),
+        ("i", "ODN12345", "eaudio"),
+        ("g", "ODN12345", "evideo"),
+        ("c", "ODN12345", None),
+        ("BT12345", None),
+    ],
 )
 def test_BibReader_determine_resource_category(
-    arg, expectation, stub_marc, fake_BibReader
+    arg1, arg2, expectation, stub_marc, fake_BibReader
 ):
-    stub_marc.add_field(Field(tag="001", data=arg))
+    stub_marc.leader = f"00000n{arg1}m a2200385Ka 4500"
+    stub_marc.add_field(Field(tag="001", data=arg2))
     assert fake_BibReader._determine_resource_category(stub_marc) == expectation
 
 
