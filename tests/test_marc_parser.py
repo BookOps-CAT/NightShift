@@ -35,7 +35,7 @@ def test_BibReader_iterator():
         ("i", "ODN12345", "eaudio"),
         ("g", "ODN12345", "evideo"),
         ("c", "ODN12345", None),
-        ("BT12345", None),
+        ("a", "BT12345", None),
     ],
 )
 def test_BibReader_determine_resource_category(
@@ -50,7 +50,10 @@ def test_BibReader_pickle_obj(fake_BibReader):
     assert isinstance(fake_BibReader._pickle_obj(["foo"]), bytes)
 
 
-def test_BibReader_fields2keep_eresource(stub_marc, fake_BibReader):
+@pytest.mark.parametrize(
+    "arg1, arg2", [("a", "ebook"), ("i", "eaudio"), ("g", "evideo")]
+)
+def test_BibReader_fields2keep_eresource(arg1, arg2, stub_marc, fake_BibReader):
     tags = [
         Field(tag="001", data="ODN12345"),
         Field(tag="020", indicators=[" ", " "], subfields=["a", "978111111111x"]),
@@ -64,10 +67,11 @@ def test_BibReader_fields2keep_eresource(stub_marc, fake_BibReader):
             subfields=["3", "Image", "u", "example.com"],
         ),
     ]
+    stub_marc.leader = f"00000n{arg1}m a2200385Ka 4500"
     for tag in tags:
         stub_marc.add_field(tag)
 
-    pickled = fake_BibReader._fields2keep(bib=stub_marc, resource_category="eresource")
+    pickled = fake_BibReader._fields2keep(bib=stub_marc, resource_category=arg2)
     result = pickle.loads(pickled)
     assert len(result) == 5
     assert result[0].tag == "001"
@@ -77,8 +81,15 @@ def test_BibReader_fields2keep_eresource(stub_marc, fake_BibReader):
     assert result[4].tag == "856"
 
 
-def test_BibReader_map_data_eresource(stub_marc, fake_BibReader):
+@pytest.mark.parametrize(
+    "arg1, arg2, expectation",
+    [("a", "ebook", 1), ("i", "eaudio", 2), ("g", "evideo", 3)],
+)
+def test_BibReader_map_data_eresource(
+    arg1, arg2, expectation, stub_marc, fake_BibReader
+):
     bib = stub_marc
+    bib.leader = f"00000n{arg1}m a2200385Ka 4500"
     tags = [
         Field(tag="001", data="ODN12345"),
         Field(tag="010", subfields=["a", "12345"]),
@@ -102,11 +113,11 @@ def test_BibReader_map_data_eresource(stub_marc, fake_BibReader):
     for tag in tags:
         bib.add_field(tag)
 
-    res = fake_BibReader._map_data(bib=bib, resource_category="eresource")
+    res = fake_BibReader._map_data(bib=bib, resource_category=arg2)
     assert isinstance(res, Resource)
     assert res.sierraId == "22509420"
     assert res.libraryId == 1
-    assert res.resourceCategoryId == 1
+    assert res.resourceCategoryId == expectation
     assert res.bibDate == date(2021, 7, 3)
     assert res.author == "Adams, John, author."
     assert res.title == "The foo /"

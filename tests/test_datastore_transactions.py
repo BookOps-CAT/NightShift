@@ -41,7 +41,7 @@ def test_init_db(mock_db_env, test_connection):
     assert len(res) == 2
 
     res = session.query(ResourceCategory).all()
-    assert len(res) == 9
+    assert len(res) == 11
     session.commit()
     session.close()
 
@@ -69,7 +69,7 @@ def test_insert_or_ingore_dup(test_session):
 
 def test_update_resource(test_session):
     lib_rec = insert_or_ignore(test_session, Library, code="nyp")
-    cat_rec = insert_or_ignore(test_session, ResourceCategory, name="eresource")
+    cat_rec = insert_or_ignore(test_session, ResourceCategory, name="ebook")
     test_session.commit()
     src_rec = insert_or_ignore(
         test_session, SourceFile, libraryId=lib_rec.nid, handle="foo"
