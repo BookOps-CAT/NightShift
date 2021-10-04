@@ -69,7 +69,15 @@ class BibReader:
         # Overdrive MarcExpress records control number starts with ODN
         control_number = bib.control_number()
         if control_number.startswith("ODN"):
-            return "eresource"
+            rec_type = bib.record_type()
+            if rec_type == "a":
+                return "ebook"
+            elif rec_type == "i":
+                return "eaudio"
+            elif rec_type == "g":
+                return "evideo"
+            else:
+                return None
         else:
             # future hook
             # determine particular resource category for print material here
