@@ -25,7 +25,7 @@ RESOURCE_CATEGORIES = {
         "description": "video digital",
         "src_tags2keep": ["001", "020", "037", "856"],
         "dst_tags2delete": ["020", "029", "037", "090", "856", "938"],
-        "query_days": [30, 90, 180],
+        "query_days": [90],
     },
     "print_eng_adult_fic": {
         "nid": 4,
