@@ -5,10 +5,18 @@ import pytest
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 
-from nightshift.datastore import Base, Library, Resource, ResourceCategory, SourceFile
+from nightshift.datastore import (
+    Base,
+    Library,
+    Resource,
+    ResourceCategory,
+    SourceFile,
+    WorldcatQuery,
+)
 from nightshift.datastore_transactions import (
     init_db,
     insert_or_ignore,
+    retrieve_new_resources,
     update_resource,
 )
 
@@ -65,6 +73,40 @@ def test_insert_or_ingore_dup(test_session):
     rec2 = insert_or_ignore(test_session, Library, code="bpl")
     test_session.commit()
     assert rec2 is None
+
+
+def test_retrieve_new_resources(test_session, test_data):
+    test_session.add(SourceFile(libraryId=1, handle="foo.mrc"))
+    test_session.commit()
+    test_session.add(
+        Resource(
+            nid=1,
+            sierraId=22222222,
+            libraryId=1,
+            resourceCategoryId=1,
+            title="TEST TITLE 1",
+            sourceId=1,
+            status="open",
+            deleted=False,
+        )
+    )
+    test_session.add(
+        Resource(
+            nid=2,
+            sierraId=22222223,
+            libraryId=1,
+            resourceCategoryId=1,
+            title="TEST TITLE 2",
+            sourceId=1,
+            status="open",
+            deleted=False,
+            queries=[WorldcatQuery(resourceId=2, libraryId=1, match=False)],
+        )
+    )
+    test_session.commit()
+
+    res = retrieve_new_resources(test_session)
+    assert res[0].nid == 1
 
 
 def test_update_resource(test_session):
