@@ -159,7 +159,8 @@ class Resource(Base):
 
     def __repr__(self):
         return (
-            f"<Resource(sierraId='{self.sierraId}', libraryId='{self.libraryId}', "
+            f"<Resource(nid='{self.nid}', "
+            f"sierraId='{self.sierraId}', libraryId='{self.libraryId}', "
             f"sourceId='{self.sourceId}', "
             f"resourceCategoryId='{self.resourceCategoryId}', "
             f"bibDate='{self.bibDate}', "
