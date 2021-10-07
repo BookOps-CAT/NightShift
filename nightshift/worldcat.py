@@ -58,21 +58,20 @@ def get_access_token(credentials: dict) -> WorldcatAccessToken:
         raise
 
 
-def worldcat_search_request(session: MetadataSession, payload: dict) -> Response:
+def is_match(response: Response) -> bool:
     """
-    Makes a request to the MetadataAPI /brief-bibs endpoint
+    Determines if Worldcat query response returned matching record
 
     Args:
-        sesssion:                   `bookops_worldcat.MetadataSession` instance
-        payload:                    query parameters as dictionary
+        response:                   `requests.Response` instance
 
-    returns:
-        `requests.Response` object
+    Returns:
+        bool
     """
-    response = session.search_brief_bibs(
-        **payload, inCatalogLanguage="eng", orderBy="mostWidelyHeld", limit=1
-    )
-    return response
+    if response.json()["numberOfRecords"] == 0:
+        return False
+    else:
+        return True
 
 
 def prep_resource_queries_payloads(resource: Resource) -> List[dict]:
@@ -99,7 +98,7 @@ def prep_resource_queries_payloads(resource: Resource) -> List[dict]:
             )
     elif resource.resourceCategoryId == 2:
         # eaudio
-        if resource.distributorId:
+        if resource.distributorNumber:
             payloads.append(
                 dict(
                     q=f"sn={resource.distributorNumber}",
@@ -141,22 +140,6 @@ def prep_resource_queries_payloads(resource: Resource) -> List[dict]:
     return payloads
 
 
-def is_match(response: Response) -> bool:
-    """
-    Determines if Worldcat query response returned matching record
-
-    Args:
-        response:                   `requests.Response` instance
-
-    Returns:
-        bool
-    """
-    if response.json()["numberOfRecords"] == 0:
-        return False
-    else:
-        return True
-
-
 def search_batch(
     library: str, resources: List[Resource]
 ) -> Iterator[Tuple[Resource, Response]]:
@@ -171,34 +154,36 @@ def search_batch(
     Yields:
         (resource, `requests.Response`)
     """
-    attempt = 3
-
-    def _request(session, payload, attempt):
-        if attempt == 0:
-            return
-        else:
-            try:
-                response = worldcat_search_request(session, payload)
-                return response
-            except WorldcatSessionError:
-                # OCLC's service can be temperamental
-                # log here, then wait? try with a new token?
-                # figure out what works the best
-                # plan for longer outages
-                time.sleep(30)
-                _request(session, payload, attempt - 1)
-
-                raise
-
     creds = get_credentials(library)
     token = get_access_token(creds)
     with MetadataSession(authorization=token) as session:
         for resource in resources:
             payloads = prep_resource_queries_payloads(resource)
             for payload in payloads:
-                response = _request(session, payload, attempt)
-                if response and is_match(response):
+                try:
+                    response = worldcat_search_request(session, payload)
+                except WorldcatSessionError:
+                    raise
+
+                if is_match(response):
                     break
                 else:
                     response = None
             yield (resource, response)
+
+
+def worldcat_search_request(session: MetadataSession, payload: dict) -> Response:
+    """
+    Makes a request to the MetadataAPI /brief-bibs endpoint
+
+    Args:
+        sesssion:                   `bookops_worldcat.MetadataSession` instance
+        payload:                    query parameters as dictionary
+
+    returns:
+        `requests.Response` object
+    """
+    response = session.search_brief_bibs(
+        **payload, inCatalogLanguage="eng", orderBy="mostWidelyHeld", limit=1
+    )
+    return response

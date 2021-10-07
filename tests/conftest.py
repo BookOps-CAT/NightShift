@@ -4,6 +4,7 @@ import datetime
 import os
 
 from bookops_marc import Bib
+from bookops_worldcat import WorldcatAccessToken, MetadataSession
 from pymarc import Field
 import pytest
 import requests
@@ -13,7 +14,7 @@ import yaml
 
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import Base, Library, ResourceCategory
-from nightshift.marc_parser import BibReader
+from nightshift.marc.marc_parser import BibReader
 
 
 class FakeUtcNow(datetime.datetime):
@@ -42,7 +43,7 @@ def local_test_db_config():
     NS_DBPORT: 5432
     NS_DBNAME: ns_db
     """
-    with open("tests/confdatabase.yaml", "r") as f:
+    with open("tests/envar.yaml", "r") as f:
         data = yaml.safe_load(f)
         return data
 
@@ -182,6 +183,11 @@ class MockAuthServerResponseSuccess:
         }
 
 
+class MockSuccessfulHTTP200SessionResponse:
+    def __init__(self):
+        self.status_code = 200
+
+
 @pytest.fixture
 def mock_worldcat_creds(monkeypatch):
     for lib in ("NYP", "BPL"):
@@ -206,3 +212,29 @@ def mock_successful_post_token_response(mock_utcnow, monkeypatch):
         return MockAuthServerResponseSuccess()
 
     monkeypatch.setattr(requests, "post", mock_oauth_server_response)
+
+
+@pytest.fixture
+def mock_successful_session_get_request(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return MockSuccessfulHTTP200SessionResponse()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def mock_token(mock_worldcat_creds, mock_successful_post_token_response):
+    mock_credentials = dict(
+        key=os.getenv("WCNYP_KEY"),
+        secret=os.getenv("WCNYP_SECRET"),
+        scopes="WorldCatMetadataAPI",
+        principal_id=os.getenv("WCNYP_PRINCIPALID"),
+        principal_idns=os.getenv("WCNYP_PRINCIPALIDNS"),
+    )
+    return WorldcatAccessToken(**mock_credentials)
+
+
+@pytest.fixture
+def mock_worldcat_session(mock_token):
+    with MetadataSession(authorization=mock_token) as session:
+        yield session
