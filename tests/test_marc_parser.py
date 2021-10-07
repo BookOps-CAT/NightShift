@@ -7,7 +7,7 @@ from pymarc import Field
 import pytest
 
 from nightshift.datastore import Resource
-from nightshift.marc_parser import BibReader
+from nightshift.marc.marc_parser import BibReader
 
 
 @pytest.mark.parametrize("arg", ["nyp", "bpl"])
