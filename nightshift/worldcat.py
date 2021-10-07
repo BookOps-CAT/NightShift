@@ -174,7 +174,7 @@ def search_batch(
 
 def worldcat_search_request(session: MetadataSession, payload: dict) -> Response:
     """
-    Makes a request to the MetadataAPI /brief-bibs endpoint
+    Makes a request to OCLC Metadata service /brief-bibs endpoint
 
     Args:
         sesssion:                   `bookops_worldcat.MetadataSession` instance
@@ -187,3 +187,17 @@ def worldcat_search_request(session: MetadataSession, payload: dict) -> Response
         **payload, inCatalogLanguage="eng", orderBy="mostWidelyHeld", limit=1
     )
     return response
+
+
+def worldcat_full_bib_request(session: MetadataSession, oclcNumber: str) -> Response:
+    """
+    Makes a request to OCLC Metadata service to retrieve full record
+
+    Args:
+        session:                    `bookops_worldcat.MetadataSession` instance
+        oclcNumber:                 OCLC record number
+
+    Response:
+        `requests.Response` object
+    """
+    pass
