@@ -5,6 +5,7 @@ import os
 
 from bookops_marc import Bib
 from bookops_worldcat import WorldcatAccessToken, MetadataSession
+from bookops_worldcat.errors import WorldcatSessionError
 from pymarc import Field
 import pytest
 import requests
@@ -187,6 +188,49 @@ class MockSuccessfulHTTP200SessionResponse:
     def __init__(self):
         self.status_code = 200
 
+    def json(self):
+        return {
+            "numberOfRecords": 1,
+            "briefRecords": [
+                {
+                    "oclcNumber": "44959645",
+                    "title": "Pride and prejudice.",
+                    "creator": "Jane Austen",
+                    "date": "199u",
+                    "language": "eng",
+                    "generalFormat": "Book",
+                    "specificFormat": "Digital",
+                    "publisher": "Project Gutenberg",
+                    "publicationPlace": "Champaign, Ill.",
+                    "isbns": [
+                        "9780585013367",
+                    ],
+                    "mergedOclcNumbers": ["818363152"],
+                    "catalogingInfo": {
+                        "catalogingAgency": "DLC",
+                        "transcribingAgency": "DLC",
+                        "catalogingLanguage": "eng",
+                        "levelOfCataloging": "8",
+                    },
+                }
+            ],
+        }
+
+
+class MockSuccessfulHTTP200SessionResponseNoMatches:
+    def __init__(self):
+        self.status_code = 200
+
+    def json(self):
+        return {
+            "numberOfRecords": 0,
+        }
+
+
+class MockSessionError:
+    def __init__(self, *args, **kwargs):
+        raise WorldcatSessionError
+
 
 @pytest.fixture
 def mock_worldcat_creds(monkeypatch):
@@ -220,6 +264,19 @@ def mock_successful_session_get_request(monkeypatch):
         return MockSuccessfulHTTP200SessionResponse()
 
     monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def mock_successful_session_get_request_no_matches(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return MockSuccessfulHTTP200SessionResponseNoMatches()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def mock_session_error(monkeypatch):
+    monkeypatch.setattr("requests.Session.get", MockSessionError)
 
 
 @pytest.fixture

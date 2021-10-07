@@ -1,14 +1,21 @@
 # -*- coding: utf-8 -*-
 import pytest
 
-from bookops_worldcat.errors import WorldcatAuthorizationError
+from .conftest import (
+    MockSuccessfulHTTP200SessionResponseNoMatches,
+    MockSuccessfulHTTP200SessionResponse,
+)
+
+from bookops_worldcat.errors import WorldcatAuthorizationError, WorldcatSessionError
 
 from nightshift import __title__, __version__
 from nightshift.datastore import Resource
 from nightshift.worldcat import (
     get_credentials,
     get_access_token,
+    is_match,
     prep_resource_queries_payloads,
+    search_batch,
     worldcat_search_request,
 )
 
@@ -46,6 +53,16 @@ def test_get_access_token_success(
     token = get_access_token(creds)
     assert token.token_str == "tk_Yebz4BpEp9dAsghA7KpWx6dYD1OZKWBlHjqW"
     assert not token.is_expired()
+
+
+def test_is_match_false():
+    response = MockSuccessfulHTTP200SessionResponseNoMatches()
+    assert is_match(response) is False
+
+
+def test_is_match_true():
+    response = MockSuccessfulHTTP200SessionResponse()
+    assert is_match(response) is True
 
 
 @pytest.mark.parametrize(
@@ -90,6 +107,60 @@ def test_prep_resource_queries_payloads(arg, expectation):
         congressNumber=333,
     )
     assert prep_resource_queries_payloads(res) == expectation
+
+
+def test_search_batch_ebook_match(
+    mock_worldcat_creds,
+    mock_successful_post_token_response,
+    mock_successful_session_get_request,
+):
+    resource = Resource(
+        nid=1,
+        sierraId=22222222,
+        resourceCategoryId=1,
+        libraryId=1,
+        title="TEST TITLE",
+        distributorNumber="111",
+    )
+    results = search_batch(library="NYP", resources=[resource])
+    resource, response = next(results)
+    assert resource.nid == 1
+    assert response.json()["briefRecords"][0]["oclcNumber"] == "44959645"
+
+
+def test_search_batch_ebook_no_match(
+    mock_worldcat_creds,
+    mock_successful_post_token_response,
+    mock_successful_session_get_request_no_matches,
+):
+    resource = Resource(
+        nid=1,
+        sierraId=22222222,
+        resourceCategoryId=1,
+        libraryId=1,
+        title="TEST TITLE",
+        distributorNumber="111",
+    )
+    results = search_batch(library="NYP", resources=[resource])
+    resource, response = next(results)
+    assert resource.nid == 1
+    assert response is None
+
+
+def test_search_batch_session_exception(
+    mock_worldcat_creds, mock_successful_post_token_response, mock_session_error
+):
+    resource = Resource(
+        nid=1,
+        sierraId=22222222,
+        resourceCategoryId=1,
+        libraryId=1,
+        title="TEST TITLE",
+        distributorNumber="111",
+    )
+    with pytest.raises(WorldcatSessionError):
+        results = search_batch(library="NYP", resources=[resource])
+        next(results)
 
 
 def test_worldcat_search_request(
