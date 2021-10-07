@@ -7,6 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm.session import Session
 from sqlalchemy.exc import DataError
 
+from .conftest import MockSuccessfulHTTP200SessionResponse
+
 from nightshift.datastore import (
     conf_db,
     dal,
@@ -126,14 +128,35 @@ def test_WorldcatQuery_tbl_repr():
             WorldcatQuery(
                 nid=1,
                 resourceId=2,
-                libraryId=1,
                 match=False,
                 response=None,
                 timestamp=stamp,
             )
         )
-        == f"<WorldcatQuery(nid='1', resourceId='2', libraryId='1', match='False', timestamp='{stamp}')>"
+        == f"<WorldcatQuery(nid='1', resourceId='2', match='False', timestamp='{stamp}')>"
     )
+
+
+def test_WorldcatQuery_tbl_json_column(test_session, test_data):
+    test_session.add(SourceFile(nid=1, libraryId=1, handle="foo.mrc"))
+    test_session.commit()
+    test_session.add(
+        Resource(
+            nid=1,
+            sierraId=22222222,
+            libraryId=1,
+            resourceCategoryId=1,
+            title="TEST",
+            sourceId=1,
+        )
+    )
+    test_session.commit()
+
+    resp_json = MockSuccessfulHTTP200SessionResponse().json()
+    test_session.add(WorldcatQuery(nid=1, resourceId=1, match=True, response=resp_json))
+    test_session.commit()
+    result = test_session.query(WorldcatQuery).filter_by(nid=1).first()
+    assert type(result.response) == dict
 
 
 def test_datastore_connection(test_connection):

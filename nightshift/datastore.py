@@ -15,6 +15,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    JSON,
     PickleType,
     String,
     UniqueConstraint,
@@ -230,16 +231,14 @@ class WorldcatQuery(Base):
 
     nid = Column(Integer, primary_key=True)
     resourceId = Column(Integer, ForeignKey("resource.nid"), nullable=False)
-    libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
     match = Column(Boolean, nullable=False)
-    response = Column(PickleType)  # save as requests.Response object?
+    response = Column(JSON)
     timestamp = Column(DateTime, default=datetime.now(), nullable=False)
 
     def __repr__(self):
         return (
             f"<WorldcatQuery(nid='{self.nid}', "
             f"resourceId='{self.resourceId}', "
-            f"libraryId='{self.libraryId}', "
             f"match='{self.match}', "
             f"timestamp='{self.timestamp}')>"
         )
