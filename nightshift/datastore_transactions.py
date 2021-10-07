@@ -82,7 +82,7 @@ def update_resource(session, sierraId, libraryId, **kwargs):
         return None
 
 
-def retrieve_new_resources(session: Session) -> Result:
+def retrieve_new_resources(session: Session, libraryId: int) -> Result:
     """
     Retrieves resources that have been added to the db
     but has not been processed yet.
@@ -91,15 +91,16 @@ def retrieve_new_resources(session: Session) -> Result:
 
     Args:
         session:                `sqlalchemy.Session` instance
+        libraryId:              `Library.nid`
 
     Returns:
         `sqlalchemy.engine.Result` object
     """
     result = (
         session.query(Resource)
-        .filter_by(status="open", deleted=False, queries=None)
-        .group_by(Resource.libraryId, Resource.resourceCategoryId, Resource.nid)
-        .order_by(Resource.libraryId, Resource.resourceCategoryId, Resource.nid)
+        .filter_by(libraryId=libraryId, status="open", deleted=False, queries=None)
+        .group_by(Resource.resourceCategoryId, Resource.nid)
+        .order_by(Resource.resourceCategoryId, Resource.nid)
         .all()
     )
     return result

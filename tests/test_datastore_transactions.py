@@ -93,36 +93,11 @@ def test_retrieve_new_resources(test_session, test_data):
             deleted=False,
         )
     )
-    test_session.add(
-        Resource(
-            nid=2,
-            sierraId=11111112,
-            libraryId=2,
-            resourceCategoryId=1,
-            title="TEST TITLE 6",
-            sourceId=2,
-            status="open",
-            deleted=False,
-            queries=[WorldcatQuery(resourceId=2, libraryId=2, match=False)],
-        )
-    )
-    test_session.add(
-        Resource(
-            nid=3,
-            sierraId=11111113,
-            libraryId=2,
-            resourceCategoryId=1,
-            title="TEST TITLE 7",
-            sourceId=2,
-            status="open",
-            deleted=False,
-        )
-    )
 
     # NYP resources
     test_session.add(
         Resource(
-            nid=4,
+            nid=2,
             sierraId=22222222,
             libraryId=1,
             resourceCategoryId=1,
@@ -134,7 +109,7 @@ def test_retrieve_new_resources(test_session, test_data):
     )
     test_session.add(
         Resource(
-            nid=5,
+            nid=3,
             sierraId=22222223,
             libraryId=1,
             resourceCategoryId=2,
@@ -146,7 +121,7 @@ def test_retrieve_new_resources(test_session, test_data):
     )
     test_session.add(
         Resource(
-            nid=6,
+            nid=4,
             sierraId=22222224,
             libraryId=1,
             resourceCategoryId=1,
@@ -158,7 +133,7 @@ def test_retrieve_new_resources(test_session, test_data):
     )
     test_session.add(
         Resource(
-            nid=7,
+            nid=5,
             sierraId=22222225,
             libraryId=1,
             resourceCategoryId=1,
@@ -166,22 +141,20 @@ def test_retrieve_new_resources(test_session, test_data):
             sourceId=1,
             status="open",
             deleted=False,
-            queries=[WorldcatQuery(resourceId=7, libraryId=1, match=False)],
+            queries=[WorldcatQuery(resourceId=5, libraryId=1, match=False)],
         )
     )
 
     test_session.commit()
 
-    res = retrieve_new_resources(test_session)
+    res = retrieve_new_resources(session=test_session, libraryId=1)
     # correct rows are retrieved
-    assert len(res) == 5
+    assert len(res) == 3
 
     # in correct grouping/order
-    assert res[0].nid == 4
-    assert res[1].nid == 6
-    assert res[2].nid == 5
-    assert res[3].nid == 3
-    assert res[4].nid == 1
+    assert res[0].nid == 2
+    assert res[1].nid == 4
+    assert res[2].nid == 3
 
 
 def test_update_resource(test_session):
