@@ -11,7 +11,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import yaml
 
-from nightshift.datastore import Base
+from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
+from nightshift.datastore import Base, Library, ResourceCategory
 from nightshift.marc_parser import BibReader
 
 
@@ -66,16 +67,6 @@ def mock_db_env(monkeypatch):
     monkeypatch.setenv("NS_DBNAME", data["NS_DBNAME"])
 
 
-@pytest.fixture
-def mock_worldcat_creds(monkeypatch):
-    for lib in ("NYP", "BPL"):
-        monkeypatch.setenv(f"WC{lib}_KEY", "lib_key")
-        monkeypatch.setenv(f"WC{lib}_SECRET", "lib_secret")
-        monkeypatch.setenv(f"WC{lib}_SCOPE", "WorldCatMetadataAPI")
-        monkeypatch.setenv(f"WC{lib}_PRINCIPALID", "lib_principal_id")
-        monkeypatch.setenv(f"WC{lib}_PRINCIPALIDNS", "lib_principal_idns")
-
-
 @pytest.fixture(scope="function")
 def test_connection(mock_db_env):
     # create db engine differently on local machine or Travis
@@ -100,6 +91,17 @@ def test_session(test_connection):
 
     # teardown
     Base.metadata.drop_all(engine)
+
+
+@pytest.fixture
+def test_data(test_session):
+    for k, v in LIBRARIES.items():
+        test_session.add(Library(nid=v["nid"], code=k))
+    for k, v in RESOURCE_CATEGORIES.items():
+        test_session.add(
+            ResourceCategory(nid=v["nid"], name=k, description=v["description"])
+        )
+    test_session.commit()
 
 
 # Bibs fixtures ##############
@@ -178,6 +180,16 @@ class MockAuthServerResponseSuccess:
             "contextInstitutionId": "00001",
             "expires_at": expires_at,
         }
+
+
+@pytest.fixture
+def mock_worldcat_creds(monkeypatch):
+    for lib in ("NYP", "BPL"):
+        monkeypatch.setenv(f"WC{lib}_KEY", "lib_key")
+        monkeypatch.setenv(f"WC{lib}_SECRET", "lib_secret")
+        monkeypatch.setenv(f"WC{lib}_SCOPE", "WorldCatMetadataAPI")
+        monkeypatch.setenv(f"WC{lib}_PRINCIPALID", "lib_principal_id")
+        monkeypatch.setenv(f"WC{lib}_PRINCIPALIDNS", "lib_principal_idns")
 
 
 @pytest.fixture
