@@ -125,6 +125,7 @@ def prep_resource_queries_payloads(resource: Resource) -> List[dict]:
                     q=f"bn:{resource.standardNumber}",
                     itemType="book",
                     itemSubType="book-printbook",
+                    catalogSource="DLC",
                 )
             )
         if resource.congressNumber:
@@ -133,6 +134,7 @@ def prep_resource_queries_payloads(resource: Resource) -> List[dict]:
                     q=f"ln:{resource.congressNumber}",
                     itemType="book",
                     itemSubType="book-printbook",
+                    catalogSource="DLC",
                 )
             )
 
