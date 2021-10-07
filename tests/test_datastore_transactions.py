@@ -4,6 +4,7 @@ from contextlib import nullcontext as does_not_raise
 import pytest
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
 
 from nightshift.datastore import (
     Base,
@@ -75,6 +76,35 @@ def test_insert_or_ingore_dup(test_session):
     assert rec2 is None
 
 
+def test_insert_or_ignore_resubmitted_changed_record_exception(test_session, test_data):
+    # not possible to add the same record but exception raised
+    # should this be trapped somehow and instead return None?
+    test_session.add(SourceFile(nid=1, libraryId=1, handle="foo1.mrc"))
+    test_session.add(SourceFile(nid=2, libraryId=2, handle="foo2.mrc"))
+    test_session.commit()
+    rec1 = insert_or_ignore(
+        test_session,
+        Resource,
+        sierraId=22222222,
+        libraryId=1,
+        resourceCategoryId=1,
+        sourceId=1,
+        title="TEST TITLE 1",
+    )
+    test_session.commit()
+    rec2 = insert_or_ignore(
+        test_session,
+        Resource,
+        sierraId=22222222,
+        libraryId=1,
+        resourceCategoryId=1,
+        sourceId=2,
+        title="REV TEST TITLE 1",
+    )
+    with pytest.raises(IntegrityError):
+        test_session.commit()
+
+
 def test_retrieve_new_resources(test_session, test_data):
     test_session.add(SourceFile(libraryId=1, handle="foo.mrc"))
     test_session.add(SourceFile(libraryId=2, handle="bar.mrc"))
@@ -141,7 +171,7 @@ def test_retrieve_new_resources(test_session, test_data):
             sourceId=1,
             status="open",
             deleted=False,
-            queries=[WorldcatQuery(resourceId=5, libraryId=1, match=False)],
+            queries=[WorldcatQuery(resourceId=5, match=False)],
         )
     )
 
