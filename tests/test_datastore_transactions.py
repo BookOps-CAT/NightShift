@@ -17,6 +17,7 @@ from nightshift.datastore import (
 from nightshift.datastore_transactions import (
     init_db,
     insert_or_ignore,
+    retrieve_matched_resources,
     retrieve_new_resources,
     update_resource,
 )
@@ -82,7 +83,7 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(test_session, tes
     test_session.add(SourceFile(nid=1, libraryId=1, handle="foo1.mrc"))
     test_session.add(SourceFile(nid=2, libraryId=2, handle="foo2.mrc"))
     test_session.commit()
-    rec1 = insert_or_ignore(
+    insert_or_ignore(
         test_session,
         Resource,
         sierraId=22222222,
@@ -92,7 +93,7 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(test_session, tes
         title="TEST TITLE 1",
     )
     test_session.commit()
-    rec2 = insert_or_ignore(
+    insert_or_ignore(
         test_session,
         Resource,
         sierraId=22222222,
@@ -185,6 +186,86 @@ def test_retrieve_new_resources(test_session, test_data):
     assert res[0].nid == 2
     assert res[1].nid == 4
     assert res[2].nid == 3
+
+
+def test_retrieve_matched_resources(test_session, test_data):
+    test_session.add(SourceFile(libraryId=1, handle="foo.mrc"))
+    test_session.add(SourceFile(libraryId=2, handle="bar.mrc"))
+    test_session.commit()
+
+    # BPL resources
+    test_session.add(
+        Resource(
+            nid=1,
+            sierraId=11111111,
+            libraryId=2,
+            resourceCategoryId=2,
+            title="TEST TITLE 5",
+            sourceId=2,
+            status="open",
+            deleted=False,
+        )
+    )
+
+    # NYP resources
+    test_session.add(
+        Resource(
+            nid=2,
+            sierraId=22222222,
+            libraryId=1,
+            resourceCategoryId=1,
+            title="TEST TITLE 1",
+            sourceId=1,
+            status="open",
+            deleted=False,
+        )
+    )
+    test_session.add(
+        Resource(
+            nid=3,
+            sierraId=22222223,
+            libraryId=1,
+            resourceCategoryId=2,
+            title="TEST TITLE 2",
+            sourceId=1,
+            status="matched",
+            deleted=False,
+        )
+    )
+    test_session.add(
+        Resource(
+            nid=4,
+            sierraId=22222224,
+            libraryId=1,
+            resourceCategoryId=1,
+            title="TEST TITLE 3",
+            sourceId=1,
+            status="matched",
+            deleted=False,
+        )
+    )
+    test_session.add(
+        Resource(
+            nid=5,
+            sierraId=22222225,
+            libraryId=1,
+            resourceCategoryId=1,
+            title="TEST TITLE 4",
+            sourceId=1,
+            status="matched",
+            deleted=False,
+        )
+    )
+    test_session.commit()
+
+    res1 = retrieve_matched_resources(test_session, libraryId=2)
+    assert len(res1) == 0
+
+    res2 = retrieve_matched_resources(test_session, libraryId=1)
+    assert len(res2) == 3
+    assert res2[0].nid == 4
+    assert res2[1].nid == 5
+    assert res2[2].nid == 3
 
 
 def test_update_resource(test_session):

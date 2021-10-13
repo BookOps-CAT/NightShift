@@ -86,7 +86,7 @@ def retrieve_new_resources(session: Session, libraryId: int) -> Result:
     """
     Retrieves resources that have been added to the db
     but has not been processed yet.
-    The results are grouped by the library, resource category and ordered by
+    The results are grouped by the resource category and ordered by
     resource nid.
 
     Args:
@@ -99,6 +99,29 @@ def retrieve_new_resources(session: Session, libraryId: int) -> Result:
     result = (
         session.query(Resource)
         .filter_by(libraryId=libraryId, status="open", deleted=False, queries=None)
+        .group_by(Resource.resourceCategoryId, Resource.nid)
+        .order_by(Resource.resourceCategoryId, Resource.nid)
+        .all()
+    )
+    return result
+
+
+def retrieve_matched_resources(session: Session, libraryId: int) -> Result:
+    """
+    Retrieves resources that have been matched to records in WorldCat,
+    but not upgraded yet.
+    The results are grouped by resource category and ordered by resource nid
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        libraryId:              `Library.nid`
+
+    Returns:
+        `sqlalchemy.engine.Result` object
+    """
+    result = (
+        session.query(Resource)
+        .filter_by(libraryId=libraryId, status="matched", deleted=False)
         .group_by(Resource.resourceCategoryId, Resource.nid)
         .order_by(Resource.resourceCategoryId, Resource.nid)
         .all()
