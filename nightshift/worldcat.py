@@ -58,6 +58,19 @@ def get_access_token(credentials: dict) -> WorldcatAccessToken:
         raise
 
 
+def get_oclc_number(response: Response) -> str:
+    """
+    Parses OCLC number from MetadataAPI brief bib search response
+
+    Args:
+        response:                   `requests.Response` intstance
+
+    Returns:
+        oclc_number
+    """
+    return response.json()["briefRecords"][0]["oclcNumber"]
+
+
 def is_match(response: Response) -> bool:
     """
     Determines if Worldcat query response returned matching record
@@ -161,7 +174,7 @@ def search_batch(
             payloads = prep_resource_queries_payloads(resource)
             for payload in payloads:
                 try:
-                    response = worldcat_search_request(session, payload)
+                    response = search_request(session, payload)
                 except WorldcatSessionError:
                     raise
 
@@ -172,7 +185,22 @@ def search_batch(
             yield (resource, response)
 
 
-def worldcat_search_request(session: MetadataSession, payload: dict) -> Response:
+def full_bib_request(session: MetadataSession, oclcNumber: str) -> Response:
+    """
+    Makes a request to OCLC Metadata service to retrieve full record
+
+    Args:
+        session:                    `bookops_worldcat.MetadataSession` instance
+        oclcNumber:                 OCLC record number
+
+    Response:
+        `requests.Response` object
+    """
+    response = session.get_full_bib(oclcNumber)
+    return response
+
+
+def search_request(session: MetadataSession, payload: dict) -> Response:
     """
     Makes a request to OCLC Metadata service /brief-bibs endpoint
 
@@ -187,17 +215,3 @@ def worldcat_search_request(session: MetadataSession, payload: dict) -> Response
         **payload, inCatalogLanguage="eng", orderBy="mostWidelyHeld", limit=1
     )
     return response
-
-
-def worldcat_full_bib_request(session: MetadataSession, oclcNumber: str) -> Response:
-    """
-    Makes a request to OCLC Metadata service to retrieve full record
-
-    Args:
-        session:                    `bookops_worldcat.MetadataSession` instance
-        oclcNumber:                 OCLC record number
-
-    Response:
-        `requests.Response` object
-    """
-    pass

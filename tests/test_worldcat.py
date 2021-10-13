@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from contextlib import nullcontext as does_not_raise
+
 import pytest
 
 from .conftest import (
@@ -13,10 +15,12 @@ from nightshift.datastore import Resource
 from nightshift.worldcat import (
     get_credentials,
     get_access_token,
+    get_oclc_number,
     is_match,
     prep_resource_queries_payloads,
     search_batch,
-    worldcat_search_request,
+    full_bib_request,
+    search_request,
 )
 
 
@@ -65,6 +69,11 @@ def test_is_match_true():
     assert is_match(response) is True
 
 
+def test_get_oclc_number_from_response():
+    response = MockSuccessfulHTTP200SessionResponse()
+    assert get_oclc_number(response) == "44959645"
+
+
 @pytest.mark.parametrize(
     "arg,expectation",
     [
@@ -107,6 +116,13 @@ def test_prep_resource_queries_payloads(arg, expectation):
         congressNumber=333,
     )
     assert prep_resource_queries_payloads(res) == expectation
+
+
+def test_worldcat_full_bib_request(
+    mock_worldcat_session, mock_successful_session_get_request
+):
+    with does_not_raise():
+        full_bib_request(mock_worldcat_session, 123)
 
 
 def test_search_batch_ebook_match(
@@ -166,5 +182,5 @@ def test_search_batch_session_exception(
 def test_worldcat_search_request(
     mock_worldcat_session, mock_successful_session_get_request
 ):
-    response = worldcat_search_request(mock_worldcat_session, payload=dict(q="foo"))
+    response = search_request(mock_worldcat_session, payload=dict(q="foo"))
     assert response.status_code == 200
