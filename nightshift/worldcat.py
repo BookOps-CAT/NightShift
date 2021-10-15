@@ -13,6 +13,7 @@ from bookops_worldcat.errors import (
     WorldcatSessionError,
 )
 from requests import Response
+from sqlalchemy.engine import Result
 
 from nightshift import __title__, __version__
 from nightshift.datastore import Resource
@@ -154,7 +155,7 @@ def prep_resource_queries_payloads(resource: Resource) -> List[dict]:
 
 
 def search_batch(
-    library: str, resources: List[Resource]
+    library: str, resources: Result
 ) -> Iterator[Tuple[Resource, Response]]:
     """
     Performes WorldCat queries for each resource in the passed library batch.
@@ -165,7 +166,7 @@ def search_batch(
         resouces:
 
     Yields:
-        (resource, `requests.Response`)
+        (Resource, `requests.Response`)
     """
     creds = get_credentials(library)
     token = get_access_token(creds)
@@ -174,7 +175,12 @@ def search_batch(
             payloads = prep_resource_queries_payloads(resource)
             for payload in payloads:
                 try:
-                    response = search_request(session, payload)
+                    response = session.search_brief_bibs(
+                        **payload,
+                        inCatalogLanguage="eng",
+                        orderBy="mostWidelyHeld",
+                        limit=1,
+                    )
                 except WorldcatSessionError:
                     raise
 
@@ -185,33 +191,22 @@ def search_batch(
             yield (resource, response)
 
 
-def full_bib_request(session: MetadataSession, oclcNumber: str) -> Response:
+def get_full_bibs(
+    library: str, resources: Result
+) -> Iterator[Tuple[Resource, Response]]:
     """
-    Makes a request to OCLC Metadata service to retrieve full record
+    Makes MetadataAPI requests for full bibliographic records
 
     Args:
-        session:                    `bookops_worldcat.MetadataSession` instance
-        oclcNumber:                 OCLC record number
+        library:                    'NYP' or 'BPL'
+        resources:                  `sqlalchemy.engine.Result` instance
 
-    Response:
-        `requests.Response` object
+    Yields:
+        (Resource, Response)
     """
-    response = session.get_full_bib(oclcNumber)
-    return response
-
-
-def search_request(session: MetadataSession, payload: dict) -> Response:
-    """
-    Makes a request to OCLC Metadata service /brief-bibs endpoint
-
-    Args:
-        sesssion:                   `bookops_worldcat.MetadataSession` instance
-        payload:                    query parameters as dictionary
-
-    returns:
-        `requests.Response` object
-    """
-    response = session.search_brief_bibs(
-        **payload, inCatalogLanguage="eng", orderBy="mostWidelyHeld", limit=1
-    )
-    return response
+    creds = get_credentials(library)
+    token = get_access_token(creds)
+    with MetadataSession(authorization=token) as session:
+        for resource in resources:
+            response = session.get_full_bib(oclcNumber=resource.oclcMatchNumber)
+            yield (resource, response)

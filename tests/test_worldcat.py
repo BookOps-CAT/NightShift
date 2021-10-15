@@ -19,8 +19,7 @@ from nightshift.worldcat import (
     is_match,
     prep_resource_queries_payloads,
     search_batch,
-    full_bib_request,
-    search_request,
+    get_full_bibs,
 )
 
 
@@ -118,13 +117,6 @@ def test_prep_resource_queries_payloads(arg, expectation):
     assert prep_resource_queries_payloads(res) == expectation
 
 
-def test_worldcat_full_bib_request(
-    mock_worldcat_session, mock_successful_session_get_request
-):
-    with does_not_raise():
-        full_bib_request(mock_worldcat_session, 123)
-
-
 def test_search_batch_ebook_match(
     mock_worldcat_creds,
     mock_successful_post_token_response,
@@ -177,10 +169,3 @@ def test_search_batch_session_exception(
     with pytest.raises(WorldcatSessionError):
         results = search_batch(library="NYP", resources=[resource])
         next(results)
-
-
-def test_worldcat_search_request(
-    mock_worldcat_session, mock_successful_session_get_request
-):
-    response = search_request(mock_worldcat_session, payload=dict(q="foo"))
-    assert response.status_code == 200
