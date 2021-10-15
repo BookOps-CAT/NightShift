@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime, timedelta
 from contextlib import nullcontext as does_not_raise
 
 import pytest
@@ -80,9 +81,6 @@ def test_insert_or_ingore_dup(test_session):
 def test_insert_or_ignore_resubmitted_changed_record_exception(test_session, test_data):
     # not possible to add the same record but exception raised
     # should this be trapped somehow and instead return None?
-    test_session.add(SourceFile(nid=1, libraryId=1, handle="foo1.mrc"))
-    test_session.add(SourceFile(nid=2, libraryId=2, handle="foo2.mrc"))
-    test_session.commit()
     insert_or_ignore(
         test_session,
         Resource,
@@ -106,10 +104,91 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(test_session, tes
         test_session.commit()
 
 
-def test_retrieve_new_resources(test_session, test_data):
-    test_session.add(SourceFile(libraryId=1, handle="foo.mrc"))
-    test_session.add(SourceFile(libraryId=2, handle="bar.mrc"))
+def test_last_worldcat_query(test_session, test_data):
+    test_session.add(
+        Resource(
+            nid=1,
+            sierraId=22222222,
+            libraryId=1,
+            resourceCategoryId=1,
+            title="TEST TITLE 1",
+            sourceId=1,
+            status="open",
+            deleted=False,
+            queries=[
+                WorldcatQuery(
+                    resourceId=1,
+                    match=False,
+                    timestamp=datetime.now() - timedelta(days=90),
+                ),
+                WorldcatQuery(
+                    resourceId=1,
+                    match=False,
+                    timestamp=datetime.now() - timedelta(days=60),
+                ),
+                WorldcatQuery(resourceId=1, match=False, timestamp=datetime.now()),
+            ],
+        )
+    )
+    # expired resource
+    test_session.add(
+        Resource(
+            nid=2,
+            sierraId=22222223,
+            libraryId=1,
+            resourceCategoryId=1,
+            title="TEST TITLE 2",
+            sourceId=2,
+            status="expired",
+            queries=[
+                WorldcatQuery(
+                    resourceId=2,
+                    match=False,
+                    timestamp=datetime.now() - timedelta(days=200),
+                )
+            ],
+        )
+    )
+    # wrong resource category
+    test_session.add(
+        Resource(
+            nid=3,
+            sierraId=22222224,
+            libraryId=1,
+            resourceCategoryId=2,
+            title="TEST TITLE 3",
+            sourceId=2,
+            status="open",
+            deleted=False,
+            queries=[
+                WorldcatQuery(resourceId=3, match=False, timestamp=datetime.now())
+            ],
+        )
+    )
+    test_session.add(
+        Resource(
+            nid=4,
+            sierraId=22222225,
+            libraryId=1,
+            resourceCategoryId=1,
+            title="TEST TITLE 4",
+            sourceId=2,
+            status="open",
+            deleted=False,
+            queries=[
+                WorldcatQuery(
+                    resourceId=4,
+                    match=False,
+                    timestamp=datetime.now() - timedelta(days=30),
+                ),
+                WorldcatQuery(resourceId=4, match=False, timestamp=datetime.now()),
+            ],
+        )
+    )
     test_session.commit()
+
+
+def test_retrieve_new_resources(test_session, test_data):
 
     # BPL resources
     test_session.add(
@@ -189,10 +268,6 @@ def test_retrieve_new_resources(test_session, test_data):
 
 
 def test_retrieve_matched_resources(test_session, test_data):
-    test_session.add(SourceFile(libraryId=1, handle="foo.mrc"))
-    test_session.add(SourceFile(libraryId=2, handle="bar.mrc"))
-    test_session.commit()
-
     # BPL resources
     test_session.add(
         Resource(

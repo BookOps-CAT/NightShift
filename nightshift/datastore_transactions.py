@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
+from typing import List
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.engine import Result
 from sqlalchemy.orm import Session
 
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
-from nightshift.datastore import Library, Resource, ResourceCategory, DataAccessLayer
+from nightshift.datastore import (
+    DataAccessLayer,
+    Library,
+    Resource,
+    ResourceCategory,
+    WorldcatQuery,
+)
 
 
 def init_db():
@@ -56,30 +63,30 @@ def insert_or_ignore(session, model, **kwargs):
         return None
 
 
-def update_resource(session, sierraId, libraryId, **kwargs):
+def last_worldcat_query(session: Session):
     """
-    Updates Resource record.
+    Creates a subquery with only the most recent WorldcatQuery db row
 
     Args:
         session:                `sqlalchemy.Session` instance
-        sierraId:               sierra 8 digit bib # (without prefix
-                                or check digit)
-        libraryId:              datastore.Library.nid
-        kwargs:                 Resource table values to be updated as dictionary
+
     Returns:
-        instance of updated record
+        subquery
     """
-    instance = (
-        session.query(Resource)
-        .filter_by(sierraId=sierraId, libraryId=libraryId)
-        .one_or_none()
+    subq = (
+        session.query(
+            WorldcatQuery.ResourceId,
+            WorldcatQuery.nid.label("wq_nid"),
+            func.max(WorldcatQuery.timestamp).label("wq_timestamp"),
+        )
+        .filter(WorldcatQuery.match == False)
+        .subquery()
     )
-    if instance:
-        for key, value in kwargs.items():
-            setattr(instance, key, value)
-            return instance
-    else:
-        return None
+    return subq
+
+
+def retreive_full_bib_resources(session: Session, library):
+    pass
 
 
 def retrieve_new_resources(session: Session, libraryId: int) -> Result:
@@ -127,3 +134,56 @@ def retrieve_matched_resources(session: Session, libraryId: int) -> Result:
         .all()
     )
     return result
+
+
+def retrieve_scheduled_resources(
+    session: Session, libraryId: int, resourceCategoryId: int, query_days: List[int]
+) -> Result:
+    """
+    Retieves resources for a particular library and resource category that are scheduled
+    for subsequent query based on query_days values
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        libraryId:              `datastore.Library.nid`
+        resourceCategoryId:     `datastore.ResourceCategory.nid`
+        query_days:             list of days since creation of the resource to trigger
+                                WorldCat query
+    """
+    result = (
+        session.query(Resource)
+        .filter_by(
+            libraryId=libraryId,
+            resourceCategoryId=resourceCategoryId,
+            status="open",
+            deleted=False,
+        )
+        .all()
+    )
+    return result
+
+
+def update_resource(session, sierraId, libraryId, **kwargs):
+    """
+    Updates Resource record.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        sierraId:               sierra 8 digit bib # (without prefix
+                                or check digit)
+        libraryId:              datastore.Library.nid
+        kwargs:                 Resource table values to be updated as dictionary
+    Returns:
+        instance of updated record
+    """
+    instance = (
+        session.query(Resource)
+        .filter_by(sierraId=sierraId, libraryId=libraryId)
+        .one_or_none()
+    )
+    if instance:
+        for key, value in kwargs.items():
+            setattr(instance, key, value)
+            return instance
+    else:
+        return None

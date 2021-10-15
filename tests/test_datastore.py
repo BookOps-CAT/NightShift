@@ -138,8 +138,6 @@ def test_WorldcatQuery_tbl_repr():
 
 
 def test_WorldcatQuery_tbl_json_column(test_session, test_data):
-    test_session.add(SourceFile(nid=1, libraryId=1, handle="foo.mrc"))
-    test_session.commit()
     test_session.add(
         Resource(
             nid=1,

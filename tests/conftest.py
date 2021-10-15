@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker
 import yaml
 
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
-from nightshift.datastore import Base, Library, ResourceCategory
+from nightshift.datastore import Base, Library, ResourceCategory, SourceFile
 from nightshift.marc.marc_parser import BibReader
 
 
@@ -103,6 +103,9 @@ def test_data(test_session):
         test_session.add(
             ResourceCategory(nid=v["nid"], name=k, description=v["description"])
         )
+    test_session.add(SourceFile(nid=1, libraryId=1, handle="foo1.mrc"))
+    test_session.add(SourceFile(nid=2, libraryId=2, handle="foo2.mrc"))
+    test_session.commit()
     test_session.commit()
 
 
