@@ -101,7 +101,7 @@ def retrieve_older_open_resources(
         maxAge:                 max numb of days since bib creation date
 
     Returns:
-        resul
+        list of `Row` instances
     """
 
     result = (
@@ -139,13 +139,13 @@ def retrieve_new_resources(session: Session, libraryId: int) -> List[Resource]:
     Returns:
         list of `Resource` instances
     """
-    result = (
+    resources = (
         session.query(Resource)
         .filter_by(libraryId=libraryId, status="open", deleted=False, queries=None)
         .order_by(Resource.resourceCategoryId, Resource.nid)
         .all()
     )
-    return result
+    return resources
 
 
 def retrieve_matched_resources(session: Session, libraryId: int) -> List[Resource]:
@@ -161,13 +161,13 @@ def retrieve_matched_resources(session: Session, libraryId: int) -> List[Resourc
     Returns:
         list of `Resource` instances
     """
-    result = (
+    resources = (
         session.query(Resource)
         .filter_by(libraryId=libraryId, status="matched", deleted=False)
         .order_by(Resource.resourceCategoryId, Resource.nid)
         .all()
     )
-    return result
+    return resources
 
 
 def update_resource(session, sierraId, libraryId, **kwargs):
