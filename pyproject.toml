@@ -15,6 +15,7 @@ PyYAML = "^5.4.1"
 bookops-marc = {git = "https://github.com/BookOps-CAT/bookops-marc.git", rev = "0.4.0"}
 psycopg2 = "^2.9.1"
 bookops-worldcat = "^0.4.0"
+loggly-python-handler = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
