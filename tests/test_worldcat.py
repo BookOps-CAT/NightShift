@@ -15,10 +15,11 @@ from nightshift.datastore import Resource
 from nightshift.worldcat import (
     get_credentials,
     get_access_token,
+    get_full_bibs,
     get_oclc_number,
     is_match,
     prep_resource_queries_payloads,
-    search_batch,
+    search_brief_bibs,
     get_full_bibs,
 )
 
@@ -58,6 +59,40 @@ def test_get_access_token_success(
     assert not token.is_expired()
 
 
+def test_get_full_bibs_success(
+    mock_worldcat_creds,
+    mock_successful_post_token_response,
+    mock_successful_session_get_request,
+):
+    resource = Resource(
+        nid=1,
+        title="TEST TITLE",
+        oclcMatchNumber="123",
+    )
+    results = get_full_bibs(library="NYP", resources=[resource])
+    resource, response = next(results)
+    assert resource.nid == 1
+    assert response.status_code == 200
+
+
+def test_get_full_bibs_failure(
+    mock_worldcat_creds, mock_successful_post_token_response, mock_session_error
+):
+    resource = Resource(
+        nid=1,
+        title="TEST TITLE",
+        distributorNumber="111",
+    )
+    with pytest.raises(WorldcatSessionError):
+        results = get_full_bibs(library="NYP", resources=[resource])
+        next(results)
+
+
+def test_get_oclc_number_from_response():
+    response = MockSuccessfulHTTP200SessionResponse()
+    assert get_oclc_number(response) == "44959645"
+
+
 def test_is_match_false():
     response = MockSuccessfulHTTP200SessionResponseNoMatches()
     assert is_match(response) is False
@@ -66,11 +101,6 @@ def test_is_match_false():
 def test_is_match_true():
     response = MockSuccessfulHTTP200SessionResponse()
     assert is_match(response) is True
-
-
-def test_get_oclc_number_from_response():
-    response = MockSuccessfulHTTP200SessionResponse()
-    assert get_oclc_number(response) == "44959645"
 
 
 @pytest.mark.parametrize(
@@ -117,7 +147,7 @@ def test_prep_resource_queries_payloads(arg, expectation):
     assert prep_resource_queries_payloads(res) == expectation
 
 
-def test_search_batch_ebook_match(
+def test_search_brief_bibs_for_ebooks_success(
     mock_worldcat_creds,
     mock_successful_post_token_response,
     mock_successful_session_get_request,
@@ -125,18 +155,18 @@ def test_search_batch_ebook_match(
     resource = Resource(
         nid=1,
         sierraId=22222222,
-        resourceCategoryId=1,
+        resourceCategoryId=1,  # ebook category id
         libraryId=1,
         title="TEST TITLE",
         distributorNumber="111",
     )
-    results = search_batch(library="NYP", resources=[resource])
+    results = search_brief_bibs(library="NYP", resources=[resource])
     resource, response = next(results)
     assert resource.nid == 1
     assert response.json()["briefRecords"][0]["oclcNumber"] == "44959645"
 
 
-def test_search_batch_ebook_no_match(
+def test_search_brief_bibs_for_ebooks_no_matches_found(
     mock_worldcat_creds,
     mock_successful_post_token_response,
     mock_successful_session_get_request_no_matches,
@@ -149,13 +179,13 @@ def test_search_batch_ebook_no_match(
         title="TEST TITLE",
         distributorNumber="111",
     )
-    results = search_batch(library="NYP", resources=[resource])
+    results = search_brief_bibs(library="NYP", resources=[resource])
     resource, response = next(results)
     assert resource.nid == 1
     assert response is None
 
 
-def test_search_batch_session_exception(
+def test_search_brief_bibs_session_exception(
     mock_worldcat_creds, mock_successful_post_token_response, mock_session_error
 ):
     resource = Resource(
@@ -167,5 +197,5 @@ def test_search_batch_session_exception(
         distributorNumber="111",
     )
     with pytest.raises(WorldcatSessionError):
-        results = search_batch(library="NYP", resources=[resource])
+        results = search_brief_bibs(library="NYP", resources=[resource])
         next(results)

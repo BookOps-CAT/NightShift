@@ -59,6 +59,30 @@ def get_access_token(credentials: dict) -> WorldcatAccessToken:
         raise
 
 
+def get_full_bibs(
+    library: str, resources: Result
+) -> Iterator[Tuple[Resource, Response]]:
+    """
+    Makes MetadataAPI requests for full bibliographic records
+
+    Args:
+        library:                    'NYP' or 'BPL'
+        resources:                  `sqlalchemy.engine.Result` instance
+
+    Yields:
+        (Resource, Response)
+    """
+    creds = get_credentials(library)
+    token = get_access_token(creds)
+    with MetadataSession(authorization=token) as session:
+        for resource in resources:
+            try:
+                response = session.get_full_bib(oclcNumber=resource.oclcMatchNumber)
+                yield (resource, response)
+            except WorldcatSessionError:
+                raise
+
+
 def get_oclc_number(response: Response) -> str:
     """
     Parses OCLC number from MetadataAPI brief bib search response
@@ -154,7 +178,7 @@ def prep_resource_queries_payloads(resource: Resource) -> List[dict]:
     return payloads
 
 
-def search_batch(
+def search_brief_bibs(
     library: str, resources: Result
 ) -> Iterator[Tuple[Resource, Response]]:
     """
@@ -188,25 +212,4 @@ def search_batch(
                     break
                 else:
                     response = None
-            yield (resource, response)
-
-
-def get_full_bibs(
-    library: str, resources: Result
-) -> Iterator[Tuple[Resource, Response]]:
-    """
-    Makes MetadataAPI requests for full bibliographic records
-
-    Args:
-        library:                    'NYP' or 'BPL'
-        resources:                  `sqlalchemy.engine.Result` instance
-
-    Yields:
-        (Resource, Response)
-    """
-    creds = get_credentials(library)
-    token = get_access_token(creds)
-    with MetadataSession(authorization=token) as session:
-        for resource in resources:
-            response = session.get_full_bib(oclcNumber=resource.oclcMatchNumber)
             yield (resource, response)
