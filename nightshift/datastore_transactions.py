@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime, timedelta
 from typing import List
 
 from sqlalchemy import create_engine, func
 from sqlalchemy.engine import Result
+from sqlalchemy.engine.row import Row
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import select
 
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import (
@@ -63,33 +66,68 @@ def insert_or_ignore(session, model, **kwargs):
         return None
 
 
-def last_worldcat_query(session: Session):
+def retrieve_full_bib_resources(session: Session, libraryId: int) -> List[Resource]:
     """
-    Creates a subquery with only the most recent WorldcatQuery db row
+    Retrieves resources that include MARC XML with full bib
 
     Args:
         session:                `sqlalchemy.Session` instance
+        libraryId:              `Library.nid`
 
     Returns:
-        subquery
+        list of `Resource` instances
     """
-    subq = (
-        session.query(
-            WorldcatQuery.ResourceId,
-            WorldcatQuery.nid.label("wq_nid"),
-            func.max(WorldcatQuery.timestamp).label("wq_timestamp"),
+    resources = (
+        session.query(Resource)
+        .filter(
+            Resource.libraryId == libraryId,
+            Resource.status == "matched",
+            Resource.deleted == False,
+            Resource.fullBib.isnot(None),
         )
-        .filter(WorldcatQuery.match == False)
-        .subquery()
+        .all()
     )
-    return subq
+    return resources
 
 
-def retreive_full_bib_resources(session: Session, library):
-    pass
+def retrieve_older_open_resources(
+    session: Session, minAge: int, maxAge: int
+) -> List[Row]:
+    """
+    Queries resources with open status that has not been queried in WorldCat
+    betweeen minAge and maxAge
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        minAge:                 min number of days since bib creation date
+        maxAge:                 max numb of days since bib creation date
+
+    Returns:
+        resul
+    """
+
+    result = (
+        session.query(
+            Resource,
+            WorldcatQuery.nid.label("wqId"),
+        )
+        .join(WorldcatQuery)
+        .filter(
+            Resource.status == "open",
+            Resource.deleted == False,
+            Resource.bibDate <= datetime.utcnow() - timedelta(days=minAge),
+            Resource.bibDate > datetime.utcnow() - timedelta(days=maxAge),
+        )
+        .filter(
+            WorldcatQuery.timestamp > datetime.utcnow() - timedelta(days=maxAge),
+            WorldcatQuery.timestamp < datetime.utcnow() - timedelta(days=minAge),
+        )
+        .all()
+    )
+    return result
 
 
-def retrieve_new_resources(session: Session, libraryId: int) -> Result:
+def retrieve_new_resources(session: Session, libraryId: int) -> List[Resource]:
     """
     Retrieves resources that have been added to the db
     but has not been processed yet.
@@ -101,19 +139,18 @@ def retrieve_new_resources(session: Session, libraryId: int) -> Result:
         libraryId:              `Library.nid`
 
     Returns:
-        `sqlalchemy.engine.Result` object
+        list of `Resource` instances
     """
     result = (
         session.query(Resource)
         .filter_by(libraryId=libraryId, status="open", deleted=False, queries=None)
-        .group_by(Resource.resourceCategoryId, Resource.nid)
         .order_by(Resource.resourceCategoryId, Resource.nid)
         .all()
     )
     return result
 
 
-def retrieve_matched_resources(session: Session, libraryId: int) -> Result:
+def retrieve_matched_resources(session: Session, libraryId: int) -> List[Resource]:
     """
     Retrieves resources that have been matched to records in WorldCat,
     but not upgraded yet.
@@ -124,40 +161,12 @@ def retrieve_matched_resources(session: Session, libraryId: int) -> Result:
         libraryId:              `Library.nid`
 
     Returns:
-        `sqlalchemy.engine.Result` object
+        list of `Resource` instances
     """
     result = (
         session.query(Resource)
         .filter_by(libraryId=libraryId, status="matched", deleted=False)
-        .group_by(Resource.resourceCategoryId, Resource.nid)
         .order_by(Resource.resourceCategoryId, Resource.nid)
-        .all()
-    )
-    return result
-
-
-def retrieve_scheduled_resources(
-    session: Session, libraryId: int, resourceCategoryId: int, query_days: List[int]
-) -> Result:
-    """
-    Retieves resources for a particular library and resource category that are scheduled
-    for subsequent query based on query_days values
-
-    Args:
-        session:                `sqlalchemy.Session` instance
-        libraryId:              `datastore.Library.nid`
-        resourceCategoryId:     `datastore.ResourceCategory.nid`
-        query_days:             list of days since creation of the resource to trigger
-                                WorldCat query
-    """
-    result = (
-        session.query(Resource)
-        .filter_by(
-            libraryId=libraryId,
-            resourceCategoryId=resourceCategoryId,
-            status="open",
-            deleted=False,
-        )
         .all()
     )
     return result

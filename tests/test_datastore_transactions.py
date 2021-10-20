@@ -18,8 +18,10 @@ from nightshift.datastore import (
 from nightshift.datastore_transactions import (
     init_db,
     insert_or_ignore,
+    retrieve_full_bib_resources,
     retrieve_matched_resources,
     retrieve_new_resources,
+    retrieve_older_open_resources,
     update_resource,
 )
 
@@ -88,6 +90,7 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(test_session, tes
         libraryId=1,
         resourceCategoryId=1,
         sourceId=1,
+        bibDate=datetime.utcnow().date(),
         title="TEST TITLE 1",
     )
     test_session.commit()
@@ -98,94 +101,172 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(test_session, tes
         libraryId=1,
         resourceCategoryId=1,
         sourceId=2,
+        bibDate=datetime.utcnow().date(),
         title="REV TEST TITLE 1",
     )
     with pytest.raises(IntegrityError):
         test_session.commit()
 
 
-def test_last_worldcat_query(test_session, test_data):
+@pytest.mark.parametrize(
+    "library_id,status,deleted,full_bib,expectation",
+    [
+        pytest.param(1, "open", False, "<foo>spam</foo>", [], id="wrong status"),
+        pytest.param(1, "matched", True, "<foo>spam</foo", [], id="deleted resource"),
+        pytest.param(1, "matched", False, None, [], id="missing full bib"),
+        pytest.param(1, "matched", False, "<foo>spam</foo>", [2], id="found 1 match"),
+        pytest.param(
+            2, "matched", False, "<foo>spam</foo>", [1, 2], id="found 2 matches"
+        ),
+    ],
+)
+def test_retrieve_full_bib_resources(
+    test_session, test_data, library_id, status, deleted, full_bib, expectation
+):
+    bib_date = datetime.utcnow().date()
+    test_session.add(
+        Resource(
+            nid=1,
+            sierraId=11111111,
+            libraryId=2,
+            sourceId=1,
+            resourceCategoryId=1,
+            bibDate=bib_date,
+            title="TEST TITLE 1",
+            status="matched",
+            deleted=False,
+            fullBib="<foo>spam</foo>",
+        )
+    )
+    test_session.add(
+        Resource(
+            nid=2,
+            sierraId=22222222,
+            libraryId=library_id,
+            sourceId=1,
+            resourceCategoryId=1,
+            bibDate=bib_date,
+            title="TEST TITLE 2",
+            status=status,
+            deleted=deleted,
+            fullBib=full_bib,
+        )
+    )
+    test_session.commit()
+    res = retrieve_full_bib_resources(test_session, library_id)
+    assert [r.nid for r in res] == expectation
+
+
+@pytest.mark.parametrize(
+    "bib_date,status,deleted,match,days_since_last_query,expectation",
+    [
+        pytest.param(
+            datetime.utcnow() - timedelta(days=80),
+            "open",
+            False,
+            False,
+            31,
+            [2],
+            id="query needed",
+        ),
+        pytest.param(
+            datetime.utcnow() - timedelta(days=80),
+            "open",
+            False,
+            False,
+            15,
+            [],
+            id="already queried",
+        ),
+        pytest.param(
+            datetime.utcnow() - timedelta(days=80),
+            "open",
+            False,
+            False,
+            100,
+            [],
+            id="last query > maxAge",
+        ),
+        pytest.param(
+            datetime.utcnow() - timedelta(days=100),
+            "open",
+            False,
+            False,
+            31,
+            [],
+            id="too old resource",
+        ),
+        pytest.param(
+            datetime.utcnow() - timedelta(days=80),
+            "expired",
+            False,
+            False,
+            31,
+            [],
+            id="expired status",
+        ),
+        pytest.param(
+            datetime.utcnow() - timedelta(days=80),
+            "open",
+            True,
+            False,
+            31,
+            [],
+            id="deleted resource",
+        ),
+        pytest.param(
+            datetime.utcnow() - timedelta(days=100),
+            "open",
+            False,
+            True,
+            31,
+            [],
+            id="matched resource",
+        ),
+    ],
+)
+def test_retrieve_older_open_resources(
+    test_session,
+    test_data,
+    bib_date,
+    status,
+    deleted,
+    match,
+    days_since_last_query,
+    expectation,
+):
+
     test_session.add(
         Resource(
             nid=1,
             sierraId=22222222,
             libraryId=1,
+            bibDate=bib_date,
             resourceCategoryId=1,
-            title="TEST TITLE 1",
+            title="TEST TITLE",
             sourceId=1,
-            status="open",
-            deleted=False,
+            status=status,
+            deleted=deleted,
             queries=[
                 WorldcatQuery(
+                    nid=1,
                     resourceId=1,
-                    match=False,
-                    timestamp=datetime.now() - timedelta(days=90),
-                ),
-                WorldcatQuery(
-                    resourceId=1,
-                    match=False,
-                    timestamp=datetime.now() - timedelta(days=60),
-                ),
-                WorldcatQuery(resourceId=1, match=False, timestamp=datetime.now()),
-            ],
-        )
-    )
-    # expired resource
-    test_session.add(
-        Resource(
-            nid=2,
-            sierraId=22222223,
-            libraryId=1,
-            resourceCategoryId=1,
-            title="TEST TITLE 2",
-            sourceId=2,
-            status="expired",
-            queries=[
-                WorldcatQuery(
-                    resourceId=2,
                     match=False,
                     timestamp=datetime.now() - timedelta(days=200),
-                )
-            ],
-        )
-    )
-    # wrong resource category
-    test_session.add(
-        Resource(
-            nid=3,
-            sierraId=22222224,
-            libraryId=1,
-            resourceCategoryId=2,
-            title="TEST TITLE 3",
-            sourceId=2,
-            status="open",
-            deleted=False,
-            queries=[
-                WorldcatQuery(resourceId=3, match=False, timestamp=datetime.now())
-            ],
-        )
-    )
-    test_session.add(
-        Resource(
-            nid=4,
-            sierraId=22222225,
-            libraryId=1,
-            resourceCategoryId=1,
-            title="TEST TITLE 4",
-            sourceId=2,
-            status="open",
-            deleted=False,
-            queries=[
-                WorldcatQuery(
-                    resourceId=4,
-                    match=False,
-                    timestamp=datetime.now() - timedelta(days=30),
                 ),
-                WorldcatQuery(resourceId=4, match=False, timestamp=datetime.now()),
+                WorldcatQuery(
+                    nid=2,
+                    resourceId=1,
+                    match=match,
+                    timestamp=datetime.now() - timedelta(days=days_since_last_query),
+                ),
             ],
         )
     )
     test_session.commit()
+
+    res = retrieve_older_open_resources(test_session, 30, 90)
+    assert [r.wqId for r in res] == expectation
 
 
 def test_retrieve_new_resources(test_session, test_data):
@@ -197,6 +278,7 @@ def test_retrieve_new_resources(test_session, test_data):
             sierraId=11111111,
             libraryId=2,
             resourceCategoryId=2,
+            bibDate=datetime.utcnow().date(),
             title="TEST TITLE 5",
             sourceId=2,
             status="open",
@@ -211,6 +293,7 @@ def test_retrieve_new_resources(test_session, test_data):
             sierraId=22222222,
             libraryId=1,
             resourceCategoryId=1,
+            bibDate=datetime.utcnow().date(),
             title="TEST TITLE 1",
             sourceId=1,
             status="open",
@@ -223,6 +306,7 @@ def test_retrieve_new_resources(test_session, test_data):
             sierraId=22222223,
             libraryId=1,
             resourceCategoryId=2,
+            bibDate=datetime.utcnow().date(),
             title="TEST TITLE 2",
             sourceId=1,
             status="open",
@@ -235,6 +319,7 @@ def test_retrieve_new_resources(test_session, test_data):
             sierraId=22222224,
             libraryId=1,
             resourceCategoryId=1,
+            bibDate=datetime.utcnow().date(),
             title="TEST TITLE 3",
             sourceId=1,
             status="open",
@@ -247,6 +332,7 @@ def test_retrieve_new_resources(test_session, test_data):
             sierraId=22222225,
             libraryId=1,
             resourceCategoryId=1,
+            bibDate=datetime.utcnow().date(),
             title="TEST TITLE 4",
             sourceId=1,
             status="open",
@@ -268,6 +354,7 @@ def test_retrieve_new_resources(test_session, test_data):
 
 
 def test_retrieve_matched_resources(test_session, test_data):
+    some_date = (datetime.utcnow().date(),)
     # BPL resources
     test_session.add(
         Resource(
@@ -275,6 +362,7 @@ def test_retrieve_matched_resources(test_session, test_data):
             sierraId=11111111,
             libraryId=2,
             resourceCategoryId=2,
+            bibDate=some_date,
             title="TEST TITLE 5",
             sourceId=2,
             status="open",
@@ -289,6 +377,7 @@ def test_retrieve_matched_resources(test_session, test_data):
             sierraId=22222222,
             libraryId=1,
             resourceCategoryId=1,
+            bibDate=some_date,
             title="TEST TITLE 1",
             sourceId=1,
             status="open",
@@ -301,6 +390,7 @@ def test_retrieve_matched_resources(test_session, test_data):
             sierraId=22222223,
             libraryId=1,
             resourceCategoryId=2,
+            bibDate=some_date,
             title="TEST TITLE 2",
             sourceId=1,
             status="matched",
@@ -313,6 +403,7 @@ def test_retrieve_matched_resources(test_session, test_data):
             sierraId=22222224,
             libraryId=1,
             resourceCategoryId=1,
+            bibDate=some_date,
             title="TEST TITLE 3",
             sourceId=1,
             status="matched",
@@ -325,6 +416,7 @@ def test_retrieve_matched_resources(test_session, test_data):
             sierraId=22222225,
             libraryId=1,
             resourceCategoryId=1,
+            bibDate=some_date,
             title="TEST TITLE 4",
             sourceId=1,
             status="matched",
@@ -359,6 +451,7 @@ def test_update_resource(test_session):
         sierraId=sierraId,
         libraryId=lib_rec.nid,
         resourceCategoryId=cat_rec.nid,
+        bibDate=datetime.utcnow().date(),
         title="TEST TITLE",
         sourceId=src_rec.nid,
         status="open",
