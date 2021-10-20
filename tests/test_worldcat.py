@@ -12,7 +12,7 @@ from bookops_worldcat.errors import WorldcatAuthorizationError, WorldcatSessionE
 
 from nightshift import __title__, __version__
 from nightshift.datastore import Resource
-from nightshift.worldcat import (
+from nightshift.comms.worldcat import (
     get_credentials,
     get_access_token,
     get_full_bibs,
@@ -20,7 +20,6 @@ from nightshift.worldcat import (
     is_match,
     prep_resource_queries_payloads,
     search_brief_bibs,
-    get_full_bibs,
 )
 
 
