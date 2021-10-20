@@ -2,11 +2,9 @@
 from datetime import datetime, timedelta
 from typing import List
 
-from sqlalchemy import create_engine, func
-from sqlalchemy.engine import Result
+from sqlalchemy import create_engine
 from sqlalchemy.engine.row import Row
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.expression import select
 
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import (
