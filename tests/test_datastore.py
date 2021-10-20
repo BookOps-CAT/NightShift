@@ -66,7 +66,7 @@ def test_Library_tbl_repr():
 
 
 def test_OutputFile_tbl_repr():
-    stamp = datetime.now()
+    stamp = datetime.utcnow()
     assert (
         str(OutputFile(nid=1, libraryId=2, handle="foo.mrc", timestamp=stamp))
         == f"<OutputFile(nid='1', libraryId='2', handle='foo.mrc', timestamp='{stamp}')>"
@@ -144,6 +144,7 @@ def test_WorldcatQuery_tbl_json_column(test_session, test_data):
             sierraId=22222222,
             libraryId=1,
             resourceCategoryId=1,
+            bibDate=datetime.now().date(),
             title="TEST",
             sourceId=1,
         )

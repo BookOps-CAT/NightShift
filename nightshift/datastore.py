@@ -127,7 +127,7 @@ class Resource(Base):
         Integer, ForeignKey("resource_category.nid"), nullable=False
     )
 
-    bibDate = Column(Date)
+    bibDate = Column(Date, nullable=False)
     author = Column(String)
     title = Column(String)
     pubDate = Column(String)
