@@ -29,6 +29,12 @@ def mock_utcnow(monkeypatch):
     monkeypatch.setattr(datetime, "datetime", FakeUtcNow)
 
 
+@pytest.fixture
+def mock_log_env(monkeypatch):
+    monkeypatch.setenv("LOGGLY_TOKEN", "ns_token_here")
+    monkeypatch.setenv("LOG_HANDLERS", "console,file,loggly")
+
+
 # DB fixtures ############
 
 
