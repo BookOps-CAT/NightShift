@@ -18,7 +18,7 @@ def run():
     try:
         2 / 0
     except Exception as e:
-        logger.error(e, exc_info=True)
+        logger.error(e)
 
 
 if __name__ == "__main__":
