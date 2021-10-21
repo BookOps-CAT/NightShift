@@ -1,19 +1,23 @@
 """
 This module incldues top level processes to be performed by the app
 """
-from bookops_worldcat.errors import WorldcatSessionError
+import logging
 
+from bookops_worldcat.errors import WorldcatSessionError
 
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import session_scope
-from nightshfit.datastore_transactions import (
+from nightshift.datastore_transactions import (
     retrieve_matched_resources,
     retrieve_new_resources,
-    retrieve_scheduled_resources,
+    retrieve_older_open_resources,
     update_resource,
 )
-from nightshift import worldcat
+from nightshift.comms import worldcat
 from nightshift.marc.marc_parser import BibReader
+
+
+logger = logging.getLogger("nightshift")
 
 
 def search_worldcat(db_session, library, resources) -> None:
@@ -26,7 +30,7 @@ def search_worldcat(db_session, library, resources) -> None:
         library:                        'NYP' or 'BPL'
         resources:                      `sqlachemy.engine.Result` instance
     """
-    results = worldcat.search_batch(library=library, resources=resources)
+    results = worldcat.search_brief_bibs(library=library, resources=resources)
     try:
         for resource, response in results:
             if response is not None:
@@ -59,7 +63,7 @@ def search_worldcat(db_session, library, resources) -> None:
                 pass
     except WorldcatSessionError:
         # log exception
-        break
+        raise
 
 
 def get_worldcat_full_bibs(db_session, library, resources):
@@ -89,7 +93,7 @@ def process_resources():
     with session_scope() as db_session:
         # retrieve today's resouces & search WorldCat
         for library, libdata in LIBRARIES.items():
-
+            logger.info(f"Processing {library} new resources.")
             # search newly added resources
             resources = retrieve_new_resources(db_session, libdata["nid"])
             # perform searches for each resource and store results
@@ -106,16 +110,16 @@ def process_resources():
 
             # search again older resources
             for res_category, catdata in RESOURCE_CATEGORIES.items():
-                resources = retrieve_scheduled_resources(
+                resources = retrieve_older_open_resources(
                     db_session, libdata["nid"], catdata["nid"], catdata["query_days"]
                 )
 
-            # perform download of full records for matched resources
-            resources = retrieve_matched_resources(db_session, libdata["nid"])
-            get_worldcat_full_bibs(db_session, library, resources)
+                # perform download of full records for matched resources
+                resources = retrieve_matched_resources(db_session, libdata["nid"])
+                get_worldcat_full_bibs(db_session, library, resources)
 
-            # serialize as MARC21 and output to a file upgraded resources
-            resources = retrieve_full_bib_resources(db_session, library)
+                # serialize as MARC21 and output to a file upgraded resources
+                resources = retrieve_full_bib_resources(db_session, library)
 
     # produce MARC records
     # output MARC records to the network drive
