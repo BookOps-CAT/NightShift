@@ -35,13 +35,9 @@ def mock_log_env(monkeypatch):
     monkeypatch.setenv("LOG_HANDLERS", "console,file,loggly")
 
 
-# DB fixtures ############
-
-
-def local_test_db_config():
+def local_test_config():
     """
-    requires yaml file with local postgres config
-
+    Requires yaml file with local logging configuration
     example:
     ---
     NS_DBHOST: localhost
@@ -49,10 +45,23 @@ def local_test_db_config():
     NS_DBPASSW: some_password
     NS_DBPORT: 5432
     NS_DBNAME: ns_db
+    LOGGLY_TOKEN: app_token
+    LOG_HANDLERS: "console,file,loggly"
     """
     with open("tests/envar.yaml", "r") as f:
         data = yaml.safe_load(f)
         return data
+
+
+@pytest.fixture(scope="function")
+def test_log(monkeypatch):
+    if not os.getenv("TRAVIS"):
+        data = local_test_config()
+        monkeypatch.setenv("LOGGLY_TOKEN", data["LOGGLY_TOKEN"])
+        monkeypatch.setenv("LOG_HANDLERS", data["LOG_HANDLERS"])
+
+
+# DB fixtures ############
 
 
 @pytest.fixture(scope="function")
@@ -66,7 +75,7 @@ def mock_db_env(monkeypatch):
             NS_DBNAME="ns_db",
         )
     else:
-        data = local_test_db_config()
+        data = local_test_config()
 
     monkeypatch.setenv("NS_DBUSER", data["NS_DBUSER"])
     monkeypatch.setenv("NS_DBPASSW", data["NS_DBPASSW"])

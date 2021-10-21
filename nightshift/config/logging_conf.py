@@ -26,7 +26,7 @@ def get_token() -> str:
     return os.getenv("LOGGLY_TOKEN")
 
 
-def log_config() -> Dict:
+def log_conf() -> Dict:
     """
     Returns dictionary with logger configuration. Depends on
     environmental variables to access loggly token and specify logger.
@@ -45,7 +45,7 @@ def log_config() -> Dict:
                 "format": "%(name)s-%(asctime)s-%(filename)s-%(lineno)s-%(levelname)s-%(message)s"
             },
             "json": {
-                "format": '{"app":"%(name)s", "asciTime":"%(asctime)s", "fileName":"%(filename)s", "lineNo":"%(lineno)d", "levelName":"%(levelname)s", "message":"%(message)s"}'
+                "format": '{"app":"%(name)s", "asciTime":"%(asctime)s", "fileName":"%(filename)s", "lineNo":"%(lineno)d", "levelName":"%(levelname)s", "message":"%(message)s", "exc_info":"%(exc_info)s"}'
             },
         },
         "handlers": {
