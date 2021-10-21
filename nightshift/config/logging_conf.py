@@ -45,7 +45,7 @@ def log_conf() -> Dict:
                 "format": "%(name)s-%(asctime)s-%(filename)s-%(lineno)s-%(levelname)s-%(message)s"
             },
             "json": {
-                "format": '{"app":"%(name)s", "asciTime":"%(asctime)s", "fileName":"%(filename)s", "lineNo":"%(lineno)d", "levelName":"%(levelname)s", "message":"%(message)s", "exc_info":"%(exc_info)s"}'
+                "format": '{"app":"%(name)s", "asciTime":"%(asctime)s", "fileName":"%(filename)s", "lineNo":"%(lineno)d", "levelName":"%(levelname)s", "message":"%(message)s"}'
             },
         },
         "handlers": {
@@ -57,7 +57,7 @@ def log_conf() -> Dict:
             "file": {
                 "level": "DEBUG",
                 "class": "logging.handlers.RotatingFileHandler",
-                "filename": "ns_log.log",
+                "filename": "nightshift.log",
                 "formatter": "brief",
                 "maxBytes": 1024 * 1024,
                 "backupCount": 5,
