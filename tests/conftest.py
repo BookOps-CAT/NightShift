@@ -221,6 +221,8 @@ class MockAuthServerResponseSuccess:
 class MockSuccessfulHTTP200SessionResponse:
     def __init__(self):
         self.status_code = 200
+        self.content = b"some content here"
+        self.url = "request_url_here"
 
     def json(self):
         return {
@@ -254,6 +256,7 @@ class MockSuccessfulHTTP200SessionResponse:
 class MockSuccessfulHTTP200SessionResponseNoMatches:
     def __init__(self):
         self.status_code = 200
+        self.url = "request_url_here"
 
     def json(self):
         return {
