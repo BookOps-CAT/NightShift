@@ -89,7 +89,7 @@ def retrieve_full_bib_resources(session: Session, libraryId: int) -> List[Resour
 
 
 def retrieve_older_open_resources(
-    session: Session, minAge: int, maxAge: int
+    session: Session, libraryId: int, minAge: int, maxAge: int
 ) -> List[Row]:
     """
     Queries resources with open status that has not been queried in WorldCat
@@ -110,6 +110,7 @@ def retrieve_older_open_resources(
         )
         .join(WorldcatQuery)
         .filter(
+            Resource.libraryId == libraryId,
             Resource.status == "open",
             Resource.deleted == False,
             Resource.bibDate > datetime.utcnow() - timedelta(days=maxAge),

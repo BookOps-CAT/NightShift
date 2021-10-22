@@ -267,7 +267,7 @@ def test_retrieve_older_open_resources(
     )
     test_session.commit()
 
-    res = retrieve_older_open_resources(test_session, 30, 90)
+    res = retrieve_older_open_resources(test_session, 1, 30, 90)
     assert [r.nid for r in res] == expectation
 
 
