@@ -104,16 +104,14 @@ def retrieve_older_open_resources(
         list of `Row` instances
     """
 
-    result = (
+    resources = (
         session.query(
             Resource,
-            WorldcatQuery.nid.label("wqId"),
         )
         .join(WorldcatQuery)
         .filter(
             Resource.status == "open",
             Resource.deleted == False,
-            Resource.bibDate <= datetime.utcnow() - timedelta(days=minAge),
             Resource.bibDate > datetime.utcnow() - timedelta(days=maxAge),
         )
         .filter(
@@ -122,7 +120,7 @@ def retrieve_older_open_resources(
         )
         .all()
     )
-    return result
+    return resources
 
 
 def retrieve_new_resources(session: Session, libraryId: int) -> List[Resource]:

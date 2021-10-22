@@ -168,7 +168,7 @@ def test_retrieve_full_bib_resources(
             False,
             False,
             31,
-            [2],
+            [1],
             id="query needed",
         ),
         pytest.param(
@@ -268,7 +268,7 @@ def test_retrieve_older_open_resources(
     test_session.commit()
 
     res = retrieve_older_open_resources(test_session, 30, 90)
-    assert [r.wqId for r in res] == expectation
+    assert [r.nid for r in res] == expectation
 
 
 def test_retrieve_new_resources(test_session, test_data_core):
