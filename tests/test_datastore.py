@@ -137,7 +137,7 @@ def test_WorldcatQuery_tbl_repr():
     )
 
 
-def test_WorldcatQuery_tbl_json_column(test_session, test_data):
+def test_WorldcatQuery_tbl_json_column(test_session, test_data_core):
     test_session.add(
         Resource(
             nid=1,

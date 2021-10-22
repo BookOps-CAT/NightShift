@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker
 import yaml
 
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
-from nightshift.datastore import Base, Library, ResourceCategory, SourceFile
+from nightshift.datastore import Base, Library, Resource, ResourceCategory, SourceFile
 from nightshift.marc.marc_parser import BibReader
 
 
@@ -111,7 +111,7 @@ def test_session(test_connection):
 
 
 @pytest.fixture
-def test_data(test_session):
+def test_data_core(test_session):
     for k, v in LIBRARIES.items():
         test_session.add(Library(nid=v["nid"], code=k))
     for k, v in RESOURCE_CATEGORIES.items():
@@ -121,6 +121,22 @@ def test_data(test_session):
     test_session.add(SourceFile(nid=1, libraryId=1, handle="foo1.mrc"))
     test_session.add(SourceFile(nid=2, libraryId=2, handle="foo2.mrc"))
     test_session.commit()
+
+
+@pytest.fixture
+def test_data_rich(test_session, test_data_core):
+    test_session.add(
+        Resource(
+            nid=1,
+            sierraId=1111111,
+            libraryId=1,
+            resourceCategoryId=1,
+            sourceId=1,
+            bibDate=datetime.datetime.utcnow().date() - datetime.timedelta(days=31),
+            title="TITLE 1",
+            status="open",
+        )
+    )
     test_session.commit()
 
 

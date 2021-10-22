@@ -5,7 +5,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def test_logger_init_nightshift(
-    test_log, caplog, test_connection, test_session, test_data
+    test_log, caplog, test_connection, test_session, test_data_core
 ):
     from nightshift.bot import run
 

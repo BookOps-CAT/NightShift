@@ -80,7 +80,9 @@ def test_insert_or_ingore_dup(test_session):
     assert rec2 is None
 
 
-def test_insert_or_ignore_resubmitted_changed_record_exception(test_session, test_data):
+def test_insert_or_ignore_resubmitted_changed_record_exception(
+    test_session, test_data_core
+):
     # not possible to add the same record but exception raised
     # should this be trapped somehow and instead return None?
     insert_or_ignore(
@@ -121,7 +123,7 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(test_session, tes
     ],
 )
 def test_retrieve_full_bib_resources(
-    test_session, test_data, library_id, status, deleted, full_bib, expectation
+    test_session, test_data_core, library_id, status, deleted, full_bib, expectation
 ):
     bib_date = datetime.utcnow().date()
     test_session.add(
@@ -227,7 +229,7 @@ def test_retrieve_full_bib_resources(
 )
 def test_retrieve_older_open_resources(
     test_session,
-    test_data,
+    test_data_core,
     bib_date,
     status,
     deleted,
@@ -269,7 +271,7 @@ def test_retrieve_older_open_resources(
     assert [r.wqId for r in res] == expectation
 
 
-def test_retrieve_new_resources(test_session, test_data):
+def test_retrieve_new_resources(test_session, test_data_core):
 
     # BPL resources
     test_session.add(
@@ -353,7 +355,7 @@ def test_retrieve_new_resources(test_session, test_data):
     assert res[2].nid == 3
 
 
-def test_retrieve_matched_resources(test_session, test_data):
+def test_retrieve_matched_resources(test_session, test_data_core):
     some_date = (datetime.utcnow().date(),)
     # BPL resources
     test_session.add(
