@@ -92,6 +92,11 @@ def test_get_oclc_number_from_response():
     assert get_oclc_number(response) == "44959645"
 
 
+def test_get_oclc_number_from_response_no_matches():
+    response = MockSuccessfulHTTP200SessionResponseNoMatches()
+    assert get_oclc_number(response) is None
+
+
 def test_is_match_false():
     response = MockSuccessfulHTTP200SessionResponseNoMatches()
     assert is_match(response) is False
@@ -181,7 +186,7 @@ def test_search_brief_bibs_for_ebooks_no_matches_found(
     results = search_brief_bibs(library="NYP", resources=[resource])
     resource, response = next(results)
     assert resource.nid == 1
-    assert response is None
+    assert response.json() == MockSuccessfulHTTP200SessionResponseNoMatches().json()
 
 
 def test_search_brief_bibs_session_exception(

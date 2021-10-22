@@ -4,7 +4,7 @@
 This module handles WorldCat Metadata API requests.
 """
 import os
-import time
+import logging
 from typing import Iterator, List, Tuple
 
 from bookops_worldcat import WorldcatAccessToken, MetadataSession
@@ -13,10 +13,12 @@ from bookops_worldcat.errors import (
     WorldcatSessionError,
 )
 from requests import Response
-from sqlalchemy.engine import Result
 
 from nightshift import __title__, __version__
 from nightshift.datastore import Resource
+
+
+logger = logging.getLogger("nightshift")
 
 
 def get_credentials(library: str) -> dict:
@@ -56,11 +58,12 @@ def get_access_token(credentials: dict) -> WorldcatAccessToken:
         access_token = WorldcatAccessToken(**credentials)
         return access_token
     except WorldcatAuthorizationError:
+        logger.error("Unable to obtain Worldcat MetadataAPI access token.")
         raise
 
 
 def get_full_bibs(
-    library: str, resources: Result
+    library: str, resources: List[Resource]
 ) -> Iterator[Tuple[Resource, Response]]:
     """
     Makes MetadataAPI requests for full bibliographic records
@@ -78,8 +81,12 @@ def get_full_bibs(
         for resource in resources:
             try:
                 response = session.get_full_bib(oclcNumber=resource.oclcMatchNumber)
+                logger.debug(
+                    f"Full bib request for resource.nid={resource.nid} : {response.url}"
+                )
                 yield (resource, response)
             except WorldcatSessionError:
+                logger.error("WorldcatSessionError. Aborting.")
                 raise
 
 
@@ -93,7 +100,10 @@ def get_oclc_number(response: Response) -> str:
     Returns:
         oclc_number
     """
-    return response.json()["briefRecords"][0]["oclcNumber"]
+    try:
+        return response.json()["briefRecords"][0]["oclcNumber"]
+    except (IndexError, KeyError):
+        return None
 
 
 def is_match(response: Response) -> bool:
@@ -174,12 +184,12 @@ def prep_resource_queries_payloads(resource: Resource) -> List[dict]:
                     catalogSource="DLC",
                 )
             )
-
+    logging.debug(f"Query payload for resource.nid={resource.nid}: {payloads}")
     return payloads
 
 
 def search_brief_bibs(
-    library: str, resources: Result
+    library: str, resources: List[Resource]
 ) -> Iterator[Tuple[Resource, Response]]:
     """
     Performes WorldCat queries for each resource in the passed library batch.
@@ -205,11 +215,14 @@ def search_brief_bibs(
                         orderBy="mostWidelyHeld",
                         limit=1,
                     )
+                    logger.debug(
+                        f"Brief bib query for resource.nid={resource.nid}: {response.url}"
+                    )
                 except WorldcatSessionError:
+                    logger.error("WorldcatSessionError. Aborting.")
                     raise
 
                 if is_match(response):
+                    logger.debug(f"Match found for resource.nid={resource.nid}")
                     break
-                else:
-                    response = None
             yield (resource, response)
