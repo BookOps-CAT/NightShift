@@ -189,6 +189,6 @@ def update_resource(session, sierraId, libraryId, **kwargs):
     if instance:
         for key, value in kwargs.items():
             setattr(instance, key, value)
-            return instance
+        return instance
     else:
         return None
