@@ -142,7 +142,7 @@ class Resource(Base):
 
     deleted = Column(Boolean, nullable=False, default=False)
     deletedTimestamp = Column(DateTime)
-    oclcMatchNumber = Column(Integer)
+    oclcMatchNumber = Column(String)
     fullBib = Column(String)
     outputId = Column(Integer, ForeignKey("output_file.nid"))
     status = Column(
