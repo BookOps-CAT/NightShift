@@ -104,21 +104,29 @@ def get_worldcat_full_bibs(
 #             get_worldcat_brief_bib_matches(db_session, library, resources)
 
 #             # update status of older resources
-#             # for res_category, catdata in RESOURCE_CATEGORIES.items():
-#             #     resources = retrieve_older_open_resources(
-#             #         db_session, libdata["nid"], catdata["nid"], catdata["query_days"]
-#             #     )
-#             #     # query Sierra to update their status if changed
-#             #     # here
-#             #     # this will be particulary important for print materials
-#             #     pass
+#             for res_category, catdata in RESOURCE_CATEGORIES.items():
+#                 for ageMin, ageMax in catdata["query_days"]:
+#                     resources = retrieve_older_open_resources(
+#                         db_session,
+#                         libdata["nid"],
+#                         minAge,
+#                         maxAge,
+#                     )
+#                     # query Sierra to update their status if changed
+#                     # here
+#                     # this will be particulary important for print materials
+#                     pass
 
 #             # search again older resources dropping any resources already cataloged
 #             # or deleted/suppessed
 #             for res_category, catdata in RESOURCE_CATEGORIES.items():
-#                 resources = retrieve_older_open_resources(
-#                     db_session, libdata["nid"], catdata["nid"], catdata["query_days"]
-#                 )
+#                 for ageMin, ageMax in catdata["query_days"]:
+#                     resources = retrieve_older_open_resources(
+#                         db_session,
+#                         libdata["nid"],
+#                         catdata["nid"],
+#                         catdata["query_days"],
+#                     )
 
 #                 # perform download of full records for matched resources
 #                 resources = retrieve_matched_resources(db_session, libdata["nid"])
