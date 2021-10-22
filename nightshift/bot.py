@@ -7,7 +7,8 @@ import logging.config
 import loggly.handlers
 
 from nightshift.config.logging_conf import log_conf
-from nightshift.manager import process_resources
+
+# from nightshift.manager import process_resources
 
 conf = log_conf()
 logging.config.dictConfig(conf)
