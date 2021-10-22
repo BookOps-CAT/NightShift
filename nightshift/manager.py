@@ -2,25 +2,29 @@
 This module incldues top level processes to be performed by the app
 """
 import logging
+from typing import List
 
 from bookops_worldcat.errors import WorldcatSessionError
+from sqlalchemy.orm.session import Session
 
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
-from nightshift.datastore import session_scope
+from nightshift.datastore import session_scope, Resource, WorldcatQuery
 from nightshift.datastore_transactions import (
+    retrieve_full_bib_resources,
     retrieve_matched_resources,
     retrieve_new_resources,
     retrieve_older_open_resources,
     update_resource,
 )
 from nightshift.comms import worldcat
-from nightshift.marc.marc_parser import BibReader
 
 
 logger = logging.getLogger("nightshift")
 
 
-def search_worldcat(db_session, library, resources) -> None:
+def get_worldcat_brief_bib_matches(
+    db_session: Session, library: str, resources: List[Resource]
+) -> None:
     """
     Queries Worldcat for given resources and persists responses
     in the database.
@@ -30,43 +34,41 @@ def search_worldcat(db_session, library, resources) -> None:
         library:                        'NYP' or 'BPL'
         resources:                      `sqlachemy.engine.Result` instance
     """
+    logger.info(f"Searching Worldcat.")
     results = worldcat.search_brief_bibs(library=library, resources=resources)
     try:
         for resource, response in results:
-            if response is not None:
+            if worldcat.is_match(response):
                 oclcNumber = worldcat.get_oclc_number(response)
-                queries = resource.queries.append(
-                    resourceId=resource.nid,
-                    match=True,
-                    response=response.json(),
-                )
                 instance = update_resource(
                     db_session,
                     resource.sierraId,
                     resource.libraryId,
                     oclcMatchNumber=oclcNumber,
                     status="matched",
-                    queries=queries,
+                )
+                instance.queries.append(
+                    WorldcatQuery(
+                        resourceId=resource.nid,
+                        match=True,
+                        response=response.json(),
+                    )
+                )
+            else:
+                resource.queries.append(
+                    WorldcatQuery(match=False, response=response.json())
                 )
 
-            else:
-                queries = resource.queries.append(resourceId=resource.nid, match=False)
-                instance = update_resource(
-                    db_session,
-                    resource.sierraId,
-                    resource.libraryId,
-                    queries=queries,
-                )
             db_session.commit()
-            if instance is None:
-                # log failed update
-                pass
+
     except WorldcatSessionError:
-        # log exception
+        logger.error("WorldcatSessionError. Aborting.")
         raise
 
 
-def get_worldcat_full_bibs(db_session, library, resources):
+def get_worldcat_full_bibs(
+    db_session: Session, library: str, resources: List[Resource]
+) -> None:
     """
     Requests full bibliographic records from MetadataAPI service and
     stores the responses.
@@ -81,49 +83,53 @@ def get_worldcat_full_bibs(db_session, library, resources):
         instance = update_resource(
             db_session, resource.sierraId, resource.libraryId, fullBib=response.content
         )
-        if instance is None:
-            # log error
-            continue
 
 
-def process_resources():
-    """
-    Processes any newly added resources.
-    """
-    with session_scope() as db_session:
-        # retrieve today's resouces & search WorldCat
-        for library, libdata in LIBRARIES.items():
-            logger.info(f"Processing {library} new resources.")
-            # search newly added resources
-            resources = retrieve_new_resources(db_session, libdata["nid"])
-            # perform searches for each resource and store results
-            search_worldcat(db_session, library, resources)
+# def process_resources() -> None:
+#     """
+#     Processes newly added and older open resources.
+#     """
+#     with session_scope() as db_session:
+#         # retrieve today's resouces & search WorldCat
+#         for library, libdata in LIBRARIES.items():
+#             logger.info(f"Processing {(library).upper()} new resources.")
 
-            # update status of older resources
-            for res_category, catdata in RESOURCE_CATEGORIES.items():
-                resources = retrieve_scheduled_resources(
-                    db_session, libdata["nid"], catdata["nid"], catdata["query_days"]
-                )
-                # query Sierra to update their status if changed
-                # here
-                pass
+#             # search newly added resources
+#             resources = retrieve_new_resources(db_session, libdata["nid"])
+#             logger.debug(
+#                 f"Retrieved {len(resources)} new {(library).upper()} for querying."
+#             )
 
-            # search again older resources
-            for res_category, catdata in RESOURCE_CATEGORIES.items():
-                resources = retrieve_older_open_resources(
-                    db_session, libdata["nid"], catdata["nid"], catdata["query_days"]
-                )
+#             # perform searches for each resource and store results
+#             get_worldcat_brief_bib_matches(db_session, library, resources)
 
-                # perform download of full records for matched resources
-                resources = retrieve_matched_resources(db_session, libdata["nid"])
-                get_worldcat_full_bibs(db_session, library, resources)
+#             # update status of older resources
+#             # for res_category, catdata in RESOURCE_CATEGORIES.items():
+#             #     resources = retrieve_older_open_resources(
+#             #         db_session, libdata["nid"], catdata["nid"], catdata["query_days"]
+#             #     )
+#             #     # query Sierra to update their status if changed
+#             #     # here
+#             #     # this will be particulary important for print materials
+#             #     pass
 
-                # serialize as MARC21 and output to a file upgraded resources
-                resources = retrieve_full_bib_resources(db_session, library)
+#             # search again older resources dropping any resources already cataloged
+#             # or deleted/suppessed
+#             for res_category, catdata in RESOURCE_CATEGORIES.items():
+#                 resources = retrieve_older_open_resources(
+#                     db_session, libdata["nid"], catdata["nid"], catdata["query_days"]
+#                 )
 
-    # produce MARC records
-    # output MARC records to the network drive
-    # notify
+#                 # perform download of full records for matched resources
+#                 resources = retrieve_matched_resources(db_session, libdata["nid"])
+#                 get_worldcat_full_bibs(db_session, library, resources)
 
-    # perform db maintenance
-    # mark resources as expired
+#                 # serialize as MARC21 and output to a file of enhanced bibs
+#                 resources = retrieve_full_bib_resources(db_session, library)
+#                 ...
+
+#                 # output MARC records to the network drive
+#                 # notify (loggly?)
+
+#         # perform db maintenance
+#         # mark resources as expired
