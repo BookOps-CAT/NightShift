@@ -3,7 +3,7 @@
 LIBRARIES = {"nyp": {"nid": 1}, "bpl": {"nid": 2}}
 
 PRINT_TAGS_TO_KEEP = ["029", "090", "263", "936", "938"]
-PRINT_QUERY_DAYS = [15, 30]
+PRINT_QUERY_DAYS = [(15, 30), (30, 45)]
 
 RESOURCE_CATEGORIES = {
     "ebook": {
@@ -11,21 +11,21 @@ RESOURCE_CATEGORIES = {
         "description": "digital book",
         "src_tags2keep": ["001", "020", "037", "856"],
         "dst_tags2delete": ["020", "029", "037", "090", "856", "938"],
-        "query_days": [30, 90, 180],
+        "query_days": [(30, 90), (90, 180)],
     },
     "eaudio": {
         "nid": 2,
         "description": "digital audiobook",
         "src_tags2keep": ["001", "020", "037", "856"],
         "dst_tags2delete": ["020", "029", "037", "090", "856", "938"],
-        "query_days": [30, 90, 180],
+        "query_days": [(30, 90), (90, 180)],
     },
     "evideo": {
         "nid": 3,
         "description": "video digital",
         "src_tags2keep": ["001", "020", "037", "856"],
         "dst_tags2delete": ["020", "029", "037", "090", "856", "938"],
-        "query_days": [90],
+        "query_days": [(30, 90)],
     },
     "print_eng_adult_fic": {
         "nid": 4,
