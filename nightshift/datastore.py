@@ -15,12 +15,11 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
-    JSON,
     PickleType,
     String,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.dialects.postgresql import ENUM, JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -234,7 +233,7 @@ class WorldcatQuery(Base):
     nid = Column(Integer, primary_key=True)
     resourceId = Column(Integer, ForeignKey("resource.nid"), nullable=False)
     match = Column(Boolean, nullable=False)
-    response = Column(JSON)
+    response = Column(JSONB)
     timestamp = Column(DateTime, default=datetime.now(), nullable=False)
 
     def __repr__(self):
