@@ -13,6 +13,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import yaml
 
+from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import Base, Library, Resource, ResourceCategory, SourceFile
 from nightshift.marc.marc_parser import BibReader
@@ -266,7 +267,7 @@ class MockSuccessfulHTTP200SessionResponseNoMatches:
 
 class MockSessionError:
     def __init__(self, *args, **kwargs):
-        raise WorldcatSessionError
+        raise WorldcatSessionError("Timeout error")
 
 
 @pytest.fixture
@@ -332,3 +333,8 @@ def mock_token(mock_worldcat_creds, mock_successful_post_token_response):
 def mock_worldcat_session(mock_token):
     with MetadataSession(authorization=mock_token) as session:
         yield session
+
+
+@pytest.fixture
+def mock_Worldcat(mock_worldcat_creds, mock_successful_post_token_response):
+    return Worldcat("NYP")
