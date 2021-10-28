@@ -113,12 +113,12 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(
 @pytest.mark.parametrize(
     "library_id,status,deleted,full_bib,expectation",
     [
-        pytest.param(1, "open", False, "<foo>spam</foo>", [], id="wrong status"),
-        pytest.param(1, "matched", True, "<foo>spam</foo", [], id="deleted resource"),
+        pytest.param(1, "open", False, b"<foo>spam</foo>", [], id="wrong status"),
+        pytest.param(1, "matched", True, b"<foo>spam</foo", [], id="deleted resource"),
         pytest.param(1, "matched", False, None, [], id="missing full bib"),
-        pytest.param(1, "matched", False, "<foo>spam</foo>", [2], id="found 1 match"),
+        pytest.param(1, "matched", False, b"<foo>spam</foo>", [2], id="found 1 match"),
         pytest.param(
-            2, "matched", False, "<foo>spam</foo>", [1, 2], id="found 2 matches"
+            2, "matched", False, b"<foo>spam</foo>", [1, 2], id="found 2 matches"
         ),
     ],
 )
@@ -137,7 +137,7 @@ def test_retrieve_full_bib_resources(
             title="TEST TITLE 1",
             status="matched",
             deleted=False,
-            fullBib="<foo>spam</foo>",
+            fullBib=b"<foo>spam</foo>",
         )
     )
     test_session.add(

@@ -74,9 +74,10 @@ def get_worldcat_full_bibs(
     """
     results = worldcat.get_full_bibs(resources)
     for resource, response in results:
-        instance = update_resource(
+        update_resource(
             db_session, resource.sierraId, resource.libraryId, fullBib=response
         )
+        db_session.commit()
 
 
 # def process_resources() -> None:

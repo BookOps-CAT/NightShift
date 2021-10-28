@@ -19,7 +19,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import ENUM, JSONB
+from sqlalchemy.dialects.postgresql import ENUM, JSONB, BYTEA
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -142,7 +142,7 @@ class Resource(Base):
     deleted = Column(Boolean, nullable=False, default=False)
     deletedTimestamp = Column(DateTime)
     oclcMatchNumber = Column(String)
-    fullBib = Column(String)
+    fullBib = Column(BYTEA)
     outputId = Column(Integer, ForeignKey("output_file.nid"))
     status = Column(
         ENUM(
