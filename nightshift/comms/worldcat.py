@@ -180,7 +180,9 @@ class Worldcat:
                         catalogSource="DLC",
                     )
                 )
-        logging.debug(f"Query payload for resource.nid={resource.nid}: {payloads}")
+        logging.debug(
+            f"Query payload for {self.library} Sierra bib # {resource.sierraId}: {payloads}."
+        )
         return payloads
 
     def get_full_bibs(self, resources: list[Resource]) -> Iterator[bytes]:
@@ -193,7 +195,7 @@ class Worldcat:
                     oclcNumber=resource.oclcMatchNumber
                 )
                 logger.debug(
-                    f"Full bib Worldcat request for b{resource.sierraId}a: {response.url}"
+                    f"Full bib Worldcat request for {self.library} Sierra bib # {resource.sierraId}: {response.url}."
                 )
                 yield (resource, response)
         except WorldcatSessionError:
@@ -222,10 +224,12 @@ class Worldcat:
 
                     brief_bib_response = BriefBibResponse(response)
                     logger.debug(
-                        f"Brief bib Worldcat query for b{resource.sierraId}a: {response.url}"
+                        f"Brief bib Worldcat query for {self.library} Sierra bib # {resource.sierraId}: {response.url}."
                     )
                     if brief_bib_response.is_match:
-                        logger.debug(f"Match found for b{resource.sierraId}a.")
+                        logger.debug(
+                            f"Match found for {self.library} Sierra bib #: {resource.sierraId}."
+                        )
                         break
                 yield (resource, brief_bib_response)
         except WorldcatSessionError:

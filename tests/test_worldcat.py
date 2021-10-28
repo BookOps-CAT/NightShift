@@ -104,7 +104,8 @@ class TestWorldcatMocked:
         assert resource.nid == 1
         assert response.status_code == 200
         assert (
-            "Full bib Worldcat request for b22222222a: request_url_here" in caplog.text
+            "Full bib Worldcat request for NYP Sierra bib # 22222222: request_url_here."
+            in caplog.text
         )
 
     def test_get_full_bibs_session_error(
@@ -166,14 +167,20 @@ class TestWorldcatMocked:
             ),
         ],
     )
-    def test_prep_resource_queries_payloads(self, arg, expectation, mock_Worldcat):
+    def test_prep_resource_queries_payloads(
+        self, caplog, arg, expectation, mock_Worldcat
+    ):
         resource = Resource(
             resourceCategoryId=arg,
+            sierraId=22222222,
             distributorNumber=111,
             standardNumber=222,
             congressNumber=333,
         )
-        assert mock_Worldcat._prep_resource_queries_payloads(resource) == expectation
+        with caplog.at_level(logging.DEBUG):
+            payloads = mock_Worldcat._prep_resource_queries_payloads(resource)
+        assert payloads == expectation
+        assert f"Query payload for NYP Sierra bib # 22222222: {expectation}."
 
     def test_search_brief_bibs(
         self, caplog, mock_Worldcat, mock_successful_session_get_request
@@ -197,7 +204,10 @@ class TestWorldcatMocked:
         assert resource.nid == 1
         assert brief_data.is_match
         assert brief_data.oclc_number == "44959645"
-        assert "Brief bib Worldcat query for b22222222a: request_url_here"
+        assert (
+            "Brief bib Worldcat query for NYP Sierra bib # 22222222: request_url_here."
+            in caplog.text
+        )
 
     def test_search_brief_bibs_no_matches_found(
         self,
