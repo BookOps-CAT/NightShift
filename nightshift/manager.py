@@ -7,6 +7,7 @@ from typing import List
 from bookops_worldcat.errors import WorldcatSessionError
 from sqlalchemy.orm.session import Session
 
+from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import session_scope, Resource, WorldcatQuery
 from nightshift.datastore_transactions import (
@@ -16,14 +17,13 @@ from nightshift.datastore_transactions import (
     retrieve_older_open_resources,
     update_resource,
 )
-from nightshift.comms import worldcat
 
 
 logger = logging.getLogger("nightshift")
 
 
 def get_worldcat_brief_bib_matches(
-    db_session: Session, library: str, resources: List[Resource]
+    db_session: Session, worldcat: Worldcat, resources: List[Resource]
 ) -> None:
     """
     Queries Worldcat for given resources and persists responses
@@ -31,43 +31,37 @@ def get_worldcat_brief_bib_matches(
 
     Args:
         db_session:                     `sqlalchemy.Session` instance
-        library:                        'NYP' or 'BPL'
+        worldcat:                       `nightshift.comms.worldcat.Worldcat` instance
         resources:                      `sqlachemy.engine.Result` instance
     """
     logger.info(f"Searching Worldcat.")
-    results = worldcat.search_brief_bibs(library=library, resources=resources)
-    try:
-        for resource, response in results:
-            if worldcat.is_match(response):
-                oclcNumber = worldcat.get_oclc_number(response)
-                instance = update_resource(
-                    db_session,
-                    resource.sierraId,
-                    resource.libraryId,
-                    oclcMatchNumber=oclcNumber,
-                    status="matched",
+    results = worldcat.get_brief_bibs(resources=resources)
+    for resource, response in results:
+        if response.is_match:
+            instance = update_resource(
+                db_session,
+                resource.sierraId,
+                resource.libraryId,
+                oclcMatchNumber=response.oclc_number,
+                status="matched",
+            )
+            instance.queries.append(
+                WorldcatQuery(
+                    resourceId=resource.nid,
+                    match=True,
+                    response=response.as_json,
                 )
-                instance.queries.append(
-                    WorldcatQuery(
-                        resourceId=resource.nid,
-                        match=True,
-                        response=response.json(),
-                    )
-                )
-            else:
-                resource.queries.append(
-                    WorldcatQuery(match=False, response=response.json())
-                )
+            )
+        else:
+            resource.queries.append(
+                WorldcatQuery(match=False, response=response.as_json)
+            )
 
-            db_session.commit()
-
-    except WorldcatSessionError:
-        logger.error("WorldcatSessionError. Aborting.")
-        raise
+        db_session.commit()
 
 
 def get_worldcat_full_bibs(
-    db_session: Session, library: str, resources: List[Resource]
+    db_session: Session, worldcat: Worldcat, resources: List[Resource]
 ) -> None:
     """
     Requests full bibliographic records from MetadataAPI service and
@@ -75,13 +69,13 @@ def get_worldcat_full_bibs(
 
     Args:
         db_session:                     `sqlalchemy.Session` instance
-        library:                        'NYP' or 'BPL'
+        worldcat:                       `nightshift.comms.worldcat.Worldcat` instance
         resources:                      `sqlalchemy.engine.Result` instance
     """
-    results = worldcat.get_full_bibs(library, resources)
+    results = worldcat.get_full_bibs(resources)
     for resource, response in results:
         instance = update_resource(
-            db_session, resource.sierraId, resource.libraryId, fullBib=response.content
+            db_session, resource.sierraId, resource.libraryId, fullBib=response
         )
 
 
