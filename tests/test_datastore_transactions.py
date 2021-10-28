@@ -113,12 +113,12 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(
 @pytest.mark.parametrize(
     "library_id,status,deleted,full_bib,expectation",
     [
-        pytest.param(1, "open", False, b"<foo>spam</foo>", [], id="wrong status"),
-        pytest.param(1, "matched", True, b"<foo>spam</foo", [], id="deleted resource"),
-        pytest.param(1, "matched", False, None, [], id="missing full bib"),
-        pytest.param(1, "matched", False, b"<foo>spam</foo>", [2], id="found 1 match"),
+        pytest.param(1, "expired", False, b"<foo>spam</foo>", [], id="wrong status"),
+        pytest.param(1, "open", True, b"<foo>spam</foo", [], id="deleted resource"),
+        pytest.param(1, "open", False, None, [], id="missing full bib"),
+        pytest.param(1, "open", False, b"<foo>spam</foo>", [2], id="found 1 match"),
         pytest.param(
-            2, "matched", False, b"<foo>spam</foo>", [1, 2], id="found 2 matches"
+            2, "open", False, b"<foo>spam</foo>", [1, 2], id="found 2 matches"
         ),
     ],
 )
@@ -135,7 +135,7 @@ def test_retrieve_full_bib_resources(
             resourceCategoryId=1,
             bibDate=bib_date,
             title="TEST TITLE 1",
-            status="matched",
+            status="open",
             deleted=False,
             fullBib=b"<foo>spam</foo>",
         )
@@ -367,7 +367,8 @@ def test_retrieve_matched_resources(test_session, test_data_core):
             bibDate=some_date,
             title="TEST TITLE 5",
             sourceId=2,
-            status="open",
+            status="upgraded_bot",
+            oclcMatchNumber="123",
             deleted=False,
         )
     )
@@ -383,6 +384,7 @@ def test_retrieve_matched_resources(test_session, test_data_core):
             title="TEST TITLE 1",
             sourceId=1,
             status="open",
+            oclcMatchNumber=None,
             deleted=False,
         )
     )
@@ -395,7 +397,8 @@ def test_retrieve_matched_resources(test_session, test_data_core):
             bibDate=some_date,
             title="TEST TITLE 2",
             sourceId=1,
-            status="matched",
+            status="open",
+            oclcMatchNumber="123",
             deleted=False,
         )
     )
@@ -408,7 +411,8 @@ def test_retrieve_matched_resources(test_session, test_data_core):
             bibDate=some_date,
             title="TEST TITLE 3",
             sourceId=1,
-            status="matched",
+            status="open",
+            oclcMatchNumber="124",
             deleted=False,
         )
     )
@@ -421,7 +425,8 @@ def test_retrieve_matched_resources(test_session, test_data_core):
             bibDate=some_date,
             title="TEST TITLE 4",
             sourceId=1,
-            status="matched",
+            status="open",
+            oclcMatchNumber="125",
             deleted=False,
         )
     )

@@ -43,7 +43,6 @@ def get_worldcat_brief_bib_matches(
                 resource.sierraId,
                 resource.libraryId,
                 oclcMatchNumber=response.oclc_number,
-                status="matched",
             )
             instance.queries.append(
                 WorldcatQuery(

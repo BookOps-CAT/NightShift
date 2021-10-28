@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
-from typing import List
+from typing import Optional
 
 from sqlalchemy import create_engine
-from sqlalchemy.engine.row import Row
 from sqlalchemy.orm import Session
 
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
@@ -16,7 +15,7 @@ from nightshift.datastore import (
 )
 
 
-def init_db():
+def init_db() -> None:
     """
     Initiates the database and prepopulates needed tables
 
@@ -64,7 +63,7 @@ def insert_or_ignore(session, model, **kwargs):
         return None
 
 
-def retrieve_full_bib_resources(session: Session, libraryId: int) -> List[Resource]:
+def retrieve_full_bib_resources(session: Session, libraryId: int) -> list[Resource]:
     """
     Retrieves resources that include MARC XML with full bib
 
@@ -79,7 +78,7 @@ def retrieve_full_bib_resources(session: Session, libraryId: int) -> List[Resour
         session.query(Resource)
         .filter(
             Resource.libraryId == libraryId,
-            Resource.status == "matched",
+            Resource.status == "open",
             Resource.deleted == False,
             Resource.fullBib.isnot(None),
         )
@@ -90,7 +89,7 @@ def retrieve_full_bib_resources(session: Session, libraryId: int) -> List[Resour
 
 def retrieve_older_open_resources(
     session: Session, libraryId: int, minAge: int, maxAge: int
-) -> List[Row]:
+) -> list[Resource]:
     """
     Queries resources with open status that has not been queried in WorldCat
     betweeen minAge and maxAge
@@ -124,7 +123,7 @@ def retrieve_older_open_resources(
     return resources
 
 
-def retrieve_new_resources(session: Session, libraryId: int) -> List[Resource]:
+def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
     """
     Retrieves resources that have been added to the db
     but has not been processed yet.
@@ -147,7 +146,7 @@ def retrieve_new_resources(session: Session, libraryId: int) -> List[Resource]:
     return resources
 
 
-def retrieve_matched_resources(session: Session, libraryId: int) -> List[Resource]:
+def retrieve_matched_resources(session: Session, libraryId: int) -> list[Resource]:
     """
     Retrieves resources that have been matched to records in WorldCat,
     but not upgraded yet.
@@ -162,14 +161,19 @@ def retrieve_matched_resources(session: Session, libraryId: int) -> List[Resourc
     """
     resources = (
         session.query(Resource)
-        .filter_by(libraryId=libraryId, status="matched", deleted=False)
+        .filter(
+            Resource.libraryId == libraryId,
+            Resource.status == "open",
+            Resource.deleted == False,
+            Resource.oclcMatchNumber != None,
+        )
         .order_by(Resource.resourceCategoryId, Resource.nid)
         .all()
     )
     return resources
 
 
-def update_resource(session, sierraId, libraryId, **kwargs):
+def update_resource(session, sierraId, libraryId, **kwargs) -> Optional[Resource]:
     """
     Updates Resource record.
 

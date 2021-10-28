@@ -70,7 +70,7 @@ def test_get_worldcat_brief_bib_matches_success(
     assert query.match
     assert query.response == MockSuccessfulHTTP200SessionResponse().json()
     assert res.oclcMatchNumber == "44959645"
-    assert res.status == "matched"
+    assert res.status == "open"
 
 
 def test_get_worldcat_brief_bib_matches_failed(
@@ -106,32 +106,6 @@ def test_get_worldcat_brief_bib_matches_failed(
     assert res.status == "open"
 
 
-# def test_get_worldcat_brief_bib_session_error(
-#     test_session,
-#     test_data_core,
-#     mock_worldcat_creds,
-#     mock_successful_post_token_response,
-#     mock_session_error,
-# ):
-#     test_session.add(
-#         Resource(
-#             nid=1,
-#             sierraId=11111111,
-#             libraryId=1,
-#             resourceCategoryId=1,
-#             sourceId=1,
-#             bibDate=datetime.utcnow().date(),
-#             title="Pride and prejudice.",
-#             distributorNumber="123",
-#             status="open",
-#         )
-#     )
-#     test_session.commit()
-#     resources = test_session.query(Resource).filter_by(nid=1).all()
-#     with pytest.raises(WorldcatSessionError):
-#         get_worldcat_brief_bib_matches(test_session, "NYP", resources)
-
-
 def test_get_worldcat_full_bibs(
     test_session,
     test_data_core,
@@ -148,7 +122,7 @@ def test_get_worldcat_full_bibs(
             bibDate=datetime.utcnow().date(),
             title="Pride and prejudice.",
             distributorNumber="123",
-            status="matched",
+            status="open",
             oclcMatchNumber="44959645",
         )
     )

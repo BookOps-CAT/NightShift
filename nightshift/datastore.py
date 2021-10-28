@@ -147,7 +147,6 @@ class Resource(Base):
     status = Column(
         ENUM(
             "open",
-            "matched",
             "expired",
             "deleted_staff",
             "upgraded_bot",
