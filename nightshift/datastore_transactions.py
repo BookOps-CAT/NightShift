@@ -63,9 +63,12 @@ def insert_or_ignore(session, model, **kwargs):
         return None
 
 
-def retrieve_full_bib_resources(session: Session, libraryId: int) -> list[Resource]:
+def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
     """
-    Retrieves resources that include MARC XML with full bib
+    Retrieves resources that have been added to the db
+    but has not been processed yet.
+    The results are grouped by the resource category and ordered by
+    resource nid.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -76,18 +79,14 @@ def retrieve_full_bib_resources(session: Session, libraryId: int) -> list[Resour
     """
     resources = (
         session.query(Resource)
-        .filter(
-            Resource.libraryId == libraryId,
-            Resource.status == "open",
-            Resource.deleted == False,
-            Resource.fullBib.isnot(None),
-        )
+        .filter_by(libraryId=libraryId, status="open", deleted=False, queries=None)
+        .order_by(Resource.resourceCategoryId, Resource.nid)
         .all()
     )
     return resources
 
 
-def retrieve_older_open_resources(
+def retrieve_open_older_resources(
     session: Session, libraryId: int, minAge: int, maxAge: int
 ) -> list[Resource]:
     """
@@ -112,6 +111,7 @@ def retrieve_older_open_resources(
             Resource.libraryId == libraryId,
             Resource.status == "open",
             Resource.deleted == False,
+            Resource.oclcMatchNumber == None,
             Resource.bibDate > datetime.utcnow() - timedelta(days=maxAge),
         )
         .filter(
@@ -123,30 +123,9 @@ def retrieve_older_open_resources(
     return resources
 
 
-def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
-    """
-    Retrieves resources that have been added to the db
-    but has not been processed yet.
-    The results are grouped by the resource category and ordered by
-    resource nid.
-
-    Args:
-        session:                `sqlalchemy.Session` instance
-        libraryId:              `Library.nid`
-
-    Returns:
-        list of `Resource` instances
-    """
-    resources = (
-        session.query(Resource)
-        .filter_by(libraryId=libraryId, status="open", deleted=False, queries=None)
-        .order_by(Resource.resourceCategoryId, Resource.nid)
-        .all()
-    )
-    return resources
-
-
-def retrieve_matched_resources(session: Session, libraryId: int) -> list[Resource]:
+def retrieve_open_matched_resources_without_full_bib(
+    session: Session, libraryId: int
+) -> list[Resource]:
     """
     Retrieves resources that have been matched to records in WorldCat,
     but not upgraded yet.
@@ -166,8 +145,35 @@ def retrieve_matched_resources(session: Session, libraryId: int) -> list[Resourc
             Resource.status == "open",
             Resource.deleted == False,
             Resource.oclcMatchNumber != None,
+            Resource.fullBib == None,
         )
         .order_by(Resource.resourceCategoryId, Resource.nid)
+        .all()
+    )
+    return resources
+
+
+def retrieve_open_matched_resources_with_full_bib_obtained(
+    session: Session, libraryId: int
+) -> list[Resource]:
+    """
+    Retrieves resources that include MARC XML with full bib
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        libraryId:              `Library.nid`
+
+    Returns:
+        list of `Resource` instances
+    """
+    resources = (
+        session.query(Resource)
+        .filter(
+            Resource.libraryId == libraryId,
+            Resource.status == "open",
+            Resource.deleted == False,
+            Resource.fullBib.isnot(None),
+        )
         .all()
     )
     return resources

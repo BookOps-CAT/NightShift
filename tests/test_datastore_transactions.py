@@ -18,10 +18,10 @@ from nightshift.datastore import (
 from nightshift.datastore_transactions import (
     init_db,
     insert_or_ignore,
-    retrieve_full_bib_resources,
-    retrieve_matched_resources,
+    retrieve_open_matched_resources_with_full_bib_obtained,
+    retrieve_open_matched_resources_without_full_bib,
     retrieve_new_resources,
-    retrieve_older_open_resources,
+    retrieve_open_older_resources,
     update_resource,
 )
 
@@ -122,7 +122,7 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(
         ),
     ],
 )
-def test_retrieve_full_bib_resources(
+def test_retrieve_open_matched_resources_with_full_bib_obtained(
     test_session, test_data_core, library_id, status, deleted, full_bib, expectation
 ):
     bib_date = datetime.utcnow().date()
@@ -155,17 +155,20 @@ def test_retrieve_full_bib_resources(
         )
     )
     test_session.commit()
-    res = retrieve_full_bib_resources(test_session, library_id)
+    res = retrieve_open_matched_resources_with_full_bib_obtained(
+        test_session, library_id
+    )
     assert [r.nid for r in res] == expectation
 
 
 @pytest.mark.parametrize(
-    "bib_date,status,deleted,match,days_since_last_query,expectation",
+    "bib_date,status,deleted,oclc_number,match,days_since_last_query,expectation",
     [
         pytest.param(
             datetime.utcnow() - timedelta(days=80),
             "open",
             False,
+            None,
             False,
             31,
             [1],
@@ -175,6 +178,7 @@ def test_retrieve_full_bib_resources(
             datetime.utcnow() - timedelta(days=80),
             "open",
             False,
+            None,
             False,
             15,
             [],
@@ -184,6 +188,7 @@ def test_retrieve_full_bib_resources(
             datetime.utcnow() - timedelta(days=80),
             "open",
             False,
+            None,
             False,
             100,
             [],
@@ -193,6 +198,7 @@ def test_retrieve_full_bib_resources(
             datetime.utcnow() - timedelta(days=100),
             "open",
             False,
+            None,
             False,
             31,
             [],
@@ -202,6 +208,7 @@ def test_retrieve_full_bib_resources(
             datetime.utcnow() - timedelta(days=80),
             "expired",
             False,
+            None,
             False,
             31,
             [],
@@ -211,6 +218,7 @@ def test_retrieve_full_bib_resources(
             datetime.utcnow() - timedelta(days=80),
             "open",
             True,
+            None,
             False,
             31,
             [],
@@ -220,6 +228,7 @@ def test_retrieve_full_bib_resources(
             datetime.utcnow() - timedelta(days=100),
             "open",
             False,
+            "123",
             True,
             31,
             [],
@@ -227,12 +236,13 @@ def test_retrieve_full_bib_resources(
         ),
     ],
 )
-def test_retrieve_older_open_resources(
+def test_retrieve_open_older_resources(
     test_session,
     test_data_core,
     bib_date,
     status,
     deleted,
+    oclc_number,
     match,
     days_since_last_query,
     expectation,
@@ -247,6 +257,7 @@ def test_retrieve_older_open_resources(
             resourceCategoryId=1,
             title="TEST TITLE",
             sourceId=1,
+            oclcMatchNumber=oclc_number,
             status=status,
             deleted=deleted,
             queries=[
@@ -267,7 +278,7 @@ def test_retrieve_older_open_resources(
     )
     test_session.commit()
 
-    res = retrieve_older_open_resources(test_session, 1, 30, 90)
+    res = retrieve_open_older_resources(test_session, 1, 30, 90)
     assert [r.nid for r in res] == expectation
 
 
@@ -355,7 +366,7 @@ def test_retrieve_new_resources(test_session, test_data_core):
     assert res[2].nid == 3
 
 
-def test_retrieve_matched_resources(test_session, test_data_core):
+def test_retrieve_open_matched_resources_without_full_bib(test_session, test_data_core):
     some_date = (datetime.utcnow().date(),)
     # BPL resources
     test_session.add(
@@ -430,12 +441,30 @@ def test_retrieve_matched_resources(test_session, test_data_core):
             deleted=False,
         )
     )
+    # exclude (full bib already obtained)
+    test_session.add(
+        Resource(
+            nid=6,
+            sierraId=22222226,
+            libraryId=1,
+            resourceCategoryId=1,
+            bibDate=some_date,
+            title="TEST TITLE 5",
+            sourceId=1,
+            status="open",
+            oclcMatchNumber="126",
+            fullBib=b"<foo>spam</foo>",
+            deleted=False,
+        )
+    )
     test_session.commit()
 
-    res1 = retrieve_matched_resources(test_session, libraryId=2)
+    # BPL
+    res1 = retrieve_open_matched_resources_without_full_bib(test_session, libraryId=2)
     assert len(res1) == 0
 
-    res2 = retrieve_matched_resources(test_session, libraryId=1)
+    # NYPL
+    res2 = retrieve_open_matched_resources_without_full_bib(test_session, libraryId=1)
     assert len(res2) == 3
     assert res2[0].nid == 4
     assert res2[1].nid == 5

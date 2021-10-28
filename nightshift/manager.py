@@ -11,10 +11,10 @@ from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import session_scope, Resource, WorldcatQuery
 from nightshift.datastore_transactions import (
-    retrieve_full_bib_resources,
-    retrieve_matched_resources,
     retrieve_new_resources,
-    retrieve_older_open_resources,
+    retrieve_open_matched_resources_with_full_bib_obtained,
+    retrieve_open_matched_resources_without_full_bib,
+    retrieve_open_older_resources,
     update_resource,
 )
 
