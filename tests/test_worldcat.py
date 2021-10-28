@@ -198,12 +198,13 @@ class TestWorldcatMocked:
 
         assert isinstance(result, tuple)
 
-        resource, brief_data = result
+        resource, data = result
         assert isinstance(resource, Resource)
-        assert isinstance(brief_data, BriefBibResponse)
+        assert isinstance(data, BriefBibResponse)
         assert resource.nid == 1
-        assert brief_data.is_match
-        assert brief_data.oclc_number == "44959645"
+        assert data.is_match
+        assert data.as_json == MockSuccessfulHTTP200SessionResponse().json()
+        assert data.oclc_number == "44959645"
         assert (
             "Brief bib Worldcat query for NYP Sierra bib # 22222222: request_url_here."
             in caplog.text
@@ -231,9 +232,7 @@ class TestWorldcatMocked:
         assert isinstance(res, Resource)
         assert isinstance(data, BriefBibResponse)
         assert resource.nid == 1
-        assert (
-            data.json_response == MockSuccessfulHTTP200SessionResponseNoMatches().json()
-        )
+        assert data.as_json == MockSuccessfulHTTP200SessionResponseNoMatches().json()
         assert not data.is_match
         assert data.oclc_number is None
 

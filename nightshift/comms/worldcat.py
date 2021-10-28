@@ -23,7 +23,7 @@ logger = logging.getLogger("nightshift")
 
 class BriefBibResponse:
     def __init__(self, response: Response):
-        self.json_response = response.json()
+        self.as_json = response.json()
         self.is_match = self._is_match()
         self.oclc_number = self._parse_oclc_number()
 
@@ -33,7 +33,7 @@ class BriefBibResponse:
         Returns:
             bool
         """
-        if self.json_response["numberOfRecords"] == 0:
+        if self.as_json["numberOfRecords"] == 0:
             return False
         else:
             return True
@@ -46,7 +46,7 @@ class BriefBibResponse:
             oclc_number
         """
         try:
-            return self.json_response["briefRecords"][0]["oclcNumber"]
+            return self.as_json["briefRecords"][0]["oclcNumber"]
         except (IndexError, KeyError):
             return None
 
