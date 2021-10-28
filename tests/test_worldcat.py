@@ -102,7 +102,7 @@ class TestWorldcatMocked:
         assert isinstance(result, tuple)
         assert isinstance(resource, Resource)
         assert resource.nid == 1
-        assert response.status_code == 200
+        assert isinstance(response, bytes)
         assert (
             "Full bib Worldcat request for NYP Sierra bib # 22222222: request_url_here."
             in caplog.text

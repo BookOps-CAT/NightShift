@@ -3,9 +3,10 @@
 """
 This module handles WorldCat Metadata API requests.
 """
+from collections.abc import Iterator
 import os
 import logging
-from typing import Iterator, List, Optional, Tuple
+from typing import Any
 
 from bookops_worldcat import WorldcatAccessToken, MetadataSession
 from bookops_worldcat.errors import (
@@ -38,7 +39,7 @@ class BriefBibResponse:
         else:
             return True
 
-    def _parse_oclc_number(self) -> Optional[str]:
+    def _parse_oclc_number(self) -> Any:
         """
         Parses OCLC number from MetadataAPI brief bib search response
 
@@ -118,7 +119,7 @@ class Worldcat:
             agent=f"{__title__}/{__version__}",
         )
 
-    def _prep_resource_queries_payloads(self, resource: Resource) -> List[dict]:
+    def _prep_resource_queries_payloads(self, resource: Resource) -> list[dict]:
         """
         Prepares payloads with query parameters for different resources.
 
@@ -185,7 +186,9 @@ class Worldcat:
         )
         return payloads
 
-    def get_full_bibs(self, resources: list[Resource]) -> Iterator[bytes]:
+    def get_full_bibs(
+        self, resources: list[Resource]
+    ) -> Iterator[tuple[Resource, bytes]]:
         """
         Makes MetadataAPI requests for full bibliographic resources
         """
@@ -197,12 +200,14 @@ class Worldcat:
                 logger.debug(
                     f"Full bib Worldcat request for {self.library} Sierra bib # {resource.sierraId}: {response.url}."
                 )
-                yield (resource, response)
+                yield (resource, response.content)
         except WorldcatSessionError:
             logger.error("WorldcatSessionError. Aborting.")
             raise
 
-    def get_brief_bibs(self, resources: list[Resource]) -> Iterator:
+    def get_brief_bibs(
+        self, resources: list[Resource]
+    ) -> Iterator[tuple[Resource, BriefBibResponse]]:
         """
         Performes WorldCat queries for each resource in the passed library batch.
         Resources must belong to the same library.
