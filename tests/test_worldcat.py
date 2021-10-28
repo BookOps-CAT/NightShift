@@ -182,7 +182,7 @@ class TestWorldcatMocked:
         assert payloads == expectation
         assert f"Query payload for NYP Sierra bib # 22222222: {expectation}."
 
-    def test_search_brief_bibs(
+    def test_get_brief_bibs(
         self, caplog, mock_Worldcat, mock_successful_session_get_request
     ):
         resource = Resource(
@@ -210,7 +210,7 @@ class TestWorldcatMocked:
             in caplog.text
         )
 
-    def test_search_brief_bibs_no_matches_found(
+    def test_get_brief_bibs_no_matches_found(
         self,
         mock_Worldcat,
         mock_successful_session_get_request_no_matches,
@@ -236,7 +236,7 @@ class TestWorldcatMocked:
         assert not data.is_match
         assert data.oclc_number is None
 
-    def test_search_brief_bibs_session_error(
+    def test_get_brief_bibs_session_error(
         self, caplog, mock_Worldcat, mock_session_error
     ):
         resource = Resource(nid=1, resourceCategoryId=1, distributorNumber="123")
@@ -245,3 +245,29 @@ class TestWorldcatMocked:
                 next(mock_Worldcat.get_brief_bibs([resource]))
 
         assert "WorldcatSessionError. Aborting." in caplog.text
+
+    def test_get_brief_bibs_no_payload_available(
+        self, caplog, mock_Worldcat, mock_successful_session_get_request
+    ):
+        """
+        In a rare situation resource may not have any identifiers to be used for
+        searching
+        """
+        resource1 = Resource(nid=1, resourceCategoryId=1, sierraId=22222222)
+        resource2 = Resource(
+            nid=2, resourceCategoryId=1, sierraId=22222223, distributorNumber="123"
+        )
+
+        with caplog.at_level(logging.WARN):
+            with does_not_raise():
+                for result in mock_Worldcat.get_brief_bibs([resource1, resource2]):
+                    pass
+
+        assert (
+            "Unable to create a payload for brief bib query for NYP resource nid=1, sierraId=22222222."
+            in caplog.text
+        )
+        resource, response = result
+        assert isinstance(resource, Resource)
+        assert resource.nid == 2
+        assert isinstance(response, BriefBibResponse)

@@ -186,6 +186,52 @@ class Worldcat:
         )
         return payloads
 
+    def get_brief_bibs(
+        self, resources: list[Resource]
+    ) -> Iterator[tuple[Resource, BriefBibResponse]]:
+        """
+        Performes WorldCat queries for each resource in the passed library batch.
+        Resources must belong to the same library.
+
+        Args:
+            resources:                   `datastore.Resource` instances
+
+
+        """
+        try:
+            for resource in resources:
+
+                payloads = self._prep_resource_queries_payloads(resource)
+                if not payloads:
+                    logger.warning(
+                        f"Unable to create a payload for brief bib query for {self.library} resource nid={resource.nid}, sierraId={resource.sierraId}."
+                    )
+                    continue
+
+                for payload in payloads:
+                    response = self.session.search_brief_bibs(
+                        **payload,
+                        inCatalogLanguage="eng",
+                        orderBy="mostWidelyHeld",
+                        limit=1,
+                    )
+
+                    brief_bib_response = BriefBibResponse(response)
+                    logger.debug(
+                        f"Brief bib Worldcat query for {self.library} Sierra bib # {resource.sierraId}: {response.url}."
+                    )
+                    if brief_bib_response.is_match:
+                        logger.debug(
+                            f"Match found for {self.library} Sierra bib #: {resource.sierraId}."
+                        )
+                        break
+
+                yield (resource, brief_bib_response)
+
+        except WorldcatSessionError:
+            logger.error(f"WorldcatSessionError. Aborting.")
+            raise
+
     def get_full_bibs(
         self, resources: list[Resource]
     ) -> Iterator[tuple[Resource, bytes]]:
@@ -203,40 +249,4 @@ class Worldcat:
                 yield (resource, response.content)
         except WorldcatSessionError:
             logger.error("WorldcatSessionError. Aborting.")
-            raise
-
-    def get_brief_bibs(
-        self, resources: list[Resource]
-    ) -> Iterator[tuple[Resource, BriefBibResponse]]:
-        """
-        Performes WorldCat queries for each resource in the passed library batch.
-        Resources must belong to the same library.
-
-        Args:
-            resources:                   `datastore.Resource` instances
-
-
-        """
-        try:
-            for resource in resources:
-                for payload in self._prep_resource_queries_payloads(resource):
-                    response = self.session.search_brief_bibs(
-                        **payload,
-                        inCatalogLanguage="eng",
-                        orderBy="mostWidelyHeld",
-                        limit=1,
-                    )
-
-                    brief_bib_response = BriefBibResponse(response)
-                    logger.debug(
-                        f"Brief bib Worldcat query for {self.library} Sierra bib # {resource.sierraId}: {response.url}."
-                    )
-                    if brief_bib_response.is_match:
-                        logger.debug(
-                            f"Match found for {self.library} Sierra bib #: {resource.sierraId}."
-                        )
-                        break
-                yield (resource, brief_bib_response)
-        except WorldcatSessionError:
-            logger.error(f"WorldcatSessionError. Aborting.")
             raise
