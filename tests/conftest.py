@@ -338,3 +338,16 @@ def mock_worldcat_session(mock_token):
 @pytest.fixture
 def mock_Worldcat(mock_worldcat_creds, mock_successful_post_token_response):
     return Worldcat("NYP")
+
+
+# SFTP #############
+
+
+@pytest.fixture
+def live_sftp_env(monkeypatch):
+    with open("tests/envar.yaml", "r") as f:
+        data = yaml.safe_load(f)
+    monkeypatch.setenv("SFTP_HOST", data["SFTP_HOST"])
+    monkeypatch.setenv("SFTP_USER", data["SFTP_USER"])
+    monkeypatch.setenv("SFTP_PASSW", data["SFTP_PASSW"])
+    monkeypatch.setenv("SFTP_DIR", data["SFTP_DIR"])
