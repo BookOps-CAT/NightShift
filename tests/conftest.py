@@ -2,10 +2,12 @@
 
 import datetime
 import os
+import threading
 
 from bookops_marc import Bib
 from bookops_worldcat import WorldcatAccessToken, MetadataSession
 from bookops_worldcat.errors import WorldcatSessionError
+from paramiko import RSAKey, SFTPServer, SFTPClient, Transport
 from pymarc import Field
 import pytest
 import requests
@@ -17,6 +19,9 @@ from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import Base, Library, Resource, ResourceCategory, SourceFile
 from nightshift.marc.marc_parser import BibReader
+
+from .loop_socket import LoopSocket
+from .stub_sftp import StubServer, StubSFTPServer
 
 
 class FakeUtcNow(datetime.datetime):
@@ -340,7 +345,7 @@ def mock_Worldcat(mock_worldcat_creds, mock_successful_post_token_response):
     return Worldcat("NYP")
 
 
-# SFTP #############
+# SFTP / newtowrked drive #############
 
 
 @pytest.fixture
@@ -350,4 +355,63 @@ def live_sftp_env(monkeypatch):
     monkeypatch.setenv("SFTP_HOST", data["SFTP_HOST"])
     monkeypatch.setenv("SFTP_USER", data["SFTP_USER"])
     monkeypatch.setenv("SFTP_PASSW", data["SFTP_PASSW"])
-    monkeypatch.setenv("SFTP_DIR", data["SFTP_DIR"])
+    monkeypatch.setenv("SFTP_NS_HOME", data["SFTP_NS_HOME"])
+
+
+@pytest.fixture
+def mock_sftp_env(monkeypatch):
+    monkeypatch.setenv("SFTP_HOST", "sftp_host")
+    monkeypatch.setenv("SFTP_USER", "sftp_user")
+    monkeypatch.setenv("SFTP_PASSW", "sftp_password")
+    monkeypatch.setenv("SFTP_NS_HOME", "nightshift_home_dir")
+
+
+@pytest.fixture
+def temp_sftp_folder(tmpdir):
+    path = tmpdir.mkdir("SFTP")
+    return path
+
+
+@pytest.fixture
+def local_sftp_server():
+    """
+    Sets up in-memory SFTP server tread. Yields the client
+    Transport/socket;
+    `local_sftp` fixture creates higher level client object
+    wrapped around Transport
+    """
+
+    # sockets & transport
+    socks = LoopSocket()
+    sockc = LoopSocket()
+    sockc.link(socks)
+    tc = Transport(sockc)
+    ts = Transport(socks)
+
+    # auth
+    host_key = RSAKey.from_private_key_file(
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_rsa.key")
+    )
+    ts.add_server_key(host_key)
+
+    # server setup
+    event = threading.Event()
+    server = StubServer()
+    ts.set_subsystem_handler("sftp", SFTPServer, StubSFTPServer)
+    ts.start_server(event, server)
+
+    tc.connect(username="ns_testing", password="scabbers")
+    yield tc
+
+
+@pytest.fixture
+def local_sftp(local_sftp_server, temp_sftp_folder):
+    """
+    Yields an SFTP client connected to the global in-session SFTP server thread.
+    """
+
+    # client setup
+    client = SFTPClient.from_transport(local_sftp_server)
+    client.FOLDER = temp_sftp_folder
+
+    yield client
