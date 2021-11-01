@@ -4,6 +4,7 @@
 This module handles communication with network drive accessible via SFTP where Sierra
 dumps daily files for processing and where CAT staff can access them
 """
+from io import BytesIO
 import logging
 import os
 
@@ -48,8 +49,40 @@ class Drive:
         self.src_dir = src_dir
         self.dst_dir = dst_dir
 
-    def list_directory(self):
+    def list_src_directory(self) -> list[str]:
+        """
+        Returns a list of files found in SFTP/Drive Sierra dumps directory
+        """
         return self.sftp.listdir(path=self.src_dir)
+
+    def fetch_src_file(self, path: str) -> BytesIO:
+        """
+        Retrieves file on the given path
+
+        Args:
+            path:                       path to file on the SFTP server
+
+        Returns:
+            bytes stream
+
+        """
+        with self.sftp.file(path, mode="rb") as file:
+            file_size = file.stat().st_size
+            file.prefetch(file_size)
+            file.set_pipelined()
+            return BytesIO(file.read(file_size))
+
+    def output_bib_to_file(self, path: str, data) -> None:
+        """
+        Appends stream to a file in SFTP/Drive load directory
+
+        Args:
+            path:                   path to file on the SFTP server to append to
+            bib:                    `bookops_marc.Bib` instance?
+        """
+        with self.sftp.file(path, mode="ab") as file:
+            file.write(data)
+            file.flush()
 
     def _sftp(self, host, port, user, password):
         if port:
