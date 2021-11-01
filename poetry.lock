@@ -404,6 +404,18 @@ pytest = ">=5.0"
 dev = ["pre-commit", "tox", "pytest-asyncio"]
 
 [[package]]
+name = "pytest-sftpserver"
+version = "1.3.0"
+description = "py.test plugin to locally test sftp server connections."
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+paramiko = "*"
+six = "*"
+
+[[package]]
 name = "pyyaml"
 version = "5.4.1"
 description = "YAML parser and emitter for Python"
@@ -536,7 +548,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "40d99cc6d2b489056b884960a13579211fa35e3dbe123ab9bd9fbfa74fa5eeae"
+content-hash = "a5d1d0a171e2057a16b016d0667f83aabca44e2842fb360cc87fa66753762d28"
 
 [metadata.files]
 atomicwrites = [
@@ -880,6 +892,10 @@ pytest-mock = [
     {file = "pytest-mock-3.6.1.tar.gz", hash = "sha256:40217a058c52a63f1042f0784f62009e976ba824c418cced42e88d5f40ab0e62"},
     {file = "pytest_mock-3.6.1-py3-none-any.whl", hash = "sha256:30c2f2cc9759e76eee674b81ea28c9f0b94f8f0445a1b87762cadf774f0df7e3"},
 ]
+pytest-sftpserver = [
+    {file = "pytest-sftpserver-1.3.0.tar.gz", hash = "sha256:b7ac34a23f63d77e27f67b6a81c9418243733f027eeb8a3061d965b2da7e5cab"},
+    {file = "pytest_sftpserver-1.3.0-py2.py3-none-any.whl", hash = "sha256:c5e8a37049866d4eabc711db9f1c09e1c02ab72ba290f5fd244939c9a188042f"},
+]
 pyyaml = [
     {file = "PyYAML-5.4.1-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:3b2b1824fe7112845700f815ff6a489360226a5609b96ec2190a45e62a9fc922"},
     {file = "PyYAML-5.4.1-cp27-cp27m-win32.whl", hash = "sha256:129def1b7c1bf22faffd67b8f3724645203b79d8f4cc81f674654d9902cb4393"},
@@ -960,7 +976,6 @@ requests = [
 ]
 requests-futures = [
     {file = "requests-futures-1.0.0.tar.gz", hash = "sha256:35547502bf1958044716a03a2f47092a89efe8f9789ab0c4c528d9c9c30bc148"},
-    {file = "requests_futures-1.0.0-py2.py3-none-any.whl", hash = "sha256:633804c773b960cef009efe2a5585483443c6eac3c39cc64beba2884013bcdd9"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
