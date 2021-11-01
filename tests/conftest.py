@@ -350,68 +350,72 @@ def mock_Worldcat(mock_worldcat_creds, mock_successful_post_token_response):
 
 @pytest.fixture
 def live_sftp_env(monkeypatch):
-    with open("tests/envar.yaml", "r") as f:
-        data = yaml.safe_load(f)
-    monkeypatch.setenv("SFTP_HOST", data["SFTP_HOST"])
-    monkeypatch.setenv("SFTP_USER", data["SFTP_USER"])
-    monkeypatch.setenv("SFTP_PASSW", data["SFTP_PASSW"])
-    monkeypatch.setenv("SFTP_NS_HOME", data["SFTP_NS_HOME"])
+    if not os.getenv("TRAVIS"):
+        with open("tests/envar.yaml", "r") as f:
+            data = yaml.safe_load(f)
+            monkeypatch.setenv("SFTP_HOST", data["SFTP_HOST"])
+            monkeypatch.setenv("SFTP_USER", data["SFTP_USER"])
+            monkeypatch.setenv("SFTP_PASSW", data["SFTP_PASSW"])
+            monkeypatch.setenv("SFTP_NS_SRC", data["SFTP_NS_SRC"])
+            monkeypatch.setenv("SFTP_NS_DST", data["SFTP_NS_DST"])
 
 
 @pytest.fixture
-def mock_sftp_env(monkeypatch):
-    monkeypatch.setenv("SFTP_HOST", "sftp_host")
-    monkeypatch.setenv("SFTP_USER", "sftp_user")
+def mock_sftp_env(monkeypatch, sftpserver):
+    monkeypatch.setenv("SFTP_HOST", sftpserver.host)
+    monkeypatch.setenv("SFTP_PORT", str(sftpserver.port))
+    monkeypatch.setenv("SFTP_USER", "nightshift")
     monkeypatch.setenv("SFTP_PASSW", "sftp_password")
-    monkeypatch.setenv("SFTP_NS_HOME", "nightshift_home_dir")
+    monkeypatch.setenv("SFTP_NS_SRC", "sierra_dumps_dir")
+    monkeypatch.setenv("SFTP_NS_DST", "load_dir")
 
 
-@pytest.fixture
-def temp_sftp_folder(tmpdir):
-    path = tmpdir.mkdir("SFTP")
-    return path
+# @pytest.fixture
+# def temp_sftp_folder(tmpdir):
+#     path = tmpdir.mkdir("SFTP")
+#     return path
 
 
-@pytest.fixture
-def local_sftp_server():
-    """
-    Sets up in-memory SFTP server tread. Yields the client
-    Transport/socket;
-    `local_sftp` fixture creates higher level client object
-    wrapped around Transport
-    """
+# @pytest.fixture
+# def local_sftp_server():
+#     """
+#     Sets up in-memory SFTP server tread. Yields the client
+#     Transport/socket;
+#     `local_sftp` fixture creates higher level client object
+#     wrapped around Transport
+#     """
 
-    # sockets & transport
-    socks = LoopSocket()
-    sockc = LoopSocket()
-    sockc.link(socks)
-    tc = Transport(sockc)
-    ts = Transport(socks)
+#     # sockets & transport
+#     socks = LoopSocket()
+#     sockc = LoopSocket()
+#     sockc.link(socks)
+#     tc = Transport(sockc)
+#     ts = Transport(socks)
 
-    # auth
-    host_key = RSAKey.from_private_key_file(
-        os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_rsa.key")
-    )
-    ts.add_server_key(host_key)
+#     # auth
+#     host_key = RSAKey.from_private_key_file(
+#         os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_rsa.key")
+#     )
+#     ts.add_server_key(host_key)
 
-    # server setup
-    event = threading.Event()
-    server = StubServer()
-    ts.set_subsystem_handler("sftp", SFTPServer, StubSFTPServer)
-    ts.start_server(event, server)
+#     # server setup
+#     event = threading.Event()
+#     server = StubServer()
+#     ts.set_subsystem_handler("sftp", SFTPServer, StubSFTPServer)
+#     ts.start_server(event, server)
 
-    tc.connect(username="ns_testing", password="scabbers")
-    yield tc
+#     tc.connect(username="ns_testing", password="scabbers")
+#     yield tc
 
 
-@pytest.fixture
-def local_sftp(local_sftp_server, temp_sftp_folder):
-    """
-    Yields an SFTP client connected to the global in-session SFTP server thread.
-    """
+# @pytest.fixture
+# def local_sftp(local_sftp_server, temp_sftp_folder):
+#     """
+#     Yields an SFTP client connected to the global in-session SFTP server thread.
+#     """
 
-    # client setup
-    client = SFTPClient.from_transport(local_sftp_server)
-    client.FOLDER = temp_sftp_folder
+#     # client setup
+#     client = SFTPClient.from_transport(local_sftp_server)
+#     client.FOLDER = temp_sftp_folder
 
-    yield client
+#     yield client

@@ -24,33 +24,40 @@ def get_credentials():
     """
     return (
         os.getenv("SFTP_HOST"),
+        os.getenv("SFTP_PORT"),
         os.getenv("SFTP_USER"),
         os.getenv("SFTP_PASSW"),
-        os.getenv("SFTP_NS_HOME"),
+        os.getenv("SFTP_NS_SRC"),
+        os.getenv("SFTP_NS_DST"),
     )
 
 
 class Drive:
-    def __init__(self, host, user, password, home_directory):
+    def __init__(self, host, port, user, password, src_dir, dst_dir):
         """
         Opens communication channel via SFTP to networked drive
 
         Args:
             host:                       SFTP host
+            port:                       SFTP port
             user:                       SFTP user name
             password:                   SFTP user password
             home_directory:             NighShift directory on the drive
         """
-        self.sftp = self._sftp(host, user, password, home_directory)
+        self.sftp = self._sftp(host, port, user, password)
+        self.src_dir = src_dir
+        self.dst_dir = dst_dir
 
     def list_directory(self):
-        return self.sftp.listdir()
+        return self.sftp.listdir(path=self.src_dir)
 
-    def _sftp(self, host, user, password, home_directory):
-        transport = Transport((host))
+    def _sftp(self, host, port, user, password):
+        if port:
+            transport = Transport((host, int(port)))
+        else:
+            transport = Transport((host))
         transport.connect(None, user, password)
         sftp = SFTPClient.from_transport(transport)
-        sftp.chdir(home_directory)  # wrap in an exception
         return sftp
 
     def __enter__(self, *args):
