@@ -1,4 +1,4 @@
-import os
+import pytest
 
 from nightshift.comms.storage import get_credentials, Drive
 
@@ -14,6 +14,7 @@ def test_get_credentials(mock_sftp_env, sftpserver):
     )
 
 
+@pytest.mark.localtest
 class TestDriveLive:
     def test_init(self, live_sftp_env):
         creds = get_credentials()
