@@ -1,5 +1,6 @@
 from contextlib import nullcontext as does_not_raise
 from io import BytesIO
+import logging
 import pytest
 
 from nightshift.comms.storage import get_credentials, Drive
@@ -26,22 +27,43 @@ class TestDriveLive:
                 "NYPeres210701.pout",
             ]
 
-    def test_fetch_src_file(self, live_sftp_env):
+    def test_fetch_file(self, live_sftp_env):
         creds = get_credentials()
         with Drive(*creds) as drive:
-            path = (
-                drive.src_dir + "/NYPeres210701.pout"
-            )  # how to do it with os.path.join?
+            path = drive.src_dir + "/NYPeres210701.pout"
             with does_not_raise():
-                file = drive.fetch_src_file(path)
+                file = drive.fetch_file(path)
             assert isinstance(file, BytesIO)
 
-    def test_output_bib_to_file(self, live_sftp_env, stub_marc):
+    def test_output_bib_to_file(self, live_sftp_env):
+        pass
+
+    def test_determine_dst_file_handle(self, live_sftp_env):
         creds = get_credentials()
         with Drive(*creds) as drive:
-            path = drive.dst_dir + "/test.mrc"
-            data = stub_marc.as_marc()
-            drive.output_bib_to_file(path, data)
+            assert (
+                drive._determine_drive_file_handle("/test/foo.mrc")
+                == "/NSDROP/TEST/load/foo.mrc"
+            )
+
+    def test_output_file_success(self, live_sftp_env):
+        creds = get_credentials()
+        with Drive(*creds) as drive:
+            local_fh = "tests/nyp-ebook-sample.mrc"
+            drive.output_file(local_fh)
+
+            assert drive.sftp.listdir(drive.dst_dir) == ["nyp-ebook-sample.mrc"]
+
+            # cleanup
+            drive.sftp.remove(drive.dst_dir + "/nyp-ebook-sample.mrc")
+
+    def test_output_file_io_error(self, caplog, live_sftp_env, mock_io_error):
+        creds = get_credentials()
+        with Drive(*creds) as drive:
+            with caplog.at_level(logging.ERROR):
+                with pytest.raises(IOError):
+                    drive.output_file("foo.mrc")
+        assert "IOError. Unable to create /NSDROP/TEST/load/foo.mrc on the SFTP."
 
 
 # class TestDriveMocked:
