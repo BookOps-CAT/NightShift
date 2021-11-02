@@ -7,10 +7,14 @@ dumps daily files for processing and where CAT staff can access produces MARC fi
 from io import BytesIO
 import logging
 import os
+from typing import Optional
 
 
 from paramiko.transport import Transport
 from paramiko.sftp_client import SFTPClient
+from paramiko.ssh_exception import SSHException
+
+from ..ns_exceptions import DriveError
 
 
 logger = logging.getLogger("nightshift")
@@ -25,18 +29,26 @@ def get_credentials():
     """
     return (
         os.getenv("SFTP_HOST"),
-        os.getenv("SFTP_PORT"),
         os.getenv("SFTP_USER"),
         os.getenv("SFTP_PASSW"),
         os.getenv("SFTP_NS_SRC"),
         os.getenv("SFTP_NS_DST"),
+        os.getenv("SFTP_PORT"),
     )
 
 
 class Drive:
-    def __init__(self, host, port, user, password, src_dir, dst_dir):
+    def __init__(
+        self,
+        host: str,
+        user: str,
+        password: str,
+        src_dir: str,
+        dst_dir: str,
+        port: Optional[str] = None,
+    ):
         """
-        Opens communication channel via SFTP to networked drive
+        Opens a secure communication channel via SFTP to a networked drive
 
         Args:
             host:                       SFTP host
@@ -45,17 +57,21 @@ class Drive:
             password:                   SFTP user password
             home_directory:             NighShift directory on the drive
         """
-        self.sftp = self._sftp(host, port, user, password)
+        sock = self._sock(host, port)
+        self.sftp = self._sftp(sock, user, password)
         self.src_dir = src_dir
         self.dst_dir = dst_dir
 
-    def list_src_directory(self) -> list[str]:
+    def list_src_directory(self) -> Optional[list[str]]:
         """
         Returns a list of files found in SFTP/Drive Sierra dumps directory
         """
-        return self.sftp.listdir(path=self.src_dir)
+        if self.sftp is None:
+            return None
+        else:
+            return self.sftp.listdir(path=self.src_dir)
 
-    def fetch_file(self, path: str) -> BytesIO:
+    def fetch_file(self, src_fh: str) -> Optional[BytesIO]:
         """
         Retrieves file of the given path
 
@@ -66,28 +82,49 @@ class Drive:
             bytes stream
 
         """
-        logging.info(f"Fetching {path} file from the SFTP.")
-        with self.sftp.file(path, mode="r") as file:
-            file_size = file.stat().st_size
-            file.prefetch(file_size)
-            file.set_pipelined()
-            return BytesIO(file.read(file_size))
+        src_fh_path = f"{self.src_dir}/{src_fh}"
+        print(src_fh_path)
+        logging.info(f"Fetching {src_fh_path} file from the SFTP.")
+        if self.sftp:
+            try:
+                with self.sftp.file(src_fh_path, mode="r") as file:
+                    file_size = file.stat().st_size
+                    file.prefetch(file_size)
+                    file.set_pipelined()
+                    return BytesIO(file.read(file_size))
+            except IOError as exc:
+                logger.error(f"Unable to fetch file from the SFTP. {exc}.")
+                raise DriveError
+        else:
+            return None
 
     def output_file(self, local_fh: str) -> None:
         """
         Appends stream to a file in SFTP/Drive load directory
 
         Args:
-            path:                   path to file on the SFTP server to append to
+            local_fh:                   path to file on the SFTP server to append to
 
         """
         drive_fh = self._determine_drive_file_handle(local_fh)
-        try:
-            self.sftp.put(local_fh, drive_fh)
-            logger.info(f"Successfully created {drive_fh} on the SFTP.")
-        except IOError:
-            logger.error(f"IOError. Unable to create {drive_fh} on the SFTP.")
-            raise
+        if self.sftp:
+            try:
+                self.sftp.put(local_fh, drive_fh)
+                logger.info(f"Successfully created {drive_fh} on the SFTP.")
+            except IOError as exc:
+                logger.error(f"IOError. Unable to create {drive_fh} on the SFTP. {exc}")
+                raise DriveError
+        else:
+            logger.error(
+                "Unable to output file to drive. SFTP client/session not active."
+            )
+            raise DriveError
+
+    def _sock(self, host: str, port: Optional[str] = None) -> str:
+        if port:
+            return f"{host}:{port}"
+        else:
+            return host
 
     def _determine_drive_file_handle(self, local_fh: str) -> str:
         """
@@ -102,16 +139,33 @@ class Drive:
         file_name = os.path.basename(local_fh)
         return f"{self.dst_dir}/{file_name}"
 
-    def _sftp(self, host, port, user, password):
-        logging.debug(f"Opening a secure channel to {host}.")
-        if port:
-            transport = Transport((host, int(port)))
+    def _sftp(self, sock: str, user: str, password: str) -> Optional[SFTPClient]:
+        """
+        Establishes a secure channel to SFTP server and returns a client/session for
+        communication.
+
+        Args:
+            host:                   SFTP server host
+            port:                   SFTP server port (optional)
+            user:                   SFTP account user
+            password:               SFTP account password
+
+        Returns:
+            `paramiko.sftp_client.SFTPClient` instance
+        """
+        logging.debug(f"Opening a secure channel to {sock}.")
+        try:
+            self.transport = Transport(sock)
+            self.transport.connect(None, user, password)
+            sftp = SFTPClient.from_transport(self.transport)
+        except SSHException as exc:
+            logger.error(
+                f"Unable to establish secure channel and open SFTP sesssion. {exc}"
+            )
+            raise DriveError
         else:
-            transport = Transport((host))
-        transport.connect(None, user, password)
-        sftp = SFTPClient.from_transport(transport)
-        logging.debug("Successfully connected to the SFTP.")
-        return sftp
+            logging.debug("Successfully connected to the SFTP.")
+            return sftp
 
     def __enter__(self, *args):
         return self
@@ -125,4 +179,9 @@ class Drive:
         """
         if self.sftp:
             self.sftp.close()
-            logging.debug("Connection to the SFTP closed.")
+            logging.debug("SFTP client session closed.")
+        if (
+            self.transport
+        ):  # necessary since paramiko keeps open threads hanging occasionally
+            self.transport.close()
+            logging.debug("Secure channels closed.")
