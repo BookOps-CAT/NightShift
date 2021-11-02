@@ -517,6 +517,45 @@ optional = false
 python-versions = ">=3.6"
 
 [[package]]
+name = "types-cryptography"
+version = "3.3.8"
+description = "Typing stubs for cryptography"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+types-enum34 = "*"
+types-ipaddress = "*"
+
+[[package]]
+name = "types-enum34"
+version = "1.1.1"
+description = "Typing stubs for enum34"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "types-ipaddress"
+version = "1.0.1"
+description = "Typing stubs for ipaddress"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "types-paramiko"
+version = "2.7.3"
+description = "Typing stubs for paramiko"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+types-cryptography = "*"
+
+[[package]]
 name = "types-requests"
 version = "2.25.9"
 description = "Typing stubs for requests"
@@ -548,7 +587,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "a5d1d0a171e2057a16b016d0667f83aabca44e2842fb360cc87fa66753762d28"
+content-hash = "910bcccbd5ac080450b7838997ec21f17d94e4655bd16d91c76765d6e3336c85"
 
 [metadata.files]
 atomicwrites = [
@@ -1020,6 +1059,22 @@ toml = [
 tomli = [
     {file = "tomli-1.2.1-py3-none-any.whl", hash = "sha256:8dd0e9524d6f386271a36b41dbf6c57d8e32fd96fd22b6584679dc569d20899f"},
     {file = "tomli-1.2.1.tar.gz", hash = "sha256:a5b75cb6f3968abb47af1b40c1819dc519ea82bcc065776a866e8d74c5ca9442"},
+]
+types-cryptography = [
+    {file = "types-cryptography-3.3.8.tar.gz", hash = "sha256:07ff76c1fd78724adf3b774bb78928a35b010ec0b29caaf5c959d3b233a2b82d"},
+    {file = "types_cryptography-3.3.8-py3-none-any.whl", hash = "sha256:cf1b981597c482828d3ea84bcbe3fbd695cf178cd32b60cd09944f4dbe914746"},
+]
+types-enum34 = [
+    {file = "types-enum34-1.1.1.tar.gz", hash = "sha256:55c44c44f193636ed82f1cb68a9a632e1ea7096724f024c25e015976809df339"},
+    {file = "types_enum34-1.1.1-py3-none-any.whl", hash = "sha256:b6d55d7c91867bd2fd6fc90651d91629c98b27cb26df11b1db658ae7a72bb768"},
+]
+types-ipaddress = [
+    {file = "types-ipaddress-1.0.1.tar.gz", hash = "sha256:dc5540c7fd8d4b3ffe8461bc01f27513c0abe5f2088e491218bd0a98a0b4584e"},
+    {file = "types_ipaddress-1.0.1-py3-none-any.whl", hash = "sha256:9d0a642526c4a1f87ee9ae29d91b93f708508b891d038db2e1c9f06219383516"},
+]
+types-paramiko = [
+    {file = "types-paramiko-2.7.3.tar.gz", hash = "sha256:278fa5f8701540062ab314f7191596665cb957cabffc0e4ab1f967cbc4858bd6"},
+    {file = "types_paramiko-2.7.3-py3-none-any.whl", hash = "sha256:e9306c7666604fd6e1d79abb824affd6b22f0c6ab29511aa279a3b892db028da"},
 ]
 types-requests = [
     {file = "types-requests-2.25.9.tar.gz", hash = "sha256:4ec8b71da73e5344adb9bee725a74ec8598e7286f9bcb17500d627f259fe4fb9"},
