@@ -2,12 +2,11 @@
 
 import datetime
 import os
-import threading
 
 from bookops_marc import Bib
 from bookops_worldcat import WorldcatAccessToken, MetadataSession
 from bookops_worldcat.errors import WorldcatSessionError
-from paramiko import RSAKey, SFTPServer, SFTPClient, Transport
+import paramiko
 from pymarc import Field
 import pytest
 import requests
@@ -365,3 +364,13 @@ def mock_sftp_env(monkeypatch, sftpserver):
     monkeypatch.setenv("SFTP_PASSW", "sftp_password")
     monkeypatch.setenv("SFTP_NS_SRC", "sierra_dumps_dir")
     monkeypatch.setenv("SFTP_NS_DST", "load_dir")
+
+
+class MockIOError:
+    def __init__(self, *args, **kwargs):
+        raise IOError
+
+
+@pytest.fixture
+def mock_io_error(monkeypatch):
+    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.put", MockIOError)
