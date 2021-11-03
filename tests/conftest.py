@@ -14,6 +14,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import yaml
 
+from nightshift.comms.storage import get_credentials, Drive
 from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import Base, Library, Resource, ResourceCategory, SourceFile
@@ -371,6 +372,25 @@ class MockIOError:
         raise IOError
 
 
+class MockSSHException:
+    def __init__(self, *args, **kwargs):
+        raise paramiko.ssh_exception.SSHException
+
+
 @pytest.fixture
 def mock_io_error(monkeypatch):
     monkeypatch.setattr("paramiko.sftp_client.SFTPClient.put", MockIOError)
+    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.listdir", MockIOError)
+    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.file", MockIOError)
+
+
+@pytest.fixture
+def mock_ssh_exception(monkeypatch):
+    monkeypatch.setattr("paramiko.transport.Transport.connect", MockSSHException)
+
+
+@pytest.fixture
+def mock_drive(mock_sftp_env):
+    creds = get_credentials()
+    with Drive(*creds) as drive:
+        yield drive
