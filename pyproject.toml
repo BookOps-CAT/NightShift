@@ -14,6 +14,8 @@ SQLAlchemy = "^1.4.23"
 PyYAML = "^5.4.1"
 bookops-marc = {git = "https://github.com/BookOps-CAT/bookops-marc.git", rev = "0.4.0"}
 psycopg2 = "^2.9.1"
+bookops-worldcat = "^0.4.0"
+loggly-python-handler = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
@@ -21,6 +23,7 @@ black = "^21.8b0"
 pytest-cov = "^2.12.1"
 pytest-mock = "^3.6.1"
 mypy = "^0.910"
+types-requests = "^2.25.9"
 
 [tool.black]
 line-length = 88

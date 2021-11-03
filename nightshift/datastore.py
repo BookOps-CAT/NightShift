@@ -19,7 +19,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.dialects.postgresql import ENUM, JSONB, BYTEA
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -126,7 +126,7 @@ class Resource(Base):
         Integer, ForeignKey("resource_category.nid"), nullable=False
     )
 
-    bibDate = Column(Date)
+    bibDate = Column(Date, nullable=False)
     author = Column(String)
     title = Column(String)
     pubDate = Column(String)
@@ -141,7 +141,8 @@ class Resource(Base):
 
     deleted = Column(Boolean, nullable=False, default=False)
     deletedTimestamp = Column(DateTime)
-    oclcMatchNumber = Column(Integer)
+    oclcMatchNumber = Column(String)
+    fullBib = Column(BYTEA)
     outputId = Column(Integer, ForeignKey("output_file.nid"))
     status = Column(
         ENUM(
@@ -159,7 +160,8 @@ class Resource(Base):
 
     def __repr__(self):
         return (
-            f"<Resource(sierraId='{self.sierraId}', libraryId='{self.libraryId}', "
+            f"<Resource(nid='{self.nid}', "
+            f"sierraId='{self.sierraId}', libraryId='{self.libraryId}', "
             f"sourceId='{self.sourceId}', "
             f"resourceCategoryId='{self.resourceCategoryId}', "
             f"bibDate='{self.bibDate}', "
@@ -229,16 +231,14 @@ class WorldcatQuery(Base):
 
     nid = Column(Integer, primary_key=True)
     resourceId = Column(Integer, ForeignKey("resource.nid"), nullable=False)
-    libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
     match = Column(Boolean, nullable=False)
-    responseCode = Column(Integer)
-    response = Column(PickleType)  # save as requests.Response object?
+    response = Column(JSONB)
+    timestamp = Column(DateTime, default=datetime.now(), nullable=False)
 
     def __repr__(self):
         return (
             f"<WorldcatQuery(nid='{self.nid}', "
             f"resourceId='{self.resourceId}', "
-            f"libraryId='{self.libraryId}', "
             f"match='{self.match}', "
-            f"responseCode='{self.responseCode}')>"
+            f"timestamp='{self.timestamp}')>"
         )

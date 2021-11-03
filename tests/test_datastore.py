@@ -7,6 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm.session import Session
 from sqlalchemy.exc import DataError
 
+from .conftest import MockSuccessfulHTTP200SessionResponse
+
 from nightshift.datastore import (
     conf_db,
     dal,
@@ -64,7 +66,7 @@ def test_Library_tbl_repr():
 
 
 def test_OutputFile_tbl_repr():
-    stamp = datetime.now()
+    stamp = datetime.utcnow()
     assert (
         str(OutputFile(nid=1, libraryId=2, handle="foo.mrc", timestamp=stamp))
         == f"<OutputFile(nid='1', libraryId='2', handle='foo.mrc', timestamp='{stamp}')>"
@@ -77,6 +79,7 @@ def test_Resource_tbl_repr():
     assert (
         str(
             Resource(
+                nid=1,
                 sierraId=1,
                 libraryId=2,
                 resourceCategoryId=3,
@@ -99,7 +102,7 @@ def test_Resource_tbl_repr():
                 upgradeTimestamp=stamp,
             )
         )
-        == f"<Resource(sierraId='1', libraryId='2', sourceId='5', resourceCategoryId='3', bibDate='{bibDate}', author='foo', title='spam', pubDate='2021', controlNumber='0002', congressNumber='0001', standardNumber='0005', distributorNumber='0003', status='open', deleted='False', deletedTimestamp='{stamp}', outputId='None', oclcMatchNumber='None', upgradeTimestamp='{stamp}')>"
+        == f"<Resource(nid='1', sierraId='1', libraryId='2', sourceId='5', resourceCategoryId='3', bibDate='{bibDate}', author='foo', title='spam', pubDate='2021', controlNumber='0002', congressNumber='0001', standardNumber='0005', distributorNumber='0003', status='open', deleted='False', deletedTimestamp='{stamp}', outputId='None', oclcMatchNumber='None', upgradeTimestamp='{stamp}')>"
     )
 
 
@@ -119,19 +122,40 @@ def test_SourceFile_tbl_repr():
 
 
 def test_WorldcatQuery_tbl_repr():
+    stamp = datetime.now()
     assert (
         str(
             WorldcatQuery(
                 nid=1,
                 resourceId=2,
-                libraryId=1,
                 match=False,
-                responseCode="404",
                 response=None,
+                timestamp=stamp,
             )
         )
-        == "<WorldcatQuery(nid='1', resourceId='2', libraryId='1', match='False', responseCode='404')>"
+        == f"<WorldcatQuery(nid='1', resourceId='2', match='False', timestamp='{stamp}')>"
     )
+
+
+def test_WorldcatQuery_tbl_json_column(test_session, test_data_core):
+    test_session.add(
+        Resource(
+            nid=1,
+            sierraId=22222222,
+            libraryId=1,
+            resourceCategoryId=1,
+            bibDate=datetime.now().date(),
+            title="TEST",
+            sourceId=1,
+        )
+    )
+    test_session.commit()
+
+    resp_json = MockSuccessfulHTTP200SessionResponse().json()
+    test_session.add(WorldcatQuery(nid=1, resourceId=1, match=True, response=resp_json))
+    test_session.commit()
+    result = test_session.query(WorldcatQuery).filter_by(nid=1).first()
+    assert type(result.response) == dict
 
 
 def test_datastore_connection(test_connection):

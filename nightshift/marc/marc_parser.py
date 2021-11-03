@@ -7,15 +7,15 @@ In case of e-resouces only bib informatin is considered.
 Source MARC files for e-resources will have a mix of various formats (ebooks, eaudio,
 evideo)
 """
-# from collections import namedtuple
+
 import pickle
 from typing import Any, Iterator, Optional
 
 from bookops_marc import SierraBibReader, Bib
 
 
-from .constants import LIBRARIES, RESOURCE_CATEGORIES
-from .datastore import Resource
+from ..constants import LIBRARIES, RESOURCE_CATEGORIES
+from ..datastore import Resource
 
 
 class BibReader:
@@ -69,7 +69,15 @@ class BibReader:
         # Overdrive MarcExpress records control number starts with ODN
         control_number = bib.control_number()
         if control_number.startswith("ODN"):
-            return "eresource"
+            rec_type = bib.record_type()
+            if rec_type == "a":
+                return "ebook"
+            elif rec_type == "i":
+                return "eaudio"
+            elif rec_type == "g":
+                return "evideo"
+            else:
+                return None
         else:
             # future hook
             # determine particular resource category for print material here
