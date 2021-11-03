@@ -447,3 +447,13 @@ def mock_platform_env(monkeypatch):
     monkeypatch.setenv("NYPL_PLATFORM_SECRET", "app_secret")
     monkeypatch.setenv("NYPL_PLATFORM_OAUTH", "outh_server")
     monkeypatch.setenv("NYPL_PLATFORM_ENV", "prod")
+
+
+@pytest.fixture
+def live_dev_nyp_platform_env(monkeypatch):
+    with open("tests/envar.yaml", "r") as f:
+        data = yaml.safe_load(f)
+        monkeypatch.setenv("NYPL_PLATFORM_CLIENT", data["NYPL_PLATFORM_CLIENT"])
+        monkeypatch.setenv("NYPL_PLATFORM_SECRET", data["NYPL_PLATFORM_SECRET"])
+        monkeypatch.setenv("NYPL_PLATFORM_OAUTH", data["NYPL_PLATFORM_OAUTH"])
+        monkeypatch.setenv("NYPL_PLATFORM_ENV", data["NYPL_PLATFORM_ENV"])

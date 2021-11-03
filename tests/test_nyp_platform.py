@@ -33,3 +33,14 @@ class TestNypPlatformMocked:
                 NypPlatform()
 
         assert "Unable to obtain access token for NYPL Platform." in caplog.text
+
+
+@pytest.mark.localtest
+class TestNypPlatformLiveDev:
+    """
+    This mail fail a couple of first times before the service spins up
+    """
+
+    def test_successful_initiation(self, live_dev_nyp_platform_env):
+        with does_not_raise():
+            NypPlatform()
