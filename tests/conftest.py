@@ -394,3 +394,56 @@ def mock_drive(mock_sftp_env):
     creds = get_credentials()
     with Drive(*creds) as drive:
         yield drive
+
+
+# NYPL Platform fixtures ###
+
+
+class MockPlatformAuthServerResponseSuccess:
+    """Simulates oauth server response to successful token request"""
+
+    def __init__(self):
+        self.status_code = 200
+
+    def json(self):
+        return {
+            "access_token": "token_string_here",
+            "expires_in": 3600,
+            "token_type": "Bearer",
+            "scope": "scopes_here",
+            "id_token": "token_string_here",
+        }
+
+
+class MockPlatformAuthServerResponseFailure:
+    """Simulates oauth server response to successful token request"""
+
+    def __init__(self):
+        self.status_code = 400
+
+    def json(self):
+        return {"error": "No grant_type specified", "error_description": None}
+
+
+@pytest.fixture
+def mock_successful_platform_post_token_response(monkeypatch):
+    def mock_oauth_server_response(*args, **kwargs):
+        return MockPlatformAuthServerResponseSuccess()
+
+    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
+
+
+@pytest.fixture
+def mock_failed_platform_post_token_response(monkeypatch):
+    def mock_oauth_server_response(*args, **kwargs):
+        return MockPlatformAuthServerResponseFailure
+
+    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
+
+
+@pytest.fixture
+def mock_platform_env(monkeypatch):
+    monkeypatch.setenv("NYPL_PLATFORM_CLIENT", "app_client_id")
+    monkeypatch.setenv("NYPL_PLATFORM_SECRET", "app_secret")
+    monkeypatch.setenv("NYPL_PLATFORM_OAUTH", "outh_server")
+    monkeypatch.setenv("NYPL_PLATFORM_ENV", "prod")
