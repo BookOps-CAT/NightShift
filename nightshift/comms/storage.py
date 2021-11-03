@@ -78,6 +78,8 @@ class Drive:
         Returns:
             bytes stream
 
+        Raises:
+            DriveError
         """
         src_file_path = self._construct_src_file_path(src_fh)
         logging.info(f"Fetching {src_file_path} file from the SFTP.")
