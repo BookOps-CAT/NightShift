@@ -64,6 +64,24 @@ python2 = ["typed-ast (>=1.4.3)"]
 uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
+name = "bookops-bpl-solr"
+version = "0.1.0"
+description = "BookOps Python wrapper around BPL Solr service."
+category = "main"
+optional = false
+python-versions = "^3.7"
+develop = false
+
+[package.dependencies]
+requests = "^2.24.0"
+
+[package.source]
+type = "git"
+url = "https://github.com/BookOps-CAT/bookops-bpl-solr"
+reference = "v0.1.1"
+resolved_reference = "b57942ac1db8395737b2d7bb2094bc5222c73fcd"
+
+[[package]]
 name = "bookops-marc"
 version = "0.4.0"
 description = "A sweetened `pymarc.Record` module for extraction of data from local Sierra records."
@@ -80,6 +98,24 @@ type = "git"
 url = "https://github.com/BookOps-CAT/bookops-marc.git"
 reference = "0.4.0"
 resolved_reference = "4bae1ddd257ad3a9a4d6e5e0a820f911d3a6ff23"
+
+[[package]]
+name = "bookops-nypl-platform"
+version = "0.2.0"
+description = "BookOps Python wrapper around NYPL Platform API"
+category = "main"
+optional = false
+python-versions = "^3.7"
+develop = false
+
+[package.dependencies]
+requests = "^2.24.0"
+
+[package.source]
+type = "git"
+url = "https://github.com/BookOps-CAT/bookops-nypl-platform"
+reference = "v0.2.1"
+resolved_reference = "0a5cbf826d9d98b8d47737237a53c61f12ac456a"
 
 [[package]]
 name = "bookops-worldcat"
@@ -587,7 +623,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "910bcccbd5ac080450b7838997ec21f17d94e4655bd16d91c76765d6e3336c85"
+content-hash = "dd607fb4bdf0b7fc46c69d1f7579007d6752e149f1e03778b8c7ab0f704b5198"
 
 [metadata.files]
 atomicwrites = [
@@ -611,7 +647,9 @@ black = [
     {file = "black-21.10b0-py3-none-any.whl", hash = "sha256:6eb7448da9143ee65b856a5f3676b7dda98ad9abe0f87fce8c59291f15e82a5b"},
     {file = "black-21.10b0.tar.gz", hash = "sha256:a9952229092e325fe5f3dae56d81f639b23f7131eb840781947e4b2886030f33"},
 ]
+bookops-bpl-solr = []
 bookops-marc = []
+bookops-nypl-platform = []
 bookops-worldcat = [
     {file = "bookops-worldcat-0.4.0.tar.gz", hash = "sha256:fafc34ff116c8d7457dce39e4b9a24a73e3ff00734eb12efac5b7897a718a741"},
     {file = "bookops_worldcat-0.4.0-py3-none-any.whl", hash = "sha256:1dbbae663f01b7b384d722b76921955de8cf7ba75a28d90df7da802ab4466c49"},
