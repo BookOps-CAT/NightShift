@@ -38,10 +38,11 @@ install:
   - pip install pytest
   - pip install pytest-mock
   - pip install pytest-cov
+  - pip install pytest-sftpserver
   - pip install coveralls
 
 # command to run tests
 script:
-  - pytest --cov=nightshift/
+  - pytest -m "not localtest" --cov=nightshift/
 after_success:
   - coveralls

@@ -6,6 +6,7 @@ import os
 from bookops_marc import Bib
 from bookops_worldcat import WorldcatAccessToken, MetadataSession
 from bookops_worldcat.errors import WorldcatSessionError
+import paramiko
 from pymarc import Field
 import pytest
 import requests
@@ -13,6 +14,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import yaml
 
+from nightshift.comms.storage import get_credentials, Drive
 from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import Base, Library, Resource, ResourceCategory, SourceFile
@@ -338,3 +340,57 @@ def mock_worldcat_session(mock_token):
 @pytest.fixture
 def mock_Worldcat(mock_worldcat_creds, mock_successful_post_token_response):
     return Worldcat("NYP")
+
+
+# SFTP / newtowrked drive #############
+
+
+@pytest.fixture
+def live_sftp_env(monkeypatch):
+    if not os.getenv("TRAVIS"):
+        with open("tests/envar.yaml", "r") as f:
+            data = yaml.safe_load(f)
+            monkeypatch.setenv("SFTP_HOST", data["SFTP_HOST"])
+            monkeypatch.setenv("SFTP_USER", data["SFTP_USER"])
+            monkeypatch.setenv("SFTP_PASSW", data["SFTP_PASSW"])
+            monkeypatch.setenv("SFTP_NS_SRC", data["SFTP_NS_SRC"])
+            monkeypatch.setenv("SFTP_NS_DST", data["SFTP_NS_DST"])
+
+
+@pytest.fixture
+def mock_sftp_env(monkeypatch, sftpserver):
+    monkeypatch.setenv("SFTP_HOST", sftpserver.host)
+    monkeypatch.setenv("SFTP_PORT", str(sftpserver.port))
+    monkeypatch.setenv("SFTP_USER", "nightshift")
+    monkeypatch.setenv("SFTP_PASSW", "sftp_password")
+    monkeypatch.setenv("SFTP_NS_SRC", "sierra_dumps_dir")
+    monkeypatch.setenv("SFTP_NS_DST", "load_dir")
+
+
+class MockIOError:
+    def __init__(self, *args, **kwargs):
+        raise IOError
+
+
+class MockSSHException:
+    def __init__(self, *args, **kwargs):
+        raise paramiko.ssh_exception.SSHException
+
+
+@pytest.fixture
+def mock_io_error(monkeypatch):
+    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.put", MockIOError)
+    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.listdir", MockIOError)
+    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.file", MockIOError)
+
+
+@pytest.fixture
+def mock_ssh_exception(monkeypatch):
+    monkeypatch.setattr("paramiko.transport.Transport.connect", MockSSHException)
+
+
+@pytest.fixture
+def mock_drive(mock_sftp_env):
+    creds = get_credentials()
+    with Drive(*creds) as drive:
+        yield drive
