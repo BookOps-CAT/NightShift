@@ -64,3 +64,15 @@ class NypPlatform(PlatformSession):
         except BookopsPlatformError as exc:
             logger.error(f"Unable to obtain access token for NYPL Platform. {exc}")
             raise SierraSearchPlatformError
+
+    def bib_status(self, sierraId: int) -> str:
+        """
+        Searches NYPL Platform for a given sierra bib and returns its status
+
+        Args:
+            sierraId:                       Sierra bib
+
+        Returns:
+            status
+        """
+        pass
