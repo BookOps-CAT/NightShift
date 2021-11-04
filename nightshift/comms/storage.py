@@ -88,7 +88,6 @@ class Drive:
                 with self.sftp.file(src_file_path, mode="r") as file:
                     file_size = file.stat().st_size
                     file.prefetch(file_size)
-                    file.set_pipelined()
                     return BytesIO(file.read(file_size))
             except IOError as exc:
                 logger.error(
