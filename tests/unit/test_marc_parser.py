@@ -13,7 +13,7 @@ from nightshift.marc.marc_parser import BibReader
 @pytest.mark.parametrize("arg", ["nyp", "bpl"])
 def test_BibReader_library_arg(arg):
     with does_not_raise():
-        BibReader(marc_fh="foo.mrc", library=arg)
+        BibReader(marc_target=BytesIO("foo.mrc"), library=arg)
 
 
 def test_BibReader_invalid_library():
