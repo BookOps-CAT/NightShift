@@ -55,9 +55,6 @@ class DataAccessLayer:
         self.Session = sessionmaker(bind=self.engine)
 
 
-# dal = DataAccessLayer()
-
-
 @contextmanager
 def session_scope():
     """
