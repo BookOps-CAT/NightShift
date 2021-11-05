@@ -35,7 +35,7 @@ class TestNypPlatformMocked:
         assert "Unable to obtain access token for NYPL Platform." in caplog.text
 
 
-@pytest.mark.localtest
+@pytest.mark.local
 class TestNypPlatformLiveDev:
     """
     This mail fail a couple of first times before the service spins up
