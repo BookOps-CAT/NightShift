@@ -203,3 +203,24 @@ def update_resource(session, sierraId, libraryId, **kwargs) -> Optional[Resource
         return instance
     else:
         return None
+
+
+def add_resource(session: Session, resource: Resource) -> Optional[Resource]:
+    """
+    Adds Resource record to db.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        resource:               `datastore.Resource` object
+
+    Returns:
+        `Resource` instance updated with `nid`
+    """
+    instance = (
+        session.query(Resource)
+        .filter_by(sierraId=resource.sierraId, libraryId=resource.libraryId)
+        .one_or_none()
+    )
+    if not instance:
+        session.add(resource)
+    return instance
