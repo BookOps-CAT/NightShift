@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+from io import BytesIO
 import os
 
 from bookops_marc import Bib
@@ -178,7 +179,7 @@ def stub_marc():
 
 @pytest.fixture
 def fake_BibReader():
-    return BibReader("foo.mrc", "nyp")
+    return BibReader(BytesIO(b"some records"), "nyp")
 
 
 # Worldcat fixtures ########

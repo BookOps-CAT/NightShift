@@ -9,7 +9,7 @@ evideo)
 """
 from io import BytesIO
 import pickle
-from typing import Any, Iterator, Optional
+from typing import Any, BinaryIO, Iterator, Optional, Union
 
 from bookops_marc import SierraBibReader, Bib
 
@@ -19,16 +19,20 @@ from ..datastore import Resource
 
 
 class BibReader:
+    """
+    An iterator class for extracting Sierra bib data from a file of MARC21 records
+    """
+
     def __init__(
         self,
-        marc_target: str,
+        marc_target: Union[BinaryIO, str],
         library: str,
         hide_utf8_warnings: bool = True,
     ) -> None:
         """
-        Iterator that yields bib information extracted from MARC records
+        The constructor.
         Args:
-            marc_target:                        MARC file's path
+            marc_target:                    MARC file or file-like object
             library:                        'nyp' or 'bpl'
             hide_utf8_warnings:             hides character encoding warnings
         """
@@ -61,7 +65,8 @@ class BibReader:
             else:
                 bib_info = self._map_data(bib, resource_category)
                 yield bib_info
-                # log a warning
+
+        self.marc_target.close()
 
     def _determine_resource_category(self, bib: Bib) -> Optional[str]:
         """
