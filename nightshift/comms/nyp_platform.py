@@ -51,6 +51,9 @@ class NypPlatform(PlatformSession):
         Obtains an access token for NYPL Platform
 
         Args:
+            client_id:                      NYPL Platform client_id
+            client_secret:                  NYPL Platform client_secret
+            oauth_server:                   NYPl Platform authorization server
 
         Returns:
             `PlatformToken` instance
