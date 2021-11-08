@@ -7,7 +7,7 @@ import pytest
 
 from nightshift import __title__, __version__
 from nightshift.ns_exceptions import SierraSearchPlatformError
-from nightshift.comms.nyp_platform import NypPlatform
+from nightshift.comms.sierra_search_platforms import NypPlatform
 
 
 class TestNypPlatformMocked:
