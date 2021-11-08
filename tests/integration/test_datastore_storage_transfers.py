@@ -10,7 +10,7 @@ from nightshift.constants import LIBRARIES
 
 
 @pytest.mark.firewalled
-def test_fetch_file_and_parse(env_var, test_db):
+def test_fetch_file_and_add_to_db(env_var, test_db):
     test_file = "NYPeres210701.pout"
     library = "nyp"
 
