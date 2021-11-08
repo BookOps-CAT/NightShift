@@ -25,7 +25,7 @@ class BibReader:
 
     def __init__(
         self,
-        marc_target: Union[BinaryIO, str],
+        marc_target: Union[BytesIO, BinaryIO],
         library: str,
         hide_utf8_warnings: bool = True,
     ) -> None:
