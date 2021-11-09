@@ -16,6 +16,7 @@ from nightshift.datastore import (
     WorldcatQuery,
 )
 from nightshift.datastore_transactions import (
+    add_resource,
     init_db,
     insert_or_ignore,
     retrieve_open_matched_resources_with_full_bib_obtained,
@@ -60,6 +61,66 @@ def test_init_db(mock_db_env, test_connection):
 
     # tear db down
     Base.metadata.drop_all(engine)
+
+
+@pytest.mark.parametrize(
+    "sierraId,libraryId,expectation", [(22222222, 1, 2), (11111111, 2, 2)]
+)
+def test_add_resource_success(
+    sierraId, libraryId, expectation, test_session, test_data_core
+):
+    bib_date = datetime.now().date()
+    test_session.add(
+        Resource(
+            sierraId=11111111,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            bibDate=bib_date,
+        )
+    )
+    test_session.commit()
+    result = add_resource(
+        test_session,
+        Resource(
+            sierraId=sierraId,
+            libraryId=libraryId,
+            sourceId=1,
+            resourceCategoryId=1,
+            bibDate=bib_date,
+        ),
+    )
+    test_session.commit()
+    assert isinstance(result, Resource)
+    assert result.nid == expectation
+
+
+def test_add_resource_unique_constraint_violation(test_session, test_data_core):
+    bib_date = datetime.now().date()
+    test_session.add(
+        Resource(
+            sierraId=11111111,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            bibDate=bib_date,
+        )
+    )
+    test_session.commit()
+
+    with does_not_raise():
+        result = add_resource(
+            test_session,
+            Resource(
+                sierraId=11111111,
+                libraryId=1,
+                sourceId=2,
+                resourceCategoryId=1,
+                bibDate=bib_date,
+            ),
+        )
+        test_session.commit()
+        assert result is None
 
 
 def test_insert_or_ignore_new(test_session):
