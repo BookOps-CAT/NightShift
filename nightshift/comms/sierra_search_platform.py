@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-This module handles communication with NYPL Platform and BPL Solr. 
-It is used to check status of records in Sierra.
+This module handles communication with NYPL Platform and BPL Solr.
+It is used to check status of records in Sierra between WorldCat queries
+so fully cataloged or deleted bibs are dropped from the process.
 """
 import logging
 import os
