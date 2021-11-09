@@ -576,7 +576,7 @@ def mock_successful_platform_session_response(monkeypatch):
 @pytest.fixture
 def mock_failed_platform_session_response(monkeypatch):
     def mock_api_response(*args, **kwargs):
-        return MockPlatformSessionResponseFailed()
+        return MockPlatformSessionResponseNotFound()
 
     monkeypatch.setattr(requests.Session, "get", mock_api_response)
 
