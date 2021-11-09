@@ -583,6 +583,14 @@ def mock_failed_platform_session_response(monkeypatch):
 
 
 @pytest.fixture
+def mock_successful_solr_session_response(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return MockSolrSessionResponseSuccess()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
 def mock_platform_env(monkeypatch):
     monkeypatch.setenv("NYPL_PLATFORM_CLIENT", "app_client_id")
     monkeypatch.setenv("NYPL_PLATFORM_SECRET", "app_secret")
@@ -591,18 +599,6 @@ def mock_platform_env(monkeypatch):
 
 
 @pytest.fixture
-def live_dev_nyp_platform_env(monkeypatch):
-    with open("tests/envar.yaml", "r") as f:
-        data = yaml.safe_load(f)
-        monkeypatch.setenv("NYPL_PLATFORM_CLIENT", data["NYPL_PLATFORM_CLIENT"])
-        monkeypatch.setenv("NYPL_PLATFORM_SECRET", data["NYPL_PLATFORM_SECRET"])
-        monkeypatch.setenv("NYPL_PLATFORM_OAUTH", data["NYPL_PLATFORM_OAUTH"])
-        monkeypatch.setenv("NYPL_PLATFORM_ENV", data["NYPL_PLATFORM_ENV"])
-
-
-@pytest.fixture
 def mock_solr_env(monkeypatch):
-    with open("tests/envar.yaml", "r") as f:
-        data = yaml.safe_load(f)
-        monkeypatch.setenv("BPL_SOLR_CLIENT_KEY")
-        monkeypatch.setenv("BPL_SOLR_ENDPOINT")
+    monkeypatch.setenv("BPL_SOLR_CLIENT_KEY", "solr_key")
+    monkeypatch.setenv("BPL_SOLR_ENDPOINT", "solr_endpoint")
