@@ -46,11 +46,15 @@ def is_eresource_callno(callno: str) -> bool:
 class SearchResponse:
     def __init__(self, sierraId: int, library: str, response: Response) -> None:
         """
+        Initiates SearchResponse object.
 
         Args:
             sierraId:                   Sierra bib number
             library:                    'nyp' or 'bpl'
             response:                   `requests.Response` instance from the service
+
+        Raises:
+            `ns_exceptions.SierraSearchPlatformError`
         """
         self.sierraId = sierraId
         self.library = library
@@ -60,14 +64,13 @@ class SearchResponse:
                 f"{(self.library).upper()} search platform returned HTTP error code {response.status_code} for request {response.url}"
             )
             raise SierraSearchPlatformError
-        else:
-            self.response = response
 
+        self.response = response
         self.json_response = response.json()
 
-    def is_suppressed(self) -> bool:
+    def is_suppressed(self) -> Optional[bool]:
         """
-        Checks if Sierra bib is suppressed or not
+        Checks if Sierra bib is suppressed.
 
         Returns:
             bool
@@ -76,13 +79,15 @@ class SearchResponse:
             return self._nyp_suppression()
         elif self.library == "bpl":
             return self._bpl_suppression()
+        else:
+            return None
 
-    def get_status(self) -> str:
+    def get_status(self) -> Optional[str]:
         """
         Determines status of record in Sierra
 
         Returns:
-            status:                     'brief-bib', 'full-bib', 'deleted'
+            'brief-bib', 'full-bib', or 'deleted' status
         """
         bib_status = None
 
@@ -105,8 +110,10 @@ class SearchResponse:
 
     def _determine_bpl_bib_status(self) -> str:
         """
+        Determines status of record in BPL Sierra.
+
         Returns:
-            brief-bib, full-bib, deleted
+            'brief-bib', 'full-bib', 'deleted' status
         """
         try:
             data = self.json_response["response"]["docs"][0]
@@ -130,8 +137,10 @@ class SearchResponse:
 
     def _determine_nyp_bib_status(self) -> str:
         """
+        Determines status of record in NYPL Sierra.
+
         Returns:
-            bief-bib, full-bib or deleted
+            'bief-bib', 'full-bib' or 'deleted' status
         """
         data = self.json_response["data"]
         if data["deleted"]:
@@ -155,40 +164,55 @@ class SearchResponse:
             return "brief-bib"
 
     def _bpl_suppression(self) -> bool:
-        try:
-            self.json_response["response"]["docs"][0]
-        except IndexError:
+        """
+        Checks if BPL Sierra bib is suppressed from display.
+
+        Returns:
+            bool
+        """
+        if len(self.json_response["response"]["docs"]) == 0:
             return False
+        elif self.json_response["response"]["docs"][0]["suppressed"]:
+            return True
         else:
-            return self.json_response["response"]["docs"][0]["suppressed"]
+            return False
 
     def _nyp_suppression(self) -> bool:
+        """
+        Checks if NYPL Sierra bib is suppressed from display.
+
+        Returns:
+            bool
+        """
         if self.response.status_code == 404:
             return False
+        elif self.json_response["data"]["suppressed"]:
+            return True
         else:
-            return self.json_response["data"]["suppressed"]
+            return False
 
 
 class NypPlatform(PlatformSession):
-    def __init__(self):
+    def __init__(self) -> None:
         """
-        Authenticates and opens a session with NYPL Platform
-
-        Args:
-            target:                     'prod' or 'dev'
+        Authenticates and opens a session with NYPL Platform.
+        Relies on credentials stored in evironmental variables.
         """
         client_id, client_secret, oauth_server, target = self._get_credentials()
         token = self._get_token(client_id, client_secret, oauth_server)
         agent = f"{__title__}/{__version__}"
 
         PlatformSession.__init__(self, authorization=token, agent=agent, target=target)
+        logger.info("NYPL Platform session initiated.")
 
-    def _get_credentials(self):
+    def _get_credentials(
+        self,
+    ) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
         """
         Retrieves NYPL Platform credentials from environmental variables.
 
         Returns:
-                (client_id, secret_id, oauth_server)
+                (client_id, secret_id, oauth_server, platform_env)
         """
         return (
             os.getenv("NYPL_PLATFORM_CLIENT"),
@@ -198,7 +222,10 @@ class NypPlatform(PlatformSession):
         )
 
     def _get_token(
-        self, client_id: str, client_secret: str, oauth_server: str
+        self,
+        client_id: Optional[str],
+        client_secret: Optional[str],
+        oauth_server: Optional[str],
     ) -> PlatformToken:
         """
         Obtains an access token for NYPL Platform
@@ -216,12 +243,13 @@ class NypPlatform(PlatformSession):
         """
         try:
             token = PlatformToken(client_id, client_secret, oauth_server)
+            logger.info("NYPL Platform access token obtained.")
             return token
         except BookopsPlatformError as exc:
             logger.error(f"Unable to obtain access token for NYPL Platform. {exc}")
             raise SierraSearchPlatformError
 
-    def get_sierra_bib(self, sierraId: int) -> str:
+    def get_sierra_bib(self, sierraId: int) -> SearchResponse:
         """
         Searches NYPL Platform for a given sierra bib and returns its status
 
@@ -229,10 +257,16 @@ class NypPlatform(PlatformSession):
             sierraId:                       Sierra bib number
 
         Returns:
-            status
+            `SearchResponse` instance
+
+        Raises:
+            `ns_exceptions.SierraSearchPlatformError`
         """
         try:
             response = self.get_bib(sierraId)
+            logger.debug(
+                f"NYPL Platform request ({response.status_code}): {response.url}."
+            )
         except BookopsPlatformError as exc:
             logger.error(
                 f"Error while querying NYPL Platform for Sierra bib # {sierraId}. {exc}"
@@ -244,10 +278,30 @@ class NypPlatform(PlatformSession):
 
 
 class BplSolr(SolrSession):
-    def __init__(self, client_key: str, endpoint: str) -> None:
-        SolrSession.__init__(self, authorization=client_key, endpoint=endpoint)
+    def __init__(self) -> None:
+        """
+        Creates BPL Solr session object.
+        """
+        client_key, endpoint = self._get_credentials()
+        agent = f"{__title__}/{__version__}"
 
-    def get_siera_bib(self, sierraId: int) -> str:
+        SolrSession.__init__(
+            self,
+            authorization=client_key,
+            endpoint=endpoint,
+            agent=agent,
+        )
+
+    def _get_credentials(self) -> tuple[Optional[str], Optional[str]]:
+        """
+        Obtains credentials from environmental variables.
+
+        Returns:
+            (client_key, endpoint)
+        """
+        return (os.getenv("BPL_SOLR_CLIENT_KEY"), os.getenv("BPL_SOLR_ENDPOINT"))
+
+    def get_sierra_bib(self, sierraId: int) -> SearchResponse:
         """
         Searches BPL Solr for a given sierra bib and returns its status
 
@@ -255,7 +309,10 @@ class BplSolr(SolrSession):
             sierraId:                       Sierra bib number
 
         Returns:
-            status
+            `SearchResponse` instance
+
+        Raises:
+            `ns_exceptions.SierraSearchPlatformError`
         """
         try:
             response = self.search_bibNo(
@@ -275,5 +332,5 @@ class BplSolr(SolrSession):
             )
             raise SierraSearchPlatformError(exc)
         else:
-            sierra_bib = SearchResponse(sierraId, "bpl", response)
-            return sierra_bib
+            search_response = SearchResponse(sierraId, "bpl", response)
+            return search_response

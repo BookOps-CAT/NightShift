@@ -9,6 +9,7 @@ from nightshift import __title__, __version__
 from nightshift.ns_exceptions import SierraSearchPlatformError
 from nightshift.comms.sierra_search_platform import (
     is_eresource_callno,
+    BplSolr,
     NypPlatform,
     SearchResponse,
 )
@@ -65,26 +66,43 @@ class TestSearchResponse:
         sr = SearchResponse(11111111, "nyp", response)
         assert sr._nyp_suppression() is False
 
-    def test_nyp_suppression_match_response(self):
+    @pytest.mark.parametrize("arg,expectation", [(False, False), (True, True)])
+    def test_nyp_suppression_match_response(self, arg, expectation):
         response = MockPlatformSessionResponseSuccess()
         sr = SearchResponse(11111111, "nyp", response)
-        assert sr._nyp_suppression() is False
+        sr.json_response = {
+            "data": {
+                "suppressed": arg,
+            }
+        }
+        assert sr._nyp_suppression() == expectation
 
     def test_bpl_suppression_not_found(self):
         response = MockSolrSessionResponseNotFound()
         sr = SearchResponse(11111111, "bpl", response)
         assert sr._bpl_suppression() is False
 
-    def test_bpl_suppression_match_response(self):
+    @pytest.mark.parametrize("arg,expectation", [(False, False), (True, True)])
+    def test_bpl_suppression_match_response(self, arg, expectation):
         response = MockSolrSessionResponseSuccess()
         sr = SearchResponse(11111111, "bpl", response)
-        assert sr._bpl_suppression() is True
+        sr.json_response = {
+            "response": {
+                "docs": [
+                    {
+                        "suppressed": arg,
+                    }
+                ],
+            }
+        }
+        assert sr._bpl_suppression() == expectation
 
     @pytest.mark.parametrize(
         "library,response,expectation",
         [
             ("nyp", MockPlatformSessionResponseSuccess(), False),
             ("bpl", MockSolrSessionResponseSuccess(), True),
+            ("qpl", MockSolrSessionResponseSuccess(), None),
         ],
     )
     def test_is_suppressed(self, library, response, expectation):
@@ -208,13 +226,59 @@ class TestNypPlatformMocked:
 
         assert "Unable to obtain access token for NYPL Platform." in caplog.text
 
+    def test_get_sierra_bib_error(
+        self,
+        caplog,
+        mock_platform_env,
+        mock_successful_platform_post_token_response,
+        mock_session_error,
+    ):
+        with NypPlatform() as platform:
+            with caplog.at_level(logging.ERROR):
+                with pytest.raises(SierraSearchPlatformError):
+                    platform.get_sierra_bib(11111111)
+        assert (
+            "Error while querying NYPL Platform for Sierra bib # 11111111."
+            in caplog.text
+        )
 
-@pytest.mark.local
-class TestNypPlatformLiveDev:
-    """
-    This mail fail a couple of first times before the service spins up
-    """
+    def test_get_sierra_bib(
+        self,
+        caplog,
+        mock_platform_env,
+        mock_successful_platform_post_token_response,
+        mock_successful_platform_session_response,
+    ):
+        with NypPlatform() as platform:
+            with caplog.at_level(logging.DEBUG):
+                response = platform.get_sierra_bib(11111111)
 
-    def test_successful_initiation(self, live_dev_nyp_platform_env):
-        with does_not_raise():
-            NypPlatform()
+            assert "NYPL Platform request (200): request_url_here." in caplog.text
+            assert isinstance(response, SearchResponse)
+            assert response.sierraId == 11111111
+            assert response.library == "nyp"
+
+
+class TestBplSolrMocked:
+    def test_initiation(self, mock_solr_env):
+        solr = BplSolr()
+        assert solr.authorization == "solr_key"
+        assert solr.endpoint == "solr_endpoint"
+        assert solr.headers["User-Agent"] == f"{__title__}/{__version__}"
+
+    def test_get_sierra_bib_error(self, caplog, mock_solr_env, mock_session_error):
+        solr = BplSolr()
+        with pytest.raises(SierraSearchPlatformError):
+            with caplog.at_level(logging.ERROR):
+                solr.get_sierra_bib(11111111)
+        assert "Error while querying BPL Solr for Sierra bib # 11111111." in caplog.text
+
+    def test_get_sierra_bib_success(
+        self, mock_solr_env, mock_successful_solr_session_response
+    ):
+        solr = BplSolr()
+        response = solr.get_sierra_bib(11111111)
+
+        assert isinstance(response, SearchResponse)
+        assert response.sierraId == 11111111
+        assert response.library == "bpl"
