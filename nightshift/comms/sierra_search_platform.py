@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-This module handles communication with NYPL Platform and BPL Solr. It is used to check status of
-records in Sierra.
+This module handles communication with NYPL Platform and BPL Solr. 
+It is used to check status of records in Sierra.
 """
 import logging
 import os
@@ -20,19 +20,50 @@ from ..ns_exceptions import SierraSearchPlatformError
 logger = logging.getLogger("nightshift")
 
 
-class SierraBib:
+def is_eresource_callno(callno: str) -> bool:
+    """
+    Checks if call number is for electronic resource
+
+    Args:
+        callno:                         call number string
+
+    Returns:
+        bool
+    """
+    try:
+        norm_callno = callno.lower()
+    except AttributeError:
+        return False
+
+    if norm_callno.startswith("enypl"):  # NYPL pattern
+        return True
+    elif norm_callno in ("ebook", "eaudio", "evideo"):  # BPL pattern
+        return True
+    else:
+        return False
+
+
+class SearchResponse:
     def __init__(self, sierraId: int, library: str, response: Response) -> None:
         """
 
         Args:
-            response:                   `requests.Response` instance from the service
+            sierraId:                   Sierra bib number
             library:                    'nyp' or 'bpl'
+            response:                   `requests.Response` instance from the service
         """
         self.sierraId = sierraId
         self.library = library
-        self.response = response
-        # self.status = self.status()
-        # self.opac = self.opac_display()
+
+        if response.status_code > 404:
+            logger.error(
+                f"{(self.library).upper()} search platform returned HTTP error code {response.status_code} for request {response.url}"
+            )
+            raise SierraSearchPlatformError
+        else:
+            self.response = response
+
+        self.json_response = response.json()
 
     def is_suppressed(self) -> bool:
         """
@@ -42,40 +73,67 @@ class SierraBib:
             bool
         """
         if self.library == "nyp":
-            return self._determine_nyp_bib_opac_display()
+            return self._nyp_suppression()
         elif self.library == "bpl":
-            return self._determine_bpl_bib_opac_display()
+            return self._bpl_suppression()
 
-    def get_status(self) -> Optional[str]:
+    def get_status(self) -> str:
         """
         Determines status of record in Sierra
 
         Returns:
-            status:                     'brief-bib', 'full-bib', 'deleted', 'suppressed'
+            status:                     'brief-bib', 'full-bib', 'deleted'
         """
         bib_status = None
-        if self.response.status_code == 404:
-            logger.warning(
-                f"{(self.library).upper()} Sierra bib # {self.sierraId} not found on Platform."
-            )
-            bib_status = "deleted"
-        else:
+
+        if self.response.status_code == 200:
             if self.library == "nyp":
                 bib_status = self._determine_nyp_bib_status()
             elif self.library == "bpl":
                 bib_status = self._determine_bpl_bib_status()
+        elif self.response.status_code == 404:
+            # on a rare occasion NYPL bibs don't get ingested into Platform
+            logger.warning(
+                f"{(self.library).upper()} Sierra bib # {self.sierraId} not found on Platform."
+            )
+            bib_status = "deleted"
 
         logger.debug(
             f"{(self.library).upper()} Sierra bib # {self.sierraId} status: {bib_status}"
         )
         return bib_status
 
+    def _determine_bpl_bib_status(self) -> str:
+        """
+        Returns:
+            brief-bib, full-bib, deleted
+        """
+        try:
+            data = self.json_response["response"]["docs"][0]
+        except IndexError:
+            # no results, treat as deleted
+            return "deleted"
+        else:
+            if data["deleted"]:
+                return "deleted"
+            # if bib orignated from Worldcat asssume full bib
+            if "ss_marc_tag_003" in data and data["ss_marc_tag_003"] == "OCoLC":
+                return "full-bib"
+
+            # print material with call number tag - assume full bib
+            # exclude electronic resources
+            if "call_number" in data and not is_eresource_callno(data["call_number"]):
+                return "full-bib"
+
+        # assume at this point it must be a brief bib
+        return "brief-bib"
+
     def _determine_nyp_bib_status(self) -> str:
         """
         Returns:
             bief-bib, full-bib or deleted
         """
-        data = self.response.json()["data"]
+        data = self.json_response["data"]
         if data["deleted"]:
             return "deleted"
         else:
@@ -85,64 +143,30 @@ class SierraBib:
                 if field["marcTag"] == "003" and field["content"] == "OCoLC":
                     return "full-bib"
 
-            # print full bibs may come from other sources than
+            # print material full bibs may come from other sources than
             # Worldcat (no or diff content of the '003' tag);
             # brief bibs lack call numbers
             for field in data["varFields"]:
-                if field["marcTag"] in (
-                    "091",
-                    "852",
-                ):  # filter out electronic resources
-                    if not self._is_nyp_eresource_call_no(field["content"]):
+                if field["marcTag"] == "091":  # filter out electronic resources
+                    if not is_eresource_callno(field["subfields"][0]["content"]):
                         return "full-bib"
 
             # assume response failing previous clauses is a brief bib
             return "brief-bib"
 
-    def _determine_nyp_bib_opac_display(self) -> bool:
+    def _bpl_suppression(self) -> bool:
+        try:
+            self.json_response["response"]["docs"][0]
+        except IndexError:
+            return False
+        else:
+            return self.json_response["response"]["docs"][0]["suppressed"]
+
+    def _nyp_suppression(self) -> bool:
         if self.response.status_code == 404:
             return False
         else:
-            return self.response.json()["data"]["suppressed"]
-
-    def _determine_bpl_bib_status(self) -> str:
-        """
-        Returns:
-            brief-bib, full-bib, deleted
-        """
-        try:
-            data = self.response.json()["response"]["docs"][0]
-        except IndexError:
-            # no results
-            return "deleted"
-        else:
-            if "ss_marc_tag_003" in data and data["ss_marc_tag_003"] == "OCoLC":
-                return "full-bib"
-            if data["call_number"] != "" and not self._is_bpl_eresouce_call_no(
-                data["call_number"]
-            ):
-                return "full-bib"
-
-        # assume at this point it must be a brief bib
-        return "brief-bib"
-
-    def _determine_bpl_bib_opac_display(self) -> bool:
-        pass
-
-    def _is_nyp_eresource_call_no(self, content: str) -> bool:
-        """
-        Checks if call number starts with 'eNYPL' for electronic resources
-
-        Args:
-            content:                    variable field content
-
-        Returns:
-            bool
-        """
-        if "enypl" in content.lower():
-            return True
-        else:
-            return False
+            return self.json_response["data"]["suppressed"]
 
 
 class NypPlatform(PlatformSession):
@@ -202,7 +226,7 @@ class NypPlatform(PlatformSession):
         Searches NYPL Platform for a given sierra bib and returns its status
 
         Args:
-            sierraId:                       Sierra bib
+            sierraId:                       Sierra bib number
 
         Returns:
             status
@@ -215,8 +239,8 @@ class NypPlatform(PlatformSession):
             )
             raise SierraSearchPlatformError(exc)
         else:
-            sierra_bib = SierraBib(sierraId, "nyp", response)
-            return sierra_bib
+            search_response = SearchResponse(sierraId, "nyp", response)
+            return search_response
 
 
 class BplSolr(SolrSession):
@@ -228,7 +252,7 @@ class BplSolr(SolrSession):
         Searches BPL Solr for a given sierra bib and returns its status
 
         Args:
-            sierraId:                       Sierra bib
+            sierraId:                       Sierra bib number
 
         Returns:
             status
@@ -251,5 +275,5 @@ class BplSolr(SolrSession):
             )
             raise SierraSearchPlatformError(exc)
         else:
-            sierra_bib = SierraBib(sierraId, "bpl", response)
+            sierra_bib = SearchResponse(sierraId, "bpl", response)
             return sierra_bib
