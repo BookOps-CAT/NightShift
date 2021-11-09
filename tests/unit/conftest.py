@@ -436,6 +436,7 @@ class MockPlatformSessionResponseSuccess:
 
     def __init__(self):
         self.status_code = 200
+        self.url = "request_url_here"
 
     def json(self):
         return {
@@ -597,3 +598,11 @@ def live_dev_nyp_platform_env(monkeypatch):
         monkeypatch.setenv("NYPL_PLATFORM_SECRET", data["NYPL_PLATFORM_SECRET"])
         monkeypatch.setenv("NYPL_PLATFORM_OAUTH", data["NYPL_PLATFORM_OAUTH"])
         monkeypatch.setenv("NYPL_PLATFORM_ENV", data["NYPL_PLATFORM_ENV"])
+
+
+@pytest.fixture
+def mock_solr_env(monkeypatch):
+    with open("tests/envar.yaml", "r") as f:
+        data = yaml.safe_load(f)
+        monkeypatch.setenv("BPL_SOLR_CLIENT_KEY")
+        monkeypatch.setenv("BPL_SOLR_ENDPOINT")
