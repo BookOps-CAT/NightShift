@@ -385,7 +385,24 @@ def mock_drive(mock_sftp_env):
         yield drive
 
 
-# NYPL Platform fixtures ###
+# NYPL Platform & BPL Solr fixtures ###
+
+
+class MockSearchSession500HTTPError:
+    """Mocks 500 HTTP error responses for both platforms"""
+
+    def __init__(self):
+        self.status_code = 500
+        self.url = "query_url_here"
+
+    def json(self):
+        return {
+            "statusCode": 500,
+            "type": "exception",
+            "message": "error message",
+            "error": [],
+            "debugInfo": [],
+        }
 
 
 class MockPlatformAuthServerResponseSuccess:
@@ -424,77 +441,17 @@ class MockPlatformSessionResponseSuccess:
         return {
             "data": {
                 "id": "18578797",
-                "nyplSource": "sierra-nypl",
-                "nyplType": "bib",
-                "updatedDate": "2020-12-02T00:05:07-05:00",
-                "createdDate": "2010-08-19T17:15:07-04:00",
-                "deletedDate": None,
                 "deleted": False,
-                "locations": [{"code": "cla", "name": "Morningside Heights Adult "}],
                 "suppressed": False,
-                "lang": {"code": "eng", "name": "English"},
                 "title": "Zendegi",
                 "author": "Egan, Greg, 1961-",
-                "materialType": {"code": "a  ", "value": "BOOK/TEXT"},
-                "bibLevel": {"code": "m", "value": "MONOGRAPH"},
-                "publishYear": 2010,
-                "catalogDate": "2010-10-21",
-                "country": {"code": "cau", "name": "California"},
-                "normTitle": "zendegi",
-                "normAuthor": "egan greg 1961",
                 "standardNumbers": ["9781597801744", "1597801747"],
-                "controlNumber": "oc2010074825",
+                "controlNumber": "2010074825",
                 "fixedFields": {
                     "24": {"label": "Language", "value": "eng", "display": "English"},
-                    "25": {"label": "Skip", "value": "0", "display": None},
-                    "26": {
-                        "label": "Location",
-                        "value": "cla  ",
-                        "display": "Morningside Heights Adult ",
-                    },
-                    "27": {"label": "COPIES", "value": "3", "display": None},
-                    "28": {
-                        "label": "Cat. Date",
-                        "value": "2010-10-21",
-                        "display": None,
-                    },
-                    "29": {"label": "Bib Level", "value": "m", "display": "MONOGRAPH"},
-                    "30": {
-                        "label": "Material Type",
-                        "value": "a  ",
-                        "display": "BOOK/TEXT",
-                    },
-                    "31": {"label": "Bib Code 3", "value": "n", "display": None},
-                    "80": {"label": "Record Type", "value": "b", "display": None},
-                    "81": {
-                        "label": "Record Number",
-                        "value": "18578797",
-                        "display": None,
-                    },
-                    "83": {
-                        "label": "Created Date",
-                        "value": "2010-08-19T17:15:07Z",
-                        "display": None,
-                    },
-                    "84": {
-                        "label": "Updated Date",
-                        "value": "2020-12-02T00:05:07Z",
-                        "display": None,
-                    },
                     "107": {"label": "MARC Type", "value": " ", "display": None},
                 },
                 "varFields": [
-                    {
-                        "fieldTag": "a",
-                        "marcTag": "100",
-                        "ind1": "1",
-                        "ind2": " ",
-                        "content": None,
-                        "subfields": [
-                            {"tag": "a", "content": "Egan, Greg,"},
-                            {"tag": "d", "content": "1961-"},
-                        ],
-                    },
                     {
                         "fieldTag": "c",
                         "marcTag": "091",
@@ -505,41 +462,6 @@ class MockPlatformSessionResponseSuccess:
                             {"tag": "a", "content": "SCI-FI"},
                             {"tag": "c", "content": "EGAN"},
                         ],
-                    },
-                    {
-                        "fieldTag": "d",
-                        "marcTag": "650",
-                        "ind1": " ",
-                        "ind2": "0",
-                        "content": None,
-                        "subfields": [
-                            {"tag": "a", "content": "Virtual reality"},
-                            {"tag": "v", "content": "Fiction."},
-                        ],
-                    },
-                    {
-                        "fieldTag": "i",
-                        "marcTag": "020",
-                        "ind1": " ",
-                        "ind2": " ",
-                        "content": None,
-                        "subfields": [{"tag": "a", "content": "9781597801744"}],
-                    },
-                    {
-                        "fieldTag": "i",
-                        "marcTag": "020",
-                        "ind1": " ",
-                        "ind2": " ",
-                        "content": None,
-                        "subfields": [{"tag": "a", "content": "1597801747"}],
-                    },
-                    {
-                        "fieldTag": "l",
-                        "marcTag": "010",
-                        "ind1": " ",
-                        "ind2": " ",
-                        "content": None,
-                        "subfields": [{"tag": "a", "content": "oc2010074825"}],
                     },
                     {
                         "fieldTag": "o",
@@ -568,30 +490,6 @@ class MockPlatformSessionResponseSuccess:
                         "content": "OCoLC",
                         "subfields": None,
                     },
-                    {
-                        "fieldTag": "y",
-                        "marcTag": "005",
-                        "ind1": " ",
-                        "ind2": " ",
-                        "content": "20100930101855.0",
-                        "subfields": None,
-                    },
-                    {
-                        "fieldTag": "y",
-                        "marcTag": "008",
-                        "ind1": " ",
-                        "ind2": " ",
-                        "content": "090813s2010    cau           000 1 eng dnam a ",
-                        "subfields": None,
-                    },
-                    {
-                        "fieldTag": "_",
-                        "marcTag": None,
-                        "ind1": None,
-                        "ind2": None,
-                        "content": "00000nam  2200313 a 4500",
-                        "subfields": None,
-                    },
                 ],
             },
             "count": 1,
@@ -601,7 +499,7 @@ class MockPlatformSessionResponseSuccess:
         }
 
 
-class MockPlatformSessionResponseFailed:
+class MockPlatformSessionResponseNotFound:
     """Simulates NYPL Platform failed query response"""
 
     def __init__(self):
@@ -620,6 +518,7 @@ class MockPlatformSessionResponseFailed:
 class MockSolrSessionResponseSuccess:
     def __init__(self):
         self.status_code = 200
+        self.url = "query_url_here"
 
     def json(self):
         return {
@@ -630,13 +529,23 @@ class MockSolrSessionResponseSuccess:
                 "docs": [
                     {
                         "id": "12234255",
-                        "opac_label": "ONLINE",
-                        "suppressed": False,
+                        "suppressed": True,
                         "deleted": False,
                         "call_number": "eBOOK",
                     }
                 ],
             }
+        }
+
+
+class MockSolrSessionResponseNotFound:
+    def __init__(self):
+        self.status_code = 200
+        self.url = "query_url_here"
+
+    def json(self):
+        return {
+            "response": {"numFound": 0, "start": 0, "numFoundExact": True, "docs": []}
         }
 
 
