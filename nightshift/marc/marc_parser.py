@@ -12,15 +12,19 @@ import pickle
 from typing import Any, BinaryIO, Iterator, Optional, Union
 
 from bookops_marc import SierraBibReader, Bib
-from pymarc import Record
+from pymarc import parse_xml_to_array, Record
 
 
 from ..constants import LIBRARIES, RESOURCE_CATEGORIES
 from ..datastore import Resource
 
 
-def worldcat2pymarc(response: bytes) -> Record:
-    pass
+def worldcat_response_to_pymarc(response: bytes) -> Record:
+    if not isinstance(response, bytes):
+        raise TypeError("Invalid MARC data format. Must be bytes.")
+    else:
+        data = BytesIO(response)
+        return parse_xml_to_array(data)[0]
 
 
 class BibReader:
