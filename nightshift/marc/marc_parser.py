@@ -12,15 +12,21 @@ import pickle
 from typing import Any, BinaryIO, Iterator, Optional, Union
 
 from bookops_marc import SierraBibReader, Bib
+from pymarc import Record
 
 
 from ..constants import LIBRARIES, RESOURCE_CATEGORIES
 from ..datastore import Resource
 
 
+def worldcat2pymarc(response: bytes) -> Record:
+    pass
+
+
 class BibReader:
     """
-    An iterator class for extracting Sierra bib data from a file of MARC21 records
+    An iterator class for extracting Sierra bib data from a file or bytes
+    stream of MARC21 records
     """
 
     def __init__(
