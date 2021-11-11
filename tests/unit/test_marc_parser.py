@@ -2,6 +2,7 @@
 from contextlib import nullcontext as does_not_raise
 from datetime import date
 from io import BytesIO
+import logging
 import pickle
 
 from pymarc import Field, Record
@@ -18,9 +19,14 @@ def test_worldcat_response_to_pymarc():
     assert record["001"].data == "ocn850939580"
 
 
-def test_wordcat_response_to_pymarc_invalid_data_type():
+def test_wordcat_response_to_pymarc_invalid_data_type(caplog):
     with pytest.raises(TypeError):
-        worldcat_response_to_pymarc("some_str_data")
+        with caplog.at_level(logging.ERROR):
+            worldcat_response_to_pymarc(None)
+    assert (
+        "Invalid MARC data format: NoneType. Not able to convert to pymarc object."
+        in caplog.text
+    )
 
 
 @pytest.mark.parametrize("arg", ["nyp", "bpl"])
@@ -34,9 +40,12 @@ def test_BibReader_invalid_library():
         BibReader(BytesIO(b"some records"), "qpl")
 
 
-def test_BibReader_invalid_marc_target():
-    with pytest.raises(ValueError):
-        BibReader(123, "nyp")
+def test_BibReader_invalid_marc_target(caplog):
+    with pytest.raises(TypeError):
+        with caplog.at_level(logging.ERROR):
+            BibReader(123, "nyp")
+
+    assert "Invalid 'marc_target' argument: 123 (Int)."
 
 
 def test_BibReader_iterator():
@@ -63,6 +72,19 @@ def test_BibReader_determine_resource_category(
     stub_marc.leader = f"00000n{arg1}m a2200385Ka 4500"
     stub_marc.add_field(Field(tag="001", data=arg2))
     assert fake_BibReader._determine_resource_category(stub_marc) == expectation
+
+
+def test_BibReader_unsupported_resource_type_log_warning(
+    caplog, stub_marc, fake_BibReader
+):
+    stub_marc.leader = f"00000nem a2200385Ka 4500"  # cartographic mat rec type
+    with caplog.at_level(logging.WARN):
+        fake_BibReader.library = "nyp"
+        fake_BibReader._determine_resource_category(stub_marc)
+
+    assert (
+        "Unsuppported bib type. Unable to ingest NYP bib # b22222222x." in caplog.text
+    )
 
 
 def test_BibReader_pickle_obj(fake_BibReader):
@@ -126,7 +148,7 @@ def test_BibReader_map_data_eresource(
         ),
         Field(
             tag="907",
-            subfields=["a", ".b225094204", "b", "07-03-21", "c", "07-03-2021 19:07"],
+            subfields=["a", ".b22222222x", "b", "07-01-21", "c", "07-01-2021 19:07"],
         ),
     ]
     for tag in tags:
@@ -134,10 +156,10 @@ def test_BibReader_map_data_eresource(
 
     res = fake_BibReader._map_data(bib=bib, resource_category=arg2)
     assert isinstance(res, Resource)
-    assert res.sierraId == "22509420"
+    assert res.sierraId == "22222222"
     assert res.libraryId == 1
     assert res.resourceCategoryId == expectation
-    assert res.bibDate == date(2021, 7, 3)
+    assert res.bibDate == date(2021, 7, 1)
     assert res.author == "Adams, John, author."
     assert res.title == "The foo /"
     assert res.pubDate == "2021"

@@ -173,6 +173,13 @@ def stub_marc():
             subfields=["a", "Bar :", "b", "New York,", "c", "2021"],
         )
     )
+    bib.add_field(
+        Field(
+            tag="907",
+            indicators=[" ", " "],
+            subfields=["a", ".b22222222x", "b", "07-01-21", "c", "07-01-2021 19:07"],
+        )
+    )
 
     return bib
 
