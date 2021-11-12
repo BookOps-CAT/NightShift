@@ -45,7 +45,7 @@ RESOURCE_CATEGORIES = {
         "nid": 6,
         "description": "Print English adult non-fiction",
         "src_tags2keep": [],
-        "dst_fiels2delete": PRINT_TAGS_TO_KEEP,
+        "dst_tags2delete": PRINT_TAGS_TO_KEEP,
         "query_days": PRINT_QUERY_DAYS,
     },
     "print_eng_adult_mystery": {
@@ -84,3 +84,19 @@ RESOURCE_CATEGORIES = {
         "query_days": PRINT_QUERY_DAYS,
     },
 }
+
+
+def library_by_nid() -> dict[int, str]:
+    """
+    Creates a dictionary where the key is `datastore.Library.nid` and a value is the
+    library code.
+    """
+    return {v["nid"]: k for k, v in LIBRARIES.items()}
+
+
+def tags2delete() -> dict[int, list[str]]:
+    """
+    Produces a dictionary of tags to be deleted from WorldCat records.
+    The dictionary's keys are IDs of rows in the `datastore.ResourceCategory` table.
+    """
+    return {v["nid"]: v["dst_tags2delete"] for v in RESOURCE_CATEGORIES.values()}
