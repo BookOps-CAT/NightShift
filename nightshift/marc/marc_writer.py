@@ -7,6 +7,7 @@ into MARC21.
 import logging
 import pickle
 
+from pymarc.exceptions import FieldNotFound
 
 from ..constants import library_by_nid, tags2delete
 from ..datastore import Resource
@@ -81,8 +82,9 @@ class BibEnhancer:
         """
         Adds local tags to the WorldCat bib.
         """
-        tags2keep = pickle.load(self.resource.srcFieldsToKeep)
-        self.bib.add_ordered_field(tags2keep)
+        tags2keep = pickle.loads(self.resource.srcFieldsToKeep)
+        for tag in tags2keep:
+            self.bib.add_ordered_field(tag)
 
     def _add_initials_tag(self) -> None:
         """
@@ -94,4 +96,8 @@ class BibEnhancer:
         """
         Removes MARC tags indicated in `constants.RESOURCE_CATEGORIES` from the WorldCat bib.
         """
-        self.bib.remove_fields(DELETE_TAGS[self.resource.resourceCategoryId])
+        for tag in DELETE_TAGS[self.resource.resourceCategoryId]:
+            try:
+                self.bib.remove_fields(tag)
+            except FieldNotFound:
+                pass
