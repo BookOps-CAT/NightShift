@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-from nightshift.constants import library_by_nid, tags2delete
+from nightshift.constants import library_by_nid, tags2delete, sierra_format_code
 
 
 def test_tags2delete_correct_keys():
@@ -29,3 +29,13 @@ def test_library_by_nid():
 
     assert result[1] == "nyp"
     assert result[2] == "bpl"
+
+
+def test_sierra_format_code():
+    result = sierra_format_code()
+    assert isinstance(result, dict)
+    for key in result.keys():
+        assert isinstance(key, int)
+
+    assert result[1] == {"nyp": None, "bpl": "x"}
+    assert result[4] == {"nyp": "a", "bpl": "a"}
