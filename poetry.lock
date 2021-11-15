@@ -95,9 +95,9 @@ pymarc = "^4.1.1"
 
 [package.source]
 type = "git"
-url = "https://github.com/BookOps-CAT/bookops-marc.git"
-reference = "0.4.0"
-resolved_reference = "4bae1ddd257ad3a9a4d6e5e0a820f911d3a6ff23"
+url = "https://github.com/BookOps-CAT/bookops-marc"
+reference = "0.5.0"
+resolved_reference = "f593197d2fec8003340d41e28a5f5abc8e241b8c"
 
 [[package]]
 name = "bookops-nypl-platform"
@@ -623,7 +623,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "dd607fb4bdf0b7fc46c69d1f7579007d6752e149f1e03778b8c7ab0f704b5198"
+content-hash = "ee68294129e2d6cfe087ee649a1a0421214ca27a2ce569337e658b4a34d0341b"
 
 [metadata.files]
 atomicwrites = [
