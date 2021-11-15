@@ -37,5 +37,5 @@ def test_sierra_format_code():
     for key in result.keys():
         assert isinstance(key, int)
 
-    assert result[1] == {"nyp": None, "bpl": "x"}
+    assert result[1] == {"nyp": "z", "bpl": "x"}
     assert result[4] == {"nyp": "a", "bpl": "a"}
