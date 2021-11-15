@@ -8,7 +8,9 @@ import logging
 import pickle
 
 from pymarc import Record, Field
+import pytest
 
+from nightshift import __title__, __version__
 from nightshift.datastore import Resource
 from nightshift.marc.marc_writer import BibEnhancer
 
@@ -75,3 +77,23 @@ class TestBibEnhancer:
         # test if they were removed
         for field in fields:
             assert field.tag not in be.bib
+
+    @pytest.mark.parametrize(
+        "library,tag",
+        [
+            ("nyp", "901"),
+            ("bpl", "947"),
+        ],
+    )
+    def test_add_initials_tag(self, library, tag, stub_resource):
+        be = BibEnhancer(stub_resource)
+        be.library = library
+        be._add_initials_tag()
+        assert str(be.bib[tag]) == f"={tag}  \\\\$a{__title__}/{__version__}"
+
+    def test_add_initials_tag_invalid_library(self, stub_resource):
+        be = BibEnhancer(stub_resource)
+        bib_before = str(be.bib)
+        be.library = "foo"
+        be._add_initials_tag()
+        assert str(be.bib) == bib_before

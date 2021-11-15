@@ -7,8 +7,10 @@ into MARC21.
 import logging
 import pickle
 
+from pymarc import Field
 from pymarc.exceptions import FieldNotFound
 
+from .. import __title__, __version__
 from ..constants import library_by_nid, tags2delete
 from ..datastore import Resource
 from .marc_parser import worldcat_response_to_pymarc
@@ -19,6 +21,7 @@ logger = logging.getLogger("nightshift")
 
 DELETE_TAGS = tags2delete()
 LIB_IDX = library_by_nid()
+SIERRA_FORMAT = sierra_format_code()
 
 
 class BibEnhancer:
@@ -71,30 +74,72 @@ class BibEnhancer:
         """
         pass
 
-    def _add_command_tag() -> None:
+    def _add_command_tag(self) -> None:
         """
         Adds Sierra's command MARC tag specific to resource category and each library.
         Includes Sierra bib format, suppression, etc.
         """
-        pass
+        commands = []
+
+        # Sierra bib # matching point
+        commands.append(f"ov=b{self.resource.sierraId}a")
+
+        # Sierra bib format
+        sierra_format_code = SIERRA_FORMAT[self.resource.resourceCategoryId][
+            self.library
+        ]
+        commands.append(sierra_format_code)
+
+        # Sierra suppression code
+        if self.resource.suppressed:
+            commands.append("b3=n")
+
+        command_str = ";".join(commands)
+
+        # add command to bib
+        self.bib.add_field(
+            Field(
+                tag="949",
+                indicators=[" ", " "],
+                subfields=[
+                    "a",
+                    f"*{command_str};",
+                ],
+            )
+        )
 
     def _add_local_tags(self) -> None:
         """
         Adds local tags to the WorldCat bib.
         """
-        tags2keep = pickle.loads(self.resource.srcFieldsToKeep)
-        for tag in tags2keep:
-            self.bib.add_ordered_field(tag)
+        if self.resource.srcFieldsToKeep:
+            tags2keep = pickle.loads(self.resource.srcFieldsToKeep)
+            for tag in tags2keep:
+                self.bib.add_ordered_field(tag)
 
     def _add_initials_tag(self) -> None:
         """
         Marks records as produced by the NightShift bot.
         """
-        pass
+        if self.library == "nyp":
+            tag = "901"
+        elif self.library == "bpl":
+            tag = "947"
+        else:
+            return
+
+        self.bib.add_field(
+            Field(
+                tag=tag,
+                indicators=[" ", " "],
+                subfields=["a", f"{__title__}/{__version__}"],
+            )
+        )
 
     def _purge_tags(self) -> None:
         """
-        Removes MARC tags indicated in `constants.RESOURCE_CATEGORIES` from the WorldCat bib.
+        Removes MARC tags indicated in `constants.RESOURCE_CATEGORIES`
+        from the WorldCat bib.
         """
         for tag in DELETE_TAGS[self.resource.resourceCategoryId]:
             try:
