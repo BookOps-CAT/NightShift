@@ -9,7 +9,7 @@ RESOURCE_CATEGORIES = {
     "ebook": {
         "nid": 1,
         "description": "digital book",
-        "sierra_format_code": {"nyp": None, "bpl": "x"},
+        "sierra_format_code": {"nyp": "z", "bpl": "x"},
         "src_tags2keep": ["001", "020", "037", "856"],
         "dst_tags2delete": ["020", "029", "037", "090", "856", "910", "938"],
         "query_days": [(30, 90), (90, 180)],
@@ -17,7 +17,7 @@ RESOURCE_CATEGORIES = {
     "eaudio": {
         "nid": 2,
         "description": "digital audiobook",
-        "sierra_format_code": {"nyp": None, "bpl": None},
+        "sierra_format_code": {"nyp": "n", "bpl": "z"},
         "src_tags2keep": ["001", "020", "037", "856"],
         "dst_tags2delete": ["020", "029", "037", "090", "856", "910", "938"],
         "query_days": [(30, 90), (90, 180)],
@@ -25,7 +25,7 @@ RESOURCE_CATEGORIES = {
     "evideo": {
         "nid": 3,
         "description": "video digital",
-        "sierra_format_code": {"nyp": None, "bpl": None},
+        "sierra_format_code": {"nyp": "3", "bpl": "v"},
         "src_tags2keep": ["001", "020", "037", "856"],
         "dst_tags2delete": ["020", "029", "037", "090", "856", "910", "938"],
         "query_days": [(30, 90)],
