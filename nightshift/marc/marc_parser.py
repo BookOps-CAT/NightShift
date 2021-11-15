@@ -164,6 +164,7 @@ class BibReader:
         congressNumber = bib.lccn()
         controlNumber = bib.control_number()
         distributorNumber = bib.overdrive_number()
+        suppressed = bib.suppressed()
         otherNumber = bib.upc_number()
         srcFieldsToKeep = self._fields2keep(bib, resource_category)
         standardNumber = bib.isbn()
@@ -179,6 +180,7 @@ class BibReader:
             congressNumber=congressNumber,
             controlNumber=controlNumber,
             distributorNumber=distributorNumber,
+            suppressed=suppressed,
             otherNumber=otherNumber,
             srcFieldsToKeep=srcFieldsToKeep,
             standardNumber=standardNumber,

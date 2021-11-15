@@ -150,6 +150,7 @@ def test_BibReader_map_data_eresource(
             tag="907",
             subfields=["a", ".b22222222x", "b", "07-01-21", "c", "07-01-2021 19:07"],
         ),
+        Field(tag="998", indicators=[" ", " "], subfields=["e", "n"]),
     ]
     for tag in tags:
         bib.add_field(tag)
@@ -166,6 +167,7 @@ def test_BibReader_map_data_eresource(
     assert res.congressNumber == "12345"
     assert res.controlNumber == "ODN12345"
     assert res.distributorNumber == "1234567"
+    assert res.suppressed is True
     assert res.otherNumber is None
     assert isinstance(res.srcFieldsToKeep, bytes)
     assert res.standardNumber == "978111111111x"
