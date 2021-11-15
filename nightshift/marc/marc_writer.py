@@ -11,7 +11,7 @@ from pymarc import Field
 from pymarc.exceptions import FieldNotFound
 
 from .. import __title__, __version__
-from ..constants import library_by_nid, tags2delete
+from ..constants import library_by_nid, sierra_format_code, tags2delete
 from ..datastore import Resource
 from .marc_parser import worldcat_response_to_pymarc
 
@@ -88,7 +88,7 @@ class BibEnhancer:
         sierra_format_code = SIERRA_FORMAT[self.resource.resourceCategoryId][
             self.library
         ]
-        commands.append(sierra_format_code)
+        commands.append(f"b2={sierra_format_code}")
 
         # Sierra suppression code
         if self.resource.suppressed:
