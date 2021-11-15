@@ -92,6 +92,7 @@ def test_Resource_tbl_repr():
                 sourceId=5,
                 srcFieldsToKeep=None,
                 standardNumber="0005",
+                suppressed=True,
                 status="open",
                 deleted=False,
                 deletedTimestamp=stamp,
@@ -99,7 +100,7 @@ def test_Resource_tbl_repr():
                 upgradeTimestamp=stamp,
             )
         )
-        == f"<Resource(nid='1', sierraId='1', libraryId='2', sourceId='5', resourceCategoryId='3', bibDate='{bibDate}', author='foo', title='spam', pubDate='2021', controlNumber='0002', congressNumber='0001', standardNumber='0005', distributorNumber='0003', status='open', deleted='False', deletedTimestamp='{stamp}', outputId='None', oclcMatchNumber='None', upgradeTimestamp='{stamp}')>"
+        == f"<Resource(nid='1', sierraId='1', libraryId='2', sourceId='5', resourceCategoryId='3', bibDate='{bibDate}', author='foo', title='spam', pubDate='2021', controlNumber='0002', congressNumber='0001', standardNumber='0005', distributorNumber='0003', suppressed='True', status='open', deleted='False', deletedTimestamp='{stamp}', outputId='None', oclcMatchNumber='None', upgradeTimestamp='{stamp}')>"
     )
 
 

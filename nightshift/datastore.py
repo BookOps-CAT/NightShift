@@ -136,6 +136,7 @@ class Resource(Base):
     sourceId = Column(Integer, ForeignKey("source_file.nid"), nullable=False)
     srcFieldsToKeep = Column(PickleType)
     standardNumber = Column(String)
+    suppressed = Column(Boolean, nullable=False, default=False)
 
     deleted = Column(Boolean, nullable=False, default=False)
     deletedTimestamp = Column(DateTime)
@@ -170,6 +171,7 @@ class Resource(Base):
             f"congressNumber='{self.congressNumber}', "
             f"standardNumber='{self.standardNumber}', "
             f"distributorNumber='{self.distributorNumber}', "
+            f"suppressed='{self.suppressed}', "
             f"status='{self.status}', "
             f"deleted='{self.deleted}', "
             f"deletedTimestamp='{self.deletedTimestamp}', "
