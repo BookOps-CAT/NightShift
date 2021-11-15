@@ -163,3 +163,38 @@ class TestBibEnhancer:
         # test if they were removed
         for field in fields:
             assert field.tag not in be.bib
+
+    def test_purge_tags_non_existent(self, stub_resource):
+        be = BibEnhancer(stub_resource)
+        with does_not_raise():
+            be._purge_tags()
+
+    def test_manipulate(self, stub_resource):
+        stub_resource.resourceCategoryId = 1
+        stub_resource.libraryId = 1
+        fields = [
+            Field(tag="020", indicators=[" ", " "], subfields=["a", "978123456789x"]),
+            Field(
+                tag="037",
+                indicators=[" ", " "],
+                subfields=["a", "123", "b", "Overdrive Inc."],
+            ),
+            Field(
+                tag="856",
+                indicators=["0", "4"],
+                subfields=["u", "url_here", "2", "opac msg"],
+            ),
+        ]
+        pickled_fields = pickle.dumps(fields)
+        stub_resource.srcFieldsToKeep = pickled_fields
+
+        be = BibEnhancer(stub_resource)
+        with does_not_raise():
+            be.manipulate()
+
+        assert str(be.bib["020"]) == "=020  \\\\$a978123456789x"
+        assert str(be.bib["037"]) == "=037  \\\\$a123$bOverdrive Inc."
+        assert str(be.bib["856"]) == "=856  04$uurl_here$2opac msg"
+        assert str(be.bib["091"]) == "=091  \\\\$aeNYPL Book"
+        assert str(be.bib["901"]) == f"=901  \\\\$a{__title__}/{__version__}"
+        assert str(be.bib["949"]) == "=949  \\\\$a*ov=b11111111a;b2=z;"
