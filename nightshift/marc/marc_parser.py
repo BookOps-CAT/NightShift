@@ -68,7 +68,7 @@ class BibReader:
         """
         logger.info(f"Initating BibReader.")
         if library not in LIBRARIES.keys():
-            raise ValueError("Invalid 'library' argument. Must be 'nyp' or 'bpl'.")
+            raise ValueError("Invalid 'library' argument. Must be 'NYP' or 'BPL'.")
 
         if isinstance(marc_target, BytesIO):
             self.marc_target = marc_target
@@ -126,7 +126,7 @@ class BibReader:
             # determine particular resource category for print material here
             # based it on order information from the 960/961 tags
             logger.warning(
-                f"Unsuppported bib type. Unable to ingest {self.library.upper()} bib # {bib.sierra_bib_id()}."
+                f"Unsuppported bib type. Unable to ingest {self.library} bib # {bib.sierra_bib_id()}."
             )
             return None
 

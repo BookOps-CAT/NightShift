@@ -192,7 +192,7 @@ def stub_marc():
 
 @pytest.fixture
 def fake_BibReader():
-    return BibReader(BytesIO(b"some records"), "nyp")
+    return BibReader(BytesIO(b"some records"), "NYP")
 
 
 # Worldcat fixtures ########

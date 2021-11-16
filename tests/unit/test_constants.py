@@ -15,8 +15,8 @@ def test_library_by_nid():
     for key in result.keys():
         assert isinstance(key, int)
 
-    assert result[1] == "nyp"
-    assert result[2] == "bpl"
+    assert result[1] == "NYP"
+    assert result[2] == "BPL"
 
 
 def test_resource_category_by_nid():
@@ -38,8 +38,8 @@ def test_sierra_format_code():
     for key in result.keys():
         assert isinstance(key, int)
 
-    assert result[1] == {"nyp": "z", "bpl": "x"}
-    assert result[4] == {"nyp": "a", "bpl": "a"}
+    assert result[1] == {"NYP": "z", "BPL": "x"}
+    assert result[4] == {"NYP": "a", "BPL": "a"}
 
 
 def test_tags2delete_correct_keys():
