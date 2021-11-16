@@ -8,7 +8,6 @@ import logging
 import pickle
 
 from pymarc import Field
-from pymarc.exceptions import FieldNotFound
 
 from .. import __title__, __version__
 from ..constants import (
@@ -40,9 +39,7 @@ class BibEnhancer:
 
         self.library = LIB_IDX[resource.libraryId]
 
-        logger.info(
-            f"Enhancing {self.library.upper()} Sierra bib # b{resource.sierraId}a."
-        )
+        logger.info(f"Enhancing {self.library} Sierra bib # b{resource.sierraId}a.")
 
         self.resource = resource
         self.bib = worldcat_response_to_pymarc(resource.fullBib)
@@ -71,8 +68,11 @@ class BibEnhancer:
         """
         Appends bib to a temporary dump file.
         """
-        with open("temp.mrc" "ab") as out:  # what the location should be?
+        with open("temp.mrc", "ab") as out:
             out.write(self.bib.as_marc())
+            logger.debug(
+                f"Saving to file {self.library} record b{self.resource.sierraId}a."
+            )
 
     def _add_call_number(self) -> None:
         """
@@ -81,7 +81,7 @@ class BibEnhancer:
         will be incorporated into the process (due to complexity).
         """
         resource_cat = RES_IDX[self.resource.resourceCategoryId]
-        if self.library == "nyp":
+        if self.library == "NYP":
             tag = "091"
             if resource_cat == "ebook":
                 value = "eNYPL Book"
@@ -92,7 +92,7 @@ class BibEnhancer:
             else:
                 value = None
 
-        elif self.library == "bpl":
+        elif self.library == "BPL":
             tag = "099"
             if resource_cat == "ebook":
                 value = "eBOOK"
@@ -107,13 +107,15 @@ class BibEnhancer:
             value = None
 
         if tag and value:
-            self.bib.add_field(
-                Field(tag=tag, indicators=[" ", " "], subfields=["a", value])
+            callno = Field(tag=tag, indicators=[" ", " "], subfields=["a", value])
+            self.bib.add_field(callno)
+            logger.debug(
+                f"Added {callno.value()} to {self.library} b{self.resource.sierraId}a."
             )
         else:
             logger.warning(
                 f"Attempting to create a call number for unsupported resource category for "
-                f"{self.library.upper()} b{self.resource.sierraId}a."
+                f"{self.library} b{self.resource.sierraId}a."
             )
 
     def _add_command_tag(self) -> None:
@@ -139,15 +141,17 @@ class BibEnhancer:
         command_str = ";".join(commands)
 
         # add command to bib
-        self.bib.add_field(
-            Field(
-                tag="949",
-                indicators=[" ", " "],
-                subfields=[
-                    "a",
-                    f"*{command_str};",
-                ],
-            )
+        command_tag = Field(
+            tag="949",
+            indicators=[" ", " "],
+            subfields=[
+                "a",
+                f"*{command_str};",
+            ],
+        )
+        self.bib.add_field(command_tag)
+        logger.debug(
+            f"Added 949 command tag: {command_tag.value()} to {self.library} b{self.resource.sierraId}a."
         )
 
     def _add_local_tags(self) -> None:
@@ -156,16 +160,25 @@ class BibEnhancer:
         """
         if self.resource.srcFieldsToKeep:
             tags2keep = pickle.loads(self.resource.srcFieldsToKeep)
+            fields = []
             for tag in tags2keep:
                 self.bib.add_ordered_field(tag)
+                fields.append(tag.tag)
+            logger.debug(
+                f"Added following local fields {fields} to {self.library} b{self.resource.sierraId}a."
+            )
+        else:
+            logger.debug(
+                f"No local tags to keep were found for {self.library}, b{self.resource.sierraId}a."
+            )
 
     def _add_initials_tag(self) -> None:
         """
         Marks records as produced by the NightShift bot.
         """
-        if self.library == "nyp":
+        if self.library == "NYP":
             tag = "901"
-        elif self.library == "bpl":
+        elif self.library == "BPL":
             tag = "947"
         else:
             return
@@ -177,6 +190,9 @@ class BibEnhancer:
                 subfields=["a", f"{__title__}/{__version__}"],
             )
         )
+        logger.debug(
+            f"Added initials tag {tag} to {self.library} b{self.resource.sierraId}a."
+        )
 
     def _purge_tags(self) -> None:
         """
@@ -184,7 +200,8 @@ class BibEnhancer:
         from the WorldCat bib.
         """
         for tag in DELETE_TAGS[self.resource.resourceCategoryId]:
-            try:
+            if tag in self.bib:
                 self.bib.remove_fields(tag)
-            except FieldNotFound:
-                pass
+        logger.debug(
+            f"Removed {DELETE_TAGS[self.resource.resourceCategoryId]} from {self.library} b{self.resource.sierraId}a."
+        )
