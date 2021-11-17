@@ -204,7 +204,7 @@ class NypPlatform(PlatformSession):
         token = self._get_token(client_id, client_secret, oauth_server)
         agent = f"{__title__}/{__version__}"
 
-        PlatformSession.__init__(self, authorization=token, agent=agent, target=target)
+        super().__init__(authorization=token, agent=agent, target=target)
         logger.info("NYPL Platform session initiated.")
 
     def _get_credentials(
@@ -265,18 +265,20 @@ class NypPlatform(PlatformSession):
             `ns_exceptions.SierraSearchPlatformError`
         """
         try:
+
             response = self.get_bib(sierraId)
             logger.debug(
                 f"NYPL Platform request ({response.status_code}): {response.url}."
             )
+            search_response = SearchResponse(sierraId, "nyp", response)
+
+            return search_response
+
         except BookopsPlatformError as exc:
             logger.error(
                 f"Error while querying NYPL Platform for Sierra bib # {sierraId}. {exc}"
             )
             raise SierraSearchPlatformError(exc)
-        else:
-            search_response = SearchResponse(sierraId, "nyp", response)
-            return search_response
 
 
 class BplSolr(SolrSession):
@@ -287,8 +289,7 @@ class BplSolr(SolrSession):
         client_key, endpoint = self._get_credentials()
         agent = f"{__title__}/{__version__}"
 
-        SolrSession.__init__(
-            self,
+        super().__init__(
             authorization=client_key,
             endpoint=endpoint,
             agent=agent,
@@ -328,11 +329,12 @@ class BplSolr(SolrSession):
                     "ss_marc_tag_003",
                 ],
             )
+            search_response = SearchResponse(sierraId, "bpl", response)
+
+            return search_response
+
         except BookopsSolrError as exc:
             logger.error(
                 f"Error while querying BPL Solr for Sierra bib # {sierraId}. {exc}"
             )
             raise SierraSearchPlatformError(exc)
-        else:
-            search_response = SearchResponse(sierraId, "bpl", response)
-            return search_response
