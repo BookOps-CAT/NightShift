@@ -141,6 +141,13 @@ class TestBibEnhancer:
         assert str(bib["037"]) == "=037  \\\\$a123$bOverdrive Inc."
         assert str(bib["856"]) == "=856  04$uurl_here$2opac msg"
 
+    def test_add_local_tags_missing_tags(self, caplog, stub_resource):
+        be = BibEnhancer(stub_resource)
+        with caplog.at_level(logging.DEBUG):
+            be._add_local_tags()
+
+        assert "No local tags to keep were found for NYP b11111111a." in caplog.text
+
     @pytest.mark.parametrize(
         "library,tag",
         [
@@ -247,3 +254,11 @@ class TestBibEnhancer:
 
         # cleanup
         os.remove("temp.mrc")
+
+    def test_save2file_os_error(self, caplog, stub_resource, mock_os_error):
+        be = BibEnhancer(stub_resource)
+        with caplog.at_level(logging.ERROR):
+            with pytest.raises(OSError):
+                be.save2file()
+
+        assert "Unable to save record to a temp file. Error" in caplog.text

@@ -31,11 +31,16 @@ SIERRA_FORMAT = sierra_format_code()
 
 class BibEnhancer:
     """
-    A class representing an enhanced MARC record configured specifically
-    for import to Sierra.
+    A class used for upgrading MARC records.
     """
 
     def __init__(self, resource: Resource) -> None:
+        """
+        Initiates BibEnhancer.
+
+        Args:
+            resource:                       `datastore.Resource` instance
+        """
 
         self.library = LIB_IDX[resource.libraryId]
 
@@ -67,6 +72,9 @@ class BibEnhancer:
     def save2file(self) -> None:
         """
         Appends bib to a temporary dump file.
+
+        Raises:
+            OSError
         """
         try:
             with open("temp.mrc", "ab") as out:
@@ -74,7 +82,7 @@ class BibEnhancer:
                 logger.debug(
                     f"Saving to file {self.library} record b{self.resource.sierraId}a."
                 )
-        except IOError as exc:
+        except OSError as exc:
             logger.error(f"Unable to save record to a temp file. Error {exc}.")
             raise
 
@@ -174,7 +182,7 @@ class BibEnhancer:
             )
         else:
             logger.debug(
-                f"No local tags to keep were found for {self.library}, b{self.resource.sierraId}a."
+                f"No local tags to keep were found for {self.library} b{self.resource.sierraId}a."
             )
 
     def _add_initials_tag(self) -> None:

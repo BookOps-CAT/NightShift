@@ -33,6 +33,16 @@ def mock_utcnow(monkeypatch):
     monkeypatch.setattr(datetime, "datetime", FakeUtcNow)
 
 
+class MockOSError:
+    def __init__(self, *args, **kwargs):
+        raise OSError
+
+
+@pytest.fixture
+def mock_os_error(monkeypatch):
+    monkeypatch.setattr("builtins.open", MockIOError)
+
+
 @pytest.fixture
 def mock_log_env(monkeypatch):
     monkeypatch.setenv("LOGGLY_TOKEN", "ns_token_here")
