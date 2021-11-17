@@ -284,7 +284,7 @@ class NypPlatform(PlatformSession):
 class BplSolr(SolrSession):
     def __init__(self) -> None:
         """
-        Creates BPL Solr session object.
+        Creates BPL Solr session.
         """
         client_key, endpoint = self._get_credentials()
         agent = f"{__title__}/{__version__}"
@@ -312,7 +312,7 @@ class BplSolr(SolrSession):
             sierraId:                       Sierra bib number
 
         Returns:
-            `SearchResponse` instance
+            `sierra_search_platform.SearchResponse` instance
 
         Raises:
             `ns_exceptions.SierraSearchPlatformError`
