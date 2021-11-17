@@ -62,11 +62,11 @@ class SearchResponse:
 
         if response.status_code == 404:
             logger.warning(
-                f"{self.library.upper()} Sierra b{self.sierraId}a not found (404 HTTP code). Request: {response.url}"
+                f"{self.library} Sierra b{self.sierraId}a not found (404 HTTP code). Request: {response.url}"
             )
         elif response.status_code >= 400:
             logger.error(
-                f"{(self.library).upper()} search platform returned HTTP error code {response.status_code} for request {response.url}"
+                f"{self.library} search platform returned HTTP error code {response.status_code} for request {response.url}"
             )
             raise SierraSearchPlatformError
 
@@ -80,9 +80,9 @@ class SearchResponse:
         Returns:
             bool
         """
-        if self.library == "nyp":
+        if self.library == "NYP":
             return self._nyp_suppression()
-        elif self.library == "bpl":
+        elif self.library == "BPL":
             return self._bpl_suppression()
         else:
             return None
@@ -97,16 +97,16 @@ class SearchResponse:
         bib_status = None
 
         if self.response.status_code == 200:
-            if self.library == "nyp":
+            if self.library == "NYP":
                 bib_status = self._determine_nyp_bib_status()
-            elif self.library == "bpl":
+            elif self.library == "BPL":
                 bib_status = self._determine_bpl_bib_status()
         elif self.response.status_code == 404:
             # on a rare occasion NYPL bibs may not get ingested into Platform
             bib_status = "deleted"
 
         logger.debug(
-            f"{(self.library).upper()} Sierra bib # {self.sierraId} status: {bib_status}"
+            f"{self.library} Sierra bib # {self.sierraId} status: {bib_status}"
         )
         return bib_status
 
@@ -270,7 +270,7 @@ class NypPlatform(PlatformSession):
             logger.debug(
                 f"NYPL Platform request ({response.status_code}): {response.url}."
             )
-            search_response = SearchResponse(sierraId, "nyp", response)
+            search_response = SearchResponse(sierraId, "NYP", response)
 
             return search_response
 
@@ -329,7 +329,7 @@ class BplSolr(SolrSession):
                     "ss_marc_tag_003",
                 ],
             )
-            search_response = SearchResponse(sierraId, "bpl", response)
+            search_response = SearchResponse(sierraId, "BPL", response)
 
             return search_response
 

@@ -46,9 +46,9 @@ class TestSearchResponse:
     def test_init(self):
         response = MockSolrSessionResponseSuccess()
         with does_not_raise():
-            sr = SearchResponse(11111111, "bpl", response)
+            sr = SearchResponse(11111111, "BPL", response)
 
-        assert sr.library == "bpl"
+        assert sr.library == "BPL"
         assert sr.sierraId == 11111111
         assert sr.response.json() == response.json()
 
@@ -68,7 +68,7 @@ class TestSearchResponse:
         # response = MockPlatformSessionResponseNotFound()
         response = MockSearchSessionHTTPError(404)
         with caplog.at_level(logging.WARN):
-            sr = SearchResponse(11111111, "nyp", response)
+            sr = SearchResponse(11111111, "NYP", response)
         assert (
             f"NYP Sierra b11111111a not found (404 HTTP code). Request: request_url_here"
             in caplog.text
@@ -78,7 +78,7 @@ class TestSearchResponse:
     @pytest.mark.parametrize("arg,expectation", [(False, False), (True, True)])
     def test_nyp_suppression_match_response(self, arg, expectation):
         response = MockPlatformSessionResponseSuccess()
-        sr = SearchResponse(11111111, "nyp", response)
+        sr = SearchResponse(11111111, "NYP", response)
         sr.json_response = {
             "data": {
                 "suppressed": arg,
@@ -88,13 +88,13 @@ class TestSearchResponse:
 
     def test_bpl_suppression_not_found(self):
         response = MockSolrSessionResponseNotFound()
-        sr = SearchResponse(11111111, "bpl", response)
+        sr = SearchResponse(11111111, "BPL", response)
         assert sr._bpl_suppression() is False
 
     @pytest.mark.parametrize("arg,expectation", [(False, False), (True, True)])
     def test_bpl_suppression_match_response(self, arg, expectation):
         response = MockSolrSessionResponseSuccess()
-        sr = SearchResponse(11111111, "bpl", response)
+        sr = SearchResponse(11111111, "BPL", response)
         sr.json_response = {
             "response": {
                 "docs": [
@@ -109,8 +109,8 @@ class TestSearchResponse:
     @pytest.mark.parametrize(
         "library,response,expectation",
         [
-            ("nyp", MockPlatformSessionResponseSuccess(), False),
-            ("bpl", MockSolrSessionResponseSuccess(), True),
+            ("NYP", MockPlatformSessionResponseSuccess(), False),
+            ("BPL", MockSolrSessionResponseSuccess(), True),
             ("qpl", MockSolrSessionResponseSuccess(), None),
         ],
     )
@@ -134,7 +134,7 @@ class TestSearchResponse:
         self, deleted, tag, tag_content, sub_content, expectation
     ):
         response = MockPlatformSessionResponseSuccess()
-        sr = SearchResponse(11111111, "nyp", response)
+        sr = SearchResponse(11111111, "NYP", response)
         sr.json_response = {
             "data": {
                 "deleted": deleted,
@@ -156,7 +156,7 @@ class TestSearchResponse:
 
     def test_determine_bpl_bib_status_not_found(self):
         response = MockSolrSessionResponseNotFound()
-        sr = SearchResponse(11111111, "bpl", response)
+        sr = SearchResponse(11111111, "BPL", response)
         assert sr._determine_bpl_bib_status() == "deleted"
 
     @pytest.mark.parametrize(
@@ -173,7 +173,7 @@ class TestSearchResponse:
     )
     def test_determine_bpl_bib_status(self, deleted, field, value, expectation):
         response = MockSolrSessionResponseSuccess()
-        sr = SearchResponse(11111111, "bpl", response)
+        sr = SearchResponse(11111111, "BPL", response)
         sr.json_response = {
             "response": {
                 "numFound": 1,
@@ -192,9 +192,9 @@ class TestSearchResponse:
     @pytest.mark.parametrize(
         "library,response,expectation",
         [
-            ("nyp", MockPlatformSessionResponseSuccess(), "full-bib"),
-            ("bpl", MockSolrSessionResponseSuccess(), "brief-bib"),
-            ("bpl", MockSolrSessionResponseNotFound(), "deleted"),
+            ("NYP", MockPlatformSessionResponseSuccess(), "full-bib"),
+            ("BPL", MockSolrSessionResponseSuccess(), "brief-bib"),
+            ("BPL", MockSolrSessionResponseNotFound(), "deleted"),
         ],
     )
     def test_get_status(self, caplog, library, response, expectation):
@@ -205,7 +205,7 @@ class TestSearchResponse:
 
     def test_get_status_404_http_response(self, caplog):
         response = MockPlatformSessionResponseNotFound()
-        sr = SearchResponse(11111111, "nyp", response)
+        sr = SearchResponse(11111111, "NYP", response)
         with caplog.at_level(logging.WARN):
             assert sr.get_status() == "deleted"
         assert "NYP Sierra bib # 11111111 not found on Platform."
@@ -265,7 +265,7 @@ class TestNypPlatformMocked:
             assert "NYPL Platform request (200): request_url_here." in caplog.text
             assert isinstance(response, SearchResponse)
             assert response.sierraId == 11111111
-            assert response.library == "nyp"
+            assert response.library == "NYP"
 
 
 class TestBplSolrMocked:
@@ -290,4 +290,4 @@ class TestBplSolrMocked:
 
         assert isinstance(response, SearchResponse)
         assert response.sierraId == 11111111
-        assert response.library == "bpl"
+        assert response.library == "BPL"
