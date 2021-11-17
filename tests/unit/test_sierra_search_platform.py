@@ -17,7 +17,7 @@ from nightshift.comms.sierra_search_platform import (
 from .conftest import (
     MockPlatformSessionResponseNotFound,
     MockPlatformSessionResponseSuccess,
-    MockSearchSession500HTTPError,
+    MockSearchSessionHTTPError,
     MockSolrSessionResponseSuccess,
     MockSolrSessionResponseNotFound,
 )
@@ -52,18 +52,27 @@ class TestSearchResponse:
         assert sr.sierraId == 11111111
         assert sr.response.json() == response.json()
 
-    @pytest.mark.parametrize("arg", ["nyp", "bpl"])
-    def test_500_error_response(self, arg, caplog):
-        response = MockSearchSession500HTTPError()
+    @pytest.mark.parametrize("arg", [400, 401, 403, 405, 406, 500, 503])
+    def test_handling_error_responses(self, caplog, arg):
+        response = MockSearchSessionHTTPError(arg)
         with caplog.at_level(logging.ERROR):
             with pytest.raises(SierraSearchPlatformError):
-                sr = SearchResponse(22222222, "nyp", response)
+                SearchResponse(22222222, "NYP", response)
 
-        assert f"{arg.upper()} search platform returned HTTP error code: 500 for request query_url_here"
+        assert (
+            f"NYP search platform returned HTTP error code {arg} for request {response.url}"
+            in caplog.text
+        )
 
-    def test_nyp_suppression_not_found_response(self):
-        response = MockPlatformSessionResponseNotFound()
-        sr = SearchResponse(11111111, "nyp", response)
+    def test_nyp_suppression_not_found_response(self, caplog):
+        # response = MockPlatformSessionResponseNotFound()
+        response = MockSearchSessionHTTPError(404)
+        with caplog.at_level(logging.WARN):
+            sr = SearchResponse(11111111, "nyp", response)
+        assert (
+            f"NYP Sierra b11111111a not found (404 HTTP code). Request: request_url_here"
+            in caplog.text
+        )
         assert sr._nyp_suppression() is False
 
     @pytest.mark.parametrize("arg,expectation", [(False, False), (True, True)])

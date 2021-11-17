@@ -60,7 +60,11 @@ class SearchResponse:
         self.sierraId = sierraId
         self.library = library
 
-        if response.status_code > 403:
+        if response.status_code == 404:
+            logger.warning(
+                f"{self.library.upper()} Sierra b{self.sierraId}a not found (404 HTTP code). Request: {response.url}"
+            )
+        elif response.status_code >= 400:
             logger.error(
                 f"{(self.library).upper()} search platform returned HTTP error code {response.status_code} for request {response.url}"
             )
@@ -98,10 +102,7 @@ class SearchResponse:
             elif self.library == "bpl":
                 bib_status = self._determine_bpl_bib_status()
         elif self.response.status_code == 404:
-            # on a rare occasion NYPL bibs don't get ingested into Platform
-            logger.warning(
-                f"{(self.library).upper()} Sierra bib # {self.sierraId} not found on Platform."
-            )
+            # on a rare occasion NYPL bibs may not get ingested into Platform
             bib_status = "deleted"
 
         logger.debug(

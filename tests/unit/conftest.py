@@ -388,16 +388,16 @@ def mock_drive(mock_sftp_env):
 # NYPL Platform & BPL Solr fixtures ###
 
 
-class MockSearchSession500HTTPError:
+class MockSearchSessionHTTPError:
     """Mocks 500 HTTP error responses for both platforms"""
 
-    def __init__(self):
-        self.status_code = 500
-        self.url = "query_url_here"
+    def __init__(self, code=500):
+        self.status_code = code
+        self.url = "request_url_here"
 
     def json(self):
         return {
-            "statusCode": 500,
+            "statusCode": self.status_code,
             "type": "exception",
             "message": "error message",
             "error": [],
@@ -504,11 +504,12 @@ class MockPlatformSessionResponseNotFound:
     """Simulates NYPL Platform failed query response"""
 
     def __init__(self):
-        self.status_code = 403
+        self.status_code = 404
+        self.url = "query_url_here"
 
     def json(self):
         return {
-            "statusCode": 403,
+            "statusCode": 404,
             "type": "exception",
             "message": "No record found",
             "error": [],
