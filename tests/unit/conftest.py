@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+from io import BytesIO
 import os
 
 from bookops_marc import Bib
@@ -178,7 +179,7 @@ def stub_marc():
 
 @pytest.fixture
 def fake_BibReader():
-    return BibReader("foo.mrc", "nyp")
+    return BibReader(BytesIO(b"some records"), "nyp")
 
 
 # Worldcat fixtures ########
@@ -346,18 +347,6 @@ def mock_Worldcat(mock_worldcat_creds, mock_successful_post_token_response):
 
 
 @pytest.fixture
-def live_sftp_env(monkeypatch):
-    if not os.getenv("TRAVIS"):
-        with open("tests/envar.yaml", "r") as f:
-            data = yaml.safe_load(f)
-            monkeypatch.setenv("SFTP_HOST", data["SFTP_HOST"])
-            monkeypatch.setenv("SFTP_USER", data["SFTP_USER"])
-            monkeypatch.setenv("SFTP_PASSW", data["SFTP_PASSW"])
-            monkeypatch.setenv("SFTP_NS_SRC", data["SFTP_NS_SRC"])
-            monkeypatch.setenv("SFTP_NS_DST", data["SFTP_NS_DST"])
-
-
-@pytest.fixture
 def mock_sftp_env(monkeypatch, sftpserver):
     monkeypatch.setenv("SFTP_HOST", sftpserver.host)
     monkeypatch.setenv("SFTP_PORT", str(sftpserver.port))
@@ -394,3 +383,223 @@ def mock_drive(mock_sftp_env):
     creds = get_credentials()
     with Drive(*creds) as drive:
         yield drive
+
+
+# NYPL Platform & BPL Solr fixtures ###
+
+
+class MockSearchSessionHTTPError:
+    """Mocks 500 HTTP error responses for both platforms"""
+
+    def __init__(self, code=500):
+        self.status_code = code
+        self.url = "request_url_here"
+
+    def json(self):
+        return {
+            "statusCode": self.status_code,
+            "type": "exception",
+            "message": "error message",
+            "error": [],
+            "debugInfo": [],
+        }
+
+
+class MockPlatformAuthServerResponseSuccess:
+    """Simulates oauth server response to successful token request"""
+
+    def __init__(self):
+        self.status_code = 200
+
+    def json(self):
+        return {
+            "access_token": "token_string_here",
+            "expires_in": 3600,
+            "token_type": "Bearer",
+            "scope": "scopes_here",
+            "id_token": "token_string_here",
+        }
+
+
+class MockPlatformAuthServerResponseFailure:
+    """Simulates oauth server response to successful token request"""
+
+    def __init__(self):
+        self.status_code = 400
+
+    def json(self):
+        return {"error": "No grant_type specified", "error_description": None}
+
+
+class MockPlatformSessionResponseSuccess:
+    """Simulates NYPL Platform query successful response"""
+
+    def __init__(self):
+        self.status_code = 200
+        self.url = "request_url_here"
+
+    def json(self):
+        return {
+            "data": {
+                "id": "18578797",
+                "deleted": False,
+                "suppressed": False,
+                "title": "Zendegi",
+                "author": "Egan, Greg, 1961-",
+                "standardNumbers": ["9781597801744", "1597801747"],
+                "controlNumber": "2010074825",
+                "fixedFields": {
+                    "24": {"label": "Language", "value": "eng", "display": "English"},
+                    "107": {"label": "MARC Type", "value": " ", "display": None},
+                },
+                "varFields": [
+                    {
+                        "fieldTag": "c",
+                        "marcTag": "091",
+                        "ind1": " ",
+                        "ind2": " ",
+                        "content": None,
+                        "subfields": [
+                            {"tag": "a", "content": "SCI-FI"},
+                            {"tag": "c", "content": "EGAN"},
+                        ],
+                    },
+                    {
+                        "fieldTag": "o",
+                        "marcTag": "001",
+                        "ind1": " ",
+                        "ind2": " ",
+                        "content": "2010074825",
+                        "subfields": None,
+                    },
+                    {
+                        "fieldTag": "t",
+                        "marcTag": "245",
+                        "ind1": "1",
+                        "ind2": "0",
+                        "content": None,
+                        "subfields": [
+                            {"tag": "a", "content": "Zendegi /"},
+                            {"tag": "c", "content": "Greg Egan."},
+                        ],
+                    },
+                    {
+                        "fieldTag": "y",
+                        "marcTag": "003",
+                        "ind1": " ",
+                        "ind2": " ",
+                        "content": "OCoLC",
+                        "subfields": None,
+                    },
+                ],
+            },
+            "count": 1,
+            "totalCount": 0,
+            "statusCode": 200,
+            "debugInfo": [],
+        }
+
+
+class MockPlatformSessionResponseNotFound:
+    """Simulates NYPL Platform failed query response"""
+
+    def __init__(self):
+        self.status_code = 404
+        self.url = "query_url_here"
+
+    def json(self):
+        return {
+            "statusCode": 404,
+            "type": "exception",
+            "message": "No record found",
+            "error": [],
+            "debugInfo": [],
+        }
+
+
+class MockSolrSessionResponseSuccess:
+    def __init__(self):
+        self.status_code = 200
+        self.url = "query_url_here"
+
+    def json(self):
+        return {
+            "response": {
+                "numFound": 1,
+                "start": 0,
+                "numFoundExact": True,
+                "docs": [
+                    {
+                        "id": "12234255",
+                        "suppressed": True,
+                        "deleted": False,
+                        "call_number": "eBOOK",
+                    }
+                ],
+            }
+        }
+
+
+class MockSolrSessionResponseNotFound:
+    def __init__(self):
+        self.status_code = 200
+        self.url = "query_url_here"
+
+    def json(self):
+        return {
+            "response": {"numFound": 0, "start": 0, "numFoundExact": True, "docs": []}
+        }
+
+
+@pytest.fixture
+def mock_successful_platform_post_token_response(monkeypatch):
+    def mock_oauth_server_response(*args, **kwargs):
+        return MockPlatformAuthServerResponseSuccess()
+
+    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
+
+
+@pytest.fixture
+def mock_failed_platform_post_token_response(monkeypatch):
+    def mock_oauth_server_response(*args, **kwargs):
+        return MockPlatformAuthServerResponseFailure
+
+    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
+
+
+@pytest.fixture
+def mock_successful_platform_session_response(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return MockPlatformSessionResponseSuccess()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def mock_failed_platform_session_response(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return MockPlatformSessionResponseNotFound()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def mock_successful_solr_session_response(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return MockSolrSessionResponseSuccess()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def mock_platform_env(monkeypatch):
+    monkeypatch.setenv("NYPL_PLATFORM_CLIENT", "app_client_id")
+    monkeypatch.setenv("NYPL_PLATFORM_SECRET", "app_secret")
+    monkeypatch.setenv("NYPL_PLATFORM_OAUTH", "outh_server")
+    monkeypatch.setenv("NYPL_PLATFORM_ENV", "prod")
+
+
+@pytest.fixture
+def mock_solr_env(monkeypatch):
+    monkeypatch.setenv("BPL_SOLR_CLIENT_KEY", "solr_key")
+    monkeypatch.setenv("BPL_SOLR_ENDPOINT", "solr_endpoint")

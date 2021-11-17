@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from contextlib import nullcontext as does_not_raise
 from datetime import date
+from io import BytesIO
 import pickle
 
 from pymarc import Field
@@ -13,12 +14,17 @@ from nightshift.marc.marc_parser import BibReader
 @pytest.mark.parametrize("arg", ["nyp", "bpl"])
 def test_BibReader_library_arg(arg):
     with does_not_raise():
-        BibReader(marc_fh="foo.mrc", library=arg)
+        BibReader(marc_target=BytesIO(b"some records"), library=arg)
 
 
 def test_BibReader_invalid_library():
     with pytest.raises(ValueError):
-        BibReader("foo.mrc", "qpl")
+        BibReader(BytesIO(b"some records"), "qpl")
+
+
+def test_BibReader_invalid_marc_target():
+    with pytest.raises(ValueError):
+        BibReader(123, "nyp")
 
 
 def test_BibReader_iterator():
@@ -26,6 +32,7 @@ def test_BibReader_iterator():
     with does_not_raise():
         for bib in reader:
             continue
+    assert reader.marc_target.closed
 
 
 @pytest.mark.parametrize(

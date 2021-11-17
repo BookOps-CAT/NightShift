@@ -42,6 +42,29 @@ def init_db() -> None:
     session.close()
 
 
+def add_resource(session: Session, resource: Resource) -> Optional[Resource]:
+    """
+    Adds Resource record to db.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        resource:               `datastore.Resource` object
+
+    Returns:
+        `Resource` instance updated with `nid`
+    """
+    instance = (
+        session.query(Resource)
+        .filter_by(sierraId=resource.sierraId, libraryId=resource.libraryId)
+        .one_or_none()
+    )
+    if not instance:
+        session.add(resource)
+        return resource
+    else:
+        return None
+
+
 def insert_or_ignore(session, model, **kwargs):
     """
     Adds a new record to given table (model) or ignores if the same.

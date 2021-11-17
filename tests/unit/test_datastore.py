@@ -11,7 +11,6 @@ from .conftest import MockSuccessfulHTTP200SessionResponse
 
 from nightshift.datastore import (
     conf_db,
-    dal,
     DataAccessLayer,
     Library,
     OutputFile,
@@ -41,7 +40,6 @@ def test_DataAccessLayer_connect(test_connection):
 
 
 def test_session_scope_success(test_connection, test_session):
-    dal.conn = test_connection
     with session_scope() as session:
         assert isinstance(session, Session)
         session.add(Library(nid=1, code="nyp"))
@@ -52,7 +50,6 @@ def test_session_scope_success(test_connection, test_session):
 
 
 def test_session_scope_exception_rollback(test_connection, test_session):
-    dal.conn = test_connection
     with pytest.raises(DataError):
         with session_scope() as session:
             session.add(Library(nid=1, code="new york public"))

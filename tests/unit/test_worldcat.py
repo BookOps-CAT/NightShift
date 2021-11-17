@@ -15,7 +15,7 @@ from bookops_worldcat.errors import (
     WorldcatSessionError,
 )
 
-from nightshift import __title__, __version__
+# from nightshift import __title__, __version__
 from nightshift.datastore import Resource
 from nightshift.comms.worldcat import Worldcat, BriefBibResponse
 

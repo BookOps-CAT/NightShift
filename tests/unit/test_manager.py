@@ -4,7 +4,7 @@ import logging
 from bookops_worldcat.errors import WorldcatSessionError
 import pytest
 
-from nightshift.datastore import dal, session_scope, Resource
+from nightshift.datastore import session_scope, Resource
 
 from nightshift.manager import get_worldcat_brief_bib_matches, get_worldcat_full_bibs
 

@@ -1,3 +1,7 @@
+"""
+This probably be more of a functional test eventually. Move out of unit tests when expanded.
+"""
+
 import logging
 
 

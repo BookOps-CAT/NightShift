@@ -43,6 +43,6 @@ install:
 
 # command to run tests
 script:
-  - pytest -m "not localtest" --cov=nightshift/
+  - pytest -m "not firewalled and not local" --cov=nightshift/
 after_success:
   - coveralls

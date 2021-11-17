@@ -7,9 +7,9 @@ In case of e-resouces only bib informatin is considered.
 Source MARC files for e-resources will have a mix of various formats (ebooks, eaudio,
 evideo)
 """
-
+from io import BytesIO
 import pickle
-from typing import Any, Iterator, Optional
+from typing import Any, BinaryIO, Iterator, Optional, Union
 
 from bookops_marc import SierraBibReader, Bib
 
@@ -19,16 +19,20 @@ from ..datastore import Resource
 
 
 class BibReader:
+    """
+    An iterator class for extracting Sierra bib data from a file of MARC21 records
+    """
+
     def __init__(
         self,
-        marc_fh: str,
+        marc_target: Union[BytesIO, BinaryIO],
         library: str,
         hide_utf8_warnings: bool = True,
     ) -> None:
         """
-        Iterator that yields bib information extracted from MARC records
+        The constructor.
         Args:
-            marc_fh:                        MARC file's path
+            marc_target:                    MARC file or file-like object
             library:                        'nyp' or 'bpl'
             hide_utf8_warnings:             hides character encoding warnings
         """
@@ -36,25 +40,33 @@ class BibReader:
         if library not in LIBRARIES.keys():
             raise ValueError("Invalid 'library' argument. Must be 'nyp' or 'bpl'.")
 
-        self.marc_fh = marc_fh
+        if isinstance(marc_target, BytesIO):
+            self.marc_target = marc_target
+        elif isinstance(marc_target, str):
+            self.marc_target = open(marc_target, "rb")
+        else:
+            raise ValueError(
+                "Invalid 'marc_target' argument. Must be file-like object."
+            )
+
         self.library = library
         self.hide_utf8_warnings = hide_utf8_warnings
 
     def __iter__(self) -> Iterator[Resource]:
-        with open(self.marc_fh, "rb") as marcfile:
-            reader = SierraBibReader(
-                marcfile, hide_utf8_warnings=self.hide_utf8_warnings
-            )
-            for bib in reader:
-                resource_category = self._determine_resource_category(bib)
+        reader = SierraBibReader(
+            self.marc_target, hide_utf8_warnings=self.hide_utf8_warnings
+        )
+        for bib in reader:
+            resource_category = self._determine_resource_category(bib)
 
-                # skip any unmapped resource types from processing
-                if not resource_category:
-                    continue
-                else:
-                    bib_info = self._map_data(bib, resource_category)
-                    yield bib_info
-                    # log a warning
+            # skip any unmapped resource types from processing
+            if not resource_category:
+                continue
+            else:
+                bib_info = self._map_data(bib, resource_category)
+                yield bib_info
+
+        self.marc_target.close()
 
     def _determine_resource_category(self, bib: Bib) -> Optional[str]:
         """
