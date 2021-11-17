@@ -60,7 +60,7 @@ class SearchResponse:
         self.sierraId = sierraId
         self.library = library
 
-        if response.status_code > 404:
+        if response.status_code > 403:
             logger.error(
                 f"{(self.library).upper()} search platform returned HTTP error code {response.status_code} for request {response.url}"
             )
