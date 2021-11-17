@@ -51,7 +51,7 @@ class SearchResponse:
 
         Args:
             sierraId:                   Sierra bib number
-            library:                    'NYP' or 'BPL'
+            library:                    'nyp' or 'bpl'
             response:                   `requests.Response` instance from the service
 
         Raises:
@@ -60,9 +60,13 @@ class SearchResponse:
         self.sierraId = sierraId
         self.library = library
 
-        if response.status_code > 404:
+        if response.status_code == 404:
+            logger.warning(
+                f"{self.library.upper()} Sierra b{self.sierraId}a not found (404 HTTP code). Request: {response.url}"
+            )
+        elif response.status_code >= 400:
             logger.error(
-                f"{self.library} search platform returned HTTP error code {response.status_code} for request {response.url}"
+                f"{(self.library).upper()} search platform returned HTTP error code {response.status_code} for request {response.url}"
             )
             raise SierraSearchPlatformError
 
@@ -76,9 +80,9 @@ class SearchResponse:
         Returns:
             bool
         """
-        if self.library == "NYP":
+        if self.library == "nyp":
             return self._nyp_suppression()
-        elif self.library == "BPL":
+        elif self.library == "bpl":
             return self._bpl_suppression()
         else:
             return None
@@ -93,19 +97,16 @@ class SearchResponse:
         bib_status = None
 
         if self.response.status_code == 200:
-            if self.library == "NYP":
+            if self.library == "nyp":
                 bib_status = self._determine_nyp_bib_status()
-            elif self.library == "BPL":
+            elif self.library == "bpl":
                 bib_status = self._determine_bpl_bib_status()
         elif self.response.status_code == 404:
-            # on a rare occasion NYPL bibs don't get ingested into Platform
-            logger.warning(
-                f"{self.library} Sierra bib # b{self.sierraId}a not found on Platform."
-            )
+            # on a rare occasion NYPL bibs may not get ingested into Platform
             bib_status = "deleted"
 
         logger.debug(
-            f"{self.library} Sierra bib # b{self.sierraId}a status: {bib_status}"
+            f"{(self.library).upper()} Sierra bib # {self.sierraId} status: {bib_status}"
         )
         return bib_status
 
@@ -203,7 +204,7 @@ class NypPlatform(PlatformSession):
         token = self._get_token(client_id, client_secret, oauth_server)
         agent = f"{__title__}/{__version__}"
 
-        PlatformSession.__init__(self, authorization=token, agent=agent, target=target)
+        super().__init__(authorization=token, agent=agent, target=target)
         logger.info("NYPL Platform session initiated.")
 
     def _get_credentials(
@@ -264,30 +265,31 @@ class NypPlatform(PlatformSession):
             `ns_exceptions.SierraSearchPlatformError`
         """
         try:
+
             response = self.get_bib(sierraId)
             logger.debug(
                 f"NYPL Platform request ({response.status_code}): {response.url}."
             )
+            search_response = SearchResponse(sierraId, "nyp", response)
+
+            return search_response
+
         except BookopsPlatformError as exc:
             logger.error(
-                f"Error while querying NYPL Platform for Sierra bib # b{sierraId}a. {exc}"
+                f"Error while querying NYPL Platform for Sierra bib # {sierraId}. {exc}"
             )
             raise SierraSearchPlatformError(exc)
-        else:
-            search_response = SearchResponse(sierraId, "NYP", response)
-            return search_response
 
 
 class BplSolr(SolrSession):
     def __init__(self) -> None:
         """
-        Creates BPL Solr session object.
+        Creates BPL Solr session.
         """
         client_key, endpoint = self._get_credentials()
         agent = f"{__title__}/{__version__}"
 
-        SolrSession.__init__(
-            self,
+        super().__init__(
             authorization=client_key,
             endpoint=endpoint,
             agent=agent,
@@ -310,7 +312,7 @@ class BplSolr(SolrSession):
             sierraId:                       Sierra bib number
 
         Returns:
-            `SearchResponse` instance
+            `sierra_search_platform.SearchResponse` instance
 
         Raises:
             `ns_exceptions.SierraSearchPlatformError`
@@ -327,11 +329,12 @@ class BplSolr(SolrSession):
                     "ss_marc_tag_003",
                 ],
             )
+            search_response = SearchResponse(sierraId, "bpl", response)
+
+            return search_response
+
         except BookopsSolrError as exc:
             logger.error(
-                f"Error while querying BPL Solr for Sierra bib # b{sierraId}a. {exc}"
+                f"Error while querying BPL Solr for Sierra bib # {sierraId}. {exc}"
             )
             raise SierraSearchPlatformError(exc)
-        else:
-            search_response = SearchResponse(sierraId, "BPL", response)
-            return search_response
