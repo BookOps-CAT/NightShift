@@ -2,15 +2,15 @@
 
 
 from nightshift.constants import (
-    library_by_nid,
-    resource_category_by_nid,
+    library_by_id,
+    resource_category_by_id,
     sierra_format_code,
     tags2delete,
 )
 
 
 def test_library_by_nid():
-    result = library_by_nid()
+    result = library_by_id()
     assert isinstance(result, dict)
     for key in result.keys():
         assert isinstance(key, int)
@@ -20,7 +20,7 @@ def test_library_by_nid():
 
 
 def test_resource_category_by_nid():
-    result = resource_category_by_nid()
+    result = resource_category_by_id()
     assert isinstance(result, dict)
     for k, v in result.items():
         assert isinstance(k, int)

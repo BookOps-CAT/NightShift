@@ -115,7 +115,7 @@ SIERRA_FORMATS = {
 }
 
 
-def library_by_nid() -> dict[int, str]:
+def library_by_id() -> dict[int, str]:
     """
     Creates a dictionary where the key is `datastore.Library.nid` and a value is the
     library code.
@@ -123,7 +123,7 @@ def library_by_nid() -> dict[int, str]:
     return {v["nid"]: k for k, v in LIBRARIES.items()}
 
 
-def resource_category_by_nid() -> dict[int, str]:
+def resource_category_by_id() -> dict[int, str]:
     """
     Creates a dictionary of resource categories by their id
     """

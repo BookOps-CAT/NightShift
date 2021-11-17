@@ -11,8 +11,8 @@ from pymarc import Field
 
 from .. import __title__, __version__
 from ..constants import (
-    library_by_nid,
-    resource_category_by_nid,
+    library_by_id,
+    resource_category_by_id,
     sierra_format_code,
     tags2delete,
 )
@@ -24,8 +24,8 @@ logger = logging.getLogger("nightshift")
 
 
 DELETE_TAGS = tags2delete()
-LIB_IDX = library_by_nid()
-RES_IDX = resource_category_by_nid()
+LIB_IDX = library_by_id()
+RES_IDX = resource_category_by_id()
 SIERRA_FORMAT = sierra_format_code()
 
 
@@ -68,17 +68,22 @@ class BibEnhancer:
         """
         Appends bib to a temporary dump file.
         """
-        with open("temp.mrc", "ab") as out:
-            out.write(self.bib.as_marc())
-            logger.debug(
-                f"Saving to file {self.library} record b{self.resource.sierraId}a."
-            )
+        try:
+            with open("temp.mrc", "ab") as out:
+                out.write(self.bib.as_marc())
+                logger.debug(
+                    f"Saving to file {self.library} record b{self.resource.sierraId}a."
+                )
+        except IOError as exc:
+            logger.error(f"Unable to save record to a temp file. Error {exc}.")
+            raise
 
     def _add_call_number(self) -> None:
         """
         Adds a call number MARC tag specific to resource category and each library.
-        Creation of call numbers will be moved to a separate module when print materials
-        will be incorporated into the process (due to complexity).
+
+        !!Creation of call numbers will be moved to a separate module or even package
+        when print materials will be incorporated into the process (due to complexity)!!
         """
         resource_cat = RES_IDX[self.resource.resourceCategoryId]
         if self.library == "NYP":
