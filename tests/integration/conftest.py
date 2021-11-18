@@ -52,8 +52,8 @@ def test_data(local_db, stub_resource):
         local_db.add(
             ResourceCategory(nid=v["nid"], name=k, description=v["description"]),
         )
-    local_db.add(SourceFile(nid=1, libraryId=1, handle="foo1.mrc"))
-    local_db.add(SourceFile(nid=2, libraryId=2, handle="foo2.mrc"))
+    local_db.add(SourceFile(libraryId=1, handle="foo1.mrc"))
+    local_db.add(SourceFile(libraryId=2, handle="foo2.mrc"))
     local_db.commit()
     local_db.add(stub_resource)
     local_db.commit()
@@ -62,18 +62,16 @@ def test_data(local_db, stub_resource):
 @pytest.fixture
 def stub_resource():
     return Resource(
-        nid=1,
-        sierraId=21642892,
+        sierraId=11111111,
         libraryId=1,
         resourceCategoryId=1,
         sourceId=1,
         bibDate=datetime.datetime.utcnow().date() - datetime.timedelta(days=31),
         title="Harry potter and the sorcerer's stone",
         status="open",
-        distributorNumber="622708F6-78D7-453A-A7C5-3FE6853F3167",
     )
 
 
 @pytest.fixture()
-def test_nyp_worldcat():
+def test_nyp_worldcat(env_var):
     yield Worldcat("NYP")
