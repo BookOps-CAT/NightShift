@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
+import datetime
 import os
 
 import pytest
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 import yaml
 
 
-from nightshift.datastore import Base
+from nightshift.comms.worldcat import Worldcat
+from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
+from nightshift.datastore import Base, Library, Resource, ResourceCategory, SourceFile
 from nightshift.datastore_transactions import init_db
 
 
@@ -20,12 +24,56 @@ def env_var(monkeypatch):
 
 
 @pytest.fixture
-def test_db(env_var):
-    # setup
-    init_db()
-    yield
+def local_connection(env_var):
+    return f"postgresql://{os.getenv('NS_DBUSER')}:{os.getenv('NS_DBPASSW')}@{os.getenv('NS_DBHOST')}:{os.getenv('NS_DBPORT')}/{os.getenv('NS_DBNAME')}"
+
+
+@pytest.fixture
+def local_db(local_connection):
+    engine = create_engine(local_connection)
+
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    yield session
+    session.close()
 
     # teardown
-    test_connection = f"postgresql://{os.getenv('NS_DBUSER')}:{os.getenv('NS_DBPASSW')}@{os.getenv('NS_DBHOST')}:{os.getenv('NS_DBPORT')}/{os.getenv('NS_DBNAME')}"
-    engine = create_engine(test_connection)
     Base.metadata.drop_all(engine)
+
+
+@pytest.fixture
+def test_data(local_db, stub_resource):
+    for k, v in LIBRARIES.items():
+        local_db.add(Library(nid=v["nid"], code=k))
+
+    for k, v in RESOURCE_CATEGORIES.items():
+        local_db.add(
+            ResourceCategory(nid=v["nid"], name=k, description=v["description"]),
+        )
+    local_db.add(SourceFile(nid=1, libraryId=1, handle="foo1.mrc"))
+    local_db.add(SourceFile(nid=2, libraryId=2, handle="foo2.mrc"))
+    local_db.commit()
+    local_db.add(stub_resource)
+    local_db.commit()
+
+
+@pytest.fixture
+def stub_resource():
+    return Resource(
+        nid=1,
+        sierraId=21642892,
+        libraryId=1,
+        resourceCategoryId=1,
+        sourceId=1,
+        bibDate=datetime.datetime.utcnow().date() - datetime.timedelta(days=31),
+        title="Harry potter and the sorcerer's stone",
+        status="open",
+        distributorNumber="622708F6-78D7-453A-A7C5-3FE6853F3167",
+    )
+
+
+@pytest.fixture()
+def test_nyp_worldcat():
+    yield Worldcat("NYP")
