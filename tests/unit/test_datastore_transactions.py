@@ -90,7 +90,6 @@ def test_add_resource_success(
             bibDate=bib_date,
         ),
     )
-    test_session.commit()
     assert isinstance(result, Resource)
     assert result.nid == expectation
 
