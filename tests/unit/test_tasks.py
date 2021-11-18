@@ -1,44 +1,14 @@
+# -*- coding: utf-8 -*-
 from datetime import datetime
-import logging
 
-from bookops_worldcat.errors import WorldcatSessionError
-import pytest
 
-from nightshift.datastore import session_scope, Resource
-
-from nightshift.manager import get_worldcat_brief_bib_matches, get_worldcat_full_bibs
+from nightshift.datastore import Resource
+from nightshift.tasks import get_worldcat_brief_bib_matches, get_worldcat_full_bibs
 
 from .conftest import (
     MockSuccessfulHTTP200SessionResponse,
     MockSuccessfulHTTP200SessionResponseNoMatches,
 )
-
-
-LOGGER = logging.getLogger(__name__)
-
-
-# def test_processing_resources_logging(caplog, test_connection, test_session, test_data):
-#     # from nightshift.bot import run
-
-#     dal.conn = test_connection
-
-#     bib_date = datetime.utcnow().date()
-#     test_session.add(
-#         Resource(
-#             sierraId=11111111,
-#             libraryId=1,
-#             resourceCategoryId=1,
-#             bibDate=bib_date,
-#             distributorNumber="123",
-#             sourceId=1,
-#             status="open",
-#         )
-#     )
-
-#     with caplog.at_level(logging.INFO):
-#         process_resources()
-#     assert "Processing NYP new resources" in caplog.text
-#     assert "Processing BPL new resources" in caplog.text
 
 
 def test_get_worldcat_brief_bib_matches_success(
