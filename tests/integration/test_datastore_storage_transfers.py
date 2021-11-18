@@ -10,7 +10,7 @@ from nightshift.constants import LIBRARIES
 
 
 @pytest.mark.firewalled
-def test_fetch_file_and_add_to_db(env_var, test_db):
+def test_fetch_file_and_add_to_db(env_var, test_data):
     test_file = "NYPeres210701.pout"
     library = "NYP"
 
@@ -39,9 +39,9 @@ def test_fetch_file_and_add_to_db(env_var, test_db):
 
         # verify
         results = db_session.query(Resource).all()
-        assert len(results) == 1
+        assert len(results) == 2
 
-        bib = results[0]
+        bib = results[1]
         assert bib.sierraId == 21642892
         assert bib.status == "open"
         assert bib.resourceCategoryId == 1
