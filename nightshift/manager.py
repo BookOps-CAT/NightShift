@@ -17,6 +17,7 @@ from nightshift.datastore_transactions import (
     retrieve_open_older_resources,
     update_resource,
 )
+from nightshift.tasks import get_worldcat_brief_bib_matches, get_worldcat_full_bibs
 
 
 logger = logging.getLogger("nightshift")
