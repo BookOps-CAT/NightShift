@@ -10,6 +10,11 @@ from nightshift.tasks import get_worldcat_brief_bib_matches, get_worldcat_full_b
 
 @pytest.mark.local
 def test_get_worldcat_brief_bib_matches_success(local_db, test_data, test_nyp_worldcat):
+    local_db.execute(
+        update(Resource)
+        .where(Resource.sierraId == 11111111, Resource.libraryId == 1)
+        .values(distributorNumber="622708F6-78D7-453A-A7C5-3FE6853F3167")
+    )
     resources = local_db.query(Resource).filter_by(nid=1).all()
 
     get_worldcat_brief_bib_matches(local_db, test_nyp_worldcat, resources)
@@ -48,7 +53,7 @@ def test_get_worldcat_brief_bib_matches_failure(local_db, test_data, test_nyp_wo
 
 
 @pytest.mark.local
-def test_worldcat_full_bibs(local_db, test_data, test_nyp_worldcat):
+def test_get_worldcat_full_bibs(local_db, test_data, test_nyp_worldcat):
     local_db.execute(
         update(Resource).where(Resource.nid == 1).values(oclcMatchNumber="779356905")
     )
