@@ -51,3 +51,23 @@ def get_worldcat_brief_bib_matches(
             )
 
         db_session.commit()
+
+
+def get_worldcat_full_bibs(
+    db_session: Session, worldcat: Worldcat, resources: list[Resource]
+) -> None:
+    """
+    Requests full bibliographic records from MetadataAPI service and
+    stores the responses.
+
+    Args:
+        db_session:                     `sqlalchemy.Session` instance
+        worldcat:                       `nightshift.comms.worldcat.Worldcat` instance
+        resources:                      `sqlalchemy.engine.Result` instance
+    """
+    results = worldcat.get_full_bibs(resources)
+    for resource, response in results:
+        update_resource(
+            db_session, resource.sierraId, resource.libraryId, fullBib=response
+        )
+        db_session.commit()
