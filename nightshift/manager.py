@@ -2,7 +2,6 @@
 This module incldues top level processes to be performed by the app
 """
 import logging
-from typing import List
 
 from bookops_worldcat.errors import WorldcatSessionError
 from sqlalchemy.orm.session import Session
@@ -17,40 +16,54 @@ from nightshift.datastore_transactions import (
     retrieve_open_older_resources,
     update_resource,
 )
-from nightshift.tasks import get_worldcat_brief_bib_matches, get_worldcat_full_bibs
+from nightshift.tasks import (
+    check_resources_sierra_state,
+    get_worldcat_brief_bib_matches,
+    get_worldcat_full_bibs,
+)
 
 
 logger = logging.getLogger("nightshift")
 
 
-# def process_resources() -> None:
-#     """
-#     Processes newly added and older open resources.
-#     """
-#     with session_scope() as db_session:
-#         # retrieve today's resouces & search WorldCat
-#         for library, libdata in LIBRARIES.items():
-#             logger.info(f"Processing {(library).upper()} new resources.")
+def process_resources() -> None:
+    """
+    Processes newly added and older open resources.
 
-#             # search newly added resources
-#             resources = retrieve_new_resources(db_session, libdata["nid"])
-#             logger.debug(
-#                 f"Retrieved {len(resources)} new {(library).upper()} for querying."
-#             )
 
-#             # perform searches for each resource and store results
-#             get_worldcat_brief_bib_matches(db_session, library, resources)
+    """
+    with session_scope() as db_session:
 
-#             # update status of older resources
-#             for res_category, catdata in RESOURCE_CATEGORIES.items():
-#                 for ageMin, ageMax in catdata["query_days"]:
-#                     resources = retrieve_older_open_resources(
-#                         db_session,
-#                         libdata["nid"],
-#                         minAge,
-#                         maxAge,
-#                     )
-#                     # query Sierra to update their status if changed
+        for library, libdata in LIBRARIES.items():
+            logger.info(f"Processing {library} new resources.")
+
+            # search newly added resources
+            resources = retrieve_new_resources(db_session, libdata["nid"])
+            logger.info(
+                f"Retrieved {len(resources)} new {library} resources for "
+                "querying WorldCat."
+            )
+
+            # perform searches for each resource and store results
+            get_worldcat_brief_bib_matches(db_session, library, resources)
+
+            # check & update status of older resources if changed in Sierra
+            for res_category, catdata in RESOURCE_CATEGORIES.items():
+                for ageMin, ageMax in catdata["query_days"]:
+                    resources = retrieve_open_older_resources(
+                        db_session,
+                        libdata["nid"],
+                        ageMin,
+                        ageMax,
+                    )
+                    logger.info(
+                        f"Retrieved {len(resources)} {library} {res_category} "
+                        "older resources to query Sierra for state change."
+                    )
+                    # query Sierra platform to update their status if changed
+                    check_resources_sierra_state(db_session, library, resources)
+
+
 #                     # here
 #                     # this will be particulary important for print materials
 #                     pass
