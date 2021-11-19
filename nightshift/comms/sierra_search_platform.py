@@ -103,7 +103,7 @@ class SearchResponse:
                 bib_status = self._determine_bpl_bib_status()
         elif self.response.status_code == 404:
             # on a rare occasion NYPL bibs may not get ingested into Platform
-            bib_status = "deleted"
+            bib_status = "deleted_staff"
 
         logger.debug(
             f"{self.library} Sierra bib # {self.sierraId} status: {bib_status}"
@@ -121,21 +121,21 @@ class SearchResponse:
             data = self.json_response["response"]["docs"][0]
         except IndexError:
             # no results, treat as deleted
-            return "deleted"
+            return "deleted_staff"
         else:
             if data["deleted"]:
-                return "deleted"
+                return "deleted_staff"
             # if bib orignated from Worldcat asssume full bib
             if "ss_marc_tag_003" in data and data["ss_marc_tag_003"] == "OCoLC":
-                return "full-bib"
+                return "upgraded_staff"
 
             # print material with call number tag - assume full bib
             # exclude electronic resources
             if "call_number" in data and not is_eresource_callno(data["call_number"]):
-                return "full-bib"
+                return "upgraded_staff"
 
         # assume at this point it must be a brief bib
-        return "brief-bib"
+        return "open"
 
     def _determine_nyp_bib_status(self) -> str:
         """
@@ -146,13 +146,13 @@ class SearchResponse:
         """
         data = self.json_response["data"]
         if data["deleted"]:
-            return "deleted"
+            return "deleted_staff"
         else:
             # check first if Sierra bib came from the Worldcat;
             # and catch here upgraded/enhanced electronic resources
             for field in data["varFields"]:
                 if field["marcTag"] == "003" and field["content"] == "OCoLC":
-                    return "full-bib"
+                    return "upgraded_staff"
 
             # print material full bibs may come from other sources than
             # Worldcat (no or diff content of the '003' tag);
@@ -160,10 +160,10 @@ class SearchResponse:
             for field in data["varFields"]:
                 if field["marcTag"] == "091":  # filter out electronic resources
                     if not is_eresource_callno(field["subfields"][0]["content"]):
-                        return "full-bib"
+                        return "upgraded_staff"
 
             # assume response failing previous clauses is a brief bib
-            return "brief-bib"
+            return "open"
 
     def _bpl_suppression(self) -> bool:
         """
