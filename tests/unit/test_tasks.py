@@ -3,12 +3,20 @@ from datetime import datetime
 
 
 from nightshift.datastore import Resource
-from nightshift.tasks import get_worldcat_brief_bib_matches, get_worldcat_full_bibs
+from nightshift.tasks import (
+    check_resources_sierra_state,
+    get_worldcat_brief_bib_matches,
+    get_worldcat_full_bibs,
+)
 
 from .conftest import (
     MockSuccessfulHTTP200SessionResponse,
     MockSuccessfulHTTP200SessionResponseNoMatches,
 )
+
+
+def test_check_resources_sierra_state(test_session, test_data_core):
+    pass
 
 
 def test_get_worldcat_brief_bib_matches_success(
