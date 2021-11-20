@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
+import logging
 
+import pytest
 
 from nightshift.datastore import Resource
 from nightshift.tasks import (
@@ -15,8 +17,51 @@ from .conftest import (
 )
 
 
-def test_check_resources_sierra_state(test_session, test_data_core):
-    pass
+def test_check_resources_sierra_state_nyp_platform(
+    test_session,
+    test_data_core,
+    stub_resource,
+    mock_platform_env,
+    mock_successful_platform_post_token_response,
+    mock_successful_platform_session_response,
+):
+    stub_resource.suppressed = True
+    stub_resource.status = "open"
+    test_session.add(stub_resource)
+    test_session.commit()
+
+    check_resources_sierra_state(test_session, "NYP", [stub_resource])
+
+    resource = test_session.query(Resource).filter_by(nid=1).one()
+    assert resource.suppressed is False
+    assert resource.status == "upgraded_staff"
+
+
+def test_check_resources_sierra_state_bpl_solr(
+    test_session,
+    test_data_core,
+    stub_resource,
+    mock_solr_env,
+    mock_successful_solr_session_response,
+):
+    stub_resource.suppressed = False
+    stub_resource.status = "expired"
+    test_session.add(stub_resource)
+    test_session.commit()
+
+    check_resources_sierra_state(test_session, "BPL", [stub_resource])
+
+    resource = test_session.query(Resource).filter_by(nid=1).one()
+    assert resource.suppressed
+    assert resource.status == "open"
+
+
+def test_check_resources_sierra_state_invalid_library_arg(caplog):
+    with pytest.raises(ValueError):
+        with caplog.at_level(logging.ERROR):
+            check_resources_sierra_state(None, "QPL", [])
+
+    assert "Invalid library argument passed: 'QPL'. Must be 'NYP' or 'BPL'"
 
 
 def test_get_worldcat_brief_bib_matches_success(
