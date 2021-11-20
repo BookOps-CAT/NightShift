@@ -20,12 +20,14 @@ def check_resources_sierra_state(
     db_session: Session, library: str, resources: list[Resource]
 ) -> None:
     """
-    Checks and updates status & suppression of records using NYPL Platform & BPL Solr
+    Checks and updates status & suppression of records using NYPL Platform & BPL Solr.
+    This method updates resources in the databse.
 
     Args:
         db_session:                     `sqlalchemy.Session` instance
         library:                        'NYP' or 'BPL'
-        resources:                      list of `datastore.Resource` instances
+        resources:                      list of `nightshift.datastore.Resource`
+                                        instances
     """
     if library == "NYP":
         sierra_platform = NypPlatform()
@@ -35,7 +37,7 @@ def check_resources_sierra_state(
         logger.error(
             f"Invalid library argument passed: '{library}'. Must be 'NYP' or 'BPL'."
         )
-        raise ValueError("Invalid library argument.")
+        raise ValueError("Invalid library argument. Must be 'NYP' or 'BPL'")
 
     for resource in resources:
         response = sierra_platform.get_sierra_bib(resource.sierraId)
@@ -92,7 +94,7 @@ def get_worldcat_full_bibs(
 ) -> None:
     """
     Requests full bibliographic records from MetadataAPI service and
-    stores the responses.
+    stores the responses in the db.
 
     Args:
         db_session:                     `sqlalchemy.Session` instance
