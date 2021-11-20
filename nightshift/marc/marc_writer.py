@@ -40,7 +40,7 @@ class BibEnhancer:
      - removes unwanted MARC tags specified in `constants.RESOURCE_CATEGORIES`,
      - adds local tags preserved from the original Sierra bib specified in
         `constants.RESOURCE_CATEGORIES`
-     - creates appropriate for each resource type call number tag (099 for BPL or
+     - creates for each resource type an appropriate call number tag (099 for BPL or
         091 for NYPL)
      - adds a Sierra command tag in the 949 tag that specifies Sierra bib to be
         overlaid, bib Sierra format code and optionally Sierra bib code 3 for
