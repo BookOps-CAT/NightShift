@@ -61,12 +61,12 @@ class Worldcat:
         Args:
             library:                'NYP' or "BPL"
         """
-        if library not in ("NYP", "BPL"):
+        if library not in ("NYP", "BPL", "nyp", "bpl"):
             raise ValueError(
                 "Invalid library argument provided. Must be 'NYP' or 'BPL'."
             )
 
-        self.library = library
+        self.library = library.upper()
 
         creds = self._get_credentials()
         token = self._get_access_token(creds)
@@ -182,7 +182,7 @@ class Worldcat:
                     )
                 )
         logging.debug(
-            f"Query payload for {self.library} Sierra bib # {resource.sierraId}: {payloads}."
+            f"Query payload for {self.library} Sierra bib # b{resource.sierraId}a: {payloads}."
         )
         return payloads
 
@@ -204,7 +204,7 @@ class Worldcat:
                 payloads = self._prep_resource_queries_payloads(resource)
                 if not payloads:
                     logger.warning(
-                        f"Unable to create a payload for brief bib query for {self.library} resource nid={resource.nid}, sierraId={resource.sierraId}."
+                        f"Unable to create a payload for brief bib query for {self.library} resource nid={resource.nid}, sierraId=b{resource.sierraId}a."
                     )
                     continue
 
@@ -218,11 +218,11 @@ class Worldcat:
 
                     brief_bib_response = BriefBibResponse(response)
                     logger.debug(
-                        f"Brief bib Worldcat query for {self.library} Sierra bib # {resource.sierraId}: {response.url}."
+                        f"Brief bib Worldcat query for {self.library} Sierra bib # b{resource.sierraId}a: {response.url}."
                     )
                     if brief_bib_response.is_match:
                         logger.debug(
-                            f"Match found for {self.library} Sierra bib #: {resource.sierraId}."
+                            f"Match found for {self.library} Sierra bib # b{resource.sierraId}a."
                         )
                         break
 
@@ -244,7 +244,7 @@ class Worldcat:
                     oclcNumber=resource.oclcMatchNumber
                 )
                 logger.debug(
-                    f"Full bib Worldcat request for {self.library} Sierra bib # {resource.sierraId}: {response.url}."
+                    f"Full bib Worldcat request for {self.library} Sierra bib # b{resource.sierraId}a: {response.url}."
                 )
                 yield (resource, response.content)
         except WorldcatSessionError:

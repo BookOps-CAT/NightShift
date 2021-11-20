@@ -12,7 +12,7 @@ from nightshift.constants import LIBRARIES
 @pytest.mark.firewalled
 def test_fetch_file_and_add_to_db(env_var, test_db):
     test_file = "NYPeres210701.pout"
-    library = "nyp"
+    library = "NYP"
 
     # open drive and stream content
     drive_creds = get_credentials()
@@ -30,7 +30,7 @@ def test_fetch_file_and_add_to_db(env_var, test_db):
         db_session.commit()
 
         # add records from file to db
-        reader = BibReader(file_data, "nyp")
+        reader = BibReader(file_data, "NYP")
         for resource in reader:
             resource.sourceId = sf.nid
             add_resource(db_session, resource)

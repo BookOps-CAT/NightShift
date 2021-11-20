@@ -43,14 +43,14 @@ class TestWorldcatMocked:
             Worldcat("QPL")
         assert msg in str(exc.value)
 
-    @pytest.mark.parametrize("arg", ["NYP", "BPL"])
+    @pytest.mark.parametrize("arg", ["NYP", "BPL", "nyp", "bpl"])
     def test_init_library_args(
         self, arg, mock_worldcat_creds, mock_successful_post_token_response
     ):
         with does_not_raise():
             reader = Worldcat(arg)
 
-        assert reader.library == arg
+        assert reader.library == arg.upper()
 
     def test_get_credentials(self, mock_Worldcat):
         assert mock_Worldcat._get_credentials() == {
@@ -104,7 +104,7 @@ class TestWorldcatMocked:
         assert resource.nid == 1
         assert isinstance(response, bytes)
         assert (
-            "Full bib Worldcat request for NYP Sierra bib # 22222222: request_url_here."
+            "Full bib Worldcat request for NYP Sierra bib # b22222222a: request_url_here."
             in caplog.text
         )
 
@@ -180,7 +180,7 @@ class TestWorldcatMocked:
         with caplog.at_level(logging.DEBUG):
             payloads = mock_Worldcat._prep_resource_queries_payloads(resource)
         assert payloads == expectation
-        assert f"Query payload for NYP Sierra bib # 22222222: {expectation}."
+        assert f"Query payload for NYP Sierra bib # b22222222a: {expectation}."
 
     def test_get_brief_bibs(
         self, caplog, mock_Worldcat, mock_successful_session_get_request
@@ -206,7 +206,7 @@ class TestWorldcatMocked:
         assert data.as_json == MockSuccessfulHTTP200SessionResponse().json()
         assert data.oclc_number == "44959645"
         assert (
-            "Brief bib Worldcat query for NYP Sierra bib # 22222222: request_url_here."
+            "Brief bib Worldcat query for NYP Sierra bib # b22222222a: request_url_here."
             in caplog.text
         )
 
@@ -264,7 +264,7 @@ class TestWorldcatMocked:
                     pass
 
         assert (
-            "Unable to create a payload for brief bib query for NYP resource nid=1, sierraId=22222222."
+            "Unable to create a payload for brief bib query for NYP resource nid=1, sierraId=b22222222a."
             in caplog.text
         )
         resource, response = result

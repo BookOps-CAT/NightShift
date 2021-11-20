@@ -60,6 +60,7 @@ def add_resource(session: Session, resource: Resource) -> Optional[Resource]:
     )
     if not instance:
         session.add(resource)
+        session.flush()
         return resource
     else:
         return None

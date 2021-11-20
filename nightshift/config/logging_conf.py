@@ -63,7 +63,7 @@ def log_conf() -> Dict:
                 "backupCount": 5,
             },
             "loggly": {
-                "level": "INFO",
+                "level": "WARN",
                 "class": "loggly.handlers.HTTPSHandler",
                 "formatter": "json",
                 "url": f"https://logs-01.loggly.com/inputs/{log_token}/tag/python",

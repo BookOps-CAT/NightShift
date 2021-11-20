@@ -90,7 +90,6 @@ def test_add_resource_success(
             bibDate=bib_date,
         ),
     )
-    test_session.commit()
     assert isinstance(result, Resource)
     assert result.nid == expectation
 
@@ -124,19 +123,19 @@ def test_add_resource_unique_constraint_violation(test_session, test_data_core):
 
 
 def test_insert_or_ignore_new(test_session):
-    rec = insert_or_ignore(test_session, Library, code="nyp")
+    rec = insert_or_ignore(test_session, Library, code="NYP")
     test_session.commit()
     assert type(rec) == Library
-    assert rec.code == "nyp"
+    assert rec.code == "NYP"
     assert rec.nid == 1
 
 
 def test_insert_or_ingore_dup(test_session):
-    rec1 = insert_or_ignore(test_session, Library, code="bpl")
+    rec1 = insert_or_ignore(test_session, Library, code="BPL")
     test_session.commit()
     assert rec1.nid == 1
 
-    rec2 = insert_or_ignore(test_session, Library, code="bpl")
+    rec2 = insert_or_ignore(test_session, Library, code="BPL")
     test_session.commit()
     assert rec2 is None
 
@@ -533,7 +532,7 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
 
 
 def test_update_resource(test_session):
-    lib_rec = insert_or_ignore(test_session, Library, code="nyp")
+    lib_rec = insert_or_ignore(test_session, Library, code="NYP")
     cat_rec = insert_or_ignore(test_session, ResourceCategory, name="ebook")
     test_session.commit()
     src_rec = insert_or_ignore(
