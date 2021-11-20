@@ -51,14 +51,14 @@ class SearchResponse:
 
         Args:
             sierraId:                   Sierra bib number
-            library:                    'nyp' or 'bpl'
+            library:                    'NYP' or 'BPL'
             response:                   `requests.Response` instance from the service
 
         Raises:
             `ns_exceptions.SierraSearchPlatformError`
         """
         self.sierraId = sierraId
-        self.library = library
+        self.library = library.upper()
 
         if response.status_code == 404:
             logger.warning(

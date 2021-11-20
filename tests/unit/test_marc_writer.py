@@ -27,6 +27,11 @@ class TestBibEnhancer:
         assert isinstance(result.bib, Record)
         assert "Enhancing NYP Sierra bib # b11111111a." in caplog.text
 
+    def test_missing_full_bib(self, stub_resource):
+        stub_resource.fullBib = None
+        with pytest.raises(TypeError):
+            BibEnhancer(stub_resource)
+
     @pytest.mark.parametrize(
         "resourceId,libraryId,tag, expectation",
         [
