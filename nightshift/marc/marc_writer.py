@@ -32,14 +32,36 @@ SIERRA_FORMAT = sierra_format_code()
 class BibEnhancer:
     """
     A class used for upgrading MARC records.
+
+    To initiate the class pass `nightshift.datastore.Resource` instance that
+    was updated with WorldCat MARC XML record.
+
+    Invoking `manipulate()` method on the instance of this class does the following:
+     - removes unwanted MARC tags specified in `constants.RESOURCE_CATEGORIES`,
+     - adds local tags preserved from the original Sierra bib specified in
+        `constants.RESOURCE_CATEGORIES`
+     - creates appropriate for each resource type call number tag (099 for BPL or
+        091 for NYPL)
+     - adds a Sierra command tag in the 949 tag that specifies Sierra bib to be
+        overlaid, bib Sierra format code and optionally Sierra bib code 3 for
+        records suppressed from public view
+    - adds Nightshift name and version to bib Sierra initials MARC tag (947 for BPL,
+        901 for NYPL)
+
+    Calling `save2file()` method on the instance of this class serializes pymarc object
+    into MARC 21 and saves it to a temporary file.
     """
 
     def __init__(self, resource: Resource) -> None:
         """
-        Initiates BibEnhancer.
+        Initiates BibEnhancer by parsing WorldCat MARC XML byte string received
+        from MetadataAPI service.
 
         Args:
             resource:                       `datastore.Resource` instance
+
+        Raises:
+            TypeError
         """
 
         self.library = LIB_IDX[resource.libraryId]
@@ -47,7 +69,10 @@ class BibEnhancer:
         logger.info(f"Enhancing {self.library} Sierra bib # b{resource.sierraId}a.")
 
         self.resource = resource
-        self.bib = worldcat_response_to_pymarc(resource.fullBib)
+        try:
+            self.bib = worldcat_response_to_pymarc(resource.fullBib)
+        except TypeError:
+            raise
 
     def manipulate(self) -> None:
         """
@@ -71,7 +96,7 @@ class BibEnhancer:
 
     def save2file(self) -> None:
         """
-        Appends bib to a temporary dump file.
+        Appends bib as MARC21 to a temporary dump file.
 
         Raises:
             OSError
@@ -133,8 +158,10 @@ class BibEnhancer:
 
     def _add_command_tag(self) -> None:
         """
-        Adds Sierra's command MARC tag specific to resource category and each library.
-        Includes Sierra bib format, suppression, etc.
+        Adds Sierra's command MARC tag (949) specific to resource category and each library.
+
+        Includes commands for matching Sierra bib # (ov=) Sierra bib format (b2=), and
+        optional suppression (b2=) code.
         """
         commands = []
 
