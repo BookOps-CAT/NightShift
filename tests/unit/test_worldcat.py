@@ -43,14 +43,14 @@ class TestWorldcatMocked:
             Worldcat("QPL")
         assert msg in str(exc.value)
 
-    @pytest.mark.parametrize("arg", ["NYP", "BPL"])
+    @pytest.mark.parametrize("arg", ["NYP", "BPL", "nyp", "bpl"])
     def test_init_library_args(
         self, arg, mock_worldcat_creds, mock_successful_post_token_response
     ):
         with does_not_raise():
             reader = Worldcat(arg)
 
-        assert reader.library == arg
+        assert reader.library == arg.upper()
 
     def test_get_credentials(self, mock_Worldcat):
         assert mock_Worldcat._get_credentials() == {

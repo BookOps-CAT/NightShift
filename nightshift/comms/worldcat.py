@@ -61,12 +61,12 @@ class Worldcat:
         Args:
             library:                'NYP' or "BPL"
         """
-        if library not in ("NYP", "BPL"):
+        if library not in ("NYP", "BPL", "nyp", "bpl"):
             raise ValueError(
                 "Invalid library argument provided. Must be 'NYP' or 'BPL'."
             )
 
-        self.library = library
+        self.library = library.upper()
 
         creds = self._get_credentials()
         token = self._get_access_token(creds)
