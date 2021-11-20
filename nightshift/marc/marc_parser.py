@@ -63,7 +63,7 @@ class BibReader:
         The constructor.
         Args:
             marc_target:                    MARC file or file-like object
-            library:                        'nyp' or 'bpl'
+            library:                        'NYP' or 'BPL'
             hide_utf8_warnings:             hides character encoding warnings
         """
         logger.info(f"Initating BibReader.")
