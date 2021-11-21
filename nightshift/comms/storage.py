@@ -112,15 +112,16 @@ class Drive:
                 logger.error(f"Unable to reach {self.src_dir} on the SFTP. {exc}")
                 raise DriveError
 
-    def output_file(self, local_file_path: str) -> None:
+    def output_file(self, local_file_path: str, remote_file_handle: str) -> None:
         """
         Appends stream to a file in SFTP/Drive load directory
 
         Args:
             local_file_path:            path to a local file to be transfered to SFTP
+            remote_file_handle:         file handle for the file on SFTP
 
         """
-        remote_file_path = self._construct_dst_file_path(local_file_path)
+        remote_file_path = self._construct_dst_file_path(remote_file_handle)
         if self.sftp:
             try:
                 self.sftp.put(local_file_path, remote_file_path)

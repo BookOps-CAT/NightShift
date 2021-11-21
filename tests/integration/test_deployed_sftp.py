@@ -59,17 +59,17 @@ class TestDriveLive:
         creds = get_credentials()
         with Drive(*creds) as drive:
             local_fh = "tests/nyp-ebook-sample.mrc"
-            drive.output_file(local_fh)
+            drive.output_file(local_fh, "foo.mrc")
 
-            assert drive.sftp.listdir(drive.dst_dir) == ["nyp-ebook-sample.mrc"]
+            assert drive.sftp.listdir(drive.dst_dir) == ["foo.mrc"]
 
             # cleanup
-            drive.sftp.remove(drive.dst_dir + "/nyp-ebook-sample.mrc")
+            drive.sftp.remove(drive.dst_dir + "/foo.mrc")
 
     def test_output_file_io_error(self, caplog, env_var):
         creds = get_credentials()
         with Drive(*creds) as drive:
             with caplog.at_level(logging.ERROR):
                 with pytest.raises(DriveError):
-                    drive.output_file("foo.mrc")
+                    drive.output_file("tests/nyp-ebook-sample.mrc", "foo.mrc")
         assert "IOError. Unable to create /NSDROP/TEST/load/foo.mrc on the SFTP."

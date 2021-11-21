@@ -77,19 +77,19 @@ class TestDriveMocked:
         assert "Attempted an operation on a closed SFTP session." in caplog.text
 
     def test_output_file(self, sftpserver, mock_drive, tmpdir):
-        tmpfile = tmpdir.join("foo.mrc")
+        tmpfile = tmpdir.join("temp.mrc")
         content = "spam"
         tmpfile.write(content)
-        with sftpserver.serve_content({"load_dir": {"foo.mrc": "spam"}}):
-            mock_drive.output_file(str(tmpfile))
-            assert mock_drive.sftp.listdir("load_dir") == ["foo.mrc"]
+        with sftpserver.serve_content({"load_dir": {"NYPebook210715-0.mrc": "spam"}}):
+            mock_drive.output_file(str(tmpfile), "NYPebook210715-0.mrc")
+            assert mock_drive.sftp.listdir("load_dir") == ["NYPebook210715-0.mrc"]
 
     def test_output_file_io_error(self, caplog, mock_drive, mock_io_error):
         with caplog.at_level(logging.ERROR):
             with pytest.raises(DriveError):
-                mock_drive.output_file("foo.mrc")
+                mock_drive.output_file("temp.mrc", "NYPebook210715-0.mrc")
         assert (
-            "IOError. Unable to output foo.mrc to load_dir/foo.mrc on the SFTP."
+            "IOError. Unable to output temp.mrc to load_dir/NYPebook210715-0.mrc on the SFTP."
             in caplog.text
         )
 
@@ -97,10 +97,10 @@ class TestDriveMocked:
         mock_drive.sftp = None
         with caplog.at_level(logging.ERROR):
             with pytest.raises(DriveError):
-                mock_drive.output_file("TEMP/foo.mrc")
+                mock_drive.output_file("temp.mrc", "NYPebook210715-0.mrc")
 
         assert (
-            "SFTP session closed. Unable to output TEMP/foo.mrc to load_dir/foo.mrc on the drive."
+            "SFTP session closed. Unable to output temp.mrc to load_dir/NYPebook210715-0.mrc on the drive."
             in caplog.text
         )
 
