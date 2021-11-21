@@ -171,19 +171,26 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(
 
 
 @pytest.mark.parametrize(
-    "library_id,status,deleted,full_bib,expectation",
+    "library_id, resource_cat_id, status,deleted,full_bib,expectation",
     [
-        pytest.param(1, "expired", False, b"<foo>spam</foo>", [], id="wrong status"),
-        pytest.param(1, "open", True, b"<foo>spam</foo", [], id="deleted resource"),
-        pytest.param(1, "open", False, None, [], id="missing full bib"),
-        pytest.param(1, "open", False, b"<foo>spam</foo>", [2], id="found 1 match"),
+        pytest.param(1, 1, "expired", False, b"<foo>spam</foo>", [], id="wrong status"),
+        pytest.param(1, 1, "open", True, b"<foo>spam</foo", [], id="deleted resource"),
+        pytest.param(1, 1, "open", False, None, [], id="missing full bib"),
+        pytest.param(1, 1, "open", False, b"<foo>spam</foo>", [2], id="found 1 match"),
         pytest.param(
-            2, "open", False, b"<foo>spam</foo>", [1, 2], id="found 2 matches"
+            2, 1, "open", False, b"<foo>spam</foo>", [1, 2], id="found 2 matches"
         ),
     ],
 )
 def test_retrieve_open_matched_resources_with_full_bib_obtained(
-    test_session, test_data_core, library_id, status, deleted, full_bib, expectation
+    test_session,
+    test_data_core,
+    library_id,
+    resource_cat_id,
+    status,
+    deleted,
+    full_bib,
+    expectation,
 ):
     bib_date = datetime.utcnow().date()
     test_session.add(
@@ -216,7 +223,7 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
     )
     test_session.commit()
     res = retrieve_open_matched_resources_with_full_bib_obtained(
-        test_session, library_id
+        test_session, library_id, resource_cat_id
     )
     assert [r.nid for r in res] == expectation
 
@@ -338,7 +345,7 @@ def test_retrieve_open_older_resources(
     )
     test_session.commit()
 
-    res = retrieve_open_older_resources(test_session, 1, 30, 90)
+    res = retrieve_open_older_resources(test_session, 1, 1, 30, 90)
     assert [r.nid for r in res] == expectation
 
 

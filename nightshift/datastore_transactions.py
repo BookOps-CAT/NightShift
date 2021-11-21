@@ -111,7 +111,7 @@ def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
 
 
 def retrieve_open_older_resources(
-    session: Session, libraryId: int, minAge: int, maxAge: int
+    session: Session, libraryId: int, resourceCategoryId: int, minAge: int, maxAge: int
 ) -> list[Resource]:
     """
     Queries resources with open status that has not been queried in WorldCat
@@ -119,6 +119,8 @@ def retrieve_open_older_resources(
 
     Args:
         session:                `sqlalchemy.Session` instance
+        libraryId:              library id
+        resourceCategoryId:     resource category id
         minAge:                 min number of days since bib creation date
         maxAge:                 max numb of days since bib creation date
 
@@ -133,6 +135,7 @@ def retrieve_open_older_resources(
         .join(WorldcatQuery)
         .filter(
             Resource.libraryId == libraryId,
+            Resource.resourceCategoryId == resourceCategoryId,
             Resource.status == "open",
             Resource.deleted == False,
             Resource.oclcMatchNumber == None,
@@ -178,14 +181,15 @@ def retrieve_open_matched_resources_without_full_bib(
 
 
 def retrieve_open_matched_resources_with_full_bib_obtained(
-    session: Session, libraryId: int
+    session: Session, libraryId: int, resourceCategoryId: int
 ) -> list[Resource]:
     """
     Retrieves resources that include MARC XML with full bib
 
     Args:
         session:                `sqlalchemy.Session` instance
-        libraryId:              `Library.nid`
+        libraryId:              `nightshift.datastore.Library.nid`
+        resourceCategoryId:     `nightshift.datastore.ResourceCategory.nid`
 
     Returns:
         list of `Resource` instances
@@ -194,6 +198,7 @@ def retrieve_open_matched_resources_with_full_bib_obtained(
         session.query(Resource)
         .filter(
             Resource.libraryId == libraryId,
+            Resource.resourceCategoryId == resourceCategoryId,
             Resource.status == "open",
             Resource.deleted == False,
             Resource.fullBib.isnot(None),
