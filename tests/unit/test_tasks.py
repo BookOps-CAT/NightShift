@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 import logging
+import os
 
+from pymarc import MARCReader
 import pytest
 
 from nightshift.datastore import Resource
 from nightshift.tasks import (
     check_resources_sierra_state,
+    enhance_and_output_bibs,
     get_worldcat_brief_bib_matches,
     get_worldcat_full_bibs,
 )
@@ -62,6 +65,32 @@ def test_check_resources_sierra_state_invalid_library_arg(caplog):
             check_resources_sierra_state(None, "QPL", [])
 
     assert "Invalid library argument passed: 'QPL'. Must be 'NYP' or 'BPL'"
+
+
+def test_enhance_and_output_bibs(caplog, test_session, test_data_rich):
+    if os.path.exists("temp.mrc"):
+        try:
+            os.remove("temp.mrc")
+        except:
+            raise
+
+    resources = test_session.query(Resource).where(Resource.nid == 1).all()
+    with caplog.at_level(logging.DEBUG):
+        enhance_and_output_bibs("NYP", resources)
+
+    assert os.path.exists("temp.mrc")
+    assert "NYP b11111111a has been output to 'temp.mrc'." in caplog.text
+
+    with open("temp.mrc", "rb") as f:
+        reader = MARCReader(f)
+        bib = next(reader)
+
+    assert bib["091"].value() == "eNYPL Book"
+    assert bib["949"].value() == "*ov=b11111111a;b2=z;"
+    assert bib["901"].value() == "NightShift/0.1.0"
+
+    # clean up
+    os.remove("temp.mrc")
 
 
 def test_get_worldcat_brief_bib_matches_success(
@@ -155,3 +184,7 @@ def test_get_worldcat_full_bibs(
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]
     assert res.fullBib == MockSuccessfulHTTP200SessionResponse().content
+
+
+def test_transfer_to_drive():
+    pass
