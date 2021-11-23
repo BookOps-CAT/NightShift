@@ -100,7 +100,7 @@ def process_resources() -> None:
                 )
 
                 # manipulate Worldcat bibs
-                enhance_and_output_bibs(resources)
+                enhance_and_output_bibs(library, resources)
                 logger.info(
                     f"Enhancing {len(resources)} {library} {res_category} records."
                 )
