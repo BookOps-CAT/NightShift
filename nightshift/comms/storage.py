@@ -68,6 +68,31 @@ class Drive:
     def __exit__(self, *args):
         self.close()
 
+    def check_file_exists(self, remote_file_path: str) -> bool:
+        """
+        Checks if file exists on SFTP drive
+
+        Args:
+            remote_file_path:           path to file on the SFTP server
+
+        Returns:
+            bool
+
+        Raises:
+            DriveError
+        """
+        if self.sftp:
+            try:
+                self.sftp.stat(remote_file_path)
+                logger.debug(f"'{remote_file_path}' found on SFTP.")
+                return True
+            except FileNotFoundError:
+                logger.debug(f"'{remote_file_path}' not found on SFTP.")
+                return False
+        else:
+            logger.error("Attempted operation on a closed SFTP session.")
+            raise DriveError
+
     def fetch_file(self, src_fh: str) -> Optional[BytesIO]:
         """
         Retrieves file of the given path
@@ -82,7 +107,7 @@ class Drive:
             DriveError
         """
         src_file_path = self._construct_src_file_path(src_fh)
-        logging.info(f"Fetching {src_file_path} file from the SFTP.")
+        logger.info(f"Fetching {src_file_path} file from the SFTP.")
         if self.sftp:
             try:
                 with self.sftp.file(src_file_path, mode="r") as file:
@@ -95,7 +120,7 @@ class Drive:
                 )
                 raise DriveError
         else:
-            logger.error("Attempted an operation on a closed SFTP session.")
+            logger.error("Attempted operation on a closed SFTP session.")
             raise DriveError
 
     def list_src_directory(self) -> Optional[list[str]]:
@@ -122,6 +147,7 @@ class Drive:
 
         """
         remote_file_path = self._construct_dst_file_path(remote_file_handle)
+
         if self.sftp:
             try:
                 self.sftp.put(local_file_path, remote_file_path)

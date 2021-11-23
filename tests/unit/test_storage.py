@@ -32,6 +32,19 @@ class TestDriveMocked:
             assert drive.src_dir == "sierra_dumps_dir"
             assert drive.dst_dir == "load_dir"
 
+    @pytest.mark.parametrize("arg,expectation", [(dict(a=123), True), (dict(), False)])
+    def test_check_file_exists(self, sftpserver, mock_drive, arg, expectation):
+        with sftpserver.serve_content(arg):
+            assert mock_drive.check_file_exists("/a") == expectation
+
+    def test_check_file_on_closed_sftp_client(self, caplog, mock_drive):
+        mock_drive.sftp = None
+        with pytest.raises(DriveError):
+            with caplog.at_level(logging.ERROR):
+                mock_drive.check_file_exists("foo.mrc")
+
+        assert "Attempted operation on a closed SFTP session."
+
     def test_fetch_file(self, sftpserver, mock_drive):
         with sftpserver.serve_content({"sierra_dumps_dir": {"foo.mrc": b"shrubbery"}}):
             result = mock_drive.fetch_file("foo.mrc")
@@ -43,7 +56,7 @@ class TestDriveMocked:
         with caplog.at_level(logging.ERROR):
             with pytest.raises(DriveError):
                 mock_drive.fetch_file("foo.mrc")
-        assert "Attempted an operation on a closed SFTP session." in caplog.text
+        assert "Attempted operation on a closed SFTP session." in caplog.text
 
     def test_fetch_file_io_error(self, caplog, mock_drive):
         with caplog.at_level(logging.ERROR):
@@ -69,7 +82,7 @@ class TestDriveMocked:
 
         assert "Unable to reach FOO/SPAM on the SFTP." in caplog.text
 
-    def test_list_src_directory_no_sftp_session(self, caplog, mock_drive):
+    def test_list_src_directory_on_closed_sftp_client(self, caplog, mock_drive):
         mock_drive.sftp = None
         with caplog.at_level(logging.ERROR):
             mock_drive.list_src_directory()
@@ -93,7 +106,7 @@ class TestDriveMocked:
             in caplog.text
         )
 
-    def test_output_file_closed_sftp_session(self, caplog, mock_drive):
+    def test_output_file_on_closed_sftp_client(self, caplog, mock_drive):
         mock_drive.sftp = None
         with caplog.at_level(logging.ERROR):
             with pytest.raises(DriveError):
