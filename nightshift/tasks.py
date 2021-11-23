@@ -54,6 +54,23 @@ def check_resources_sierra_state(
     db_session.commit()
 
 
+def enhance_and_output_bibs(library: str, resources: list[Resource]) -> None:
+    """
+    Manipulates downloaded WorldCat records and serializes them
+    into MARC21 format
+
+    Args:
+        library:                        'NYP' or 'BPL'
+        resources:                      list of `nightshift.datastore.Resource`
+                                        instances
+    """
+    for resource in resources:
+        be = BibEnhancer(resource)
+        be.manipulate()
+        be.save2file()
+        logger.debug(f"{library} b{resource.sierraId}a has been output to 'temp.mrc'.")
+
+
 def get_worldcat_brief_bib_matches(
     db_session: Session, worldcat: Worldcat, resources: list[Resource]
 ) -> None:
@@ -114,21 +131,6 @@ def get_worldcat_full_bibs(
         db_session.commit()
 
 
-def enhance_and_output_bibs(resources: list[Resource]) -> None:
-    """
-    Manipulates downloaded WorldCat records and serializes them
-    into MARC21 format
-
-    Args:
-        resources:                      list of `nightshift.datastore.Resource`
-                                        instances
-    """
-    for resource in resources:
-        be = BibEnhancer(resource)
-        be.manipulate()
-        be.save2file()
-
-
 def transfer_to_drive(library, resource_category: str) -> None:
     """
     Transfers local temporary MARC21 file to network drive.
@@ -149,8 +151,18 @@ def transfer_to_drive(library, resource_category: str) -> None:
     with Drive(*creds) as drive:
         # try:
         drive.output_file("temp.mrc", remote_file_handle)
+        logger.info(
+            f"{library} {resource_category} records have been output to remote '{remote_file_handle}'."
+        )
 
-    os.remove("temp.mrc")
+    # clean up after job completed
+    try:
+        os.remove("temp.mrc")
+    except OSError as exc:
+        logger.error(
+            f"Unable to delete temp.mrc file after completing the job. Error {exc}"
+        )
+        raise
 
 
 def update_status_to_upgraded(db_session: Session, resources: list[Resource]) -> None:
