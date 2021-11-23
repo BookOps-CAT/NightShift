@@ -3,14 +3,18 @@
 """
 This module provides methods for the manager to execute for a particular process
 """
+from datetime import datetime
 import logging
+import os
 
 from sqlalchemy.orm.session import Session
 
 from nightshift.comms.worldcat import Worldcat
 from nightshift.comms.sierra_search_platform import NypPlatform, BplSolr
+from nightshift.comms.storage import get_credentials, Drive
 from nightshift.datastore import Resource, WorldcatQuery
 from nightshift.datastore_transactions import update_resource
+from nightshift.marc.marc_writer import BibEnhancer
 
 
 logger = logging.getLogger("nightshift")
@@ -108,3 +112,58 @@ def get_worldcat_full_bibs(
             db_session, resource.sierraId, resource.libraryId, fullBib=response
         )
         db_session.commit()
+
+
+def enhance_and_output_bibs(resources: list[Resource]) -> None:
+    """
+    Manipulates downloaded WorldCat records and serializes them
+    into MARC21 format
+
+    Args:
+        resources:                      list of `nightshift.datastore.Resource`
+                                        instances
+    """
+    for resource in resources:
+        be = BibEnhancer(resource)
+        be.manipulate()
+        be.save2file()
+
+
+def transfer_to_drive(library, resource_category: str) -> None:
+    """
+    Transfers local temporary MARC21 file to network drive.
+    Argument `resource_category` is used to name the MARC file on the
+    network drive.
+    After successful transfer the temporary file is deleted.
+
+    Args:
+        library:                        library code
+        resource_category:              name of resource category being processed.
+    """
+    # def construct_remote_file_handle(library, resource_category, timestamp):
+
+    timestamp = datetime.now().date()
+    remote_file_handle = f"{library}{resource_category}{timestamp}"
+
+    creds = get_credentials()
+    with Drive(*creds) as drive:
+        # try:
+        drive.output_file("temp.mrc", remote_file_handle)
+
+    os.remove("temp.mrc")
+
+
+def update_status_to_upgraded(db_session: Session, resources: list[Resource]) -> None:
+    """
+    Upgrades resources status to "upgraded_bot"
+
+    Args:
+        db_session:                     `sqlalchemy.Session` instance
+        resources:                      list of `nightshift.datastore.Resource`
+                                        instances
+    """
+    for resource in resources:
+        update_resource(
+            db_session, resource.sierraId, resource.libraryId, status="upgraded_bot"
+        )
+    db_session.commit()
