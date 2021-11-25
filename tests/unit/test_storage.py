@@ -32,10 +32,12 @@ class TestDriveMocked:
             assert drive.src_dir == "sierra_dumps_dir"
             assert drive.dst_dir == "load_dir"
 
-    @pytest.mark.parametrize("arg,expectation", [(dict(a=123), True), (dict(), False)])
+    @pytest.mark.parametrize(
+        "arg,expectation", [({"load_dir": {"foo.mrc": 123}}, True), ({}, False)]
+    )
     def test_check_file_exists(self, sftpserver, mock_drive, arg, expectation):
         with sftpserver.serve_content(arg):
-            assert mock_drive.check_file_exists("/a") == expectation
+            assert mock_drive.check_file_exists("load_dir/foo.mrc") == expectation
 
     def test_check_file_on_closed_sftp_client(self, caplog, mock_drive):
         mock_drive.sftp = None

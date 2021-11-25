@@ -68,12 +68,13 @@ class Drive:
     def __exit__(self, *args):
         self.close()
 
-    def check_file_exists(self, remote_file_path: str) -> bool:
+    def check_file_exists(self, remote_file_handle: str) -> bool:
         """
-        Checks if file exists on SFTP drive
+        Checks if file exists in 'load' directory of the SFTP drive
 
         Args:
-            remote_file_path:           path to file on the SFTP server
+            remote_file_handle:         file handle to check in the 'load'
+                                        directory on the SFTP
 
         Returns:
             bool
@@ -81,6 +82,7 @@ class Drive:
         Raises:
             DriveError
         """
+        remote_file_path = self._construct_dst_file_path(remote_file_handle)
         if self.sftp:
             try:
                 self.sftp.stat(remote_file_path)
