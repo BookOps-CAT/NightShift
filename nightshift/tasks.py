@@ -177,13 +177,14 @@ def transfer_to_drive(
 
 def update_status_to_upgraded(db_session: Session, resources: list[Resource]) -> None:
     """
-    Upgrades resources status to "upgraded_bot"
+    Upgrades given resources status to "upgraded_bot"
 
     Args:
         db_session:                     `sqlalchemy.Session` instance
         resources:                      list of `nightshift.datastore.Resource`
                                         instances
     """
+    logging.info(f"Updating {len(resources)} resources status to 'upgraded_bot'.")
     for resource in resources:
         update_resource(
             db_session, resource.sierraId, resource.libraryId, status="upgraded_bot"
