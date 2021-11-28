@@ -153,8 +153,8 @@ def test_data_core(test_session):
         test_session.add(
             ResourceCategory(nid=v["nid"], name=k, description=v["description"])
         )
-    test_session.add(SourceFile(nid=1, libraryId=1, handle="foo1.mrc"))
-    test_session.add(SourceFile(nid=2, libraryId=2, handle="foo2.mrc"))
+    test_session.add(SourceFile(libraryId=1, handle="foo1.mrc"))
+    test_session.add(SourceFile(libraryId=2, handle="foo2.mrc"))
     test_session.commit()
 
 
