@@ -161,12 +161,14 @@ class Drive:
 
             except IOError as exc:
                 logger.error(
-                    f"IOError. Unable to output {local_file_path} to {remote_file_path} on the SFTP. {exc}"
+                    f"IOError. Unable to output {local_file_path} to "
+                    f"{remote_file_path} on the SFTP. {exc}"
                 )
                 raise DriveError
         else:
             logger.error(
-                f"SFTP session closed. Unable to output {local_file_path} to {remote_file_name_base} on the drive."
+                f"SFTP session closed. Unable to output {local_file_path} "
+                f"to {remote_file_name_base} on the drive."
             )
             raise DriveError
 
