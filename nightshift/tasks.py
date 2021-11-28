@@ -15,6 +15,7 @@ from nightshift.comms.storage import get_credentials, Drive
 from nightshift.datastore import Resource, WorldcatQuery
 from nightshift.datastore_transactions import update_resource
 from nightshift.marc.marc_writer import BibEnhancer
+from nightshift.ns_exceptions import DriveError
 
 
 logger = logging.getLogger("nightshift")
@@ -43,6 +44,8 @@ def check_resources_sierra_state(
         )
         raise ValueError("Invalid library argument. Must be 'NYP' or 'BPL'")
 
+    logging.info(f"Checking {library} Sierra status for {len(resources)} resources.")
+
     for resource in resources:
         response = sierra_platform.get_sierra_bib(resource.sierraId)
         resource.suppressed = response.is_suppressed()
@@ -64,6 +67,7 @@ def enhance_and_output_bibs(library: str, resources: list[Resource]) -> None:
         resources:                      list of `nightshift.datastore.Resource`
                                         instances
     """
+    logging.info(f"Enhancing {library} {len(resources)} resources.")
     for resource in resources:
         be = BibEnhancer(resource)
         be.manipulate()
@@ -84,7 +88,7 @@ def get_worldcat_brief_bib_matches(
         resources:                      list of `nigthtshift.datastore.Resource`
                                         instances
     """
-    logger.info(f"Searching Worldcat.")
+    logger.info(f"Searching Worldcat for brief records for {len(resources)} resources.")
 
     results = worldcat.get_brief_bibs(resources=resources)
     for resource, response in results:
@@ -123,6 +127,9 @@ def get_worldcat_full_bibs(
         resources:                      list of `nightshift.datastore.Resource`
                                         instances
     """
+    logger.info(
+        f"Downloading full records from WorldCat for {len(resources)} resources."
+    )
     results = worldcat.get_full_bibs(resources)
     for resource, response in results:
         update_resource(
@@ -131,36 +138,39 @@ def get_worldcat_full_bibs(
         db_session.commit()
 
 
-def transfer_to_drive(library, resource_category: str) -> None:
+def transfer_to_drive(
+    library: str, resource_category: str, temp_file: str = "temp.mrc"
+) -> None:
     """
     Transfers local temporary MARC21 file to network drive.
-    Argument `resource_category` is used to name the MARC file on the
+    Arguments `library` and `resource_category` is used to name the MARC file on the
     network drive.
     After successful transfer the temporary file is deleted.
 
     Args:
         library:                        library code
-        resource_category:              name of resource category being processed.
+        resource_category:              name of resource category being processed
+        temp_file:                      temporary local file to be transfered
     """
     # def construct_remote_file_handle(library, resource_category, timestamp):
 
-    timestamp = datetime.now().date()
-    remote_file_handle = f"{library}{resource_category}{timestamp}"
+    today = datetime.now().date()
+    remote_file_name_base = f"{today:%y%m%d}-{library}-{resource_category}"
 
     creds = get_credentials()
     with Drive(*creds) as drive:
-        # try:
-        drive.output_file("temp.mrc", remote_file_handle)
+        drive.output_file(temp_file, remote_file_name_base)
         logger.info(
-            f"{library} {resource_category} records have been output to remote '{remote_file_handle}'."
+            f"{library} {resource_category} records have been output to remote "
+            f"'{remote_file_name_base}'."
         )
 
     # clean up after job completed
     try:
-        os.remove("temp.mrc")
+        os.remove(temp_file)
     except OSError as exc:
         logger.error(
-            f"Unable to delete temp.mrc file after completing the job. Error {exc}"
+            f"Unable to delete '{temp_file}' file after completing the job. Error {exc}"
         )
         raise
 
