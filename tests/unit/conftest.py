@@ -40,7 +40,12 @@ class MockOSError:
 
 @pytest.fixture
 def mock_os_error(monkeypatch):
-    monkeypatch.setattr("builtins.open", MockIOError)
+    monkeypatch.setattr("builtins.open", MockOSError)
+
+
+@pytest.fixture
+def mock_os_error_on_remove(monkeypatch):
+    monkeypatch.setattr("os.remove", MockOSError)
 
 
 @pytest.fixture
