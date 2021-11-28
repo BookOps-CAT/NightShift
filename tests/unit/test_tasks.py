@@ -12,6 +12,7 @@ from nightshift.tasks import (
     enhance_and_output_bibs,
     get_worldcat_brief_bib_matches,
     get_worldcat_full_bibs,
+    transfer_to_drive,
 )
 
 from .conftest import (
@@ -186,5 +187,34 @@ def test_get_worldcat_full_bibs(
     assert res.fullBib == MockSuccessfulHTTP200SessionResponse().content
 
 
-def test_transfer_to_drive():
-    pass
+def test_transfer_to_drive(mock_drive, caplog, sftpserver, tmpdir):
+    base_name = f"{datetime.now().date():%y%m%d}-NYP-ebook"
+    tmpfile = tmpdir.join("temp.mrc")
+    tmpfile.write("spam")
+    with sftpserver.serve_content({"load_dir": {f"{base_name}-01.mrc": "spam"}}):
+        with caplog.at_level(logging.INFO):
+            transfer_to_drive("NYP", "ebook", str(tmpfile))
+            assert mock_drive.sftp.listdir("load_dir") == [
+                f"{base_name}-01.mrc",
+                f"{base_name}-02.mrc",
+            ]
+    assert f"NYP ebook records have been output to remote '{base_name}-02.mrc'"
+
+    # make sure temp file cleanup
+    assert not os.path.exists(tmpfile)
+
+
+def test_transfer_to_drive_unable_to_del_temp_file_exception(
+    mock_drive, caplog, sftpserver, mock_os_error_on_remove, tmpdir
+):
+    tmpfile = tmpdir.join("temp.mrc")
+    tmpfile.write("spam")
+    with sftpserver.serve_content({"load_dir": {"foo.mrc": "spam"}}):
+        with caplog.at_level(logging.ERROR):
+            with pytest.raises(OSError):
+                transfer_to_drive("NYP", "ebook", str(tmpfile))
+
+    assert (
+        f"Unable to delete '{str(tmpfile)}' file after completing the job. Error "
+        in caplog.text
+    )
