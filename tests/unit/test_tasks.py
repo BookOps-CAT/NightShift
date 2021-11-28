@@ -7,12 +7,14 @@ import os
 from pymarc import MARCReader
 import pytest
 
-from nightshift.datastore import Resource, OutputFile
+from nightshift.datastore import Resource, OutputFile, SourceFile
 from nightshift.tasks import (
     check_resources_sierra_state,
     enhance_and_output_bibs,
     get_worldcat_brief_bib_matches,
     get_worldcat_full_bibs,
+    ingest_new_files,
+    isolate_unprocessed_files,
     transfer_to_drive,
     update_status_to_upgraded,
 )
@@ -187,6 +189,57 @@ def test_get_worldcat_full_bibs(
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]
     assert res.fullBib == MockSuccessfulHTTP200SessionResponse().content
+
+
+def test_ingest_new_files(test_session, test_data_core, sftpserver, mock_sftp_env):
+    with open("tests/nyp-ebook-sample.mrc", "rb") as test_file:
+        marc_data = test_file.read()
+
+    with sftpserver.serve_content(
+        {"sierra_dumps_dir": {"foo1.mrc": b"foo", "NYP-bar.mrc": marc_data}}
+    ):
+        ingest_new_files(test_session, "NYP", 1)
+
+    # verify source file has been added to db
+    src_file_rec = (
+        test_session.query(SourceFile)
+        .where(SourceFile.libraryId == 1, SourceFile.handle == "NYP-bar.mrc")
+        .one_or_none()
+    )
+    assert src_file_rec.libraryId == 1
+    assert src_file_rec.handle == "NYP-bar.mrc"
+
+    resources = (
+        test_session.query(Resource).where(Resource.sourceId == src_file_rec.nid).all()
+    )
+    assert len(resources) == 2
+
+
+def test_isolate_unprocessed_nyp_files(
+    test_session, test_data_core, mock_drive, sftpserver, caplog
+):
+    with sftpserver.serve_content(
+        {"sierra_dumps_dir": {"foo1.mrc": b"spam", "NYP-bar.mrc": b"spam"}}
+    ):
+        with caplog.at_level(logging.DEBUG):
+            results = isolate_unprocessed_files(test_session, mock_drive, "NYP", 1)
+
+        assert "Found following remote files for NYP: ['NYP-bar.mrc']." in caplog.text
+
+    assert results == ["NYP-bar.mrc"]
+
+
+def test_isolate_unprocessed_bpl_files(
+    test_session, test_data_core, mock_drive, sftpserver, caplog
+):
+    with sftpserver.serve_content(
+        {"sierra_dumps_dir": {"foo1.mrc": b"spam", "NYP-bar.mrc": b"spam"}}
+    ):
+        with caplog.at_level(logging.DEBUG):
+            results = isolate_unprocessed_files(test_session, mock_drive, "BPL", 2)
+        assert "Found following remote files for BPL: []." in caplog.text
+
+    assert results == []
 
 
 def test_transfer_to_drive(mock_drive, caplog, sftpserver, tmpdir):

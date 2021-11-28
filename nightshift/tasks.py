@@ -15,9 +15,12 @@ from nightshift.comms.storage import get_credentials, Drive
 from nightshift.datastore import Resource, WorldcatQuery
 from nightshift.datastore_transactions import (
     add_output_file,
+    add_source_file,
+    add_resource,
     update_resource,
     retrieve_processed_files,
 )
+from nightshift.marc.marc_parser import BibReader
 from nightshift.marc.marc_writer import BibEnhancer
 
 
@@ -139,6 +142,68 @@ def get_worldcat_full_bibs(
             db_session, resource.sierraId, resource.libraryId, fullBib=response
         )
         db_session.commit()
+
+
+def ingest_new_files(db_session: Session, library: str, library_id: int) -> None:
+    """
+    Imports to the database resources in a newly added files on the SFTP.
+    Files on the remote server must have 'NYP' or 'BPL' in their names to be
+    considered by this process.
+    Sierra Scheduler will be configured to output data dumps following this
+    practice.
+
+    Args:
+        db_session:                     `sqlalchemy.Session` instance
+        library:                        'NYP' or 'BPL' code
+        libary_id:                      datastore library nid
+    """
+    drive_creds = get_credentials()
+    with Drive(*drive_creds) as drive:
+
+        # find files that have not been processed
+        unproc_files = isolate_unprocessed_files(db_session, drive, library, library_id)
+        logging.info(f"Found following unprocessed files: {unproc_files}")
+
+        # add records data to the db
+        for handle in unproc_files:
+            file_record = add_source_file(db_session, library_id, handle)
+            logging.debug(f"Added SourceFile record for '{handle}': {file_record}")
+            marc_target = drive.fetch_file(handle)
+            marc_reader = BibReader(marc_target, library)
+            n = 0
+            for resource in marc_reader:
+                n += 1
+                resource.sourceId = file_record.nid
+                add_resource(db_session, resource)
+            db_session.commit()
+            logging.info(f"Ingested {n} records from the file '{handle}'.")
+
+
+def isolate_unprocessed_files(
+    db_session: Session, drive: Drive, library: str, library_id: int
+) -> list[str]:
+    """
+    Finds unprocessed files on the network drive but comparing db SourceFile
+    record handles with handles retrieved from the drive.
+
+    Args:
+        db_session:                     `sqlalchemy.Session` instance
+        drive:                          `nightshfit.comms.storage.Drive` client instance
+        library:                        'NYP' or 'BPL'
+        library_id:                     datastore library id
+
+    Returns:
+        list of remote unprocessed file handles
+    """
+    remote_files = drive.list_src_directory()
+    library_remote_files = [file for file in remote_files if library in file]
+    logging.debug(
+        f"Found following remote files for {library}: {library_remote_files}."
+    )
+
+    proc_files = retrieve_processed_files(db_session, library_id)
+
+    return [f for f in library_remote_files if f not in proc_files]
 
 
 def transfer_to_drive(
