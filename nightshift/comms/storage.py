@@ -145,6 +145,8 @@ class Drive:
             local_file_path:            path to a local file to be transfered to SFTP
             remote_file_name_base:      file name base for the file on SFTP
 
+        Raises:
+            DriveError
         """
         if self.sftp:
             try:
@@ -204,10 +206,15 @@ class Drive:
         remote_handle = self._construct_dst_handle(file_base_name, n)
         remote_file_path = f"{self.dst_dir}/{remote_handle}"
         while self.check_file_exists(remote_file_path):
+            logger.debug(
+                f"'{remote_file_path}' is already taken. "
+                "Checking next consecutive number."
+            )
             n += 1
             remote_handle = self._construct_dst_handle(file_base_name, n)
             remote_file_path = f"{self.dst_dir}/{remote_handle}"
 
+        logger.debug(f"'{remote_file_path}' is available.")
         return remote_file_path
 
     def _construct_src_file_path(self, src_fh: str) -> str:
