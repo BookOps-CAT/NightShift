@@ -119,3 +119,4 @@ venvcmd.sh
 temp.*
 tests/confdatabase.yaml
 tests/envar.yaml
+nightshift.log*
