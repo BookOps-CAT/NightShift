@@ -95,8 +95,7 @@ class TestDriveMocked:
         self, sftpserver, mock_drive, tmpdir
     ):
         tmpfile = tmpdir.join("temp.mrc")
-        content = "spam"
-        tmpfile.write(content)
+        tmpfile.write("spam")
         with sftpserver.serve_content({"load_dir": {"NYPebook210715-01.mrc": "spam"}}):
             mock_drive.output_file(str(tmpfile), "NYPebook210715")
             assert mock_drive.sftp.listdir("load_dir") == [
