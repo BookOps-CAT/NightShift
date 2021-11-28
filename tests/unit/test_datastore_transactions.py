@@ -16,6 +16,7 @@ from nightshift.datastore import (
     WorldcatQuery,
 )
 from nightshift.datastore_transactions import (
+    add_output_file,
     add_resource,
     init_db,
     insert_or_ignore,
@@ -61,6 +62,13 @@ def test_init_db(mock_db_env, test_connection):
 
     # tear db down
     Base.metadata.drop_all(engine)
+
+
+def test_add_output_file(test_session, test_data_core):
+    result = add_output_file(test_session, 1, "foo.mrc")
+    assert result.nid == 1
+    assert result.handle == "foo.mrc"
+    assert result.libraryId == 1
 
 
 @pytest.mark.parametrize(

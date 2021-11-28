@@ -42,6 +42,27 @@ def init_db() -> None:
     session.close()
 
 
+def add_output_file(
+    session: Session, libraryId: int, file_handle: str
+) -> Optional[OutputFile]:
+    """
+    Adds OutputFile record to db.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        libaryId:               datastore Library record nid
+        file_handle:            handle of the out file
+
+    Returns:
+        `nightshift.datastore.OutputFile` instance
+    """
+    instance = insert_or_ignore(
+        session, OutputFile, handle=file_handle, libraryId=libraryId
+    )
+    session.flush()
+    return instance
+
+
 def add_resource(session: Session, resource: Resource) -> Optional[Resource]:
     """
     Adds Resource record to db.
