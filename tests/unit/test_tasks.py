@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from contextlib import nullcontext as does_not_raise
 from datetime import datetime
 import logging
 import os
@@ -13,6 +14,7 @@ from nightshift.tasks import (
     get_worldcat_brief_bib_matches,
     get_worldcat_full_bibs,
     transfer_to_drive,
+    update_status_to_upgraded,
 )
 
 from .conftest import (
@@ -218,3 +220,13 @@ def test_transfer_to_drive_unable_to_del_temp_file_exception(
         f"Unable to delete '{str(tmpfile)}' file after completing the job. Error "
         in caplog.text
     )
+
+
+def test_update_status_to_upgraded(test_session, test_data_rich):
+    resources = test_session.query(Resource).all()
+    with does_not_raise():
+        update_status_to_upgraded(test_session, resources)
+
+    results = test_session.query(Resource).all()
+    for resource in results:
+        assert resource.status == "upgraded_bot"
