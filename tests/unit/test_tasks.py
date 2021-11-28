@@ -222,10 +222,13 @@ def test_transfer_to_drive_unable_to_del_temp_file_exception(
     )
 
 
-def test_update_status_to_upgraded(test_session, test_data_rich):
+def test_update_status_to_upgraded(test_session, test_data_rich, caplog):
     resources = test_session.query(Resource).all()
     with does_not_raise():
-        update_status_to_upgraded(test_session, resources)
+        with caplog.at_level(logging.INFO):
+            update_status_to_upgraded(test_session, resources)
+
+        assert "Updating 1 resources status to 'upgraded_bot'." in caplog.text
 
     results = test_session.query(Resource).all()
     for resource in results:
