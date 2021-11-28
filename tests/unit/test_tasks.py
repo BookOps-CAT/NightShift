@@ -7,7 +7,7 @@ import os
 from pymarc import MARCReader
 import pytest
 
-from nightshift.datastore import Resource
+from nightshift.datastore import Resource, OutputFile
 from nightshift.tasks import (
     check_resources_sierra_state,
     enhance_and_output_bibs,
@@ -226,10 +226,19 @@ def test_update_status_to_upgraded(test_session, test_data_rich, caplog):
     resources = test_session.query(Resource).all()
     with does_not_raise():
         with caplog.at_level(logging.INFO):
-            update_status_to_upgraded(test_session, resources)
+            update_status_to_upgraded(test_session, 1, "foo3.mrc", resources)
 
         assert "Updating 1 resources status to 'upgraded_bot'." in caplog.text
+
+    # check if output file record has been created
+    out_file_record = (
+        test_session.query(OutputFile)
+        .where(OutputFile.handle == "foo3.mrc", OutputFile.libraryId == 1)
+        .one_or_none()
+    )
+    assert out_file_record is not None
 
     results = test_session.query(Resource).all()
     for resource in results:
         assert resource.status == "upgraded_bot"
+        assert resource.outputId == 1

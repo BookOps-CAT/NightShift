@@ -13,9 +13,12 @@ from nightshift.comms.worldcat import Worldcat
 from nightshift.comms.sierra_search_platform import NypPlatform, BplSolr
 from nightshift.comms.storage import get_credentials, Drive
 from nightshift.datastore import Resource, WorldcatQuery
-from nightshift.datastore_transactions import update_resource
+from nightshift.datastore_transactions import (
+    add_output_file,
+    update_resource,
+    retrieve_processed_files,
+)
 from nightshift.marc.marc_writer import BibEnhancer
-from nightshift.ns_exceptions import DriveError
 
 
 logger = logging.getLogger("nightshift")
@@ -175,18 +178,30 @@ def transfer_to_drive(
         raise
 
 
-def update_status_to_upgraded(db_session: Session, resources: list[Resource]) -> None:
+def update_status_to_upgraded(
+    db_session: Session,
+    library_id: int,
+    out_file_handle: str,
+    resources: list[Resource],
+) -> None:
     """
     Upgrades given resources status to "upgraded_bot"
 
     Args:
         db_session:                     `sqlalchemy.Session` instance
+        library_id:                     datastore Library id
+        out_file_handle:                handle of the output file
         resources:                      list of `nightshift.datastore.Resource`
                                         instances
     """
     logging.info(f"Updating {len(resources)} resources status to 'upgraded_bot'.")
+    out_file_record = add_output_file(db_session, library_id, out_file_handle)
     for resource in resources:
         update_resource(
-            db_session, resource.sierraId, resource.libraryId, status="upgraded_bot"
+            db_session,
+            resource.sierraId,
+            resource.libraryId,
+            status="upgraded_bot",
+            outputId=out_file_record.nid,
         )
     db_session.commit()
