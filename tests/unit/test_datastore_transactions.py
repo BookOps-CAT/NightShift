@@ -18,6 +18,7 @@ from nightshift.datastore import (
 from nightshift.datastore_transactions import (
     add_output_file,
     add_resource,
+    add_source_file,
     init_db,
     insert_or_ignore,
     retrieve_open_matched_resources_with_full_bib_obtained,
@@ -66,9 +67,9 @@ def test_init_db(mock_db_env, test_connection):
 
 
 def test_add_output_file(test_session, test_data_core):
-    result = add_output_file(test_session, 1, "foo.mrc")
+    result = add_output_file(test_session, 1, "bar.mrc")
     assert result.nid == 1
-    assert result.handle == "foo.mrc"
+    assert result.handle == "bar.mrc"
     assert result.libraryId == 1
 
 
@@ -129,6 +130,13 @@ def test_add_resource_unique_constraint_violation(test_session, test_data_core):
         )
         test_session.commit()
         assert result is None
+
+
+def test_add_source_file(test_session, test_data_core):
+    rec = add_source_file(test_session, 1, "bar.mrc")
+    assert rec.nid == 3
+    assert rec.libraryId == 1
+    assert rec.handle == "bar.mrc"
 
 
 def test_insert_or_ignore_new(test_session):

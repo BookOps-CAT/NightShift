@@ -59,7 +59,7 @@ def add_output_file(
         `nightshift.datastore.OutputFile` instance
     """
     instance = insert_or_ignore(
-        session, OutputFile, handle=file_handle, libraryId=libraryId
+        session, OutputFile, libraryId=libraryId, handle=file_handle
     )
     session.flush()
     return instance
@@ -87,6 +87,25 @@ def add_resource(session: Session, resource: Resource) -> Optional[Resource]:
         return resource
     else:
         return None
+
+
+def add_source_file(
+    session: Session, libraryId: int, handle: str
+) -> Optional[SourceFile]:
+    """
+    Adds SourceFile record to db.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        libraryId:              db library id
+        handle:                 marc file handle
+
+    Returns:
+        `SourceFile` instance
+    """
+    instance = insert_or_ignore(session, SourceFile, libraryId=libraryId, handle=handle)
+    session.flush()
+    return instance
 
 
 def insert_or_ignore(session, model, **kwargs):
