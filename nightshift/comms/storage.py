@@ -137,7 +137,7 @@ class Drive:
                 logger.error(f"Unable to reach {self.src_dir} on the SFTP. {exc}")
                 raise DriveError
 
-    def output_file(self, local_file_path: str, remote_file_name_base: str) -> None:
+    def output_file(self, local_file_path: str, remote_file_name_base: str) -> str:
         """
         Appends stream to a file in SFTP/Drive load directory
 
@@ -145,14 +145,20 @@ class Drive:
             local_file_path:            path to a local file to be transfered to SFTP
             remote_file_name_base:      file name base for the file on SFTP
 
+        Returns:
+            remote file handle
+
         Raises:
             DriveError
         """
         if self.sftp:
             try:
+
                 remote_file_path = self._construct_dst_file_path(remote_file_name_base)
                 self.sftp.put(local_file_path, remote_file_path)
                 logger.info(f"Successfully created {remote_file_path} on the SFTP.")
+                return os.path.basename(remote_file_path)
+
             except IOError as exc:
                 logger.error(
                     f"IOError. Unable to output {local_file_path} to {remote_file_path} on the SFTP. {exc}"

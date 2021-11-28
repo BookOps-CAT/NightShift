@@ -97,11 +97,12 @@ class TestDriveMocked:
         tmpfile = tmpdir.join("temp.mrc")
         tmpfile.write("spam")
         with sftpserver.serve_content({"load_dir": {"NYPebook210715-01.mrc": "spam"}}):
-            mock_drive.output_file(str(tmpfile), "NYPebook210715")
+            out_file = mock_drive.output_file(str(tmpfile), "NYPebook210715")
             assert mock_drive.sftp.listdir("load_dir") == [
                 "NYPebook210715-01.mrc",
                 "NYPebook210715-02.mrc",
             ]
+        assert out_file == "NYPebook210715-02.mrc"
 
     def test_output_file_io_error(self, caplog, mock_drive, mock_io_error):
         with caplog.at_level(logging.ERROR):
