@@ -24,6 +24,7 @@ from nightshift.datastore_transactions import (
     retrieve_open_matched_resources_without_full_bib,
     retrieve_new_resources,
     retrieve_open_older_resources,
+    retrieve_processed_files,
     update_resource,
 )
 
@@ -544,6 +545,14 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
     assert res2[0].nid == 4
     assert res2[1].nid == 5
     assert res2[2].nid == 3
+
+
+@pytest.mark.parametrize(
+    "libraryId,expectation", [(1, ["foo1.mrc"]), (2, ["foo2.mrc"])]
+)
+def test_retrieve_processed_files(test_session, test_data_rich, libraryId, expectation):
+    results = retrieve_processed_files(test_session, libraryId)
+    assert results == expectation
 
 
 def test_update_resource(test_session):

@@ -9,8 +9,10 @@ from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import (
     DataAccessLayer,
     Library,
+    OutputFile,
     Resource,
     ResourceCategory,
+    SourceFile,
     WorldcatQuery,
 )
 
@@ -227,6 +229,21 @@ def retrieve_open_matched_resources_with_full_bib_obtained(
         .all()
     )
     return resources
+
+
+def retrieve_processed_files(session: Session, libraryId: int) -> list[str]:
+    """
+    Retrieves file handles of all processed files for specific library.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        libraryId:              `nightshift.datastore.Library.nid`
+
+    Returns:
+        list of file handles
+    """
+    instances = session.query(SourceFile).filter_by(libraryId=libraryId).all()
+    return [instance.handle for instance in instances]
 
 
 def update_resource(session, sierraId, libraryId, **kwargs) -> Optional[Resource]:
