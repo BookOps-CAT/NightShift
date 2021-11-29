@@ -196,18 +196,18 @@ def test_ingest_new_files(test_session, test_data_core, sftpserver, mock_sftp_en
         marc_data = test_file.read()
 
     with sftpserver.serve_content(
-        {"sierra_dumps_dir": {"foo1.mrc": b"foo", "NYP-bar.mrc": marc_data}}
+        {"sierra_dumps_dir": {"foo1.pout": b"foo", "NYP-bar.pout": marc_data}}
     ):
         ingest_new_files(test_session, "NYP", 1)
 
     # verify source file has been added to db
     src_file_rec = (
         test_session.query(SourceFile)
-        .where(SourceFile.libraryId == 1, SourceFile.handle == "NYP-bar.mrc")
+        .where(SourceFile.libraryId == 1, SourceFile.handle == "NYP-bar.pout")
         .one_or_none()
     )
     assert src_file_rec.libraryId == 1
-    assert src_file_rec.handle == "NYP-bar.mrc"
+    assert src_file_rec.handle == "NYP-bar.pout"
 
     resources = (
         test_session.query(Resource).where(Resource.sourceId == src_file_rec.nid).all()
@@ -219,21 +219,21 @@ def test_isolate_unprocessed_nyp_files(
     test_session, test_data_core, mock_drive, sftpserver, caplog
 ):
     with sftpserver.serve_content(
-        {"sierra_dumps_dir": {"foo1.mrc": b"spam", "NYP-bar.mrc": b"spam"}}
+        {"sierra_dumps_dir": {"foo1.pout": b"spam", "NYP-bar.pout": b"spam"}}
     ):
         with caplog.at_level(logging.DEBUG):
             results = isolate_unprocessed_files(test_session, mock_drive, "NYP", 1)
 
-        assert "Found following remote files for NYP: ['NYP-bar.mrc']." in caplog.text
+        assert "Found following remote files for NYP: ['NYP-bar.pout']." in caplog.text
 
-    assert results == ["NYP-bar.mrc"]
+    assert results == ["NYP-bar.pout"]
 
 
 def test_isolate_unprocessed_bpl_files(
     test_session, test_data_core, mock_drive, sftpserver, caplog
 ):
     with sftpserver.serve_content(
-        {"sierra_dumps_dir": {"foo1.mrc": b"spam", "NYP-bar.mrc": b"spam"}}
+        {"sierra_dumps_dir": {"foo1.pout": b"spam", "NYP-bar.pout": b"spam"}}
     ):
         with caplog.at_level(logging.DEBUG):
             results = isolate_unprocessed_files(test_session, mock_drive, "BPL", 2)

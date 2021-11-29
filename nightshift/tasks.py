@@ -162,7 +162,7 @@ def ingest_new_files(db_session: Session, library: str, library_id: int) -> None
 
         # find files that have not been processed
         unproc_files = isolate_unprocessed_files(db_session, drive, library, library_id)
-        logging.info(f"Found following unprocessed files: {unproc_files}")
+        logging.info(f"Found following unprocessed files: {unproc_files}.")
 
         # add records data to the db
         for handle in unproc_files:
@@ -196,7 +196,11 @@ def isolate_unprocessed_files(
         list of remote unprocessed file handles
     """
     remote_files = drive.list_src_directory()
-    library_remote_files = [file for file in remote_files if library in file]
+
+    # select only files with library code and .pout extension
+    library_remote_files = [
+        file for file in remote_files if library in file and ".pout" in file
+    ]
     logging.debug(
         f"Found following remote files for {library}: {library_remote_files}."
     )
