@@ -130,17 +130,21 @@ def test_get_worldcat_brief_bib_matches_success(
     assert res.status == "open"
 
 
+@pytest.mark.parametrize("library,library_id", [("NYP", 1), ("BPL", 2)])
 def test_get_worldcat_brief_bib_matches_failed(
+    library,
+    library_id,
     test_session,
     test_data_core,
-    mock_Worldcat,
+    mock_worldcat_creds,
+    mock_successful_post_token_response,
     mock_successful_session_get_request_no_matches,
 ):
     test_session.add(
         Resource(
             nid=1,
             sierraId=11111111,
-            libraryId=1,
+            libraryId=library_id,
             resourceCategoryId=1,
             sourceId=1,
             bibDate=datetime.utcnow().date(),
@@ -151,7 +155,7 @@ def test_get_worldcat_brief_bib_matches_failed(
     )
     test_session.commit()
     resources = test_session.query(Resource).filter_by(nid=1).all()
-    get_worldcat_brief_bib_matches(test_session, mock_Worldcat, resources)
+    get_worldcat_brief_bib_matches(test_session, library, resources)
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]
     query = res.queries[0]

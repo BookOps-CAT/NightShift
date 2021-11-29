@@ -82,7 +82,7 @@ def enhance_and_output_bibs(library: str, resources: list[Resource]) -> None:
 
 
 def get_worldcat_brief_bib_matches(
-    db_session: Session, worldcat: Worldcat, resources: list[Resource]
+    db_session: Session, library: str, resources: list[Resource]
 ) -> None:
     """
     Queries Worldcat for given resources and persists responses
@@ -90,38 +90,39 @@ def get_worldcat_brief_bib_matches(
 
     Args:
         db_session:                     `sqlalchemy.Session` instance
-        worldcat:                       `nightshift.comms.worldcat.Worldcat` instance
+        library:                        'NYP' or 'BPL'
         resources:                      list of `nigthtshift.datastore.Resource`
                                         instances
     """
     logger.info(f"Searching Worldcat for brief records for {len(resources)} resources.")
 
-    results = worldcat.get_brief_bibs(resources=resources)
-    for resource, response in results:
-        if response.is_match:
-            instance = update_resource(
-                db_session,
-                resource.sierraId,
-                resource.libraryId,
-                oclcMatchNumber=response.oclc_number,
-            )
-            instance.queries.append(
-                WorldcatQuery(
-                    resourceId=resource.nid,
-                    match=True,
-                    response=response.as_json,
+    with Worldcat(library) as worldcat:
+        results = worldcat.get_brief_bibs(resources=resources)
+        for resource, response in results:
+            if response.is_match:
+                instance = update_resource(
+                    db_session,
+                    resource.sierraId,
+                    resource.libraryId,
+                    oclcMatchNumber=response.oclc_number,
                 )
-            )
-        else:
-            resource.queries.append(
-                WorldcatQuery(match=False, response=response.as_json)
-            )
+                instance.queries.append(
+                    WorldcatQuery(
+                        resourceId=resource.nid,
+                        match=True,
+                        response=response.as_json,
+                    )
+                )
+            else:
+                resource.queries.append(
+                    WorldcatQuery(match=False, response=response.as_json)
+                )
 
-        db_session.commit()
+            db_session.commit()
 
 
 def get_worldcat_full_bibs(
-    db_session: Session, worldcat: Worldcat, resources: list[Resource]
+    db_session: Session, library: str, resources: list[Resource]
 ) -> None:
     """
     Requests full bibliographic records from MetadataAPI service and
@@ -129,19 +130,20 @@ def get_worldcat_full_bibs(
 
     Args:
         db_session:                     `sqlalchemy.Session` instance
-        worldcat:                       `nightshift.comms.worldcat.Worldcat` instance
+        library:                        'NYP' or 'BPL'
         resources:                      list of `nightshift.datastore.Resource`
                                         instances
     """
     logger.info(
         f"Downloading full records from WorldCat for {len(resources)} resources."
     )
-    results = worldcat.get_full_bibs(resources)
-    for resource, response in results:
-        update_resource(
-            db_session, resource.sierraId, resource.libraryId, fullBib=response
-        )
-        db_session.commit()
+    with Worldcat(library) as worldcat:
+        results = worldcat.get_full_bibs(resources)
+        for resource, response in results:
+            update_resource(
+                db_session, resource.sierraId, resource.libraryId, fullBib=response
+            )
+            db_session.commit()
 
 
 def ingest_new_files(db_session: Session, library: str, library_id: int) -> None:
