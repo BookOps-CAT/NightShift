@@ -77,7 +77,7 @@ def test_enhance_and_transfer_to_drive(caplog, env_var, test_data, stub_resource
         assert "NYP b22222222a has been output to 'temp.mrc'." in caplog.text
 
         with caplog.at_level(logging.INFO):
-            transfer_to_drive("NYP", "ebook")
+            transfer_to_drive("NYP", "ebook", "temp.mrc")
 
         assert "NYP ebook records have been output to remote " in caplog.text
 
