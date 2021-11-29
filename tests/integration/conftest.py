@@ -13,6 +13,18 @@ from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import Base, Library, Resource, ResourceCategory, SourceFile
 
 
+class MockIOError:
+    def __init__(self, *args, **kwargs):
+        raise IOError
+
+
+@pytest.fixture
+def mock_io_error(monkeypatch):
+    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.put", MockIOError)
+    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.listdir", MockIOError)
+    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.file", MockIOError)
+
+
 @pytest.fixture
 def env_var(monkeypatch):
     if not os.getenv("TRAVIS"):
