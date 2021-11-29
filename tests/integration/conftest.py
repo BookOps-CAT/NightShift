@@ -11,7 +11,6 @@ import yaml
 from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import Base, Library, Resource, ResourceCategory, SourceFile
-from nightshift.datastore_transactions import init_db
 
 
 @pytest.fixture
