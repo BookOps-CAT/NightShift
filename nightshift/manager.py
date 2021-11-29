@@ -34,7 +34,7 @@ def process_resources() -> None:
     """
     with session_scope() as db_session:
 
-        for lib_nid, library in library_by_id():
+        for lib_nid, library in library_by_id().items():
 
             # ingest new resources
             ingest_new_files(db_session, library, lib_nid)
