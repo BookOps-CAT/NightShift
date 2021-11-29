@@ -19,7 +19,7 @@ from nightshift.tasks import (
     get_worldcat_full_bibs,
     ingest_new_files,
     transfer_to_drive,
-    upgrade_status_to_upgraded,
+    update_status_to_upgraded,
 )
 
 
@@ -117,7 +117,7 @@ def process_resources() -> None:
                 )
 
                 # update resources as upgraded
-                upgrade_status_to_upgraded(db_session, resources, file, lib_nid)
+                update_status_to_upgraded(db_session, resources, file, lib_nid)
                 logger.info(
                     f"Upgrading status of {len(resources)} {library} "
                     f"{res_category} resources completed."
