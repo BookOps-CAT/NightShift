@@ -10,7 +10,12 @@ from nightshift.datastore_transactions import insert_or_ignore, add_resource
 from nightshift.comms.storage import get_credentials, Drive
 from nightshift.marc.marc_parser import BibReader
 from nightshift.constants import LIBRARIES
-from nightshift.tasks import enhance_and_output_bibs, transfer_to_drive
+from nightshift.tasks import (
+    enhance_and_output_bibs,
+    transfer_to_drive,
+    isolate_unprocessed_files,
+    ingest_new_files,
+)
 
 
 @pytest.mark.firewalled
@@ -85,3 +90,46 @@ def test_enhance_and_transfer_to_drive(caplog, env_var, test_data, stub_resource
         drive_creds = get_credentials()
         with Drive(*drive_creds) as drive:
             drive.sftp.remove(f"{drive.dst_dir}/{today:%y%m%d}-NYP-ebook-01.mrc")
+
+
+@pytest.mark.firewalled
+def test_isolate_unprocessed_files(env_var, test_data, caplog):
+    with session_scope() as db_session:
+        drive_creds = get_credentials()
+        with Drive(*drive_creds) as drive:
+            with caplog.at_level(logging.DEBUG):
+                unproc = isolate_unprocessed_files(db_session, drive, "BPL", 2)
+
+            assert (
+                "Found following remote files for BPL: ['BPLeres210701.pout']"
+                in caplog.text
+            )
+        assert unproc == ["BPLeres210701.pout"]
+
+
+@pytest.mark.firewalled
+def test_ingest_new_files(env_var, test_data, caplog):
+    with session_scope() as db_session:
+        with caplog.at_level(logging.INFO):
+            ingest_new_files(db_session, "NYP", 1)
+
+        assert (
+            "Found following unprocessed files: ['NYPeres210701.pout']." in caplog.text
+        )
+        assert "Ingested 2 records from the file 'NYPeres210701.pout'."
+
+        sf_rec = (
+            db_session.query(SourceFile)
+            .where(SourceFile.handle == "NYPeres210701.pout")
+            .one_or_none()
+        )
+
+        assert sf_rec is not None
+
+        res_rec = (
+            db_session.query(Resource)
+            .where(Resource.sourceId == sf_rec.nid)
+            .one_or_none()
+        )
+        assert res_rec is not None
+        assert res_rec.sierraId == 21642892
