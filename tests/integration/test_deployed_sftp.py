@@ -30,8 +30,7 @@ class TestDriveLive:
         creds = get_credentials()
         with Drive(*creds) as drive:
             assert (
-                drive._construct_dst_file_path("/test/foo.mrc")
-                == "/NSDROP/TEST/load/foo.mrc"
+                drive._construct_dst_file_path("foo") == "/NSDROP/TEST/load/foo-01.mrc"
             )
 
     def test_construct_src_file_path(self, env_var):
@@ -59,17 +58,22 @@ class TestDriveLive:
         creds = get_credentials()
         with Drive(*creds) as drive:
             local_fh = "tests/nyp-ebook-sample.mrc"
-            drive.output_file(local_fh, "foo.mrc")
 
-            assert drive.sftp.listdir(drive.dst_dir) == ["foo.mrc"]
+            remote_handle = drive.output_file(local_fh, "foo")
+
+            assert remote_handle == "foo-01.mrc"
+            assert drive.sftp.listdir(drive.dst_dir) == ["foo-01.mrc"]
 
             # cleanup
-            drive.sftp.remove(drive.dst_dir + "/foo.mrc")
+            drive.sftp.remove(drive.dst_dir + "/foo-01.mrc")
 
-    def test_output_file_io_error(self, caplog, env_var):
+    def test_output_file_io_error(self, caplog, env_var, mock_io_error):
         creds = get_credentials()
         with Drive(*creds) as drive:
             with caplog.at_level(logging.ERROR):
                 with pytest.raises(DriveError):
-                    drive.output_file("tests/nyp-ebook-sample.mrc", "foo.mrc")
-        assert "IOError. Unable to create /NSDROP/TEST/load/foo.mrc on the SFTP."
+                    drive.output_file("tests/nyp-ebook-sample.mrc", "foo")
+        assert (
+            "IOError. Unable to output tests/nyp-ebook-sample.mrc to /NSDROP/TEST/load/foo-01.mrc on the SFTP."
+            in caplog.text
+        )

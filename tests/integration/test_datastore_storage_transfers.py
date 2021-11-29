@@ -75,10 +75,13 @@ def test_enhance_and_transfer_to_drive(caplog, env_var, test_data, stub_resource
             enhance_and_output_bibs("NYP", resources)
 
         assert "NYP b22222222a has been output to 'temp.mrc'." in caplog.text
-
         with caplog.at_level(logging.INFO):
             transfer_to_drive("NYP", "ebook", "temp.mrc")
-
         assert "NYP ebook records have been output to remote " in caplog.text
-
         assert not os.path.exists("temp.mrc")
+
+        # clean-up
+        today = datetime.datetime.now().date()
+        drive_creds = get_credentials()
+        with Drive(*drive_creds) as drive:
+            drive.sftp.remove(f"{drive.dst_dir}/{today:%y%m%d}-NYP-ebook-01.mrc")
