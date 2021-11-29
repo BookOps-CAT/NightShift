@@ -17,6 +17,7 @@ from nightshift.tasks import (
     enhance_and_output_bibs,
     get_worldcat_brief_bib_matches,
     get_worldcat_full_bibs,
+    ingest_new_files,
     transfer_to_drive,
     upgrade_status_to_upgraded,
 )
@@ -35,8 +36,9 @@ def process_resources() -> None:
 
         for lib_nid, library in library_by_id():
 
-            # ingest new resources if any
-            # here
+            # ingest new resources
+            ingest_new_files(db_session, library, lib_nid)
+            logger.info(f"New {library} remote files have been ingested.")
 
             # search newly added resources
             resources = retrieve_new_resources(db_session, lib_nid)
@@ -108,14 +110,14 @@ def process_resources() -> None:
                 )
 
                 # output MARC records to the network drive
-                transfer_to_drive(library, res_category)
+                file = transfer_to_drive(library, res_category)
                 logger.info(
                     f"Transfering {len(resources)} {library} {res_category} resources "
                     "to the network drive completed."
                 )
 
                 # update resources as upgraded
-                upgrade_status_to_upgraded(db_session, resources)
+                upgrade_status_to_upgraded(db_session, resources, file, lib_nid)
                 logger.info(
                     f"Upgrading status of {len(resources)} {library} "
                     f"{res_category} resources completed."
