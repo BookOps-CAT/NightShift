@@ -99,16 +99,16 @@ RESOURCE_CATEGORIES = {
 
 SIERRA_FORMATS = {
     "NYP": {
-        "ebook": None,
-        "eaudio": None,
-        "evideo": None,
+        "ebook": "z",
+        "eaudio": "n",
+        "evideo": "3",
         "print": "a",
         "large_print": "l",
     },
     "BPL": {
         "ebook": "x",
-        "eaudio": None,
-        "evideo": None,
+        "eaudio": "z",
+        "evideo": "v",
         "print": "a",
         "large_print": "l",
     },
