@@ -83,6 +83,7 @@ def stub_resource():
     )
 
 
-@pytest.fixture()
-def test_nyp_worldcat(env_var):
-    yield Worldcat("NYP")
+# @pytest.fixture
+# def mock_drive():
+#     with Drive(*creds) as drive:
+#         yield drive
