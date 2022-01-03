@@ -233,11 +233,12 @@ def transfer_to_drive(
 
     creds = get_credentials()
     with Drive(*creds) as drive:
-        drive.output_file(temp_file, remote_file_name_base)
+        file = drive.output_file(temp_file, remote_file_name_base)
         logger.info(
             f"{library} {resource_category} records have been output to remote "
             f"'{remote_file_name_base}'."
         )
+        return file
 
     # clean up after job completed
     try:
