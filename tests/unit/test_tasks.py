@@ -101,7 +101,8 @@ def test_enhance_and_output_bibs(caplog, test_session, test_data_rich):
 def test_get_worldcat_brief_bib_matches_success(
     test_session,
     test_data_core,
-    mock_Worldcat,
+    mock_worldcat_creds,
+    mock_successful_post_token_response,
     mock_successful_session_get_request,
 ):
     test_session.add(
@@ -119,7 +120,7 @@ def test_get_worldcat_brief_bib_matches_success(
     )
     test_session.commit()
     resources = test_session.query(Resource).filter_by(nid=1).all()
-    get_worldcat_brief_bib_matches(test_session, mock_Worldcat, resources)
+    get_worldcat_brief_bib_matches(test_session, "NYP", resources)
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]
     query = res.queries[0]
@@ -170,7 +171,8 @@ def test_get_worldcat_brief_bib_matches_failed(
 def test_get_worldcat_full_bibs(
     test_session,
     test_data_core,
-    mock_Worldcat,
+    mock_worldcat_creds,
+    mock_successful_post_token_response,
     mock_successful_session_get_request,
 ):
     test_session.add(
@@ -189,7 +191,7 @@ def test_get_worldcat_full_bibs(
     )
     test_session.commit()
     resources = test_session.query(Resource).filter_by(nid=1).all()
-    get_worldcat_full_bibs(test_session, mock_Worldcat, resources)
+    get_worldcat_full_bibs(test_session, "NYP", resources)
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]
     assert res.fullBib == MockSuccessfulHTTP200SessionResponse().content

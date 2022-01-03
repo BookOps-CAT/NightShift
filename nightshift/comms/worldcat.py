@@ -72,6 +72,12 @@ class Worldcat:
         token = self._get_access_token(creds)
         self.session = self._create_worldcat_session(token)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.session.close()
+
     def _create_worldcat_session(
         self, access_token: WorldcatAccessToken
     ) -> MetadataSession:

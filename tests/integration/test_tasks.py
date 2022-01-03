@@ -9,7 +9,7 @@ from nightshift.tasks import get_worldcat_brief_bib_matches, get_worldcat_full_b
 
 
 @pytest.mark.local
-def test_get_worldcat_brief_bib_matches_success(local_db, test_data, test_nyp_worldcat):
+def test_get_worldcat_brief_bib_matches_success(local_db, test_data, env_var):
     local_db.execute(
         update(Resource)
         .where(Resource.sierraId == 11111111, Resource.libraryId == 1)
@@ -17,7 +17,7 @@ def test_get_worldcat_brief_bib_matches_success(local_db, test_data, test_nyp_wo
     )
     resources = local_db.query(Resource).filter_by(nid=1).all()
 
-    get_worldcat_brief_bib_matches(local_db, test_nyp_worldcat, resources)
+    get_worldcat_brief_bib_matches(local_db, "NYP", resources)
 
     res = local_db.query(Resource).filter_by(nid=1).all()[0]
     query_record = res.queries[0]
@@ -30,7 +30,7 @@ def test_get_worldcat_brief_bib_matches_success(local_db, test_data, test_nyp_wo
 
 
 @pytest.mark.local
-def test_get_worldcat_brief_bib_matches_failure(local_db, test_data, test_nyp_worldcat):
+def test_get_worldcat_brief_bib_matches_failure(local_db, test_data, env_var):
     # modify existing resource
     local_db.execute(
         update(Resource).where(Resource.nid == 1).values(distributorNumber="ABC#1234")
@@ -39,7 +39,7 @@ def test_get_worldcat_brief_bib_matches_failure(local_db, test_data, test_nyp_wo
 
     resources = local_db.query(Resource).filter_by(nid=1).all()
 
-    get_worldcat_brief_bib_matches(local_db, test_nyp_worldcat, resources)
+    get_worldcat_brief_bib_matches(local_db, "NYP", resources)
 
     res = local_db.query(Resource).filter_by(nid=1).one()
     assert res.oclcMatchNumber is None
@@ -53,7 +53,7 @@ def test_get_worldcat_brief_bib_matches_failure(local_db, test_data, test_nyp_wo
 
 
 @pytest.mark.local
-def test_get_worldcat_full_bibs(local_db, test_data, test_nyp_worldcat):
+def test_get_worldcat_full_bibs(local_db, test_data, env_var):
     local_db.execute(
         update(Resource).where(Resource.nid == 1).values(oclcMatchNumber="779356905")
     )
@@ -63,7 +63,7 @@ def test_get_worldcat_full_bibs(local_db, test_data, test_nyp_worldcat):
     resources = local_db.query(Resource).filter_by(nid=1).all()
     assert len(resources) == 1
 
-    get_worldcat_full_bibs(local_db, test_nyp_worldcat, resources)
+    get_worldcat_full_bibs(local_db, "NYP", resources)
 
     res = local_db.query(Resource).filter_by(nid=1).one()
     assert isinstance(res.fullBib, bytes)
