@@ -99,7 +99,7 @@ def process_resources() -> None:
             # serialize as MARC21 and output to a file of enhanced bibs
             for res_category, res_cat_data in RESOURCE_CATEGORIES.items():
                 resources = retrieve_open_matched_resources_with_full_bib_obtained(
-                    db_session, library, res_cat_data["nid"]
+                    db_session, lib_nid, res_cat_data["nid"]
                 )
 
                 # manipulate Worldcat bibs
@@ -117,7 +117,7 @@ def process_resources() -> None:
                 )
 
                 # update resources as upgraded
-                update_status_to_upgraded(db_session, resources, file, lib_nid)
+                update_status_to_upgraded(db_session, lib_nid, file, resources)
                 logger.info(
                     f"Upgrading status of {len(resources)} {library} "
                     f"{res_category} resources completed."
