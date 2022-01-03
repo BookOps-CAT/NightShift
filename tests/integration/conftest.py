@@ -81,9 +81,3 @@ def stub_resource():
         title="Harry potter and the sorcerer's stone",
         status="open",
     )
-
-
-# @pytest.fixture
-# def mock_drive():
-#     with Drive(*creds) as drive:
-#         yield drive
