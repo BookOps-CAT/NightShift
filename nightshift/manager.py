@@ -61,11 +61,12 @@ def process_resources() -> None:
                         age_max,
                     )
                     # query Sierra platform to update their status if changed
-                    check_resources_sierra_state(db_session, library, resources)
-                    logger.info(
-                        f"Checking Sierra status of {len(resources)} {library} "
-                        f"{res_category} older resources completed."
-                    )
+                    if resources:
+                        check_resources_sierra_state(db_session, library, resources)
+                        logger.info(
+                            f"Checking Sierra status of {len(resources)} {library} "
+                            f"{res_category} older resources completed."
+                        )
 
             # search again older resources dropping any resources already cataloged
             # or deleted
@@ -80,21 +81,23 @@ def process_resources() -> None:
                     )
 
                     # perform WorldCat searches for open older resources
-                    get_worldcat_brief_bib_matches(db_session, library, resources)
-                    logger.info(
-                        f"Obtainig WorldCat matches for {len(resources)} "
-                        f"{library} {res_category} older resources completed."
-                    )
+                    if resources:
+                        get_worldcat_brief_bib_matches(db_session, library, resources)
+                        logger.info(
+                            f"Obtainig WorldCat matches for {len(resources)} "
+                            f"{library} {res_category} older resources completed."
+                        )
 
             # perform download of full records for matched resources
             resources = retrieve_open_matched_resources_without_full_bib(
                 db_session, lib_nid
             )
-            get_worldcat_full_bibs(db_session, library, resources)
-            logger.info(
-                f"Downloading {len(resources)} {library} {res_category} full records "
-                "from WorldCat completed."
-            )
+            if resources:
+                get_worldcat_full_bibs(db_session, library, resources)
+                logger.info(
+                    f"Downloading {len(resources)} {library} {res_category} "
+                    "full records from WorldCat completed."
+                )
 
             # serialize as MARC21 and output to a file of enhanced bibs
             for res_category, res_cat_data in RESOURCE_CATEGORIES.items():
@@ -103,25 +106,26 @@ def process_resources() -> None:
                 )
 
                 # manipulate Worldcat bibs
-                enhance_and_output_bibs(library, resources)
-                logger.info(
-                    f"Enhancing {len(resources)} {library} {res_category} resources "
-                    "completed."
-                )
+                if resources:
+                    enhance_and_output_bibs(library, resources)
+                    logger.info(
+                        f"Enhancing {len(resources)} {library} {res_category} "
+                        "resources completed."
+                    )
 
-                # output MARC records to the network drive
-                file = transfer_to_drive(library, res_category)
-                logger.info(
-                    f"Transfering {len(resources)} {library} {res_category} resources "
-                    "to the network drive completed."
-                )
+                    # output MARC records to the network drive
+                    file = transfer_to_drive(library, res_category)
+                    logger.info(
+                        f"Transfering {len(resources)} {library} {res_category} "
+                        f"resources to the network drive completed ({file})."
+                    )
 
-                # update resources as upgraded
-                update_status_to_upgraded(db_session, lib_nid, file, resources)
-                logger.info(
-                    f"Upgrading status of {len(resources)} {library} "
-                    f"{res_category} resources completed."
-                )
+                    # update resources as upgraded
+                    update_status_to_upgraded(db_session, lib_nid, file, resources)
+                    logger.info(
+                        f"Upgrading status of {len(resources)} {library} "
+                        f"{res_category} resources completed."
+                    )
 
 
 def perform_db_maintenance():
