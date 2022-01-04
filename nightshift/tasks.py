@@ -238,7 +238,6 @@ def transfer_to_drive(
             f"{library} {resource_category} records have been output to remote "
             f"'{remote_file_name_base}'."
         )
-        return file
 
     # clean up after job completed
     try:
@@ -248,6 +247,8 @@ def transfer_to_drive(
             f"Unable to delete '{temp_file}' file after completing the job. Error {exc}"
         )
         raise
+    else:
+        return file
 
 
 def update_status_to_upgraded(
