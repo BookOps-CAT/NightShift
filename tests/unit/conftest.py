@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import datetime
 from io import BytesIO
 import os
 
@@ -9,17 +8,6 @@ from pymarc import Field
 import pytest
 
 from nightshift.marc.marc_parser import BibReader
-
-
-class FakeUtcNow(datetime.datetime):
-    @classmethod
-    def utcnow(cls):
-        return cls(2021, 1, 1, 17, 0, 0, 0)
-
-
-@pytest.fixture
-def mock_utcnow(monkeypatch):
-    monkeypatch.setattr(datetime, "datetime", FakeUtcNow)
 
 
 class MockOSError:

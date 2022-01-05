@@ -10,7 +10,10 @@ from nightshift.manager import process_resources
 
 @pytest.mark.firewalled
 @pytest.mark.local
-def test_process_resources(env_var, test_data):
+def test_process_resources_live(env_var, test_data):
+    """
+    This tests runs using real data and live services
+    """
     with does_not_raise():
         process_resources()
 
@@ -22,5 +25,22 @@ def test_process_resources(env_var, test_data):
             drive.sftp.remove(f"{drive.dst_dir}/{file_handle}")
 
 
-def test_process_resources_mocked():
-    pass
+class TestProcessResourcesMocked:
+    """
+    These test runs using mocked SFTP, Worldcat, NYPL Platform and BPL Solr,
+    and local Postgres db
+    """
+
+    def test_blank_state_db(
+        self,
+        env_var,
+        test_data_core,
+        mock_sftp_env,
+        mock_drive_unprocessed_files,
+        mock_drive_fetch_file,
+        mock_worldcat_creds,
+        mock_successful_post_token_response,
+        mock_successful_session_get_request,
+    ):
+        with does_not_raise():
+            process_resources()
