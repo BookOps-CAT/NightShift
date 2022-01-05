@@ -19,7 +19,7 @@ from nightshift.tasks import (
     update_status_to_upgraded,
 )
 
-from .conftest import (
+from ..conftest import (
     MockSuccessfulHTTP200SessionResponse,
     MockSuccessfulHTTP200SessionResponseNoMatches,
 )

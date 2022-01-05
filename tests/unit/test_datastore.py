@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm.session import Session
 from sqlalchemy.exc import DataError
 
-from .conftest import MockSuccessfulHTTP200SessionResponse
+from ..conftest import MockSuccessfulHTTP200SessionResponse
 
 from nightshift.datastore import (
     conf_db,

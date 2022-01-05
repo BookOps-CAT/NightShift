@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from .conftest import (
+from ..conftest import (
     MockSuccessfulHTTP200SessionResponseNoMatches,
     MockSuccessfulHTTP200SessionResponse,
 )

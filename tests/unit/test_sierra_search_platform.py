@@ -14,7 +14,7 @@ from nightshift.comms.sierra_search_platform import (
     SearchResponse,
 )
 
-from .conftest import (
+from ..conftest import (
     MockPlatformSessionResponseNotFound,
     MockPlatformSessionResponseSuccess,
     MockSearchSessionHTTPError,
