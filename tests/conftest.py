@@ -18,6 +18,17 @@ from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import Base, Library, Resource, ResourceCategory, SourceFile
 
 
+class FakeUtcNow(datetime.datetime):
+    @classmethod
+    def utcnow(cls):
+        return cls(2021, 1, 1, 17, 0, 0, 0)
+
+
+@pytest.fixture
+def mock_utcnow(monkeypatch):
+    monkeypatch.setattr(datetime, "datetime", FakeUtcNow)
+
+
 class MockIOError:
     def __init__(self, *args, **kwargs):
         raise IOError
