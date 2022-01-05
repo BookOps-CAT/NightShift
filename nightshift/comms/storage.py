@@ -98,7 +98,8 @@ class Drive:
         Retrieves file of the given path
 
         Args:
-            path:                       path to file on the SFTP server
+            src_fh:                     file handle of file in the
+                                        'sierra_dump' directory
 
         Returns:
             bytes stream
