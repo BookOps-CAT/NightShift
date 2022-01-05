@@ -62,7 +62,7 @@ class TestDriveLive:
             remote_handle = drive.output_file(local_fh, "foo")
 
             assert remote_handle == "foo-01.mrc"
-            assert drive.sftp.listdir(drive.dst_dir) == ["foo-01.mrc"]
+            assert "foo-01.mrc" in drive.sftp.listdir(drive.dst_dir)
 
             # cleanup
             drive.sftp.remove(drive.dst_dir + "/foo-01.mrc")

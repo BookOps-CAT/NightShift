@@ -9,17 +9,17 @@ from nightshift.tasks import get_worldcat_brief_bib_matches, get_worldcat_full_b
 
 
 @pytest.mark.local
-def test_get_worldcat_brief_bib_matches_success(local_db, test_data, env_var):
-    local_db.execute(
+def test_get_worldcat_brief_bib_matches_success(test_session, test_data, env_var):
+    test_session.execute(
         update(Resource)
         .where(Resource.sierraId == 11111111, Resource.libraryId == 1)
         .values(distributorNumber="622708F6-78D7-453A-A7C5-3FE6853F3167")
     )
-    resources = local_db.query(Resource).filter_by(nid=1).all()
+    resources = test_session.query(Resource).filter_by(nid=1).all()
 
-    get_worldcat_brief_bib_matches(local_db, "NYP", resources)
+    get_worldcat_brief_bib_matches(test_session, "NYP", resources)
 
-    res = local_db.query(Resource).filter_by(nid=1).all()[0]
+    res = test_session.query(Resource).filter_by(nid=1).all()[0]
     query_record = res.queries[0]
     assert query_record.nid == 1
     assert query_record.match
@@ -30,18 +30,20 @@ def test_get_worldcat_brief_bib_matches_success(local_db, test_data, env_var):
 
 
 @pytest.mark.local
-def test_get_worldcat_brief_bib_matches_failure(local_db, test_data, env_var):
+def test_get_worldcat_brief_bib_matches_failure(test_session, test_data, env_var):
     # modify existing resource
-    local_db.execute(
-        update(Resource).where(Resource.nid == 1).values(distributorNumber="ABC#1234")
+    test_session.execute(
+        update(Resource)
+        .where(Resource.nid == 1)
+        .values(distributorNumber="ABC#1234", oclcMatchNumber=None)
     )
-    local_db.commit()
+    test_session.commit()
 
-    resources = local_db.query(Resource).filter_by(nid=1).all()
+    resources = test_session.query(Resource).filter_by(nid=1).all()
 
-    get_worldcat_brief_bib_matches(local_db, "NYP", resources)
+    get_worldcat_brief_bib_matches(test_session, "NYP", resources)
 
-    res = local_db.query(Resource).filter_by(nid=1).one()
+    res = test_session.query(Resource).filter_by(nid=1).one()
     assert res.oclcMatchNumber is None
     assert res.status == "open"
 
@@ -53,17 +55,17 @@ def test_get_worldcat_brief_bib_matches_failure(local_db, test_data, env_var):
 
 
 @pytest.mark.local
-def test_get_worldcat_full_bibs(local_db, test_data, env_var):
-    local_db.execute(
+def test_get_worldcat_full_bibs(test_session, test_data, env_var):
+    test_session.execute(
         update(Resource).where(Resource.nid == 1).values(oclcMatchNumber="779356905")
     )
 
-    local_db.commit()
+    test_session.commit()
 
-    resources = local_db.query(Resource).filter_by(nid=1).all()
+    resources = test_session.query(Resource).filter_by(nid=1).all()
     assert len(resources) == 1
 
-    get_worldcat_full_bibs(local_db, "NYP", resources)
+    get_worldcat_full_bibs(test_session, "NYP", resources)
 
-    res = local_db.query(Resource).filter_by(nid=1).one()
+    res = test_session.query(Resource).filter_by(nid=1).one()
     assert isinstance(res.fullBib, bytes)

@@ -1,28 +1,26 @@
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime
+
+# from datetime import datetime
 
 import pytest
-from pytest_sftpserver.sftp.server import SFTPServer
 
+from nightshift.comms.storage import get_credentials, Drive
 from nightshift.manager import process_resources
 
 
 @pytest.mark.firewalled
+@pytest.mark.local
 def test_process_resources(env_var, test_data):
     with does_not_raise():
         process_resources()
 
-
-# def calls_counter(func):
-#     def wrapper(*args, **kwargs):
-#         wrapper.count += 1
-#         return func(*args, **kwargs)
-
-#     wrapper.count = 0
-#     return wrapper
+    # cleanup
+    drive_creds = get_credentials()
+    with Drive(*drive_creds) as drive:
+        temp_files = drive.sftp.listdir(path=drive.dst_dir)
+        for file_handle in temp_files:
+            drive.sftp.remove(f"{drive.dst_dir}/{file_handle}")
 
 
-# @calls_counter
-# def sftpserver_multi_call(sftpserver):
-#     print(f"sftpserver call #: {sftpserver_multi_call.count}")
-#     return sftpserver.serve_content({})
+def test_process_resources_mocked():
+    pass
