@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
-import datetime
+from contextlib import nullcontext as does_not_raise
 
 import pytest
 from sqlalchemy import update
 
 from nightshift.datastore import Resource
-from nightshift.tasks import get_worldcat_brief_bib_matches, get_worldcat_full_bibs
+from nightshift.tasks import (
+    get_worldcat_brief_bib_matches,
+    get_worldcat_full_bibs,
+    ingest_new_files,
+)
 
 
 @pytest.mark.local
@@ -69,3 +73,22 @@ def test_get_worldcat_full_bibs(test_session, test_data, env_var):
 
     res = test_session.query(Resource).filter_by(nid=1).one()
     assert isinstance(res.fullBib, bytes)
+
+
+def test_ingest_new_files(
+    env_var,
+    test_data_core,
+    test_session,
+    mock_sftp_env,
+    mock_drive_unprocessed_files,
+    mock_drive_fetch_file,
+):
+    with does_not_raise():
+        ingest_new_files(test_session, "NYP", 1)
+
+    res = test_session.query(Resource).all()
+    assert len(res) == 2
+    assert res[0].standardNumber == "9780071830744"
+    assert res[0].resourceCategoryId == 1
+    assert res[1].standardNumber == "9780553906899"
+    assert res[1].resourceCategoryId == 1
