@@ -12,15 +12,9 @@ from nightshift.datastore_transactions import (
     retrieve_open_matched_resources_without_full_bib,
     retrieve_open_older_resources,
 )
-from nightshift.tasks import (
-    check_resources_sierra_state,
-    enhance_and_output_bibs,
-    get_worldcat_brief_bib_matches,
-    get_worldcat_full_bibs,
-    ingest_new_files,
-    transfer_to_drive,
-    update_status_to_upgraded,
-)
+
+
+from nightshift import tasks
 
 
 logger = logging.getLogger("nightshift")
@@ -36,19 +30,22 @@ def process_resources() -> None:
 
         for lib_nid, library in library_by_id().items():
 
+            logger.info(f"Processing {library} resources.")
+
             # ingest new resources
-            ingest_new_files(db_session, library, lib_nid)
+            tasks.ingest_new_files(db_session, library, lib_nid)
             logger.info(f"New {library} remote files have been ingested.")
 
             # search newly added resources
             resources = retrieve_new_resources(db_session, lib_nid)
 
             # perform searches for each resource and store results
-            get_worldcat_brief_bib_matches(db_session, library, resources)
-            logger.info(
-                f"Obtaining Worldcat matches for {len(resources)} {library} "
-                "new resources completed."
-            )
+            if resources:
+                tasks.get_worldcat_brief_bib_matches(db_session, library, resources)
+                logger.info(
+                    f"Obtaining Worldcat matches for {len(resources)} {library} "
+                    "new resources completed."
+                )
 
             # check & update status of older resources if changed in Sierra
             for res_category, res_cat_data in RESOURCE_CATEGORIES.items():
@@ -62,7 +59,9 @@ def process_resources() -> None:
                     )
                     # query Sierra platform to update their status if changed
                     if resources:
-                        check_resources_sierra_state(db_session, library, resources)
+                        tasks.check_resources_sierra_state(
+                            db_session, library, resources
+                        )
                         logger.info(
                             f"Checking Sierra status of {len(resources)} {library} "
                             f"{res_category} older resources completed."
@@ -82,7 +81,9 @@ def process_resources() -> None:
 
                     # perform WorldCat searches for open older resources
                     if resources:
-                        get_worldcat_brief_bib_matches(db_session, library, resources)
+                        tasks.get_worldcat_brief_bib_matches(
+                            db_session, library, resources
+                        )
                         logger.info(
                             f"Obtainig WorldCat matches for {len(resources)} "
                             f"{library} {res_category} older resources completed."
@@ -93,7 +94,7 @@ def process_resources() -> None:
                 db_session, lib_nid
             )
             if resources:
-                get_worldcat_full_bibs(db_session, library, resources)
+                tasks.get_worldcat_full_bibs(db_session, library, resources)
                 logger.info(
                     f"Downloading {len(resources)} {library} {res_category} "
                     "full records from WorldCat completed."
@@ -107,21 +108,23 @@ def process_resources() -> None:
 
                 # manipulate Worldcat bibs
                 if resources:
-                    enhance_and_output_bibs(library, resources)
+                    tasks.enhance_and_output_bibs(library, resources)
                     logger.info(
                         f"Enhancing {len(resources)} {library} {res_category} "
                         "resources completed."
                     )
 
                     # output MARC records to the network drive
-                    file = transfer_to_drive(library, res_category)
+                    file = tasks.transfer_to_drive(library, res_category)
                     logger.info(
                         f"Transfering {len(resources)} {library} {res_category} "
                         f"resources to the network drive completed ({file})."
                     )
 
                     # update resources as upgraded
-                    update_status_to_upgraded(db_session, lib_nid, file, resources)
+                    tasks.update_status_to_upgraded(
+                        db_session, lib_nid, file, resources
+                    )
                     logger.info(
                         f"Upgrading status of {len(resources)} {library} "
                         f"{res_category} resources completed."
