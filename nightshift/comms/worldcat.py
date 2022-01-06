@@ -104,6 +104,7 @@ class Worldcat:
         """
         try:
             access_token = WorldcatAccessToken(**credentials)
+            logger.info("Worldcat Metadata API access token obtained.")
             return access_token
         except WorldcatAuthorizationError:
             logger.error("Unable to obtain Worldcat MetadataAPI access token.")
