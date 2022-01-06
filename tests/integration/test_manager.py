@@ -38,9 +38,9 @@ class TestProcessResourcesMocked:
         mock_sftp_env,
         mock_drive_unprocessed_files,
         mock_drive_fetch_file,
-        mock_worldcat_creds,
-        mock_successful_post_token_response,
-        mock_successful_session_get_request,
+        mock_worldcat_brief_bib_matches,
+        mock_check_resources_sierra_status,
+        mock_get_worldcat_full_bibs,
     ):
         with does_not_raise():
             process_resources()
