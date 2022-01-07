@@ -24,6 +24,7 @@ def process_resources() -> None:
     """
     Processes newly added and older open resources.
 
+    temp.mrc deleted after transfering content to SFTP (`tasks.transfer_to_drive()`)
 
     """
     with session_scope() as db_session:
