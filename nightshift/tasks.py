@@ -276,5 +276,6 @@ def update_status_to_upgraded(
             resource.libraryId,
             status="upgraded_bot",
             outputId=out_file_record.nid,
+            upgradeTimestamp=datetime.utcnow(),
         )
     db_session.commit()
