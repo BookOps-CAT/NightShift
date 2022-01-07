@@ -27,15 +27,16 @@ from ..conftest import (
 
 def test_check_resources_sierra_state_nyp_platform(
     test_session,
-    test_data_core,
+    test_data_rich,
     stub_resource,
     mock_platform_env,
     mock_successful_platform_post_token_response,
     mock_successful_platform_session_response,
 ):
+    stub_resource = test_session.query(Resource).filter_by(nid=1).one()
     stub_resource.suppressed = True
     stub_resource.status = "open"
-    test_session.add(stub_resource)
+
     test_session.commit()
 
     check_resources_sierra_state(test_session, "NYP", [stub_resource])
@@ -47,14 +48,14 @@ def test_check_resources_sierra_state_nyp_platform(
 
 def test_check_resources_sierra_state_bpl_solr(
     test_session,
-    test_data_core,
+    test_data_rich,
     stub_resource,
     mock_solr_env,
     mock_successful_solr_session_response,
 ):
+    stub_resource = test_session.query(Resource).filter_by(nid=1).one()
     stub_resource.suppressed = False
     stub_resource.status = "expired"
-    test_session.add(stub_resource)
     test_session.commit()
 
     check_resources_sierra_state(test_session, "BPL", [stub_resource])
@@ -298,6 +299,8 @@ def test_update_status_to_upgraded(test_session, test_data_rich, caplog):
     assert out_file_record is not None
 
     results = test_session.query(Resource).all()
+    assert len(results) > 0
     for resource in results:
         assert resource.status == "upgraded_bot"
-        assert resource.outputId == 1
+        assert resource.outputId == 2
+        assert resource.upgradeTimestamp is not None

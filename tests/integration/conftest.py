@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
 from io import BytesIO
 import os
 
@@ -7,7 +8,7 @@ import pytest
 
 from nightshift import tasks
 from nightshift.comms.storage import Drive
-from nightshift.datastore import WorldcatQuery
+from nightshift.datastore import OutputFile, WorldcatQuery
 from nightshift.datastore_transactions import update_resource
 
 
@@ -20,6 +21,8 @@ def env_var(monkeypatch, local_test_config):
 
 @pytest.fixture
 def test_data(test_session, test_data_core, stub_resource):
+    test_session.add(OutputFile(libraryId=1, handle="spam.mrc"))
+    test_session.commit()
     test_session.add(stub_resource)
     test_session.commit()
 
@@ -96,3 +99,21 @@ def mock_get_worldcat_full_bibs(monkeypatch):
         session.commit()
 
     monkeypatch.setattr(tasks, "get_worldcat_full_bibs", _patch)
+
+
+@pytest.fixture
+def mock_transfer_to_drive(monkeypatch):
+    def _patch(*args):
+        today = datetime.now().date()
+        library = args[0]
+        res_cat = args[1]
+        return f"{today:%y%m%d}-{library}-{res_cat}.mrc"
+
+    monkeypatch.setattr(tasks, "transfer_to_drive", _patch)
+
+    yield
+
+    try:
+        os.remove("temp.mrc")
+    except:
+        pass

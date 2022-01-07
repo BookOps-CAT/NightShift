@@ -9,6 +9,8 @@ import pytest
 
 from nightshift.marc.marc_parser import BibReader
 
+from nightshift.datastore import OutputFile
+
 
 class MockOSError:
     def __init__(self, *args, **kwargs):
@@ -43,8 +45,10 @@ def test_log(monkeypatch, local_test_config):
 
 @pytest.fixture
 def test_data_rich(stub_resource, test_session, test_data_core):
-    test_session.add(stub_resource)
+    test_session.add(OutputFile(libraryId=1, handle="spam.mrc"))
+    test_session.commit()
 
+    test_session.add(stub_resource)
     test_session.commit()
 
 
