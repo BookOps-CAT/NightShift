@@ -1,11 +1,11 @@
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 import pytest
 
 from nightshift.comms.storage import get_credentials, Drive
-from nightshift.datastore import Resource
+from nightshift.datastore import Resource, WorldcatQuery
 from nightshift.manager import process_resources
 
 
@@ -63,7 +63,7 @@ class TestProcessResourcesMocked:
     and BPL Solr. It still uses local Postgres db
     """
 
-    def test_blank_state_db(
+    def test_new_resources(
         self,
         env_var,
         test_session,
@@ -89,5 +89,48 @@ class TestProcessResourcesMocked:
             assert res.status == "upgraded_bot"
             assert res.upgradeTimestamp is not None
 
-    def test_older_resources(self, env_var, test_data, mock_sftp_env):
-        pass
+    def test_older_resources(
+        self,
+        env_var,
+        test_session,
+        test_data,
+        mock_sftp_env,
+        stub_resource,
+        mock_drive_unprocessed_files_empty,
+        mock_check_resources_sierra_state_open,
+        mock_worldcat_brief_bib_matches,
+        mock_get_worldcat_full_bibs,
+        mock_transfer_to_drive,
+    ):
+        resource = stub_resource
+        resource.status = "open"
+        resource.fullBib = None
+        resource.oclcMatchNumber = None
+        resource.upgradeTimestamp = None
+        resource.queries = [
+            WorldcatQuery(
+                match=False,
+                timestamp=datetime.utcnow().date() - timedelta(days=31),
+            )
+        ]
+        resource.outputId = None
+
+        test_session.add(resource)
+        test_session.commit()
+
+        with does_not_raise():
+            process_resources()
+
+        results = test_session.query(Resource).all()
+        assert len(results) == 1
+
+        res = results[0]
+
+        assert len(res.queries) == 2
+        assert res.queries[0].match is False
+        assert res.queries[1].match is True
+        assert res.oclcMatchNumber is not None
+        assert res.fullBib is not None
+        assert res.outputId is not None
+        assert res.status == "upgraded_bot"
+        assert res.upgradeTimestamp is not None
