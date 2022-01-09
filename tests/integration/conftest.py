@@ -43,6 +43,21 @@ def mock_drive_unprocessed_files(monkeypatch):
 
 
 @pytest.fixture
+def mock_drive_unprocessed_files_empty(monkeypatch):
+    """
+    mocks workflow only for NYP
+    """
+
+    def _files(*args):
+        if args[2] == "NYP":
+            return []
+        else:
+            return []
+
+    monkeypatch.setattr(tasks, "isolate_unprocessed_files", _files)
+
+
+@pytest.fixture
 def mock_drive_fetch_file(monkeypatch):
     def _fetch(*args):
         with open("tests/nyp-ebook-sample.mrc", "rb") as test_file:
@@ -76,7 +91,6 @@ def mock_check_resources_sierra_state_open(monkeypatch):
         session = args[0]
         resources = args[2]
         for res in resources:
-            res.full_bib
             res.suppressed = False
             res.status = "open"
         session.commit()
