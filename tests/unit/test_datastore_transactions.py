@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
 from contextlib import nullcontext as does_not_raise
+from copy import deepcopy
 
 import pytest
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
+
+
+from nightshift.constants import RESOURCE_CATEGORIES
 
 from nightshift.datastore import (
     Base,
@@ -26,6 +30,7 @@ from nightshift.datastore_transactions import (
     retrieve_new_resources,
     retrieve_open_older_resources,
     retrieve_processed_files,
+    set_resources_to_expired,
     update_resource,
 )
 
@@ -561,6 +566,66 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
 def test_retrieve_processed_files(test_session, test_data_rich, libraryId, expectation):
     results = retrieve_processed_files(test_session, libraryId)
     assert results == expectation
+
+
+def test_set_resources_to_expired(test_session, test_data_rich, stub_resource):
+    nid = RESOURCE_CATEGORIES["ebook"]["nid"]
+    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            status="open",
+            bibDate=datetime.utcnow() - timedelta(days=age + 1),
+        )
+    )
+    test_session.commit()
+
+    result = set_resources_to_expired(test_session, nid, age)
+    assert result == 1
+
+    resource_not_changed = (
+        test_session.query(Resource).filter_by(sierraId=11111111).one()
+    )
+    resource_set_to_expired = (
+        test_session.query(Resource).filter_by(sierraId=22222222).one()
+    )
+    assert resource_not_changed.status == "upgraded_bot"
+    assert resource_set_to_expired.status == "expired"
+
+
+def test_set_resources_to_expired_too_early(
+    test_session, test_data_rich, stub_resource
+):
+    nid = RESOURCE_CATEGORIES["ebook"]["nid"]
+    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            status="open",
+            bibDate=datetime.utcnow() - timedelta(days=age - 1),
+        )
+    )
+    test_session.commit()
+
+    result = set_resources_to_expired(test_session, nid, age)
+    assert result == 0
+
+    resource_not_changed = (
+        test_session.query(Resource).filter_by(sierraId=11111111).one()
+    )
+    resource_set_to_expired = (
+        test_session.query(Resource).filter_by(sierraId=22222222).one()
+    )
+    assert resource_not_changed.status == "upgraded_bot"
+    assert resource_set_to_expired.status == "open"
 
 
 def test_update_resource(test_session):

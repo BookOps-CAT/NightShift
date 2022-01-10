@@ -265,6 +265,34 @@ def retrieve_processed_files(session: Session, libraryId: int) -> list[str]:
     return [instance.handle for instance in instances]
 
 
+def set_resources_to_expired(
+    session: Session, resourceCategoryId: int, age: int
+) -> int:
+    """
+    Updates status from 'open' to 'expired' in resources with given category
+    and age in days since bib created in Sierra.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        resourceCategoryId:     `nightshift.datastore.ResourceCategory.nid` identifier
+        age:                    number of days since bib created in Sierra
+
+    Returns:
+        number of updated rows in the database
+    """
+    result = session.execute(
+        update(Resource)
+        .where(
+            Resource.resourceCategoryId == resourceCategoryId,
+            Resource.status == "open",
+            Resource.bibDate < datetime.utcnow() - timedelta(days=age),
+        )
+        .values(status="expired")
+        # .execution_options(synchronize_session="fetch")
+    )
+    return result.rowcount
+
+
 def update_resource(session, sierraId, libraryId, **kwargs) -> Optional[Resource]:
     """
     Updates Resource record.
