@@ -7,10 +7,12 @@ import logging
 from nightshift.constants import library_by_id, RESOURCE_CATEGORIES
 from nightshift.datastore import session_scope
 from nightshift.datastore_transactions import (
+    delete_resources,
     retrieve_new_resources,
     retrieve_open_matched_resources_with_full_bib_obtained,
     retrieve_open_matched_resources_without_full_bib,
     retrieve_open_older_resources,
+    set_resources_to_expired,
 )
 
 
@@ -132,6 +134,27 @@ def process_resources() -> None:
                     )
 
 
-def perform_db_maintenance():
-    pass
-    # mark resources as expired
+def perform_db_maintenance() -> None:
+    """
+    Marks resources as expired or deletes them if past certain age.
+    """
+    with session_scope() as db_session:
+        for res_category, res_cat_data in RESOURCE_CATEGORIES.items():
+
+            # set to expired
+            expiration_age = res_cat_data["query_days"][-1][1]
+
+            tally = set_resources_to_expired(
+                db_session, res_cat_data["nid"], age=expiration_age
+            )
+            logger.info(
+                f"Changed {tally} {res_category} resources status to 'expired'."
+            )
+
+            # delete resources 3 months older after they expired
+            deletion_age = expiration_age + 90
+            tally = delete_resources(db_session, res_cat_data["nid"], deletion_age)
+            logger.info(
+                f"Deleted {tally} {res_category} resources older than "
+                f"{deletion_age} days from the database."
+            )

@@ -1,12 +1,14 @@
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timedelta
+import logging
 import os
 
 import pytest
 
 from nightshift.comms.storage import get_credentials, Drive
+from nightshift.constants import RESOURCE_CATEGORIES
 from nightshift.datastore import Resource, WorldcatQuery
-from nightshift.manager import process_resources
+from nightshift.manager import process_resources, perform_db_maintenance
 
 
 @pytest.mark.firewalled
@@ -134,3 +136,28 @@ class TestProcessResourcesMocked:
         assert res.outputId is not None
         assert res.status == "upgraded_bot"
         assert res.upgradeTimestamp is not None
+
+
+@pytest.mark.parametrize("age,expectation", [(89, 0)])
+def test_perform_db_maintenance_set_expired(
+    caplog, env_var, test_session, test_data, age, expectation
+):
+    # expired resource
+    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            status="open",
+            bibDate=datetime.utcnow() - timedelta(days=age),
+            queries=[WorldcatQuery(match=False)],
+        )
+    )
+    test_session.commit()
+
+    with caplog.at_level(logging.INFO):
+        perform_db_maintenance()
+
+    assert f"Changed {expectation} ebook resources status to 'expired'." in caplog.text
