@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, delete, update
 from sqlalchemy.orm import Session
 
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
@@ -106,6 +106,28 @@ def add_source_file(
     instance = insert_or_ignore(session, SourceFile, libraryId=libraryId, handle=handle)
     session.flush()
     return instance
+
+
+def delete_resources(session: Session, resourceCategoryId: int, age: int) -> int:
+    """
+    Deletes resources from the database based on category and days since
+    bib creation in Sierra.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        resourceCategoryId:     `nightshift.datastore.ResourceCategory.nid` identifier
+        age:                    number of days since bib created in Sierra
+
+    Returns:
+        number of deleted rows in the database
+    """
+    result = session.execute(
+        delete(Resource).where(
+            (Resource.resourceCategoryId == resourceCategoryId)
+            & (Resource.bibDate < datetime.utcnow() - timedelta(days=age)),
+        )
+    )
+    return result.rowcount
 
 
 def insert_or_ignore(session, model, **kwargs):
@@ -283,12 +305,11 @@ def set_resources_to_expired(
     result = session.execute(
         update(Resource)
         .where(
-            Resource.resourceCategoryId == resourceCategoryId,
-            Resource.status == "open",
-            Resource.bibDate < datetime.utcnow() - timedelta(days=age),
+            (Resource.resourceCategoryId == resourceCategoryId)
+            & (Resource.status == "open")
+            & (Resource.bibDate < datetime.utcnow() - timedelta(days=age))
         )
         .values(status="expired")
-        # .execution_options(synchronize_session="fetch")
     )
     return result.rowcount
 

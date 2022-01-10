@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
 from contextlib import nullcontext as does_not_raise
-from copy import deepcopy
 
 import pytest
 from sqlalchemy import create_engine, inspect
@@ -23,6 +22,7 @@ from nightshift.datastore_transactions import (
     add_output_file,
     add_resource,
     add_source_file,
+    delete_resources,
     init_db,
     insert_or_ignore,
     retrieve_open_matched_resources_with_full_bib_obtained,
@@ -142,6 +142,72 @@ def test_add_source_file(test_session, test_data_core):
     assert rec.nid == 3
     assert rec.libraryId == 1
     assert rec.handle == "bar.mrc"
+
+
+def test_delete_resources(test_session, test_data_rich, stub_resource):
+    nid = RESOURCE_CATEGORIES["ebook"]["nid"]
+    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            status="expired",
+            bibDate=datetime.utcnow() - timedelta(days=age + 91),
+        )
+    )
+    test_session.commit()
+
+    result = delete_resources(test_session, nid, age + 90)
+    assert result == 1
+
+    control_resource = test_session.query(Resource).filter_by(sierraId=11111111).one()
+    resource_deleted = (
+        test_session.query(Resource).filter_by(sierraId=22222222).one_or_none()
+    )
+    assert control_resource.status == "upgraded_bot"
+    assert resource_deleted is None
+
+    # check related table queries
+    # only query related to control resource
+    result = test_session.query(WorldcatQuery).all()
+    assert len(result) == 1
+    assert result[0].resourceId == 1
+
+
+def test_delete_resources_too_early(test_session, test_data_rich, stub_resource):
+    nid = RESOURCE_CATEGORIES["ebook"]["nid"]
+    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            status="expired",
+            bibDate=datetime.utcnow() - timedelta(days=age + 89),
+            queries=[WorldcatQuery(match=False)],
+        )
+    )
+    test_session.commit()
+
+    result = delete_resources(test_session, nid, age + 90)
+    assert result == 0
+
+    control_resource = test_session.query(Resource).filter_by(sierraId=11111111).one()
+    resource_deleted = (
+        test_session.query(Resource).filter_by(sierraId=22222222).one_or_none()
+    )
+    assert control_resource.status == "upgraded_bot"
+    assert resource_deleted is not None
+
+    # check related table queries
+    # only query related to control resource
+    result = test_session.query(WorldcatQuery).all()
+    assert len(result) == 2
 
 
 def test_insert_or_ignore_new(test_session):
