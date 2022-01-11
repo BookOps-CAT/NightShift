@@ -230,7 +230,9 @@ class WorldcatQuery(Base):
     __tablename__ = "worldcat_query"
 
     nid = Column(Integer, primary_key=True)
-    resourceId = Column(Integer, ForeignKey("resource.nid"), nullable=False)
+    resourceId = Column(
+        Integer, ForeignKey("resource.nid", ondelete="CASCADE"), nullable=False
+    )
     match = Column(Boolean, nullable=False)
     response = Column(JSONB)
     timestamp = Column(DateTime, default=datetime.now(), nullable=False)
