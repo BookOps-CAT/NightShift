@@ -147,14 +147,16 @@ def perform_db_maintenance() -> None:
             tally = set_resources_to_expired(
                 db_session, res_cat_data["nid"], age=expiration_age
             )
+            db_session.commit()
             logger.info(
-                f"Changed {tally} {res_category} resources status to 'expired'."
+                f"Changed {tally} {res_category} resource(s) status to 'expired'."
             )
 
             # delete resources 3 months older after they expired
             deletion_age = expiration_age + 90
             tally = delete_resources(db_session, res_cat_data["nid"], deletion_age)
+            db_session.commit()
             logger.info(
-                f"Deleted {tally} {res_category} resources older than "
+                f"Deleted {tally} {res_category} resource(s) older than "
                 f"{deletion_age} days from the database."
             )
