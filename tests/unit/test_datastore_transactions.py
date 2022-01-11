@@ -144,7 +144,7 @@ def test_add_source_file(test_session, test_data_core):
     assert rec.handle == "bar.mrc"
 
 
-def test_delete_resources(test_session, test_data_rich, stub_resource):
+def test_delete_resources(test_session, test_data_rich):
     nid = RESOURCE_CATEGORIES["ebook"]["nid"]
     age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
 
@@ -156,6 +156,7 @@ def test_delete_resources(test_session, test_data_rich, stub_resource):
             resourceCategoryId=1,
             status="expired",
             bibDate=datetime.utcnow() - timedelta(days=age + 91),
+            queries=[WorldcatQuery(match=False)],
         )
     )
     test_session.commit()
@@ -177,7 +178,7 @@ def test_delete_resources(test_session, test_data_rich, stub_resource):
     assert result[0].resourceId == 1
 
 
-def test_delete_resources_too_early(test_session, test_data_rich, stub_resource):
+def test_delete_resources_too_early(test_session, test_data_rich):
     nid = RESOURCE_CATEGORIES["ebook"]["nid"]
     age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
 
