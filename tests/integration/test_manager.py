@@ -138,12 +138,13 @@ class TestProcessResourcesMocked:
         assert res.upgradeTimestamp is not None
 
 
-@pytest.mark.parametrize("age,expectation", [(89, 0)])
+@pytest.mark.parametrize(
+    "age,status,tally", [(91, "open", 0), (179, "open", 0), (181, "expired", 1)]
+)
 def test_perform_db_maintenance_set_expired(
-    caplog, env_var, test_session, test_data, age, expectation
+    caplog, env_var, test_session, test_data, age, status, tally
 ):
     # expired resource
-    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
     test_session.add(
         Resource(
             sierraId=22222222,
@@ -151,7 +152,7 @@ def test_perform_db_maintenance_set_expired(
             sourceId=1,
             resourceCategoryId=1,
             status="open",
-            bibDate=datetime.utcnow() - timedelta(days=age),
+            bibDate=datetime.utcnow().date() - timedelta(days=age),
             queries=[WorldcatQuery(match=False)],
         )
     )
@@ -160,4 +161,41 @@ def test_perform_db_maintenance_set_expired(
     with caplog.at_level(logging.INFO):
         perform_db_maintenance()
 
-    assert f"Changed {expectation} ebook resources status to 'expired'." in caplog.text
+    assert f"Changed {tally} ebook resource(s) status to 'expired'." in caplog.text
+
+    resource = test_session.query(Resource).filter_by(sierraId=22222222).one()
+    assert resource.status == status
+
+
+@pytest.mark.parametrize(
+    "age,tally,expectation",
+    [(91, 0, Resource), (191, 0, Resource), (300, 1, type(None))],
+)
+def test_perform_db_maintenance_delete(
+    caplog, env_var, test_session, test_data, age, tally, expectation
+):
+    expiration_age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    # expired resource
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            status="open",
+            bibDate=datetime.utcnow().date() - timedelta(days=age),
+            queries=[WorldcatQuery(match=False)],
+        )
+    )
+    test_session.commit()
+
+    with caplog.at_level(logging.INFO):
+        perform_db_maintenance()
+
+    assert (
+        f"Deleted {tally} ebook resource(s) older than {expiration_age + 90} days from the database."
+        in caplog.text
+    )
+    resource = test_session.query(Resource).filter_by(sierraId=22222222).one_or_none()
+    assert isinstance(resource, expectation)
