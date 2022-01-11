@@ -307,7 +307,7 @@ def set_resources_to_expired(
         .where(
             (Resource.resourceCategoryId == resourceCategoryId)
             & (Resource.status == "open")
-            & (Resource.bibDate < datetime.utcnow() - timedelta(days=age))
+            & (Resource.bibDate < datetime.utcnow().date() - timedelta(days=age))
         )
         .values(status="expired")
     )
