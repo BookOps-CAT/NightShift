@@ -38,6 +38,7 @@ class BibEnhancer:
 
     Invoking `manipulate()` method on the instance of this class does the following:
      - removes unwanted MARC tags specified in `constants.RESOURCE_CATEGORIES`,
+     - deletes 6xx from unsupported thesauri,
      - adds local tags preserved from the original Sierra bib specified in
         `constants.RESOURCE_CATEGORIES`
      - creates for each resource type an appropriate call number tag (099 for BPL or
@@ -47,6 +48,7 @@ class BibEnhancer:
         records suppressed from public view
     - adds Nightshift name and version to bib Sierra initials MARC tag (947 for BPL,
         901 for NYPL)
+    - removes OCLC prefix from the 001 tag for NYPL records
 
     Calling `save2file()` method on the instance of this class serializes pymarc object
     into MARC 21 and saves it to a temporary file.
@@ -72,6 +74,7 @@ class BibEnhancer:
         try:
             self.bib = worldcat_response_to_pymarc(resource.fullBib)
         except TypeError:
+            logger.error("Unable to serialize Worldcat response to pymarc object.")
             raise
 
     def manipulate(self) -> None:
@@ -79,8 +82,12 @@ class BibEnhancer:
         Manipulates WorldCat record according to `nightshift.constants` module
         specs.
         """
+
         # delete unwanted MARC tags
         self._purge_tags()
+
+        # remove 6xx tags with terms from unsupported thesauri
+        self._remove_unsupported_subject_tags()
 
         # add tags from the local bib
         self._add_local_tags()
@@ -93,6 +100,10 @@ class BibEnhancer:
 
         # add bot's initials
         self._add_initials_tag()
+
+        # prep OCLC control number
+        if self.library == "NYP":
+            self._digits_only_in_tag_001()
 
     def save2file(self) -> None:
         """
@@ -152,13 +163,14 @@ class BibEnhancer:
             )
         else:
             logger.warning(
-                f"Attempting to create a call number for unsupported resource category for "
-                f"{self.library} b{self.resource.sierraId}a."
+                f"Attempting to create a call number for unsupported resource category "
+                f"for {self.library} b{self.resource.sierraId}a."
             )
 
     def _add_command_tag(self) -> None:
         """
-        Adds Sierra's command MARC tag (949) specific to resource category and each library.
+        Adds Sierra's command MARC tag (949) specific to resource category and
+        each library.
 
         Includes commands for matching Sierra bib # (ov=) Sierra bib format (b2=), and
         optional suppression (b2=) code.
@@ -191,7 +203,8 @@ class BibEnhancer:
         )
         self.bib.add_field(command_tag)
         logger.debug(
-            f"Added 949 command tag: {command_tag.value()} to {self.library} b{self.resource.sierraId}a."
+            f"Added 949 command tag: {command_tag.value()} to {self.library} "
+            f"b{self.resource.sierraId}a."
         )
 
     def _add_local_tags(self) -> None:
@@ -205,11 +218,13 @@ class BibEnhancer:
                 self.bib.add_ordered_field(tag)
                 fields.append(tag.tag)
             logger.debug(
-                f"Added following local fields {fields} to {self.library} b{self.resource.sierraId}a."
+                f"Added following local fields {fields} to {self.library} "
+                f"b{self.resource.sierraId}a."
             )
         else:
             logger.debug(
-                f"No local tags to keep were found for {self.library} b{self.resource.sierraId}a."
+                f"No local tags to keep were found for {self.library} "
+                f"b{self.resource.sierraId}a."
             )
 
     def _add_initials_tag(self) -> None:
@@ -234,6 +249,14 @@ class BibEnhancer:
             f"Added initials tag {tag} to {self.library} b{self.resource.sierraId}a."
         )
 
+    def _digits_only_in_tag_001(self) -> None:
+        """
+        Removes OCLC control number prefix from the 001 tag
+        """
+        controlNo = self.bib["001"].data
+        controlNo_without_prefix = self._remove_oclc_prefix(controlNo)
+        self.bib["001"].data = controlNo_without_prefix
+
     def _purge_tags(self) -> None:
         """
         Removes MARC tags indicated in `constants.RESOURCE_CATEGORIES`
@@ -243,5 +266,49 @@ class BibEnhancer:
             if tag in self.bib:
                 self.bib.remove_fields(tag)
         logger.debug(
-            f"Removed {DELETE_TAGS[self.resource.resourceCategoryId]} from {self.library} b{self.resource.sierraId}a."
+            f"Removed {DELETE_TAGS[self.resource.resourceCategoryId]} from "
+            f"{self.library} b{self.resource.sierraId}a."
         )
+
+    def _remove_oclc_prefix(self, controlNo: str) -> str:
+        """
+        Returns control number that consist only of digits
+        """
+        if controlNo.startswith("ocm") or controlNo.startswith("ocn"):
+            return controlNo[3:]
+        elif controlNo.startswith("on"):
+            return controlNo[2:]
+        else:
+            return controlNo
+
+    def _remove_unsupported_subject_tags(self) -> None:
+        """
+        Removes from the bib any 6xx tags that include terms from unsupported
+        thesauri.
+        Acceptable terms: LCSH, FAST, GSFAD, LCGFT, lCTGM
+        """
+        for field in self.bib.subjects():
+            # delete locally coded tags
+            if field.tag.startswith("69"):
+                self.bib.remove_field(field)
+                logger.debug(
+                    "Local term in subject tag. "
+                    f"Removed {field.tag} from {self.library} "
+                    f"b{self.resource.sierraId}a."
+                )
+
+            elif field.indicator2 == "0":  # LCSH
+                pass
+            elif field.indicator2 == "7":
+                term_src = field["2"]
+                if term_src.lower() in ("lcsh", "fast", "gsafd", "lcgft", "lctgm"):
+                    pass
+                else:
+                    logger.debug(
+                        "Unsupported thesaurus. "
+                        f"Removed {field} from {self.library} "
+                        f"b{self.resource.sierraId}a."
+                    )
+                    self.bib.remove_field(field)
+            else:
+                self.bib.remove_field(field)

@@ -176,6 +176,11 @@ class TestBibEnhancer:
         be._add_initials_tag()
         assert str(be.bib) == bib_before
 
+    def test_digits_only_in_tag_001(self, stub_resource):
+        be = BibEnhancer(stub_resource)
+        be._digits_only_in_tag_001()
+        assert be.bib["001"].data == "850939580"
+
     def test_purge_tags(self, caplog, stub_resource):
         be = BibEnhancer(stub_resource)
         fields = [
@@ -215,6 +220,112 @@ class TestBibEnhancer:
         with does_not_raise():
             be._purge_tags()
 
+    @pytest.mark.parametrize("arg", ["ocm12345", "ocn12345", "on12345", "12345"])
+    def test_remove_oclc_prefix(self, arg, stub_resource):
+        be = BibEnhancer(stub_resource)
+        assert be._remove_oclc_prefix(arg) == "12345"
+
+    @pytest.mark.parametrize(
+        "tag,expectation",
+        [
+            pytest.param(
+                Field(tag="650", indicators=[" ", "0"], subfields=["a", "Foo."]),
+                1,
+                id="LCSH",
+            ),
+            pytest.param(
+                Field(tag="690", indicators=[" ", "0"], subfields=["a", "Foo."]),
+                0,
+                id="local SH",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "lcsh"],
+                ),
+                1,
+                id="LCSH subfield $2 7",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "fast"],
+                ),
+                1,
+                id="FAST",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "gsafd"],
+                ),
+                1,
+                id="GSAFD",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "lcgft"],
+                ),
+                1,
+                id="LCGFT",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "lctgm"],
+                ),
+                1,
+                id="LCTGM",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "sears"],
+                ),
+                0,
+                id="Other dict",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "4"],
+                    subfields=["a", "Foo.", "2", "lcsh"],
+                ),
+                0,
+                id="2nd ind = 4",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "1"],
+                    subfields=["a", "Foo."],
+                ),
+                0,
+                id="Children's LCSH",
+            ),
+        ],
+    )
+    def test_remove_unsupported_subject_tags(self, stub_resource, tag, expectation):
+        be = BibEnhancer(stub_resource)
+
+        # prep - remove any existing tags for tests
+        for f in be.bib.subjects():
+            be.bib.remove_field(f)
+
+        assert len(be.bib.subjects()) == 0
+
+        be.bib.add_field(tag)
+        be._remove_unsupported_subject_tags()
+
+        assert len(be.bib.subjects()) == expectation
+
     def test_manipulate(self, stub_resource):
         stub_resource.resourceCategoryId = 1
         stub_resource.libraryId = 1
@@ -244,6 +355,11 @@ class TestBibEnhancer:
         assert str(be.bib["091"]) == "=091  \\\\$aeNYPL Book"
         assert str(be.bib["901"]) == f"=901  \\\\$a{__title__}/{__version__}"
         assert str(be.bib["949"]) == "=949  \\\\$a*ov=b11111111a;b2=z;"
+
+        # check if fields have been duplicated by accident
+        assert len(be.bib.get_fields("001")) == 1
+        assert len(be.bib.get_fields("091")) == 1
+        assert len(be.bib.get_fields("037")) == 1
 
     def test_save2file(self, caplog, stub_resource):
         be = BibEnhancer(stub_resource)
