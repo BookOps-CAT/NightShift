@@ -114,12 +114,11 @@ def test_BibReader_fields2keep_eresource(arg1, arg2, stub_marc, fake_BibReader):
 
     pickled = fake_BibReader._fields2keep(bib=stub_marc, resource_category=arg2)
     result = pickle.loads(pickled)
-    assert len(result) == 5
-    assert result[0].tag == "001"
-    assert result[1].tag == "020"
-    assert result[2].tag == "037"
+    assert len(result) == 4
+    assert result[0].tag == "020"
+    assert result[1].tag == "037"
+    assert result[2].tag == "856"
     assert result[3].tag == "856"
-    assert result[4].tag == "856"
 
 
 @pytest.mark.parametrize(
