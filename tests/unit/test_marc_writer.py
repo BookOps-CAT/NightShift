@@ -179,7 +179,7 @@ class TestBibEnhancer:
     @pytest.mark.parametrize(
         "library,tag,field_str",
         [
-            ("NYP", "945", "=945  \\\\$ab11111111a"),
+            ("NYP", "945", "=945  \\\\$a.b11111111a"),
             ("BPL", "907", "=907  \\\\$ab11111111a"),
         ],
     )
@@ -367,6 +367,7 @@ class TestBibEnhancer:
         assert str(be.bib["856"]) == "=856  04$uurl_here$2opac msg"
         assert str(be.bib["091"]) == "=091  \\\\$aeNYPL Book"
         assert str(be.bib["901"]) == f"=901  \\\\$a{__title__}/{__version__}"
+        assert str(be.bib["945"]) == "=945  \\\\$a.b11111111a"
         assert str(be.bib["949"]) == "=949  \\\\$a*b2=z;"
 
         # check if fields have been duplicated by accident

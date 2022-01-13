@@ -92,7 +92,7 @@ def test_enhance_and_output_bibs(caplog, test_session, test_data_rich):
         bib = next(reader)
 
     assert bib["091"].value() == "eNYPL Book"
-    assert bib["945"].value() == "b11111111a"
+    assert bib["945"].value() == ".b11111111a"
     assert bib["949"].value() == "*b2=z;"
     assert bib["901"].value() == "NightShift/0.1.0"
 

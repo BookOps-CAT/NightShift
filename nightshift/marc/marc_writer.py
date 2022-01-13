@@ -257,14 +257,15 @@ class BibEnhancer:
         """
         if self.library == "NYP":
             overlay_tag = "945"
+            value = f".b{self.resource.sierraId}a"
         elif self.library == "BPL":
             overlay_tag = "907"
-
+            value = f"b{self.resource.sierraId}a"
         self.bib.add_field(
             Field(
                 tag=overlay_tag,
                 indicators=[" ", " "],
-                subfields=["a", f"b{self.resource.sierraId}a"],
+                subfields=["a", value],
             )
         )
 
