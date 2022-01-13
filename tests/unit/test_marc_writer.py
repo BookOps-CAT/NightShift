@@ -80,16 +80,16 @@ class TestBibEnhancer:
     @pytest.mark.parametrize(
         "resourceId,suppressed,libraryId,expectation",
         [
-            pytest.param(1, False, 1, "*ov=b11111111a;b2=z;", id="nyp-ebook"),
-            pytest.param(1, False, 2, "*ov=b11111111a;b2=x;", id="bpl-ebook"),
-            pytest.param(1, True, 1, "*ov=b11111111a;b2=z;b3=n;", id="nyp-ebook-supp"),
-            pytest.param(1, True, 2, "*ov=b11111111a;b2=x;b3=n;", id="bpl-ebook-supp"),
-            pytest.param(2, False, 1, "*ov=b11111111a;b2=n;", id="nyp-eaudio"),
-            pytest.param(2, False, 2, "*ov=b11111111a;b2=z;", id="bpl-eaudio"),
-            pytest.param(3, True, 1, "*ov=b11111111a;b2=3;b3=n;", id="nyp-evideo-supp"),
-            pytest.param(3, True, 2, "*ov=b11111111a;b2=v;b3=n;", id="bpl-evideo-supp"),
-            pytest.param(4, False, 1, "*ov=b11111111a;b2=a;", id="nyp-print"),
-            pytest.param(4, False, 2, "*ov=b11111111a;b2=a;", id="bpl-print"),
+            pytest.param(1, False, 1, "*b2=z;", id="nyp-ebook"),
+            pytest.param(1, False, 2, "*b2=x;", id="bpl-ebook"),
+            pytest.param(1, True, 1, "*b2=z;b3=n;", id="nyp-ebook-supp"),
+            pytest.param(1, True, 2, "*b2=x;b3=n;", id="bpl-ebook-supp"),
+            pytest.param(2, False, 1, "*b2=n;", id="nyp-eaudio"),
+            pytest.param(2, False, 2, "*b2=z;", id="bpl-eaudio"),
+            pytest.param(3, True, 1, "*b2=3;b3=n;", id="nyp-evideo-supp"),
+            pytest.param(3, True, 2, "*b2=v;b3=n;", id="bpl-evideo-supp"),
+            pytest.param(4, False, 1, "*b2=a;", id="nyp-print"),
+            pytest.param(4, False, 2, "*b2=a;", id="bpl-print"),
         ],
     )
     def test_add_command_tag(
@@ -175,6 +175,19 @@ class TestBibEnhancer:
         be.library = "foo"
         be._add_initials_tag()
         assert str(be.bib) == bib_before
+
+    @pytest.mark.parametrize(
+        "library,tag,field_str",
+        [
+            ("NYP", "945", "=945  \\\\$ab11111111a"),
+            ("BPL", "907", "=907  \\\\$ab11111111a"),
+        ],
+    )
+    def test_add_sierraId(self, stub_resource, library, tag, field_str):
+        be = BibEnhancer(stub_resource)
+        be.library = library
+        be._add_sierraId()
+        assert str(be.bib[tag]) == field_str
 
     def test_digits_only_in_tag_001(self, stub_resource):
         be = BibEnhancer(stub_resource)
@@ -354,7 +367,7 @@ class TestBibEnhancer:
         assert str(be.bib["856"]) == "=856  04$uurl_here$2opac msg"
         assert str(be.bib["091"]) == "=091  \\\\$aeNYPL Book"
         assert str(be.bib["901"]) == f"=901  \\\\$a{__title__}/{__version__}"
-        assert str(be.bib["949"]) == "=949  \\\\$a*ov=b11111111a;b2=z;"
+        assert str(be.bib["949"]) == "=949  \\\\$a*b2=z;"
 
         # check if fields have been duplicated by accident
         assert len(be.bib.get_fields("001")) == 1

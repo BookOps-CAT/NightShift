@@ -37,15 +37,16 @@ class BibEnhancer:
     was updated with WorldCat MARC XML record.
 
     Invoking `manipulate()` method on the instance of this class does the following:
+     - encodes matching Sierra bib to be overlaid (matching bib # in 907 - BPL
+        or 945 - NYPL)
      - removes unwanted MARC tags specified in `constants.RESOURCE_CATEGORIES`,
      - deletes 6xx from unsupported thesauri,
      - adds local tags preserved from the original Sierra bib specified in
         `constants.RESOURCE_CATEGORIES`
      - creates for each resource type an appropriate call number tag (099 for BPL or
         091 for NYPL)
-     - adds a Sierra command tag in the 949 tag that specifies Sierra bib to be
-        overlaid, bib Sierra format code and optionally Sierra bib code 3 for
-        records suppressed from public view
+     - adds a Sierra command tag in the 949 tag that specifies Sierra bib format
+        code and optionally Sierra bib code 3 for records suppressed from public view
     - adds Nightshift name and version to bib Sierra initials MARC tag (947 for BPL,
         901 for NYPL)
     - removes OCLC prefix from the 001 tag for NYPL records
@@ -94,6 +95,9 @@ class BibEnhancer:
 
         # add call number field
         self._add_call_number()
+
+        # add Sierra bib # for overlaying
+        self._add_sierraId()
 
         # add Sierra import command tag
         self._add_command_tag()
@@ -177,9 +181,6 @@ class BibEnhancer:
         """
         commands = []
 
-        # Sierra bib # matching point
-        commands.append(f"ov=b{self.resource.sierraId}a")
-
         # Sierra bib format
         sierra_format_code = SIERRA_FORMAT[self.resource.resourceCategoryId][
             self.library
@@ -247,6 +248,24 @@ class BibEnhancer:
         )
         logger.debug(
             f"Added initials tag {tag} to {self.library} b{self.resource.sierraId}a."
+        )
+
+    def _add_sierraId(self) -> None:
+        """
+        Adds 907 (BPL) or 945 (NYP) tag to manipulated MARC record for
+        matching/overlaying purposes.
+        """
+        if self.library == "NYP":
+            overlay_tag = "945"
+        elif self.library == "BPL":
+            overlay_tag = "907"
+
+        self.bib.add_field(
+            Field(
+                tag=overlay_tag,
+                indicators=[" ", " "],
+                subfields=["a", f"b{self.resource.sierraId}a"],
+            )
         )
 
     def _digits_only_in_tag_001(self) -> None:
