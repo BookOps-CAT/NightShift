@@ -180,7 +180,7 @@ class TestBibEnhancer:
         "library,tag,field_str",
         [
             ("NYP", "945", "=945  \\\\$a.b11111111a"),
-            ("BPL", "907", "=907  \\\\$ab11111111a"),
+            ("BPL", "907", "=907  \\\\$a.b11111111a"),
         ],
     )
     def test_add_sierraId(self, stub_resource, library, tag, field_str):
