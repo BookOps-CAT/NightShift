@@ -73,6 +73,41 @@ def session_scope():
         session.close()
 
 
+class Event(Base):
+    """
+    Statistics table.
+    Records information about transactions affecting resources, such as
+    WorldCat matches/upgrades, resources being dropped out from the process because
+    they were cataloged or deleted by cataloging staff, finally, marks resources
+    that expired from the process because of they age.
+    """
+
+    __tablename__ = "event"
+
+    nid = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow())
+    sierraId = Column(Integer, nullable=False)
+    libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
+    resourceCategoryId = Column(
+        Integer, ForeignKey("resource_category.nid"), nullable=False
+    )
+    result = Column(
+        ENUM(
+            "expired",
+            "staff_cataloged",
+            "staff_deleted",
+            "worldcat_found",
+            "worldcat_missing",
+            name="result",
+        )
+    )
+
+    def __repr__(self):
+        return f"<Event(nid='{self.nid}', timestamp='{self.timestamp}', "
+        f"sierraId='{self.sierraId}', libraryId='{self.libraryId}', "
+        f"resourceCategoryId='{self.resoruceCategoryId}', result='{self.result}')>"
+
+
 class Library(Base):
     """
     Library system.
@@ -235,7 +270,7 @@ class WorldcatQuery(Base):
     )
     match = Column(Boolean, nullable=False)
     response = Column(JSONB)
-    timestamp = Column(DateTime, default=datetime.now(), nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow(), nullable=False)
 
     def __repr__(self):
         return (
