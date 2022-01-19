@@ -263,15 +263,15 @@ def update_status_to_upgraded(
         resources:                      list of `nightshift.datastore.Resource`
                                         instances
     """
-    logging.info(f"Updating {len(resources)} resources status to 'upgraded_bot'.")
+    logging.info(f"Updating {len(resources)} resources status to 'bot_enhanced'.")
     out_file_record = add_output_file(db_session, library_id, out_file_handle)
     for resource in resources:
         update_resource(
             db_session,
             resource.sierraId,
             resource.libraryId,
-            status="upgraded_bot",
+            status="bot_enhanced",
             outputId=out_file_record.nid,
-            upgradeTimestamp=datetime.utcnow(),
+            enhanceTimestamp=datetime.utcnow(),
         )
     db_session.commit()

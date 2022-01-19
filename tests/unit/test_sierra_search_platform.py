@@ -121,11 +121,11 @@ class TestSearchResponse:
     @pytest.mark.parametrize(
         "deleted,tag,tag_content,sub_content,expectation",
         [
-            (True, "091", None, "eNYPL Book", "deleted_staff"),
+            (True, "091", None, "eNYPL Book", "staff_deleted"),
             (False, "100", None, "author", "open"),
-            (False, "003", "OCoLC", None, "upgraded_staff"),
-            (False, "091", None, "JX 532", "upgraded_staff"),
-            (False, "091", None, "FIC", "upgraded_staff"),
+            (False, "003", "OCoLC", None, "staff_enhanced"),
+            (False, "091", None, "JX 532", "staff_enhanced"),
+            (False, "091", None, "FIC", "staff_enhanced"),
             (False, "091", None, "eNYPL Book", "open"),
             (False, "091", None, "eNYPL Audio", "open"),
         ],
@@ -157,18 +157,18 @@ class TestSearchResponse:
     def test_determine_bpl_bib_status_not_found(self):
         response = MockSolrSessionResponseNotFound()
         sr = SearchResponse(11111111, "BPL", response)
-        assert sr._determine_bpl_bib_status() == "deleted_staff"
+        assert sr._determine_bpl_bib_status() == "staff_deleted"
 
     @pytest.mark.parametrize(
         "deleted,field,value,expectation",
         [
-            (True, "call_number", "eBOOK", "deleted_staff"),
-            (False, "ss_marc_tag_003", "OCoLC", "upgraded_staff"),
+            (True, "call_number", "eBOOK", "staff_deleted"),
+            (False, "ss_marc_tag_003", "OCoLC", "staff_enhanced"),
             (False, "ss_marc_tag_003", "BT", "open"),
             (False, "call_number", "eBOOK", "open"),
             (False, "call_number", "eAUDIO", "open"),
             (False, "call_number", "eVIDEO", "open"),
-            (False, "call_number", "FIC EGAN", "upgraded_staff"),
+            (False, "call_number", "FIC EGAN", "staff_enhanced"),
         ],
     )
     def test_determine_bpl_bib_status(self, deleted, field, value, expectation):
@@ -192,9 +192,9 @@ class TestSearchResponse:
     @pytest.mark.parametrize(
         "library,response,expectation",
         [
-            ("NYP", MockPlatformSessionResponseSuccess(), "upgraded_staff"),
+            ("NYP", MockPlatformSessionResponseSuccess(), "staff_enhanced"),
             ("BPL", MockSolrSessionResponseSuccess(), "open"),
-            ("BPL", MockSolrSessionResponseNotFound(), "deleted_staff"),
+            ("BPL", MockSolrSessionResponseNotFound(), "staff_deleted"),
         ],
     )
     def test_get_status(self, caplog, library, response, expectation):
@@ -207,7 +207,7 @@ class TestSearchResponse:
         response = MockPlatformSessionResponseNotFound()
         sr = SearchResponse(11111111, "NYP", response)
         with caplog.at_level(logging.WARN):
-            assert sr.get_status() == "deleted_staff"
+            assert sr.get_status() == "staff_deleted"
         assert "NYP Sierra bib # 11111111 not found on Platform."
 
 

@@ -76,7 +76,7 @@ def session_scope():
 class Event(Base):
     """
     Statistics table.
-    Records information about transactions affecting resources, such as
+    Stores information about transactions affecting resources, such as
     WorldCat matches/upgrades, resources being dropped out from the process because
     they were cataloged or deleted by cataloging staff, finally, marks resources
     that expired from the process because of they age.
@@ -86,26 +86,32 @@ class Event(Base):
 
     nid = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, nullable=False, default=datetime.utcnow())
-    sierraId = Column(Integer, nullable=False)
     libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
+    sierraId = Column(Integer, nullable=False)
+    bibDate = Column(Date, nullable=False)
     resourceCategoryId = Column(
         Integer, ForeignKey("resource_category.nid"), nullable=False
     )
-    result = Column(
+    outcome = Column(
         ENUM(
             "expired",
-            "staff_cataloged",
+            "staff_enhanced",
             "staff_deleted",
-            "worldcat_found",
-            "worldcat_missing",
-            name="result",
+            "bot_enhanced",
+            "worldcat_hit",
+            "worldcat_miss",
+            name="outcome",
         )
     )
 
     def __repr__(self):
-        return f"<Event(nid='{self.nid}', timestamp='{self.timestamp}', "
-        f"sierraId='{self.sierraId}', libraryId='{self.libraryId}', "
-        f"resourceCategoryId='{self.resoruceCategoryId}', result='{self.result}')>"
+        return (
+            f"<Event(nid='{self.nid}', timestamp='{self.timestamp}', "
+            f"libraryId='{self.libraryId}', sierraId='{self.sierraId}', "
+            f"bibDate='{self.bibDate}', "
+            f"resourceCategoryId='{self.resourceCategoryId}', "
+            f"outcome='{self.outcome}')>"
+        )
 
 
 class Library(Base):
@@ -173,22 +179,20 @@ class Resource(Base):
     standardNumber = Column(String)
     suppressed = Column(Boolean, nullable=False, default=False)
 
-    deleted = Column(Boolean, nullable=False, default=False)
-    deletedTimestamp = Column(DateTime)
     oclcMatchNumber = Column(String)
     fullBib = Column(BYTEA)
     outputId = Column(Integer, ForeignKey("output_file.nid"))
     status = Column(
         ENUM(
-            "open",
+            "bot_enhanced",
             "expired",
-            "deleted_staff",
-            "upgraded_bot",
-            "upgraded_staff",
+            "open",
+            "staff_deleted",
+            "staff_enhanced",
             name="status",
         )
     )
-    upgradeTimestamp = Column(DateTime)
+    enhanceTimestamp = Column(DateTime)
 
     queries = relationship("WorldcatQuery", cascade="all, delete-orphan")
 
@@ -208,11 +212,9 @@ class Resource(Base):
             f"distributorNumber='{self.distributorNumber}', "
             f"suppressed='{self.suppressed}', "
             f"status='{self.status}', "
-            f"deleted='{self.deleted}', "
-            f"deletedTimestamp='{self.deletedTimestamp}', "
             f"outputId='{self.outputId}', "
             f"oclcMatchNumber='{self.oclcMatchNumber}', "
-            f"upgradeTimestamp='{self.upgradeTimestamp}')>"
+            f"enhanceTimestamp='{self.enhanceTimestamp}')>"
         )
 
 

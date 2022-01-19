@@ -12,6 +12,7 @@ from ..conftest import MockSuccessfulHTTP200SessionResponse
 from nightshift.datastore import (
     conf_db,
     DataAccessLayer,
+    Event,
     Library,
     OutputFile,
     Resource,
@@ -58,6 +59,26 @@ def test_session_scope_exception_rollback(test_connection, test_session):
     assert res is None
 
 
+def test_Event_tbl_repr():
+    stamp = datetime.utcnow()
+    today = stamp.date()
+    assert (
+        str(
+            Event(
+                nid=1,
+                timestamp=stamp,
+                libraryId=1,
+                sierraId=11111111,
+                bibDate=today,
+                resourceCategoryId=1,
+                outcome="bot_cataloged",
+            )
+        )
+        == f"<Event(nid='1', timestamp='{stamp}', libraryId='1', sierraId='11111111', "
+        f"bibDate='{today}', resourceCategoryId='1', outcome='bot_cataloged')>"
+    )
+
+
 def test_Library_tbl_repr():
     assert str(Library(nid=1, code="foo")) == "<Library(nid='1', code='foo')>"
 
@@ -94,13 +115,16 @@ def test_Resource_tbl_repr():
                 standardNumber="0005",
                 suppressed=True,
                 status="open",
-                deleted=False,
-                deletedTimestamp=stamp,
                 oclcMatchNumber=None,
-                upgradeTimestamp=stamp,
+                enhanceTimestamp=stamp,
             )
         )
-        == f"<Resource(nid='1', sierraId='1', libraryId='2', sourceId='5', resourceCategoryId='3', bibDate='{bibDate}', author='foo', title='spam', pubDate='2021', controlNumber='0002', congressNumber='0001', standardNumber='0005', distributorNumber='0003', suppressed='True', status='open', deleted='False', deletedTimestamp='{stamp}', outputId='None', oclcMatchNumber='None', upgradeTimestamp='{stamp}')>"
+        == f"<Resource(nid='1', sierraId='1', libraryId='2', sourceId='5', "
+        f"resourceCategoryId='3', bibDate='{bibDate}', author='foo', title='spam', "
+        "pubDate='2021', controlNumber='0002', congressNumber='0001', "
+        "standardNumber='0005', distributorNumber='0003', suppressed='True', "
+        "status='open', outputId='None', oclcMatchNumber='None', "
+        f"enhanceTimestamp='{stamp}')>"
     )
 
 

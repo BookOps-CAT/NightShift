@@ -46,6 +46,7 @@ def test_init_db(mock_db_env, test_connection):
     insp = inspect(engine)
     assert sorted(insp.get_table_names()) == sorted(
         [
+            "event",
             "library",
             "output_file",
             "source_file",
@@ -168,7 +169,7 @@ def test_delete_resources(test_session, test_data_rich):
     resource_deleted = (
         test_session.query(Resource).filter_by(sierraId=22222222).one_or_none()
     )
-    assert control_resource.status == "upgraded_bot"
+    assert control_resource.status == "bot_enhanced"
     assert resource_deleted is None
 
     # check related table queries
@@ -202,7 +203,7 @@ def test_delete_resources_too_early(test_session, test_data_rich):
     resource_deleted = (
         test_session.query(Resource).filter_by(sierraId=22222222).one_or_none()
     )
-    assert control_resource.status == "upgraded_bot"
+    assert control_resource.status == "bot_enhanced"
     assert resource_deleted is not None
 
     # check related table queries
@@ -260,15 +261,12 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(
 
 
 @pytest.mark.parametrize(
-    "library_id, resource_cat_id, status,deleted,full_bib,expectation",
+    "library_id, resource_cat_id, status,full_bib,expectation",
     [
-        pytest.param(1, 1, "expired", False, b"<foo>spam</foo>", [], id="wrong status"),
-        pytest.param(1, 1, "open", True, b"<foo>spam</foo", [], id="deleted resource"),
-        pytest.param(1, 1, "open", False, None, [], id="missing full bib"),
-        pytest.param(1, 1, "open", False, b"<foo>spam</foo>", [2], id="found 1 match"),
-        pytest.param(
-            2, 1, "open", False, b"<foo>spam</foo>", [1, 2], id="found 2 matches"
-        ),
+        pytest.param(1, 1, "expired", b"<foo>spam</foo>", [], id="wrong status"),
+        pytest.param(1, 1, "open", None, [], id="missing full bib"),
+        pytest.param(1, 1, "open", b"<foo>spam</foo>", [2], id="found 1 match"),
+        pytest.param(2, 1, "open", b"<foo>spam</foo>", [1, 2], id="found 2 matches"),
     ],
 )
 def test_retrieve_open_matched_resources_with_full_bib_obtained(
@@ -277,7 +275,6 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
     library_id,
     resource_cat_id,
     status,
-    deleted,
     full_bib,
     expectation,
 ):
@@ -292,7 +289,6 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
             bibDate=bib_date,
             title="TEST TITLE 1",
             status="open",
-            deleted=False,
             fullBib=b"<foo>spam</foo>",
         )
     )
@@ -306,7 +302,6 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
             bibDate=bib_date,
             title="TEST TITLE 2",
             status=status,
-            deleted=deleted,
             fullBib=full_bib,
         )
     )
@@ -318,12 +313,11 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
 
 
 @pytest.mark.parametrize(
-    "bib_date,status,deleted,oclc_number,match,days_since_last_query,expectation",
+    "bib_date,status,oclc_number,match,days_since_last_query,expectation",
     [
         pytest.param(
             datetime.utcnow() - timedelta(days=80),
             "open",
-            False,
             None,
             False,
             31,
@@ -333,7 +327,6 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
         pytest.param(
             datetime.utcnow() - timedelta(days=80),
             "open",
-            False,
             None,
             False,
             15,
@@ -343,7 +336,6 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
         pytest.param(
             datetime.utcnow() - timedelta(days=80),
             "open",
-            False,
             None,
             False,
             100,
@@ -353,7 +345,6 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
         pytest.param(
             datetime.utcnow() - timedelta(days=100),
             "open",
-            False,
             None,
             False,
             31,
@@ -363,7 +354,6 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
         pytest.param(
             datetime.utcnow() - timedelta(days=80),
             "expired",
-            False,
             None,
             False,
             31,
@@ -371,19 +361,8 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
             id="expired status",
         ),
         pytest.param(
-            datetime.utcnow() - timedelta(days=80),
-            "open",
-            True,
-            None,
-            False,
-            31,
-            [],
-            id="deleted resource",
-        ),
-        pytest.param(
             datetime.utcnow() - timedelta(days=100),
             "open",
-            False,
             "123",
             True,
             31,
@@ -397,7 +376,6 @@ def test_retrieve_open_older_resources(
     test_data_core,
     bib_date,
     status,
-    deleted,
     oclc_number,
     match,
     days_since_last_query,
@@ -415,7 +393,6 @@ def test_retrieve_open_older_resources(
             sourceId=1,
             oclcMatchNumber=oclc_number,
             status=status,
-            deleted=deleted,
             queries=[
                 WorldcatQuery(
                     nid=1,
@@ -451,7 +428,6 @@ def test_retrieve_new_resources(test_session, test_data_core):
             title="TEST TITLE 5",
             sourceId=2,
             status="open",
-            deleted=False,
         )
     )
 
@@ -466,7 +442,6 @@ def test_retrieve_new_resources(test_session, test_data_core):
             title="TEST TITLE 1",
             sourceId=1,
             status="open",
-            deleted=False,
         )
     )
     test_session.add(
@@ -479,7 +454,6 @@ def test_retrieve_new_resources(test_session, test_data_core):
             title="TEST TITLE 2",
             sourceId=1,
             status="open",
-            deleted=False,
         )
     )
     test_session.add(
@@ -492,7 +466,6 @@ def test_retrieve_new_resources(test_session, test_data_core):
             title="TEST TITLE 3",
             sourceId=1,
             status="open",
-            deleted=False,
         )
     )
     test_session.add(
@@ -505,7 +478,6 @@ def test_retrieve_new_resources(test_session, test_data_core):
             title="TEST TITLE 4",
             sourceId=1,
             status="open",
-            deleted=False,
             queries=[WorldcatQuery(resourceId=5, match=False)],
         )
     )
@@ -534,9 +506,8 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
             bibDate=some_date,
             title="TEST TITLE 5",
             sourceId=2,
-            status="upgraded_bot",
+            status="bot_enhanced",
             oclcMatchNumber="123",
-            deleted=False,
         )
     )
 
@@ -552,7 +523,6 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
             sourceId=1,
             status="open",
             oclcMatchNumber=None,
-            deleted=False,
         )
     )
     test_session.add(
@@ -566,7 +536,6 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
             sourceId=1,
             status="open",
             oclcMatchNumber="123",
-            deleted=False,
         )
     )
     test_session.add(
@@ -580,7 +549,6 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
             sourceId=1,
             status="open",
             oclcMatchNumber="124",
-            deleted=False,
         )
     )
     test_session.add(
@@ -594,7 +562,6 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
             sourceId=1,
             status="open",
             oclcMatchNumber="125",
-            deleted=False,
         )
     )
     # exclude (full bib already obtained)
@@ -610,7 +577,6 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
             status="open",
             oclcMatchNumber="126",
             fullBib=b"<foo>spam</foo>",
-            deleted=False,
         )
     )
     test_session.commit()
@@ -660,7 +626,7 @@ def test_set_resources_to_expired(test_session, test_data_rich, stub_resource):
     resource_set_to_expired = (
         test_session.query(Resource).filter_by(sierraId=22222222).one()
     )
-    assert resource_not_changed.status == "upgraded_bot"
+    assert resource_not_changed.status == "bot_enhanced"
     assert resource_set_to_expired.status == "expired"
 
 
@@ -691,7 +657,7 @@ def test_set_resources_to_expired_too_early(
     resource_set_to_expired = (
         test_session.query(Resource).filter_by(sierraId=22222222).one()
     )
-    assert resource_not_changed.status == "upgraded_bot"
+    assert resource_not_changed.status == "bot_enhanced"
     assert resource_set_to_expired.status == "open"
 
 

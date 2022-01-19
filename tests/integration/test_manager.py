@@ -1,7 +1,6 @@
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timedelta
 import logging
-import os
 
 import pytest
 
@@ -34,8 +33,8 @@ def test_process_resources_live(env_var, test_data, test_session):
         assert res.oclcMatchNumber is not None
         assert res.fullBib is not None
         assert res.outputId is not None
-        assert res.status == "upgraded_bot"
-        assert res.upgradeTimestamp is not None
+        assert res.status == "bot_enhanced"
+        assert res.enhanceTimestamp is not None
 
     # SFTP
     drive_creds = get_credentials()
@@ -88,8 +87,8 @@ class TestProcessResourcesMocked:
             assert res.oclcMatchNumber is not None
             assert res.fullBib is not None
             assert res.outputId is not None
-            assert res.status == "upgraded_bot"
-            assert res.upgradeTimestamp is not None
+            assert res.status == "bot_enhanced"
+            assert res.enhanceTimestamp is not None
 
     def test_older_resources(
         self,
@@ -108,7 +107,7 @@ class TestProcessResourcesMocked:
         resource.status = "open"
         resource.fullBib = None
         resource.oclcMatchNumber = None
-        resource.upgradeTimestamp = None
+        resource.enhanceTimestamp = None
         resource.queries = [
             WorldcatQuery(
                 match=False,
@@ -134,8 +133,8 @@ class TestProcessResourcesMocked:
         assert res.oclcMatchNumber is not None
         assert res.fullBib is not None
         assert res.outputId is not None
-        assert res.status == "upgraded_bot"
-        assert res.upgradeTimestamp is not None
+        assert res.status == "bot_enhanced"
+        assert res.enhanceTimestamp is not None
 
 
 @pytest.mark.parametrize(

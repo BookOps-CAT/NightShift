@@ -43,7 +43,7 @@ def test_check_resources_sierra_state_nyp_platform(
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
     assert resource.suppressed is False
-    assert resource.status == "upgraded_staff"
+    assert resource.status == "staff_enhanced"
 
 
 def test_check_resources_sierra_state_bpl_solr(
@@ -289,7 +289,7 @@ def test_update_status_to_upgraded(test_session, test_data_rich, caplog):
         with caplog.at_level(logging.INFO):
             update_status_to_upgraded(test_session, 1, "foo3.mrc", resources)
 
-        assert "Updating 1 resources status to 'upgraded_bot'." in caplog.text
+        assert "Updating 1 resources status to 'bot_enhanced'." in caplog.text
 
     # check if output file record has been created
     out_file_record = (
@@ -302,6 +302,6 @@ def test_update_status_to_upgraded(test_session, test_data_rich, caplog):
     results = test_session.query(Resource).all()
     assert len(results) > 0
     for resource in results:
-        assert resource.status == "upgraded_bot"
+        assert resource.status == "bot_enhanced"
         assert resource.outputId == 2
-        assert resource.upgradeTimestamp is not None
+        assert resource.enhanceTimestamp is not None

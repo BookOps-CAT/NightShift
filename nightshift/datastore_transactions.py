@@ -167,7 +167,7 @@ def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
     """
     resources = (
         session.query(Resource)
-        .filter_by(libraryId=libraryId, status="open", deleted=False, queries=None)
+        .filter_by(libraryId=libraryId, status="open", queries=None)
         .order_by(Resource.resourceCategoryId, Resource.nid)
         .all()
     )
@@ -201,7 +201,6 @@ def retrieve_open_older_resources(
             Resource.libraryId == libraryId,
             Resource.resourceCategoryId == resourceCategoryId,
             Resource.status == "open",
-            Resource.deleted == False,
             Resource.oclcMatchNumber == None,
             Resource.bibDate > datetime.utcnow() - timedelta(days=maxAge),
         )
@@ -234,7 +233,6 @@ def retrieve_open_matched_resources_without_full_bib(
         .filter(
             Resource.libraryId == libraryId,
             Resource.status == "open",
-            Resource.deleted == False,
             Resource.oclcMatchNumber != None,
             Resource.fullBib == None,
         )
@@ -264,7 +262,6 @@ def retrieve_open_matched_resources_with_full_bib_obtained(
             Resource.libraryId == libraryId,
             Resource.resourceCategoryId == resourceCategoryId,
             Resource.status == "open",
-            Resource.deleted == False,
             Resource.fullBib.isnot(None),
         )
         .all()
