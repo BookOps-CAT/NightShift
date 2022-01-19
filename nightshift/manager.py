@@ -70,7 +70,7 @@ def process_resources() -> None:
                             f"{res_category} older resources completed."
                         )
 
-            # search again older resources dropping any resources already cataloged
+            # search again older resources dropping any resources already enhanced
             # or deleted
             for res_category, res_cat_data in RESOURCE_CATEGORIES.items():
                 for ageMin, ageMax in res_cat_data["query_days"]:
