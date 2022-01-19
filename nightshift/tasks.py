@@ -261,7 +261,7 @@ def update_status_to_upgraded(
     resources: list[Resource],
 ) -> None:
     """
-    Upgrades given resources status to "upgraded_bot"
+    Upgrades given resources status to "bot_enhanced"
 
     Args:
         db_session:                     `sqlalchemy.Session` instance
