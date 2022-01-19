@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import (
     DataAccessLayer,
+    Event,
     Library,
     OutputFile,
     Resource,
@@ -42,6 +43,36 @@ def init_db() -> None:
 
     session.commit()
     session.close()
+
+
+def add_event(session: Session, resource: Resource, outcome: str) -> Optional[Event]:
+    """
+    Inserts an event row.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        resource:               datastore Resource record
+        outcome:                one of `datastore.Event.outcome` enum values:
+                                    'expired',
+                                    'staff_enhanced',
+                                    'staff_deleted',
+                                    'bot_enhanced',
+                                    'worldcat_hit',
+                                    'worldcat_miss',
+
+    Returns:
+        `nightshift.datastore.Event` instance
+    """
+    instance = insert_or_ignore(
+        session,
+        Event,
+        libraryId=resource.libraryId,
+        sierraId=resource.sierraId,
+        bibDate=resource.bibDate,
+        resourceCategoryId=resource.resourceCategoryId,
+        outcome=outcome,
+    )
+    return instance
 
 
 def add_output_file(

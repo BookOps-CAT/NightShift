@@ -14,11 +14,12 @@ from nightshift.comms.sierra_search_platform import NypPlatform, BplSolr
 from nightshift.comms.storage import get_credentials, Drive
 from nightshift.datastore import Resource, WorldcatQuery
 from nightshift.datastore_transactions import (
+    add_event,
     add_output_file,
-    add_source_file,
     add_resource,
-    update_resource,
+    add_source_file,
     retrieve_processed_files,
+    update_resource,
 )
 from nightshift.marc.marc_parser import BibReader
 from nightshift.marc.marc_writer import BibEnhancer
@@ -56,6 +57,9 @@ def check_resources_sierra_state(
         response = sierra_platform.get_sierra_bib(resource.sierraId)
         resource.suppressed = response.is_suppressed()
         resource.status = response.get_status()
+
+        if resource.status in ("staff_enhanced", "staff_deleted"):
+            add_event(db_session, resource, outcome=resource.status)
 
     sierra_platform.close()
 
@@ -113,11 +117,14 @@ def get_worldcat_brief_bib_matches(
                         response=response.as_json,
                     )
                 )
+
+                # add event for stats
+                add_event(db_session, resource, outcome="worldcat_hit")
             else:
                 resource.queries.append(
                     WorldcatQuery(match=False, response=response.as_json)
                 )
-
+                add_event(db_session, resource, outcome="worldcat_miss")
             db_session.commit()
 
 
@@ -274,4 +281,5 @@ def update_status_to_upgraded(
             outputId=out_file_record.nid,
             enhanceTimestamp=datetime.utcnow(),
         )
+        add_event(db_session, resource, outcome="bot_enhanced")
     db_session.commit()
