@@ -15,6 +15,7 @@ from nightshift.tasks import (
     get_worldcat_full_bibs,
     ingest_new_files,
     isolate_unprocessed_files,
+    manipulate_and_serialize_bibs,
     transfer_to_drive,
     update_status_to_upgraded,
 )
@@ -73,31 +74,33 @@ def test_check_resources_sierra_state_invalid_library_arg(caplog):
     assert "Invalid library argument passed: 'QPL'. Must be 'NYP' or 'BPL'"
 
 
-def test_enhance_and_output_bibs(caplog, test_session, test_data_rich):
-    if os.path.exists("temp.mrc"):
-        try:
-            os.remove("temp.mrc")
-        except:
-            raise
-
+def test_enhance_and_output_bibs(
+    caplog, test_session, test_data_rich, sftpserver, mock_drive, mock_sftp_env
+):
+    remote_file = f"{datetime.now().date():%y%m%d}-NYP-ebook-01.mrc"
     resources = test_session.query(Resource).where(Resource.nid == 1).all()
-    with caplog.at_level(logging.DEBUG):
-        enhance_and_output_bibs("NYP", resources)
 
-    assert os.path.exists("temp.mrc")
+    with caplog.at_level(logging.DEBUG):
+        with sftpserver.serve_content({"load_dir": {}}):
+            enhance_and_output_bibs(test_session, "NYP", 1, "ebook", resources)
+
     assert "NYP b11111111a has been output to 'temp.mrc'." in caplog.text
 
-    with open("temp.mrc", "rb") as f:
-        reader = MARCReader(f)
-        bib = next(reader)
+    # make sure temp file cleaned up
+    assert not os.path.exists("temp.mrc")
+    # check database state
 
-    assert bib["091"].value() == "eNYPL Book"
-    assert bib["945"].value() == ".b11111111a"
-    assert bib["949"].value() == "*b2=z;"
-    assert bib["901"].value() == "NightShift/0.1.0"
+    output_record = (
+        test_session.query(OutputFile).where(OutputFile.nid == 2).one_or_none()
+    )
+    assert output_record.libraryId == 1
+    assert output_record.handle == remote_file
+    assert output_record.timestamp is not None
 
-    # clean up
-    os.remove("temp.mrc")
+    resource = test_session.query(Resource).where(Resource.nid == 1).one()
+    assert resource.status == "bot_enhanced"
+    assert resource.outputId is not None
+    assert resource.enhanceTimestamp is not None
 
 
 def test_get_worldcat_brief_bib_matches_success(
@@ -248,6 +251,90 @@ def test_isolate_unprocessed_bpl_files(
         assert "Found following remote files for BPL: []." in caplog.text
 
     assert results == []
+
+
+def test_manipulate_and_serialize_bibs_default_outfile(
+    test_session, test_data_rich, caplog
+):
+
+    resources = test_session.query(Resource).all()
+    with caplog.at_level(logging.DEBUG):
+        file, resources = manipulate_and_serialize_bibs(
+            test_session, "NYP", "ebook", resources
+        )
+
+    assert "NYP b11111111a has been output to 'temp.mrc'." in caplog.text
+    assert (
+        f"Enhanced and serialized 1 and skipped 0 NYP ebook record(s)." in caplog.text
+    )
+
+    assert file == "temp.mrc"
+    assert len(resources) == 1
+
+    with open("temp.mrc", "rb") as f:
+        reader = MARCReader(f)
+        bib = next(reader)
+
+    assert bib["091"].value() == "eNYPL Book"
+    assert bib["945"].value() == ".b11111111a"
+    assert bib["949"].value() == "*b2=z;"
+    assert bib["901"].value() == "NightShift/0.1.0"
+
+    if os.path.exists("temp.mrc"):
+        try:
+            os.remove("temp.mrc")
+        except:
+            raise
+
+
+def test_manipulate_and_serialize_bibs_custom_outfile(
+    test_session, test_data_rich, caplog, tmpdir
+):
+    outfile = tmpdir.join("custom_file.mrc")
+    resources = test_session.query(Resource).all()
+    with caplog.at_level(logging.DEBUG):
+        file, resources = manipulate_and_serialize_bibs(
+            test_session, "NYP", "ebook", resources, outfile
+        )
+
+    assert f"NYP b11111111a has been output to '{outfile}'." in caplog.text
+    assert (
+        f"Enhanced and serialized 1 and skipped 0 NYP ebook record(s)." in caplog.text
+    )
+
+    assert file == outfile
+    assert len(resources) == 1
+
+    with open(outfile, "rb") as f:
+        reader = MARCReader(f)
+        bib = next(reader)
+
+    assert bib["091"].value() == "eNYPL Book"
+    assert bib["945"].value() == ".b11111111a"
+    assert bib["949"].value() == "*b2=z;"
+    assert bib["901"].value() == "NightShift/0.1.0"
+
+
+def test_manipulate_and_serialize_bibs_failed(
+    test_session, test_data_rich, caplog, tmpdir
+):
+
+    outfile = tmpdir.join("custom_file.mrc")
+    resource = test_session.query(Resource).one_or_none()
+    resource.resourceCategoryId = 5
+
+    with caplog.at_level(logging.WARNING):
+        file, resources = manipulate_and_serialize_bibs(
+            test_session, "NYP", "ebook", [resource], outfile
+        )
+
+    assert "NYP b11111111a enhancement incomplete. Skipping." in caplog.text
+
+    assert file == outfile
+    assert len(resources) == 0
+
+    # no outfile will be created if no records
+    assert not os.path.exists(file)
 
 
 def test_transfer_to_drive(mock_drive, caplog, sftpserver, tmpdir):

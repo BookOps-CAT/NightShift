@@ -67,22 +67,38 @@ def check_resources_sierra_state(
     db_session.commit()
 
 
-def enhance_and_output_bibs(library: str, resources: list[Resource]) -> None:
+def enhance_and_output_bibs(
+    db_session: Session,
+    library: str,
+    libraryId: int,
+    resource_category: str,
+    resources: list[Resource],
+) -> None:
     """
-    Manipulates downloaded WorldCat records and serializes them
-    into MARC21 format
+    Manipulates downloaded WorldCat records, serializes them into MARC21 format
+    and saves produced file to SFTP
 
     Args:
+        db_session:                     'sqlalchemy.Session' instance
         library:                        'NYP' or 'BPL'
+        libraryId:                      `nightshift.datastore.Library.nid`
+        resource_category:              name of resource category being processed
         resources:                      list of `nightshift.datastore.Resource`
                                         instances
     """
-    logging.info(f"Enhancing {library} {len(resources)} resources.")
-    for resource in resources:
-        be = BibEnhancer(resource)
-        be.manipulate()
-        be.save2file()
-        logger.debug(f"{library} b{resource.sierraId}a has been output to 'temp.mrc'.")
+    # logging.info(
+    #     f"Starting enhancement of {library} {len(resources)} {resource_category} "
+    #     "resources."
+    # )
+    temp_file, enhanced_resources = manipulate_and_serialize_bibs(
+        db_session, library, resource_category, resources
+    )
+
+    # output to SFTP
+    remote_file = transfer_to_drive(library, resource_category, temp_file)
+
+    # finalize datastore resource status
+    update_status_to_upgraded(db_session, libraryId, remote_file, enhanced_resources)
 
 
 def get_worldcat_brief_bib_matches(
@@ -219,9 +235,63 @@ def isolate_unprocessed_files(
     return [f for f in library_remote_files if f not in proc_files]
 
 
+def manipulate_and_serialize_bibs(
+    db_session: Session,
+    library: str,
+    resource_category: str,
+    resources: list[Resource],
+    file_path: str = "temp.mrc",
+) -> tuple[str, list[Resource]]:
+    """
+    Merges Sierra brief bibs data with WroldCat full bib,
+    and serializes them into MARC21 format
+
+    Args:
+        db_session:                     `sqlalchemy.Session` instance
+        library:                        'NYP' or 'BPL'
+        resource_category:              name of resource cateogry ('ebook', etc.)
+        resources:                      list of `nightshift.datastore.Resource`
+                                        instances
+        file_path:                      path of the file where records are saved
+
+    Returns:
+        tuple (output file, list of enhanced resources)
+    """
+    enhanced_resources = []
+    skipped_resources = []
+    for resource in resources:
+        be = BibEnhancer(resource)
+        be.manipulate()
+        if be.bib is not None:
+            be.save2file(file_path)
+            logger.debug(
+                f"{library} b{resource.sierraId}a has been output to '{file_path}'."
+            )
+            enhanced_resources.append(resource)
+        else:
+            # update to blank state to allow later date query
+            update_resource(
+                db_session,
+                resource.sierraId,
+                resource.libraryId,
+                oclcMatchNumber=None,
+                fullBib=None,
+            )
+            logger.warning(
+                f"{library} b{resource.sierraId}a enhancement incomplete. Skipping."
+            )
+            skipped_resources.append(resource)
+    logger.info(
+        f"Enhanced and serialized {len(enhanced_resources)} and skipped "
+        f"{len(skipped_resources)} {library} {resource_category} record(s)."
+    )
+    db_session.commit()
+    return (file_path, enhanced_resources)
+
+
 def transfer_to_drive(
-    library: str, resource_category: str, temp_file: str = "temp.mrc"
-) -> None:
+    library: str, resource_category: str, src_file: str = "temp.mrc"
+) -> str:
     """
     Transfers local temporary MARC21 file to network drive.
     Arguments `library` and `resource_category` is used to name the MARC file on the
@@ -232,6 +302,9 @@ def transfer_to_drive(
         library:                        library code
         resource_category:              name of resource category being processed
         temp_file:                      temporary local file to be transfered
+
+    Returns:
+        SFTP file handle
     """
     # def construct_remote_file_handle(library, resource_category, timestamp):
 
@@ -240,18 +313,18 @@ def transfer_to_drive(
 
     creds = get_credentials()
     with Drive(*creds) as drive:
-        file = drive.output_file(temp_file, remote_file_name_base)
+        remote_file = drive.output_file(src_file, remote_file_name_base)
 
     # clean up after job completed
     try:
-        os.remove(temp_file)
+        os.remove(src_file)
     except OSError as exc:
         logger.error(
-            f"Unable to delete '{temp_file}' file after completing the job. Error {exc}"
+            f"Unable to delete '{src_file}' file after completing the job. Error {exc}"
         )
         raise
     else:
-        return file
+        return remote_file
 
 
 def update_status_to_upgraded(

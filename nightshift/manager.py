@@ -109,28 +109,15 @@ def process_resources() -> None:
                     db_session, lib_nid, res_cat_data["nid"]
                 )
 
-                # manipulate Worldcat bibs
+                # manipulate Worldcat bibs, serialize to MARC21 and save to SFTP
                 if resources:
-                    tasks.enhance_and_output_bibs(library, resources)
-                    logger.info(
-                        f"Enhancing {len(resources)} {library} {res_category} "
-                        "resources completed."
+                    tasks.enhance_and_output_bibs(
+                        db_session, library, lib_nid, res_category, resources
                     )
 
-                    # output MARC records to the network drive
-                    file = tasks.transfer_to_drive(library, res_category)
                     logger.info(
-                        f"Transfering {len(resources)} {library} {res_category} "
-                        f"resources to the network drive completed ({file})."
-                    )
-
-                    # update resources as upgraded
-                    tasks.update_status_to_upgraded(
-                        db_session, lib_nid, file, resources
-                    )
-                    logger.info(
-                        f"Upgrading status of {len(resources)} {library} "
-                        f"{res_category} resources completed."
+                        f"Enhancement and serializaiton of {library} {res_category} "
+                        "complete."
                     )
 
 
