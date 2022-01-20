@@ -19,6 +19,7 @@ from nightshift.datastore import (
     WorldcatQuery,
 )
 from nightshift.datastore_transactions import (
+    add_event,
     add_output_file,
     add_resource,
     add_source_file,
@@ -70,6 +71,19 @@ def test_init_db(mock_db_env, test_connection):
 
     # tear db down
     Base.metadata.drop_all(engine)
+
+
+def test_add_event(test_session, test_data_rich):
+    resource = test_session.query(Resource).where(Resource.nid == 1).one()
+    event = add_event(test_session, resource, outcome="expired")
+    test_session.commit()
+
+    assert event.nid == 1
+    assert event.libraryId == resource.libraryId
+    assert event.sierraId == resource.sierraId
+    assert event.bibDate == resource.bibDate
+    assert event.resourceCategoryId == resource.resourceCategoryId
+    assert event.outcome == "expired"
 
 
 def test_add_output_file(test_session, test_data_core):
