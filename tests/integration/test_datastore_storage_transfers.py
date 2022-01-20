@@ -77,23 +77,20 @@ def test_enhance_and_transfer_to_drive(caplog, env_var, test_data, stub_resource
         )
 
         with caplog.at_level(logging.DEBUG):
-            enhance_and_output_bibs("NYP", resources)
-
-        assert "NYP b22222222a has been output to 'temp.mrc'." in caplog.text
-        with caplog.at_level(logging.INFO):
-            file = transfer_to_drive("NYP", "ebook", "temp.mrc")
+            enhance_and_output_bibs(db_session, "NYP", 1, "ebook", resources)
 
         assert not os.path.exists("temp.mrc")
 
-        drive_creds = get_credentials()
-        with Drive(*drive_creds) as drive:
-            file_info = drive.sftp.stat(f"{drive.dst_dir}/{file}")
-            assert file_info.st_size > 0
+    today = datetime.datetime.now().date()
+    drive_creds = get_credentials()
 
-        # clean-up
-        today = datetime.datetime.now().date()
-        with Drive(*drive_creds) as drive:
-            drive.sftp.remove(f"{drive.dst_dir}/{today:%y%m%d}-NYP-ebook-01.mrc")
+    with Drive(*drive_creds) as drive:
+        file_info = drive.sftp.stat(f"{drive.dst_dir}/{today:%y%m%d}-NYP-ebook-01.mrc")
+    assert file_info.st_size > 0
+
+    # clean-up
+    with Drive(*drive_creds) as drive:
+        drive.sftp.remove(f"{drive.dst_dir}/{today:%y%m%d}-NYP-ebook-01.mrc")
 
 
 @pytest.mark.firewalled
