@@ -82,56 +82,69 @@ class BibEnhancer:
         """
         Manipulates WorldCat record according to `nightshift.constants` module
         specs.
+
+        Full manipulation happens only if call number can be cosntructed.
         """
-
-        # delete unwanted MARC tags
-        self._purge_tags()
-
-        # remove 6xx tags with terms from unsupported thesauri
-        self._remove_unsupported_subject_tags()
-
-        # add tags from the local bib
-        self._add_local_tags()
 
         # add call number field
-        self._add_call_number()
+        call_number = self._add_call_number()
 
-        # add Sierra bib # for overlaying
-        self._add_sierraId()
+        if call_number:
+            # delete unwanted MARC tags
+            self._purge_tags()
 
-        # add Sierra import command tag
-        self._add_command_tag()
+            # remove 6xx tags with terms from unsupported thesauri
+            self._remove_unsupported_subject_tags()
 
-        # add bot's initials
-        self._add_initials_tag()
+            # add tags from the local bib
+            self._add_local_tags()
 
-        # prep OCLC control number
-        if self.library == "NYP":
-            self._digits_only_in_tag_001()
+            # add Sierra bib # for overlaying
+            self._add_sierraId()
 
-    def save2file(self) -> None:
+            # add Sierra import command tag
+            self._add_command_tag()
+
+            # add bot's initials
+            self._add_initials_tag()
+
+            # prep OCLC control number
+            if self.library == "NYP":
+                self._digits_only_in_tag_001()
+
+    def save2file(self, file_path: str = "temp.mrc") -> None:
         """
         Appends bib as MARC21 to a temporary dump file.
+
+        Args:
+            file_path:                    path of the file to output records
 
         Raises:
             OSError
         """
-        try:
-            with open("temp.mrc", "ab") as out:
-                out.write(self.bib.as_marc())
-                logger.debug(
-                    f"Saving to file {self.library} record b{self.resource.sierraId}a."
-                )
-        except OSError as exc:
-            logger.error(f"Unable to save record to a temp file. Error {exc}.")
-            raise
+        if self.bib is not None:
+            try:
+                with open(file_path, "ab") as out:
+                    out.write(self.bib.as_marc())
+                    logger.debug(
+                        f"Saving to file {self.library} record "
+                        f"b{self.resource.sierraId}a."
+                    )
+            except OSError as exc:
+                logger.error(f"Unable to save record to a temp file. Error {exc}.")
+                raise
+        else:
+            logger.warning("No pymarc object to serialize to MARC21.")
 
-    def _add_call_number(self) -> None:
+    def _add_call_number(self) -> bool:
         """
         Adds a call number MARC tag specific to resource category and each library.
 
         !!Creation of call numbers will be moved to a separate module or even package
         when print materials will be incorporated into the process (due to complexity)!!
+
+        Returns:
+            bool
         """
         resource_cat = RES_IDX[self.resource.resourceCategoryId]
         if self.library == "NYP":
@@ -160,16 +173,20 @@ class BibEnhancer:
             value = None
 
         if tag and value:
-            callno = Field(tag=tag, indicators=[" ", " "], subfields=["a", value])
-            self.bib.add_field(callno)
+            call_number = Field(tag=tag, indicators=[" ", " "], subfields=["a", value])
+            self.bib.add_field(call_number)
             logger.debug(
-                f"Added {callno.value()} to {self.library} b{self.resource.sierraId}a."
+                f"Added {call_number.value()} to {self.library} "
+                f"b{self.resource.sierraId}a."
             )
+            return True
         else:
+            self.bib = None
             logger.warning(
-                f"Attempting to create a call number for unsupported resource category "
-                f"for {self.library} b{self.resource.sierraId}a."
+                f"Unable to create call number for {self.library} "
+                f"b{self.resource.sierraId}a."
             )
+            return False
 
     def _add_command_tag(self) -> None:
         """

@@ -54,7 +54,7 @@ class TestBibEnhancer:
             library = "BPL"
         be = BibEnhancer(stub_resource)
         with caplog.at_level(logging.DEBUG):
-            be._add_call_number()
+            assert be._add_call_number() is True
         assert f"Added {expectation} to {library} b11111111a." in caplog.text
         bib = be.bib
         assert str(bib[tag]) == f"={tag}  \\\\$a{expectation}"
@@ -68,14 +68,10 @@ class TestBibEnhancer:
         be.library = library
 
         with caplog.at_level(logging.WARN):
-            be._add_call_number()
+            assert be._add_call_number() is False
 
-        assert "091" not in be.bib
-        assert "099" not in be.bib
-        assert (
-            f"Attempting to create a call number for unsupported resource category for {library} b11111111a."
-            in caplog.text
-        )
+        assert be.bib is None
+        assert f"Unable to create call number for {library} b11111111a." in caplog.text
 
     @pytest.mark.parametrize(
         "resourceId,suppressed,libraryId,expectation",
