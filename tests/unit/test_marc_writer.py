@@ -393,3 +393,16 @@ class TestBibEnhancer:
                 be.save2file()
 
         assert "Unable to save record to a temp file. Error" in caplog.text
+
+    def test_save2file_when_unable_to_create_call_number(
+        self, caplog, stub_resource, tmpdir
+    ):
+        outfile = tmpdir.join("foo.mrc")
+        stub_resource.resourceCategoryId = 99
+        be = BibEnhancer(stub_resource)
+        be.bib = None
+        with caplog.at_level(logging.WARNING):
+            be.manipulate()
+            be.save2file(outfile)
+
+        assert "No pymarc object to serialize to MARC21" in caplog.text
