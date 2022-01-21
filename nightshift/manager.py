@@ -24,9 +24,30 @@ logger = logging.getLogger("nightshift")
 
 def process_resources() -> None:
     """
-    Processes newly added and older open resources.
+    Processes newly added and older not enhanced yet resources.
 
-    temp.mrc deleted after transfering content to SFTP (`tasks.transfer_to_drive()`)
+    Ingests brief bibliographic and order records exported from Sierra and searches
+    WorldCat to find good full records to be used to upgrade Sierra bib. Performs
+    such searches several times until a match is found or a record ages out from the
+    process. Finally, outputs enhanced records to SFTP/shared drive as a MARC21 file.
+
+    1. Discovers new Sierra dump files on SFTP and adds records to the database.
+        A Sierra Scheduler job should be configured to create a list of newly added
+        records that needs automated cataloging, and to export such records to SFTP.
+    2. Searches WorldCat for these newly added resources and records any matching
+        OCLC numbers.
+    3. Selects older, not enhanced yet resources that can be queried in WorldCat
+        according to their schedule (encoded in 'query_days' of the
+        `constants.RESOURCE_CATEGORIES`) and checks via NYPL Platform or
+        BPL Solr API if their status have changed since previous query (enhanced
+        by staff, deleted, or suppressed). Records changes in status in the database.
+    4. Selects again older and not enhanced resources and searches for matches in
+        WorldCat. Records any matching OCLC numbers.
+    5. Downloads full bibliographic records for resources that were successfully matched
+    6. Manipulates, serializes to MARC21 and outputs to SFTP resources with full bibs
+        from WorldCat
+    7. Updates status of resources that were succesfully ouput to SFTP completing the
+        process.
 
     """
     with session_scope() as db_session:
