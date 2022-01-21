@@ -146,7 +146,11 @@ class BibEnhancer:
         Returns:
             bool
         """
-        resource_cat = RES_IDX[self.resource.resourceCategoryId]
+        try:
+            resource_cat = RES_IDX[self.resource.resourceCategoryId]
+        except KeyError:
+            resource_cat = None
+
         if self.library == "NYP":
             tag = "091"
             if resource_cat == "ebook":
