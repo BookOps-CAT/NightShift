@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime
+from datetime import datetime, date
 import logging
 import os
 
 from pymarc import MARCReader
 import pytest
 
-from nightshift.datastore import Resource, OutputFile, SourceFile
+from nightshift.datastore import Event, Resource, OutputFile, SourceFile
 from nightshift.ns_exceptions import DriveError
 from nightshift.tasks import (
     check_resources_sierra_state,
@@ -47,6 +47,47 @@ def test_check_resources_sierra_state_nyp_platform(
     assert resource.suppressed is False
     assert resource.status == "staff_enhanced"
 
+    # check if event recorded
+    event = test_session.query(Event).one_or_none()
+    assert isinstance(event, Event)
+    assert isinstance(event.timestamp, datetime)
+    assert event.libraryId == 1
+    assert event.sierraId == 11111111
+    assert isinstance(event.bibDate, date)
+    assert event.resourceCategoryId == 1
+    assert event.outcome == "staff_enhanced"
+
+
+def test_check_resources_sierra_state_nyp_platform_deleted_record(
+    test_session,
+    test_data_rich,
+    stub_resource,
+    mock_platform_env,
+    mock_successful_platform_post_token_response,
+    mock_successful_platform_session_response_deleted_record,
+):
+    stub_resource = test_session.query(Resource).filter_by(nid=1).one()
+    stub_resource.suppressed = True
+    stub_resource.status = "open"
+
+    test_session.commit()
+
+    check_resources_sierra_state(test_session, "NYP", [stub_resource])
+
+    resource = test_session.query(Resource).filter_by(nid=1).one()
+    assert resource.suppressed is False
+    assert resource.status == "staff_deleted"
+
+    # check if event recorded
+    event = test_session.query(Event).one_or_none()
+    assert isinstance(event, Event)
+    assert isinstance(event.timestamp, datetime)
+    assert event.libraryId == 1
+    assert event.sierraId == 11111111
+    assert isinstance(event.bibDate, date)
+    assert event.resourceCategoryId == 1
+    assert event.outcome == "staff_deleted"
+
 
 def test_check_resources_sierra_state_bpl_solr(
     test_session,
@@ -57,7 +98,7 @@ def test_check_resources_sierra_state_bpl_solr(
 ):
     stub_resource = test_session.query(Resource).filter_by(nid=1).one()
     stub_resource.suppressed = False
-    stub_resource.status = "expired"
+    stub_resource.status = "open"
     test_session.commit()
 
     check_resources_sierra_state(test_session, "BPL", [stub_resource])
@@ -65,6 +106,33 @@ def test_check_resources_sierra_state_bpl_solr(
     resource = test_session.query(Resource).filter_by(nid=1).one()
     assert resource.suppressed
     assert resource.status == "open"
+
+
+def test_check_resources_sierra_state_bpl_solr_no_record(
+    test_session,
+    test_data_rich,
+    mock_solr_env,
+    mock_failed_solr_session_response,
+):
+    resource = test_session.query(Resource).filter_by(nid=1).one()
+    resource.libraryId = 2
+    resource.status = "open"
+    test_session.commit()
+
+    check_resources_sierra_state(test_session, "BPL", [resource])
+
+    resource = test_session.query(Resource).filter_by(nid=1).one()
+    assert resource.status == "staff_deleted"
+
+    # check if even recorded
+    event = test_session.query(Event).one_or_none()
+    assert event is not None
+    assert isinstance(event.timestamp, datetime)
+    assert event.libraryId == 2
+    assert event.sierraId == 11111111
+    assert isinstance(event.bibDate, date)
+    assert event.resourceCategoryId == 1
+    assert event.outcome == "staff_deleted"
 
 
 def test_check_resources_sierra_state_invalid_library_arg(caplog):
@@ -136,6 +204,16 @@ def test_get_worldcat_brief_bib_matches_success(
     assert res.oclcMatchNumber == "44959645"
     assert res.status == "open"
 
+    # check if correct event recorded
+    event = test_session.query(Event).one_or_none()
+    assert event is not None
+    assert isinstance(event.timestamp, datetime)
+    assert event.libraryId == 1
+    assert event.sierraId == 11111111
+    assert isinstance(event.bibDate, date)
+    assert event.resourceCategoryId == 1
+    assert event.outcome == "worldcat_hit"
+
 
 @pytest.mark.parametrize("library,library_id", [("NYP", 1), ("BPL", 2)])
 def test_get_worldcat_brief_bib_matches_failed(
@@ -172,6 +250,16 @@ def test_get_worldcat_brief_bib_matches_failed(
     assert query.response == MockSuccessfulHTTP200SessionResponseNoMatches().json()
     assert res.oclcMatchNumber is None
     assert res.status == "open"
+
+    # check if correct event recorded
+    event = test_session.query(Event).one_or_none()
+    assert event is not None
+    assert isinstance(event.timestamp, datetime)
+    assert event.libraryId == library_id
+    assert event.sierraId == 11111111
+    assert isinstance(event.bibDate, date)
+    assert event.resourceCategoryId == 1
+    assert event.outcome == "worldcat_miss"
 
 
 def test_get_worldcat_full_bibs(
@@ -403,6 +491,16 @@ def test_update_status_to_upgraded(test_session, test_data_rich, caplog):
         assert resource.outputId == 2
         assert resource.enhanceTimestamp is not None
 
+    # check if correct event recorded
+    event = test_session.query(Event).one_or_none()
+    assert event is not None
+    assert isinstance(event.timestamp, datetime)
+    assert event.libraryId == 1
+    assert event.sierraId == 11111111
+    assert isinstance(event.bibDate, date)
+    assert event.resourceCategoryId == 1
+    assert event.outcome == "bot_enhanced"
+
 
 def test_update_status_to_upgraded_no_new_file(caplog, test_session):
     with caplog.at_level(logging.INFO):
@@ -412,3 +510,7 @@ def test_update_status_to_upgraded_no_new_file(caplog, test_session):
         "Skipping resources enhancement status update. No SFTP output file this time."
         in caplog.text
     )
+
+    # check if correct event recorded
+    event = test_session.query(Event).one_or_none()
+    assert event is None
