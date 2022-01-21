@@ -469,6 +469,47 @@ class MockPlatformSessionResponseSuccess:
         }
 
 
+class MockPlatformSessionResponseDeletedRecord:
+    """Simulates NYPL Platform query response for deleted record"""
+
+    def __init__(self):
+        self.status_code = 200
+        self.url = "request_url_here"
+
+    def json(self):
+        return {
+            "data": {
+                "id": "19099433",
+                "nyplSource": "sierra-nypl",
+                "nyplType": "bib",
+                "updatedDate": None,
+                "createdDate": "2017-08-23T17:59:35-04:00",
+                "deletedDate": "2011-09-15",
+                "deleted": True,
+                "locations": [],
+                "suppressed": None,
+                "lang": None,
+                "title": None,
+                "author": None,
+                "materialType": None,
+                "bibLevel": None,
+                "publishYear": None,
+                "catalogDate": None,
+                "country": None,
+                "normTitle": None,
+                "normAuthor": None,
+                "standardNumbers": [],
+                "controlNumber": "",
+                "fixedFields": [],
+                "varFields": [],
+            },
+            "count": 1,
+            "totalCount": 0,
+            "statusCode": 200,
+            "debugInfo": [],
+        }
+
+
 class MockPlatformSessionResponseNotFound:
     """Simulates NYPL Platform failed query response"""
 
@@ -545,6 +586,14 @@ def mock_successful_platform_session_response(monkeypatch):
 
 
 @pytest.fixture
+def mock_successful_platform_session_response_deleted_record(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return MockPlatformSessionResponseDeletedRecord()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
 def mock_failed_platform_session_response(monkeypatch):
     def mock_api_response(*args, **kwargs):
         return MockPlatformSessionResponseNotFound()
@@ -556,6 +605,14 @@ def mock_failed_platform_session_response(monkeypatch):
 def mock_successful_solr_session_response(monkeypatch):
     def mock_api_response(*args, **kwargs):
         return MockSolrSessionResponseSuccess()
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def mock_failed_solr_session_response(monkeypatch):
+    def mock_api_response(*args, **kwargs):
+        return MockSolrSessionResponseNotFound()
 
     monkeypatch.setattr(requests.Session, "get", mock_api_response)
 
