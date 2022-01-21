@@ -357,7 +357,7 @@ def test_transfer_to_drive_temp_file_not_created(mock_sftp_env, sftpserver, capl
 
 
 def test_transfer_to_drive_unable_to_del_temp_file_exception(
-    mock_drive, caplog, sftpserver, mock_os_error_on_remove, tmpdir
+    caplog, mock_sftp_env, sftpserver, mock_os_error_on_remove, tmpdir
 ):
     tmpfile = tmpdir.join("temp.mrc")
     tmpfile.write("spam")
@@ -370,6 +370,14 @@ def test_transfer_to_drive_unable_to_del_temp_file_exception(
         f"Unable to delete '{str(tmpfile)}' file after completing the job. Error "
         in caplog.text
     )
+
+
+def test_transfer_to_drive_sftp_error(mock_sftp_env, sftpserver, mock_io_error, tmpdir):
+    tmpfile = tmpdir.join("temp.mrc")
+    tmpfile.write("spam")
+    with sftpserver.serve_content({"laod_dir": {}}):
+        with pytest.raises(DriveError):
+            transfer_to_drive("NYP", "ebook", str(tmpfile))
 
 
 def test_update_status_to_upgraded(test_session, test_data_rich, caplog):
