@@ -8,6 +8,7 @@ from pymarc import MARCReader
 import pytest
 
 from nightshift.datastore import Resource, OutputFile, SourceFile
+from nightshift.ns_exceptions import DriveError
 from nightshift.tasks import (
     check_resources_sierra_state,
     enhance_and_output_bibs,
@@ -315,26 +316,20 @@ def test_manipulate_and_serialize_bibs_custom_outfile(
     assert bib["901"].value() == "NightShift/0.1.0"
 
 
-def test_manipulate_and_serialize_bibs_failed(
-    test_session, test_data_rich, caplog, tmpdir
-):
+def test_manipulate_and_serialize_bibs_failed(test_session, test_data_rich, caplog):
 
-    outfile = tmpdir.join("custom_file.mrc")
     resource = test_session.query(Resource).one_or_none()
     resource.resourceCategoryId = 5
 
     with caplog.at_level(logging.WARNING):
         file, resources = manipulate_and_serialize_bibs(
-            test_session, "NYP", "ebook", [resource], outfile
+            test_session, "NYP", "ebook", [resource]
         )
 
     assert "NYP b11111111a enhancement incomplete. Skipping." in caplog.text
 
-    assert file == outfile
+    assert file is None
     assert len(resources) == 0
-
-    # no outfile will be created if no records
-    assert not os.path.exists(file)
 
 
 def test_transfer_to_drive(mock_drive, caplog, sftpserver, tmpdir):
@@ -352,6 +347,13 @@ def test_transfer_to_drive(mock_drive, caplog, sftpserver, tmpdir):
 
     # make sure temp file cleanup
     assert not os.path.exists(tmpfile)
+
+
+def test_transfer_to_drive_temp_file_not_created(mock_sftp_env, sftpserver, caplog):
+    with caplog.at_level(logging.INFO):
+        remote_file = transfer_to_drive("NYP", "ebook", None)
+    assert remote_file is None
+    assert "No source file to output to SFTP" in caplog.text
 
 
 def test_transfer_to_drive_unable_to_del_temp_file_exception(
@@ -392,3 +394,13 @@ def test_update_status_to_upgraded(test_session, test_data_rich, caplog):
         assert resource.status == "bot_enhanced"
         assert resource.outputId == 2
         assert resource.enhanceTimestamp is not None
+
+
+def test_update_status_to_upgraded_no_new_file(caplog, test_session):
+    with caplog.at_level(logging.INFO):
+        update_status_to_upgraded(test_session, 1, None, [])
+
+    assert (
+        "Skipping resources enhancement status update. No SFTP output file this time."
+        in caplog.text
+    )

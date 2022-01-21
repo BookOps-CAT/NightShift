@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
 """
-This module provides methods for the manager to execute for a particular process
+This module provides the manager methods to perform particular tasks
 """
 from datetime import datetime
 import logging
 import os
+from typing import Optional
 
 from sqlalchemy.orm.session import Session
 
@@ -23,7 +24,7 @@ from nightshift.datastore_transactions import (
 )
 from nightshift.marc.marc_parser import BibReader
 from nightshift.marc.marc_writer import BibEnhancer
-
+from nightshift.ns_exceptions import DriveError
 
 logger = logging.getLogger("nightshift")
 
@@ -86,15 +87,12 @@ def enhance_and_output_bibs(
         resources:                      list of `nightshift.datastore.Resource`
                                         instances
     """
-    # logging.info(
-    #     f"Starting enhancement of {library} {len(resources)} {resource_category} "
-    #     "resources."
-    # )
+    # manipulate records and save to a temporary file
     temp_file, enhanced_resources = manipulate_and_serialize_bibs(
         db_session, library, resource_category, resources
     )
 
-    # output to SFTP
+    # move temporary file to SFTP
     remote_file = transfer_to_drive(library, resource_category, temp_file)
 
     # finalize datastore resource status
@@ -166,14 +164,21 @@ def get_worldcat_full_bibs(
             update_resource(
                 db_session, resource.sierraId, resource.libraryId, fullBib=response
             )
+
+            # commit each full bib response in case something
+            # breaks during this lenthy process;
+            # this should save time if process need to be restarted
             db_session.commit()
 
 
 def ingest_new_files(db_session: Session, library: str, library_id: int) -> None:
     """
     Imports to the database resources in a newly added files on the SFTP.
+
     Files on the remote server must have 'NYP' or 'BPL' in their names to be
-    considered by this process.
+    considered by this process (Sierra bib themselves do not have any system identifying
+    data to rely on).
+
     Sierra Scheduler will be configured to output data dumps following this
     practice.
 
@@ -195,11 +200,13 @@ def ingest_new_files(db_session: Session, library: str, library_id: int) -> None
             logging.debug(f"Added SourceFile record for '{handle}': {file_record}")
             marc_target = drive.fetch_file(handle)
             marc_reader = BibReader(marc_target, library)
+
             n = 0
             for resource in marc_reader:
                 n += 1
                 resource.sourceId = file_record.nid
                 add_resource(db_session, resource)
+
             db_session.commit()
             logging.info(f"Ingested {n} records from the file '{handle}'.")
 
@@ -259,6 +266,7 @@ def manipulate_and_serialize_bibs(
     """
     enhanced_resources = []
     skipped_resources = []
+
     for resource in resources:
         be = BibEnhancer(resource)
         be.manipulate()
@@ -281,17 +289,25 @@ def manipulate_and_serialize_bibs(
                 f"{library} b{resource.sierraId}a enhancement incomplete. Skipping."
             )
             skipped_resources.append(resource)
+
     logger.info(
         f"Enhanced and serialized {len(enhanced_resources)} and skipped "
         f"{len(skipped_resources)} {library} {resource_category} record(s)."
     )
     db_session.commit()
-    return (file_path, enhanced_resources)
+
+    # check if any resources have been actually saved to a file
+    if len(enhanced_resources) > 0:
+        out_file = file_path
+    else:
+        out_file = None
+
+    return (out_file, enhanced_resources)
 
 
 def transfer_to_drive(
-    library: str, resource_category: str, src_file: str = "temp.mrc"
-) -> str:
+    library: str, resource_category: str, src_file: str
+) -> Optional[str]:
     """
     Transfers local temporary MARC21 file to network drive.
     Arguments `library` and `resource_category` is used to name the MARC file on the
@@ -301,23 +317,30 @@ def transfer_to_drive(
     Args:
         library:                        library code
         resource_category:              name of resource category being processed
-        temp_file:                      temporary local file to be transfered
+        src_file:                      temporary local file to be transfered
 
     Returns:
         SFTP file handle
     """
-    # def construct_remote_file_handle(library, resource_category, timestamp):
-
     today = datetime.now().date()
     remote_file_name_base = f"{today:%y%m%d}-{library}-{resource_category}"
+    remote_file = None
 
     creds = get_credentials()
     with Drive(*creds) as drive:
-        remote_file = drive.output_file(src_file, remote_file_name_base)
+        try:
+            if src_file is not None:
+                remote_file = drive.output_file(src_file, remote_file_name_base)
+            else:
+                logger.info("No source file to output to SFTP.")
+        except DriveError:
+            raise
 
-    # clean up after job completed
+    # clean up temp/src file after job completed
     try:
         os.remove(src_file)
+    except (FileNotFoundError, TypeError):
+        pass
     except OSError as exc:
         logger.error(
             f"Unable to delete '{src_file}' file after completing the job. Error {exc}"
@@ -334,7 +357,8 @@ def update_status_to_upgraded(
     resources: list[Resource],
 ) -> None:
     """
-    Upgrades given resources status to "bot_enhanced"
+    Upgrades given resources status to "bot_enhanced" and records output file id.
+    Adds appropriate event record to the database.
 
     Args:
         db_session:                     `sqlalchemy.Session` instance
@@ -343,16 +367,27 @@ def update_status_to_upgraded(
         resources:                      list of `nightshift.datastore.Resource`
                                         instances
     """
-    logging.info(f"Updating {len(resources)} resources status to 'bot_enhanced'.")
-    out_file_record = add_output_file(db_session, library_id, out_file_handle)
-    for resource in resources:
-        update_resource(
-            db_session,
-            resource.sierraId,
-            resource.libraryId,
-            status="bot_enhanced",
-            outputId=out_file_record.nid,
-            enhanceTimestamp=datetime.utcnow(),
+    if out_file_handle is not None:
+
+        logging.info(f"Updating {len(resources)} resources status to 'bot_enhanced'.")
+
+        out_file_record = add_output_file(db_session, library_id, out_file_handle)
+
+        for resource in resources:
+            update_resource(
+                db_session,
+                resource.sierraId,
+                resource.libraryId,
+                status="bot_enhanced",
+                outputId=out_file_record.nid,
+                enhanceTimestamp=datetime.utcnow(),
+            )
+
+            add_event(db_session, resource, outcome="bot_enhanced")
+
+        db_session.commit()
+    else:
+        logging.info(
+            "Skipping resources enhancement status update. "
+            "No SFTP output file this time."
         )
-        add_event(db_session, resource, outcome="bot_enhanced")
-    db_session.commit()
