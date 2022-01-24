@@ -34,16 +34,8 @@ def test_config_local_env_variables_default_file():
         assert os.getenv(k) == v
 
 
-# def test_configure_database_local_success(
-#     mock_configure_database, test_connection, capfd
-# ):
-#     with does_not_raise():
-#         configure_database(env="local")
-#         captured = capfd.readouterr()
-#     print(f"out: {captured.out}")
-#     print(f"err: {captured.err}")
-#     # assert "NightShift database successfully set up.\n" in captured.out
-
-#     # tear down
-#     engine = create_engine(test_connection)
-#     Base.metadata.drop_all(engine)
+def test_configure_database_local_success(
+    mock_init_db, mock_config_local_env_variables
+):
+    with does_not_raise():
+        configure_database(env="local")
