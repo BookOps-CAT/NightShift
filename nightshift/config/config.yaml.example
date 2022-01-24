@@ -2,7 +2,7 @@
 NS_DBHOST: localhost
 NS_DBUSER: ns_test
 NS_DBPASSW: some_password
-NS_DBPORT: 5432
+NS_DBPORT: "5432"
 NS_DBNAME: ns_db
 WCNYP_KEY: nypl_worldcat_key
 WCNYP_SECRET: nypl_worldcat_secret
