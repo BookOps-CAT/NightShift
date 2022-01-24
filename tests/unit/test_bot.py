@@ -1,19 +1,49 @@
 """
-This probably be more of a functional test eventually. Move out of unit tests when expanded.
+Tests bot.py module
 """
+from contextlib import nullcontext as does_not_raise
+import os
 
-import logging
+import pytest
+from sqlalchemy import create_engine
+import yaml
+
+from nightshift.bot import config_local_env_variables, configure_database
+from nightshift.datastore import Base
 
 
-LOGGER = logging.getLogger(__name__)
+def test_config_local_env_variables():
+    test_config_file = "nightshift/config/config.yaml.example"
+    config_local_env_variables(config_file=test_config_file)
+
+    with open(test_config_file, "r") as f:
+        data = yaml.safe_load(f)
+
+    for k, v in data.items():
+        assert os.getenv(k) == v
 
 
-def test_logger_init_nightshift(
-    test_log, caplog, test_connection, test_session, test_data_core
-):
-    from nightshift.bot import run
+@pytest.mark.local
+def test_config_local_env_variables_default_file():
+    config_local_env_variables()
 
-    with caplog.at_level(logging.INFO):
-        run()
-    assert "Initiating NightShift..." in caplog.text
-    assert "Processing resources completed." in caplog.text
+    with open("nightshift/config/config.yaml", "r") as f:
+        data = yaml.safe_load(f)
+
+    for k, v in data.items():
+        assert os.getenv(k) == v
+
+
+# def test_configure_database_local_success(
+#     mock_configure_database, test_connection, capfd
+# ):
+#     with does_not_raise():
+#         configure_database(env="local")
+#         captured = capfd.readouterr()
+#     print(f"out: {captured.out}")
+#     print(f"err: {captured.err}")
+#     # assert "NightShift database successfully set up.\n" in captured.out
+
+#     # tear down
+#     engine = create_engine(test_connection)
+#     Base.metadata.drop_all(engine)
