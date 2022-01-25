@@ -6,13 +6,13 @@ import logging
 import logging.config
 import loggly.handlers
 import os
+import sys
 
 from sqlalchemy.exc import IntegrityError
 import yaml
 
+from nightshift import datastore_transactions, manager
 from nightshift.config.logging_conf import log_conf
-from nightshift.datastore_transactions import init_db
-from nightshift.manager import process_resources, perform_db_maintenance
 
 
 def config_local_env_variables(
@@ -20,7 +20,7 @@ def config_local_env_variables(
 ) -> None:
     """
     Sets up environment variables to run NighShift locally.
-    Requires a valid config.yaml file in nighshift/config directory
+    Requires a valid config.yaml file in the nighshift/config directory
 
     Args:
         config_file:            path to config file that includes environmental
@@ -32,7 +32,7 @@ def config_local_env_variables(
             os.environ[k] = v
 
 
-def configure_database(env: str = "prod"):
+def configure_database(env: str = "prod") -> None:
     """
     Sets up proper database tables and populates them with constant data
 
@@ -42,8 +42,8 @@ def configure_database(env: str = "prod"):
     if env == "local":
         config_local_env_variables()
     try:
-        init_db()
-        print("NightShift database successfully set up.")
+        datastore_transactions.init_db()
+        print(f"NightShift {env} database successfully set up.")
     except IntegrityError as exc:
         print(
             "NightShift database appears to be already set up. "
@@ -55,8 +55,17 @@ def configure_database(env: str = "prod"):
 
 def run(env: str = "prod") -> None:
     """
-    In production environment it is assumed environmental variables
+    Launches processing of new and older resources and performs
+    database maintenance. This is the main NightShift process.
+
+    In production environment it is assumed environment variables
     are independently set up before NighShift is launched.
+
+    In a local installation environment variables are read from a
+    file and set up at runtime.
+
+    Args:
+        env:                    application environment: 'local' or 'prod'
     """
 
     if env == "local":
@@ -66,16 +75,22 @@ def run(env: str = "prod") -> None:
     logging.config.dictConfig(conf)
     logger = logging.getLogger("nightshift")
 
-    logger.info(f"Initiating {env} NightShift...")
+    logger.info(f"Launching {env} NightShift...")
 
-    process_resources()
+    manager.process_resources()
     logger.info("Processing resources completed.")
 
-    perform_db_maintenance()
-    logger.info("Performing database maintenance completed.")
+    manager.perform_db_maintenance()
+    logger.info("Database maintenance completed.")
 
 
-if __name__ == "__main__":
+def main(args: list) -> None:
+    """
+    Parses command-line arguments used to configure and run NightShift
+
+    Args:
+        args:                   list of arguments
+    """
     parser = argparse.ArgumentParser(
         prog="NightShift", description="NighShift launcher"
     )
@@ -93,20 +108,14 @@ if __name__ == "__main__":
         choices=["prod", "local"],
     )
 
-    args = parser.parse_args()
+    pargs = parser.parse_args(args)
 
-    if args.action == "run":
-        if args.environment is None:
-            env = "prod"
-        else:
-            env = args.environment
+    if pargs.action == "run":
+        run(env=args.environment)
 
-        run(env=env)
+    elif pargs.action == "init":
+        configure_database(env=args.environment)
 
-    elif args.action == "init":
-        if args.environment is None:
-            env = "prod"
-        else:
-            env = args.environment
 
-        configure_database(env=env)
+if __name__ == "__main__":
+    main(sys.argv[1:])  # pragma: no cover
