@@ -6,9 +6,11 @@ import os
 from bookops_marc import Bib
 from pymarc import Field
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from nightshift.marc.marc_parser import BibReader
-
+from nightshift import datastore_transactions
+from nightshift import bot, manager
 from nightshift.datastore import OutputFile
 
 
@@ -40,6 +42,14 @@ def test_log(monkeypatch, local_test_config):
         monkeypatch.setenv("LOG_HANDLERS", local_test_config["LOG_HANDLERS"])
 
 
+@pytest.fixture
+def mock_config_local_env_variables(monkeypatch):
+    def _patch(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(bot, "config_local_env_variables", _patch)
+
+
 # DB fixtures ############
 
 
@@ -50,6 +60,30 @@ def test_data_rich(stub_resource, test_session, test_data_core):
 
     test_session.add(stub_resource)
     test_session.commit()
+
+
+@pytest.fixture
+def mock_init_db(monkeypatch):
+    def _patch(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(datastore_transactions, "init_db", _patch)
+
+
+@pytest.fixture
+def mock_init_db_integrity_error(monkeypatch):
+    def _patch(*args, **kwargs):
+        raise IntegrityError("err", "params", "orig")
+
+    monkeypatch.setattr(datastore_transactions, "init_db", _patch)
+
+
+@pytest.fixture
+def mock_init_db_value_error(monkeypatch):
+    def _patch(*args, **kwargs):
+        raise ValueError
+
+    monkeypatch.setattr(datastore_transactions, "init_db", _patch)
 
 
 # Bibs fixtures ##############
@@ -95,3 +129,19 @@ def stub_marc():
 @pytest.fixture
 def fake_BibReader():
     return BibReader(BytesIO(b"some records"), "NYP")
+
+
+@pytest.fixture
+def patch_process_resources(monkeypatch):
+    def _patch(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(manager, "process_resources", _patch)
+
+
+@pytest.fixture
+def patch_perform_db_maintenance(monkeypatch):
+    def _patch(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(manager, "perform_db_maintenance", _patch)
