@@ -111,10 +111,10 @@ def main(args: list) -> None:
     pargs = parser.parse_args(args)
 
     if pargs.action == "run":
-        run(env=args.environment)
+        run(env=pargs.environment)
 
     elif pargs.action == "init":
-        configure_database(env=args.environment)
+        configure_database(env=pargs.environment)
 
 
 if __name__ == "__main__":
