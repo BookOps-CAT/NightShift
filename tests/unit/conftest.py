@@ -43,7 +43,7 @@ def test_log(monkeypatch, local_test_config):
 
 
 @pytest.fixture
-def mock_config_local_env_variables(monkeypatch):
+def patch_config_local_env_variables(monkeypatch):
     def _patch(*args, **kwargs):
         return
 
@@ -63,7 +63,7 @@ def test_data_rich(stub_resource, test_session, test_data_core):
 
 
 @pytest.fixture
-def mock_init_db(monkeypatch):
+def patch_init_db(monkeypatch):
     def _patch(*args, **kwargs):
         return
 

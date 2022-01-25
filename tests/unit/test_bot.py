@@ -34,7 +34,7 @@ def test_config_local_env_variables_default_file():
 
 
 def test_configure_database_local_success(
-    mock_init_db, mock_config_local_env_variables, capfd
+    patch_init_db, patch_config_local_env_variables, capfd
 ):
     with does_not_raise():
         configure_database(env="local")
@@ -43,7 +43,7 @@ def test_configure_database_local_success(
 
 
 def test_configure_database_again(
-    mock_config_local_env_variables, mock_init_db_integrity_error, capfd
+    patch_config_local_env_variables, mock_init_db_integrity_error, capfd
 ):
     configure_database()
     captured = capfd.readouterr()
@@ -61,7 +61,7 @@ def test_configure_database_without_env_variables(capfd, mock_init_db_value_erro
 
 def test_run_local(
     caplog,
-    mock_config_local_env_variables,
+    patch_config_local_env_variables,
     mock_log_env,
     patch_process_resources,
     patch_perform_db_maintenance,
@@ -75,7 +75,7 @@ def test_run_local(
 
 
 @pytest.mark.parametrize("arg", ["local", "prod"])
-def test_main_init_arg(arg, mock_init_db, mock_config_local_env_variables, capfd):
+def test_main_init_arg(arg, patch_init_db, patch_config_local_env_variables, capfd):
     with does_not_raise():
         main(["init", f"{arg}"])
         captured = capfd.readouterr()
@@ -86,7 +86,7 @@ def test_main_init_arg(arg, mock_init_db, mock_config_local_env_variables, capfd
 @pytest.mark.parametrize("arg", ["local", "prod"])
 def test_main_run_arg(
     arg,
-    mock_config_local_env_variables,
+    patch_config_local_env_variables,
     patch_process_resources,
     patch_perform_db_maintenance,
     mock_log_env,
