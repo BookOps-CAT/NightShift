@@ -152,7 +152,7 @@ class OutputFile(Base):
 
 class Resource(Base):
     """
-    Resource to be upgraded info.
+    Resource to be upgraded.
     """
 
     __tablename__ = "resource"
