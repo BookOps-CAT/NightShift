@@ -3,13 +3,12 @@ Tests bot.py module
 """
 from contextlib import nullcontext as does_not_raise
 import os
+import logging
 
 import pytest
-from sqlalchemy import create_engine
 import yaml
 
-from nightshift.bot import config_local_env_variables, configure_database
-from nightshift.datastore import Base
+from nightshift.bot import config_local_env_variables, configure_database, main, run
 
 
 def test_config_local_env_variables():
@@ -35,7 +34,65 @@ def test_config_local_env_variables_default_file():
 
 
 def test_configure_database_local_success(
-    mock_init_db, mock_config_local_env_variables
+    mock_init_db, mock_config_local_env_variables, capfd
 ):
     with does_not_raise():
         configure_database(env="local")
+        captured = capfd.readouterr()
+        assert captured.out == "NightShift local database successfully set up.\n"
+
+
+def test_configure_database_again(
+    mock_config_local_env_variables, mock_init_db_integrity_error, capfd
+):
+    configure_database()
+    captured = capfd.readouterr()
+    assert (
+        "NightShift database appears to be already set up. Operation raised following error: "
+        in captured.out
+    )
+
+
+def test_configure_database_without_env_variables(capfd, mock_init_db_value_error):
+    configure_database()
+    captured = capfd.readouterr()
+    assert "Environmental variables are not configured properly." in captured.out
+
+
+def test_run_local(
+    caplog,
+    mock_config_local_env_variables,
+    mock_log_env,
+    patch_process_resources,
+    patch_perform_db_maintenance,
+):
+    with caplog.at_level(logging.INFO):
+        run(env="local")
+
+    assert "Launching local NightShift..." in caplog.text
+    assert "Processing resources completed." in caplog.text
+    assert "Database maintenance completed." in caplog.text
+
+
+@pytest.mark.parametrize("arg", ["local", "prod"])
+def test_main_init_arg(arg, mock_init_db, mock_config_local_env_variables, capfd):
+    with does_not_raise():
+        main(["init", f"{arg}"])
+        captured = capfd.readouterr()
+
+    assert f"NightShift {arg} database successfully set up." in captured.out
+
+
+@pytest.mark.parametrize("arg", ["local", "prod"])
+def test_main_run_arg(
+    arg,
+    mock_config_local_env_variables,
+    patch_process_resources,
+    patch_perform_db_maintenance,
+    mock_log_env,
+    caplog,
+):
+    with caplog.at_level(logging.INFO):
+        main(["run", f"{arg}"])
+
+    assert f"Launching {arg} NightShift..." in caplog.text
