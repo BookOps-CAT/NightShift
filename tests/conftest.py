@@ -12,7 +12,6 @@ from bookops_worldcat.errors import WorldcatSessionError
 import yaml
 
 
-from nightshift import bot
 from nightshift.comms.storage import get_credentials, Drive
 from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
@@ -24,7 +23,6 @@ from nightshift.datastore import (
     SourceFile,
     WorldcatQuery,
 )
-from nightshift import datastore_transactions
 
 
 class FakeUtcNow(datetime.datetime):
@@ -125,22 +123,6 @@ def mock_db_env(monkeypatch, local_test_config):
     monkeypatch.setenv("NS_DBHOST", data["NS_DBHOST"])
     monkeypatch.setenv("NS_DBPORT", data["NS_DBPORT"])
     monkeypatch.setenv("NS_DBNAME", data["NS_DBNAME"])
-
-
-@pytest.fixture
-def mock_init_db(monkeypatch):
-    def _mock(*args, **kwargs):
-        yield
-
-    monkeypatch.setattr(datastore_transactions, "init_db", _mock)
-
-
-@pytest.fixture
-def mock_config_local_env_variables(monkeypatch):
-    def _mock(*args, **kwargs):
-        yield
-
-    monkeypatch.setattr(bot, "config_local_env_variables", _mock)
 
 
 @pytest.fixture(scope="function")
