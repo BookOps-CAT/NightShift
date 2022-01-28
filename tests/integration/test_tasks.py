@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime
 
 import pytest
 from sqlalchemy import update
@@ -81,7 +80,7 @@ def test_get_worldcat_full_bibs(test_session, test_data, env_var):
 
 
 def test_ingest_new_files_mocked(
-    mock_db_env,
+    env_var,
     test_data_core,
     test_session,
     mock_sftp_env,
