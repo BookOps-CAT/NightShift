@@ -15,11 +15,21 @@ from nightshift.datastore_transactions import update_resource
 
 @pytest.fixture
 def env_var(monkeypatch):
-    if not os.getenv("TRAVIS"):
+    if os.getenv("TRAVIS"):
+        data = dict(
+            NS_DBUSER="postgres",
+            NS_DBPASSW="",
+            NS_DBHOST="127.0.0.1",
+            NS_DBPORT="5433",
+            NS_DBNAME="ns_db",
+        )
+    else:
+        # local and firewalled tests
         with open("tests/envar.yaml", "r") as f:
             data = yaml.safe_load(f)
-            for k, v in data.items():
-                monkeypatch.setenv(k, v)
+
+    for k, v in data.items():
+        monkeypatch.setenv(k, v)
 
 
 @pytest.fixture
