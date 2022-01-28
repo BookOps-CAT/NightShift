@@ -14,16 +14,16 @@ Copy cataloging bot.
 
 ### Prerequisits
 1. PostgresSQL
-	a) download and install [PostgreSQL server](https://www.postgresql.org/download/)
-	b) create new database
-2. Create a configuration file
-	a) follow `nightshift/config/config.yaml.example` to provide all required credentials
+	1. download and install [PostgreSQL server](https://www.postgresql.org/download/) 
+	2. create new database 
+2. Create a configuration file 
+	1. follow `nightshift/config/config.yaml.example` to provide all required credentials 
 3. Export Sierra brief bibs for enhancement 
-	a) use 'Output Order Records (pur)' for NYPL and 'Archive Order Records (pur)' for BPL process to compile a list of records into a proper format
-	b) use 'Output MARC Records (out)' process to extract bibs from Sierra and save them locally
-	c) rename files to include library code, example: '220129-NYP.pout'
-	d) keep Sierra's original .pout extension
-4. Drop exported files to the shared drive folder: R:/NSDROP/sierra_dumps/nightshift/
+	1. use 'Output Order Records (pur)' for NYPL and 'Archive Order Records (pur)' for BPL process to compile a list of records into a proper format 
+	2. use 'Output MARC Records (out)' process to extract bibs from Sierra and save them locally 
+	3. rename files to include library code, example: '220129-NYP.pout' 
+	4 keep Sierra's original .pout extension 
+4. Drop exported files to the shared drive folder: R:/NSDROP/sierra_dumps/nightshift/ 
 
 ### Setup
 Using command-line tool initiate NightShift:
