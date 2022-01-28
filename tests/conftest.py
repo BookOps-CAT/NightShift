@@ -106,7 +106,7 @@ def stub_resource():
 
 
 @pytest.fixture(scope="function")
-def mock_db_env(monkeypatch, local_test_config):
+def mock_db_env(monkeypatch):
     if os.getenv("TRAVIS"):
         data = dict(
             NS_DBUSER="postgres",
@@ -116,13 +116,14 @@ def mock_db_env(monkeypatch, local_test_config):
             NS_DBNAME="ns_db",
         )
     else:
-        data = local_test_config
+        with open("tests/envar.yaml", "r") as f:
+            data = yaml.safe_load(f)
 
-    monkeypatch.setenv("NS_DBUSER", data["NS_DBUSER"])
-    monkeypatch.setenv("NS_DBPASSW", data["NS_DBPASSW"])
-    monkeypatch.setenv("NS_DBHOST", data["NS_DBHOST"])
-    monkeypatch.setenv("NS_DBPORT", data["NS_DBPORT"])
-    monkeypatch.setenv("NS_DBNAME", data["NS_DBNAME"])
+            monkeypatch.setenv("NS_DBUSER", data["NS_DBUSER"])
+            monkeypatch.setenv("NS_DBPASSW", data["NS_DBPASSW"])
+            monkeypatch.setenv("NS_DBHOST", data["NS_DBHOST"])
+            monkeypatch.setenv("NS_DBPORT", data["NS_DBPORT"])
+            monkeypatch.setenv("NS_DBNAME", data["NS_DBNAME"])
 
 
 @pytest.fixture(scope="function")
