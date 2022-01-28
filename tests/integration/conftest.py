@@ -5,6 +5,7 @@ from io import BytesIO
 import os
 
 import pytest
+import yaml
 
 from nightshift import tasks
 from nightshift.comms.storage import Drive
@@ -13,10 +14,12 @@ from nightshift.datastore_transactions import update_resource
 
 
 @pytest.fixture
-def env_var(monkeypatch, local_test_config):
+def env_var(monkeypatch, mock_db_env):
     if not os.getenv("TRAVIS"):
-        for k, v in local_test_config.items():
-            monkeypatch.setenv(k, v)
+        with open("tests/envar.yaml", "r") as f:
+            data = yaml.safe_load(f)
+            for k, v in data.items():
+                monkeypatch.setenv(k, v)
 
 
 @pytest.fixture

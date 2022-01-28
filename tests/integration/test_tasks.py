@@ -81,7 +81,7 @@ def test_get_worldcat_full_bibs(test_session, test_data, env_var):
 
 
 def test_ingest_new_files_mocked(
-    env_var,
+    mock_db_env,
     test_data_core,
     test_session,
     mock_sftp_env,
