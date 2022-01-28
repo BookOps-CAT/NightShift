@@ -14,7 +14,7 @@ from nightshift.datastore_transactions import update_resource
 
 
 @pytest.fixture
-def env_var(monkeypatch, mock_db_env):
+def env_var(monkeypatch):
     if not os.getenv("TRAVIS"):
         with open("tests/envar.yaml", "r") as f:
             data = yaml.safe_load(f)
