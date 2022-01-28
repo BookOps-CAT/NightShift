@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from contextlib import nullcontext as does_not_raise
 
 import pytest
 from sqlalchemy import update
@@ -9,7 +8,7 @@ from nightshift import tasks
 
 
 @pytest.mark.local
-def test_get_worldcat_brief_bib_matches_success(test_session, test_data, env_var):
+def test_get_worldcat_brief_bib_matches_success(test_session, test_data_rich, env_var):
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
     resource.distributorNumber = "622708F6-78D7-453A-A7C5-3FE6853F3167"
@@ -35,7 +34,7 @@ def test_get_worldcat_brief_bib_matches_success(test_session, test_data, env_var
 
 
 @pytest.mark.local
-def test_get_worldcat_brief_bib_matches_failure(test_session, test_data, env_var):
+def test_get_worldcat_brief_bib_matches_failure(test_session, test_data_rich, env_var):
     # modify existing resource
     resource = test_session.query(Resource).filter_by(nid=1).one()
     resource.distributorNumber = "ABC#1234"
@@ -63,7 +62,7 @@ def test_get_worldcat_brief_bib_matches_failure(test_session, test_data, env_var
 
 
 @pytest.mark.local
-def test_get_worldcat_full_bibs(test_session, test_data, env_var):
+def test_get_worldcat_full_bibs(test_session, test_data_rich, env_var):
     test_session.execute(
         update(Resource).where(Resource.nid == 1).values(oclcMatchNumber="779356905")
     )
@@ -77,22 +76,3 @@ def test_get_worldcat_full_bibs(test_session, test_data, env_var):
 
     res = test_session.query(Resource).filter_by(nid=1).one()
     assert isinstance(res.fullBib, bytes)
-
-
-def test_ingest_new_files_mocked(
-    env_var,
-    test_data_core,
-    test_session,
-    mock_sftp_env,
-    mock_drive_unprocessed_files,
-    mock_drive_fetch_file,
-):
-    with does_not_raise():
-        tasks.ingest_new_files(test_session, "NYP", 1)
-
-    res = test_session.query(Resource).all()
-    assert len(res) == 2
-    assert res[0].standardNumber == "9780071830744"
-    assert res[0].resourceCategoryId == 1
-    assert res[1].standardNumber == "9780553906899"
-    assert res[1].resourceCategoryId == 1

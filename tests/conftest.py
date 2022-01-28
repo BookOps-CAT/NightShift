@@ -18,6 +18,7 @@ from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift.datastore import (
     Base,
     Library,
+    OutputFile,
     Resource,
     ResourceCategory,
     SourceFile,
@@ -84,6 +85,25 @@ def local_test_config():
     with open("tests/envar.yaml", "r") as f:
         data = yaml.safe_load(f)
         return data
+
+
+@pytest.fixture
+def env_var(monkeypatch):
+    if os.getenv("TRAVIS"):
+        data = dict(
+            NS_DBUSER="postgres",
+            NS_DBPASSW="",
+            NS_DBHOST="127.0.0.1",
+            NS_DBPORT="5433",
+            NS_DBNAME="ns_db",
+        )
+    else:
+        # local and firewalled tests
+        with open("tests/envar.yaml", "r") as f:
+            data = yaml.safe_load(f)
+
+    for k, v in data.items():
+        monkeypatch.setenv(k, v)
 
 
 @pytest.fixture
@@ -161,6 +181,15 @@ def test_data_core(test_session):
         )
     test_session.add(SourceFile(libraryId=1, handle="foo1.mrc"))
     test_session.add(SourceFile(libraryId=2, handle="foo2.mrc"))
+    test_session.commit()
+
+
+@pytest.fixture
+def test_data_rich(stub_resource, test_session, test_data_core):
+    test_session.add(OutputFile(libraryId=1, handle="spam.mrc"))
+    test_session.commit()
+
+    test_session.add(stub_resource)
     test_session.commit()
 
 

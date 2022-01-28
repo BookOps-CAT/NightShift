@@ -12,14 +12,13 @@ from nightshift.marc.marc_parser import BibReader
 from nightshift.constants import LIBRARIES
 from nightshift.tasks import (
     enhance_and_output_bibs,
-    transfer_to_drive,
     isolate_unprocessed_files,
     ingest_new_files,
 )
 
 
 @pytest.mark.firewalled
-def test_fetch_file_and_add_to_db(env_var, test_data):
+def test_fetch_file_and_add_to_db(env_var, test_data_rich):
     test_file = "NYPeres210701.pout"
     library = "NYP"
 
@@ -57,7 +56,7 @@ def test_fetch_file_and_add_to_db(env_var, test_data):
 
 
 @pytest.mark.firewalled
-def test_enhance_and_transfer_to_drive(caplog, env_var, test_data, stub_resource):
+def test_enhance_and_transfer_to_drive(caplog, env_var, test_data_rich, stub_resource):
     new_resource = Resource(
         sierraId=22222222,
         libraryId=1,
@@ -94,7 +93,7 @@ def test_enhance_and_transfer_to_drive(caplog, env_var, test_data, stub_resource
 
 
 @pytest.mark.firewalled
-def test_isolate_unprocessed_files(env_var, test_data, caplog):
+def test_isolate_unprocessed_files(env_var, test_data_rich, caplog):
     with session_scope() as db_session:
         drive_creds = get_credentials()
         with Drive(*drive_creds) as drive:
@@ -109,7 +108,7 @@ def test_isolate_unprocessed_files(env_var, test_data, caplog):
 
 
 @pytest.mark.firewalled
-def test_ingest_new_files(env_var, test_data, caplog):
+def test_ingest_new_files(env_var, test_data_rich, caplog):
     with session_scope() as db_session:
         with caplog.at_level(logging.INFO):
             ingest_new_files(db_session, "NYP", 1)
