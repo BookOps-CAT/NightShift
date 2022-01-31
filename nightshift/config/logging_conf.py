@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Configures app logging
 """
@@ -60,6 +62,7 @@ def log_conf() -> dict:
                 "formatter": "brief",
                 "maxBytes": 1024 * 1024,
                 "backupCount": 5,
+                "encoding": "utf8",
             },
             "loggly": {
                 "level": "WARN",
