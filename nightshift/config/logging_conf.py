@@ -60,7 +60,7 @@ def log_conf() -> dict:
                 "class": "logging.handlers.RotatingFileHandler",
                 "filename": "nightshift.log",
                 "formatter": "brief",
-                "maxBytes": 1024 * 1024,
+                "maxBytes": 10 * 1024 * 1024,  # ~5k records per file
                 "backupCount": 5,
                 "encoding": "utf8",
             },
