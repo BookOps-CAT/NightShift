@@ -216,7 +216,7 @@ class TestBibEnhancer:
             be._purge_tags()
 
         assert (
-            "Removed ['020', '029', '037', '090', '856', '910', '938'] from NYP b11111111a."
+            "Removed ['020', '029', '037', '090', '263', '856', '910', '938'] from NYP b11111111a."
             in caplog.text
         )
 
