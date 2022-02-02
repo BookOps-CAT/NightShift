@@ -75,16 +75,16 @@ class TestBibEnhancer:
     @pytest.mark.parametrize(
         "resourceId,suppressed,libraryId,expectation",
         [
-            pytest.param(1, False, 1, "*b2=z;", id="nyp-ebook"),
-            pytest.param(1, False, 2, "*b2=x;", id="bpl-ebook"),
-            pytest.param(1, True, 1, "*b2=z;b3=n;", id="nyp-ebook-supp"),
-            pytest.param(1, True, 2, "*b2=x;b3=n;", id="bpl-ebook-supp"),
-            pytest.param(2, False, 1, "*b2=n;", id="nyp-eaudio"),
-            pytest.param(2, False, 2, "*b2=z;", id="bpl-eaudio"),
-            pytest.param(3, True, 1, "*b2=3;b3=n;", id="nyp-evideo-supp"),
-            pytest.param(3, True, 2, "*b2=v;b3=n;", id="bpl-evideo-supp"),
-            pytest.param(4, False, 1, "*b2=a;", id="nyp-print"),
-            pytest.param(4, False, 2, "*b2=a;", id="bpl-print"),
+            pytest.param(1, False, 1, "*b2=z;bn=ia;", id="nyp-ebook"),
+            pytest.param(1, False, 2, "*b2=x;bn=elres;", id="bpl-ebook"),
+            pytest.param(1, True, 1, "*b2=z;b3=n;bn=ia;", id="nyp-ebook-supp"),
+            pytest.param(1, True, 2, "*b2=x;b3=n;bn=elres;", id="bpl-ebook-supp"),
+            pytest.param(2, False, 1, "*b2=n;bn=ia;", id="nyp-eaudio"),
+            pytest.param(2, False, 2, "*b2=z;bn=elres;", id="bpl-eaudio"),
+            pytest.param(3, True, 1, "*b2=3;b3=n;bn=ia;", id="nyp-evideo-supp"),
+            pytest.param(3, True, 2, "*b2=v;b3=n;bn=elres;", id="bpl-evideo-supp"),
+            pytest.param(4, False, 1, "*b2=a;bn=ia;", id="nyp-print"),
+            pytest.param(4, False, 2, "*b2=a;bn=elres;", id="bpl-print"),
         ],
     )
     def test_add_command_tag(
@@ -337,7 +337,7 @@ class TestBibEnhancer:
         assert str(be.bib["091"]) == "=091  \\\\$aeNYPL Book"
         assert str(be.bib["901"]) == f"=901  \\\\$a{__title__}/{__version__}"
         assert str(be.bib["945"]) == "=945  \\\\$a.b11111111a"
-        assert str(be.bib["949"]) == "=949  \\\\$a*b2=z;"
+        assert str(be.bib["949"]) == "=949  \\\\$a*b2=z;bn=ia;"
 
         # check if fields have been duplicated by accident
         assert len(be.bib.get_fields("001")) == 1

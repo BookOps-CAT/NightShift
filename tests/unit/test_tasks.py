@@ -315,25 +315,6 @@ def test_ingest_new_files(test_session, test_data_core, sftpserver, mock_sftp_en
     assert len(resources) == 2
 
 
-# def test_ingest_new_files_mocked(
-#     env_var,
-#     test_data_core,
-#     test_session,
-#     mock_sftp_env,
-#     mock_drive_unprocessed_files,
-#     mock_drive_fetch_file,
-# ):
-#     with does_not_raise():
-#         tasks.ingest_new_files(test_session, "NYP", 1)
-
-#     res = test_session.query(Resource).all()
-#     assert len(res) == 2
-#     assert res[0].standardNumber == "9780071830744"
-#     assert res[0].resourceCategoryId == 1
-#     assert res[1].standardNumber == "9780553906899"
-#     assert res[1].resourceCategoryId == 1
-
-
 def test_isolate_unprocessed_nyp_files(
     test_session, test_data_core, mock_drive, sftpserver, caplog
 ):
@@ -385,7 +366,7 @@ def test_manipulate_and_serialize_bibs_default_outfile(
 
     assert bib["091"].value() == "eNYPL Book"
     assert bib["945"].value() == ".b11111111a"
-    assert bib["949"].value() == "*b2=z;"
+    assert bib["949"].value() == "*b2=z;bn=ia;"
     assert bib["901"].value() == "NightShift/0.1.0"
 
     if os.path.exists("temp.mrc"):
@@ -419,7 +400,7 @@ def test_manipulate_and_serialize_bibs_custom_outfile(
 
     assert bib["091"].value() == "eNYPL Book"
     assert bib["945"].value() == ".b11111111a"
-    assert bib["949"].value() == "*b2=z;"
+    assert bib["949"].value() == "*b2=z;bn=ia;"
     assert bib["901"].value() == "NightShift/0.1.0"
 
 

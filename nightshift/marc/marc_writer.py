@@ -228,6 +228,12 @@ class BibEnhancer:
         if self.resource.suppressed:
             commands.append("b3=n")
 
+        # set default location
+        if self.library == "NYP":
+            commands.append("bn=ia")
+        elif self.library == "BPL":
+            commands.append("bn=elres")
+
         command_str = ";".join(commands)
 
         # add command to bib
