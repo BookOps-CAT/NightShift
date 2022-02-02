@@ -84,13 +84,23 @@ class BibEnhancer:
         Manipulates WorldCat record according to `nightshift.constants` module
         specs.
 
-        Full manipulation happens only if call number can be cosntructed.
+        Full manipulation happens only if records meets minimum requirements and
+        a call number can be cosntructed.
         """
 
-        # add call number field
-        call_number = self._add_call_number()
+        # if does not meet criteria delete Worldcat bib
+        if not self._is_acceptable():
+            logger.info(
+                f"Worldcat record # {self.resource.oclcMatchNumber} is rejected. "
+                "Does not meet minimum requirements."
+            )
+            self.bib = None
+        else:
+            logger.info(
+                f"Worldcat record # {self.resource.oclcMatchNumber} is acceptable. "
+                "Meets minimum requriements."
+            )
 
-        if call_number:
             # delete unwanted MARC tags
             self._purge_tags()
 
@@ -192,7 +202,6 @@ class BibEnhancer:
             )
             return True
         else:
-            self.bib = None
             logger.warning(
                 f"Unable to create call number for {self.library} "
                 f"b{self.resource.sierraId}a."
@@ -358,6 +367,38 @@ class BibEnhancer:
         controlNo = self.bib["001"].data
         controlNo_without_prefix = self._remove_oclc_prefix(controlNo)
         self.bib["001"].data = controlNo_without_prefix
+
+    def _is_acceptable(self) -> bool:
+        """
+        Checks if full Worldcat record meet minimum criteria and
+        a valid call number can be construced.
+        """
+        if self._meets_minimum_criteria() and self._add_call_number():
+            return True
+        else:
+            return False
+
+    def _meets_minimum_criteria(self) -> bool:
+        """
+        Checks if Worldcat record meets minimum criteria
+        """
+        # check uppercase title (indicates poor quality)
+        if self.bib.title().isupper():
+            logger.debug("Worldcat record failed uppercase title test.")
+            return False
+
+        # missing statement of responsibility
+        if "c" not in self.bib["245"]:
+            logger.debug("Worldcat record failed statement of resp. test.")
+            return False
+
+        # no physical description
+        if "300" not in self.bib:
+            logger.debug("Worldcat record failed physical desc. test.")
+            return False
+
+        logger.debug("Worldcat record meets minimum criteria.")
+        return True
 
     def _purge_tags(self) -> None:
         """
