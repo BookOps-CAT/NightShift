@@ -414,7 +414,14 @@ class BibEnhancer:
                 pass
             elif field.indicator2 == "7":
                 term_src = field["2"]
-                if term_src.lower() in ("lcsh", "fast", "gsafd", "lcgft", "lctgm"):
+                if term_src.lower() in (
+                    "lcsh",
+                    "fast",
+                    "homoit",
+                    "gsafd",
+                    "lcgft",
+                    "lctgm",
+                ):
                     pass
                 else:
                     logger.debug(
