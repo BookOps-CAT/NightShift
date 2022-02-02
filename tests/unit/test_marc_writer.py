@@ -112,6 +112,72 @@ class TestBibEnhancer:
 
         assert str(bib["949"]) == f"=949  \\\\$a{expectation}"
 
+    @pytest.mark.parametrize(
+        "res_cat_id, tag, indicators, subfields, log_msg",
+        [
+            pytest.param(
+                1,
+                None,
+                [],
+                [],
+                "Added ebook genre 655 tag.",
+                id="ebook: No previous tags",
+            ),
+            pytest.param(
+                1,
+                "650",
+                [" ", "0"],
+                ["a", "Electronic books."],
+                "Added ebook genre 655 tag.",
+                id="ebook: 650  0 $Electronic books.",
+            ),
+            pytest.param(
+                2,
+                "655",
+                [" ", "0"],
+                ["a", "Audiobooks."],
+                "Added 2 eaudiobook genre 655 tags.",
+                id="eaudio: 655  0 $a Audiobooks.",
+            ),
+            pytest.param(
+                3,
+                "655",
+                [" ", "0"],
+                ["a", "Internet videos."],
+                "Added evideo genre 655 tag.",
+                id="evideo: 650  0 $a Internet videos.",
+            ),
+            pytest.param(99, None, [], [], "", id="invalid resource category"),
+        ],
+    )
+    def test_add_genre_tags(
+        self, caplog, stub_resource, res_cat_id, tag, indicators, subfields, log_msg
+    ):
+        stub_resource.resourceCategoryId = res_cat_id
+        be = BibEnhancer(stub_resource)
+
+        if tag:
+            be.bib.add_field(Field(tag=tag, indicators=indicators, subfields=subfields))
+
+        with caplog.at_level(logging.DEBUG):
+            be._add_genre_tags()
+
+        assert log_msg in caplog.text
+
+        if res_cat_id == 1:
+            assert len(be.bib.get_fields("655")) == 1
+            assert str(be.bib["655"]) == "=655  \\0$aElectronic books."
+        elif res_cat_id == 2:
+            tags = be.bib.get_fields("655")
+            assert len(tags) == 2
+            assert str(tags[0]) == "=655  \\7$aAudiobooks.$2lcgft"
+            assert str(tags[1]) == "=655  \\7$aElectronic audiobooks.$2local"
+        elif res_cat_id == 3:
+            assert len(be.bib.get_fields("655")) == 1
+            assert str(be.bib["655"]) == "=655  \\7$aInternet videos.$2lcgft"
+        else:
+            assert len(be.bib.get_fields("655")) == 0
+
     def test_add_local_tags(self, caplog, stub_resource):
         fields = [
             Field(tag="020", indicators=[" ", " "], subfields=["a", "978123456789x"]),
@@ -228,6 +294,19 @@ class TestBibEnhancer:
         be = BibEnhancer(stub_resource)
         with does_not_raise():
             be._purge_tags()
+
+    @pytest.mark.parametrize(
+        "vendor",
+        ["Overdrive, Inc.", "3M Company", "Recorded Books, Inc", "CloudLibrary"],
+    )
+    def test_remove_eresource_vendors(self, stub_resource, vendor):
+        be = BibEnhancer(stub_resource)
+        be.bib.add_field(
+            Field(tag="710", indicators=[" ", "0"], subfields=["a", vendor])
+        )
+        be._remove_eresource_vendors()
+
+        assert len(be.bib.get_fields("710")) == 0
 
     @pytest.mark.parametrize("arg", ["ocm12345", "ocn12345", "on12345", "12345"])
     def test_remove_oclc_prefix(self, arg, stub_resource):

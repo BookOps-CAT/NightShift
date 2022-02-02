@@ -45,6 +45,7 @@ class BibEnhancer:
         `constants.RESOURCE_CATEGORIES`
      - creates for each resource type an appropriate call number tag (099 for BPL or
         091 for NYPL)
+     - enforces presence of appropriate genre heading in 655 ('Electronic books', etc.)
      - adds a Sierra command tag in the 949 tag that specifies Sierra bib format
         code and optionally Sierra bib code 3 for records suppressed from public view
     - adds Nightshift name and version to bib Sierra initials MARC tag (947 for BPL,
@@ -96,13 +97,19 @@ class BibEnhancer:
             # remove 6xx tags with terms from unsupported thesauri
             self._remove_unsupported_subject_tags()
 
+            # add genre tags
+            self._add_genre_tags()
+
+            # remove e-resources vendor tags
+            self._remove_eresource_vendors()
+
             # add tags from the local bib
             self._add_local_tags()
 
             # add Sierra bib # for overlaying
             self._add_sierraId()
 
-            # add Sierra import command tag
+            # add Sierra import command tags
             self._add_command_tag()
 
             # add bot's initials
@@ -229,6 +236,62 @@ class BibEnhancer:
             f"b{self.resource.sierraId}a."
         )
 
+    def _add_genre_tags(self) -> None:
+        """
+        Adds genre tags to e-resources.
+
+        Occasionally genre terms may be recorded in 650 tag in Worldcat records
+        and it is safer to remove all and add 655 from scratch.
+        """
+        try:
+            resource_cat = RES_IDX[self.resource.resourceCategoryId]
+        except KeyError:
+            resource_cat = None
+
+        if resource_cat == "ebook":
+            for field in self.bib.subjects():
+                if field.value().lower() == "electronic books.":
+                    self.bib.remove_field(field)
+            self.bib.add_field(
+                Field(
+                    tag="655",
+                    indicators=[" ", "0"],
+                    subfields=["a", "Electronic books."],
+                )
+            )
+            logger.debug("Added ebook genre 655 tag.")
+        elif resource_cat == "eaudio":
+            for field in self.bib.subjects():
+                if field.value().lower() in ("audiobooks.", "electronic audiobooks."):
+                    self.bib.remove_field(field)
+            self.bib.add_field(
+                Field(
+                    tag="655",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Audiobooks.", "2", "lcgft"],
+                )
+            )
+            self.bib.add_field(
+                Field(
+                    tag="655",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Electronic audiobooks.", "2", "local"],
+                )
+            )
+            logger.debug("Added 2 eaudiobook genre 655 tags.")
+        elif resource_cat == "evideo":
+            for field in self.bib.subjects():
+                if "internet videos." in field.value().lower():
+                    self.bib.remove_field(field)
+            self.bib.add_field(
+                Field(
+                    tag="655",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Internet videos.", "2", "lcgft"],
+                )
+            )
+            logger.debug("Added evideo genre 655 tag.")
+
     def _add_local_tags(self) -> None:
         """
         Adds local tags to the WorldCat bib.
@@ -308,6 +371,17 @@ class BibEnhancer:
             f"Removed {DELETE_TAGS[self.resource.resourceCategoryId]} from "
             f"{self.library} b{self.resource.sierraId}a."
         )
+
+    def _remove_eresource_vendors(self) -> None:
+        """
+        Removes from e-resource bib any tags indicating distributor
+        """
+        vendors = ["Overdrive", "CloudLibrary", "3M", "Recorded Books"]
+
+        for tag in self.bib.get_fields("710"):
+            for vendor in vendors:
+                if vendor in tag.value():
+                    self.bib.remove_field(tag)
 
     def _remove_oclc_prefix(self, controlNo: str) -> str:
         """
