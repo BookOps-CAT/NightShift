@@ -26,6 +26,7 @@ from nightshift.datastore_transactions import (
     delete_resources,
     init_db,
     insert_or_ignore,
+    retrieve_expired_resources,
     retrieve_open_matched_resources_with_full_bib_obtained,
     retrieve_open_matched_resources_without_full_bib,
     retrieve_new_resources,
@@ -272,6 +273,55 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(
     )
     with pytest.raises(IntegrityError):
         test_session.commit()
+
+
+def test_retrieve_expired_resources(test_session, test_data_rich):
+    # single test record serves as control data
+    # it should not be caught by this query
+
+    nid = RESOURCE_CATEGORIES["ebook"]["nid"]
+    expiration_age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=nid,
+            status="open",
+            bibDate=datetime.utcnow() - timedelta(days=expiration_age + 1),
+        )
+    )
+    test_session.commit()
+
+    resources = retrieve_expired_resources(test_session, nid, expiration_age)
+
+    assert len(resources) == 1
+    assert resources[0].nid == 2
+
+
+def test_retrieve_expired_resources_too_early(test_session, test_data_rich):
+    # single test record serves as control data
+    # it should not be caught by this query
+
+    nid = RESOURCE_CATEGORIES["ebook"]["nid"]
+    expiration_age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=nid,
+            status="open",
+            bibDate=datetime.utcnow() - timedelta(days=expiration_age - 1),
+        )
+    )
+    test_session.commit()
+
+    resources = retrieve_expired_resources(test_session, nid, expiration_age)
+
+    assert len(resources) == 0
 
 
 @pytest.mark.parametrize(

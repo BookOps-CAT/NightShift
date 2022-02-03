@@ -7,8 +7,10 @@ import logging
 from nightshift.constants import library_by_id, RESOURCE_CATEGORIES
 from nightshift.datastore import session_scope
 from nightshift.datastore_transactions import (
+    add_event,
     delete_resources,
     retrieve_new_resources,
+    retrieve_expired_resources,
     retrieve_open_matched_resources_with_full_bib_obtained,
     retrieve_open_matched_resources_without_full_bib,
     retrieve_open_older_resources,
@@ -152,6 +154,14 @@ def perform_db_maintenance() -> None:
             # set to expired
             expiration_age = res_cat_data["query_days"][-1][1]
 
+            # record status change for statistical purposes in Event table
+            resources = retrieve_expired_resources(
+                db_session, res_cat_data["nid"], expiration_age
+            )
+            for resource in resources:
+                add_event(db_session, resource, outcome="expired")
+
+            # change status in Resource table
             tally = set_resources_to_expired(
                 db_session, res_cat_data["nid"], age=expiration_age
             )

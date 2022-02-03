@@ -6,7 +6,7 @@ import pytest
 
 from nightshift.comms.storage import get_credentials, Drive
 from nightshift.constants import RESOURCE_CATEGORIES
-from nightshift.datastore import Resource, WorldcatQuery
+from nightshift.datastore import Event, Resource, WorldcatQuery
 from nightshift.manager import process_resources, perform_db_maintenance
 
 
@@ -116,6 +116,15 @@ def test_perform_db_maintenance_set_expired(
 
     resource = test_session.query(Resource).filter_by(sierraId=22222222).one()
     assert resource.status == status
+
+    # check the Event table
+    event = test_session.query(Event).filter_by(sierraId=22222222).one_or_none()
+    if tally == 0:
+        assert event is None
+    else:
+        assert event is not None
+        assert event.outcome == "expired"
+        assert event.timestamp.date() == datetime.utcnow().date()
 
 
 @pytest.mark.parametrize(

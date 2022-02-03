@@ -205,6 +205,37 @@ def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
     return resources
 
 
+def retrieve_expired_resources(
+    session: Session, resourceCategoryId: int, expiration_age: int
+) -> list[Resource]:
+    """
+    Retrieves resources for a particular category specified by resourceCategoryId that
+    expired accoring to the schedule from the `constants.RESOURCE_CATEGORIES`
+    query_days.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        resourceCategoryId:     `nightshift.datastore.ResourceCategory.nid` value
+        expiration_age:         age in days since bib in Sierra was created
+
+    Returns:
+        list of matching query `Resource` instances
+    """
+    resources = (
+        session.query(Resource)
+        .where(
+            (Resource.resourceCategoryId == resourceCategoryId)
+            & (Resource.status == "open")
+            & (
+                Resource.bibDate
+                < datetime.utcnow().date() - timedelta(days=expiration_age)
+            )
+        )
+        .all()
+    )
+    return resources
+
+
 def retrieve_open_older_resources(
     session: Session, libraryId: int, resourceCategoryId: int, minAge: int, maxAge: int
 ) -> list[Resource]:
