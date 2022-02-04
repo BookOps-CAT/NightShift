@@ -11,11 +11,11 @@ jobs:
           NS_DBNAME: "ns_db"
           NS_DBUSER:  "postgres"
           NS_DBPASSW: "postgres"
-          NS_DBPORT:  "5433"
+          NS_DBPORT:  "5432"
         options:
           --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
         ports:
-         - 5433:5433
+         - 5432:5432
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.9
