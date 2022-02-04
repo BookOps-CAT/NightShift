@@ -1,4 +1,4 @@
-![tests workflow](https://github.com/klinga/nightshift/actions/workflows/tests.yaml/badge.sv?branch=github-actions-alt-cov-setup) [![Coverage Status](https://coveralls.io/repos/github/BookOps-CAT/NightShift/badge.svg?branch=main)](https://coveralls.io/github/BookOps-CAT/NightShift?branch=main) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![tests workflow](https://github.com/BookOps-CAT/nightshift/actions/workflows/tests.yaml/badge.sv?branch=github-actions-alt-cov-setup) [![Coverage Status](https://coveralls.io/repos/github/BookOps-CAT/NightShift/badge.svg?branch=main)](https://coveralls.io/github/BookOps-CAT/NightShift?branch=main) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # NightShift
 Copy cataloging bot.
