@@ -7,11 +7,9 @@ jobs:
       postgres:
         image: postgres:latest
         env:
-          NS_DBHOST: "127.0.0.1"
-          NS_DBNAME: "ns_db"
-          NS_DBUSER:  "postgres"
-          NS_DBPASSW: "postgres"
-          NS_DBPORT:  "5432"
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ns_db
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
