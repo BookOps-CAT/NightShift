@@ -89,7 +89,7 @@ def local_test_config():
 
 @pytest.fixture
 def env_var(monkeypatch):
-    if os.getenv("TRAVIS"):
+    if os.getenv("GITHUB_ACTIONS"):
         data = dict(
             POSTGRES_HOST="127.0.0.1",
             POSTGRES_USER="postgres",

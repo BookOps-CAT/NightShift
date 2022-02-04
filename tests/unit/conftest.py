@@ -37,7 +37,7 @@ def mock_log_env(monkeypatch):
 
 @pytest.fixture(scope="function")
 def test_log(monkeypatch, local_test_config):
-    if not os.getenv("TRAVIS"):
+    if not os.getenv("GITHUB_ACTIONS"):
         monkeypatch.setenv("LOGGLY_TOKEN", local_test_config["LOGGLY_TOKEN"])
         monkeypatch.setenv("LOG_HANDLERS", local_test_config["LOG_HANDLERS"])
 
