@@ -3,6 +3,19 @@ on: push
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      posgres:
+        image: postgres:13
+        env:
+          NS_DBHOST: "127.0.0.1"
+          NS_DBNAME: "ns_db"
+          NS_DBUSER:  "postgres"
+          NS_DBPASSW: "postgres"
+          NS_DBPORT:  "5433"
+        options:
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        ports:
+         - 5433:5433
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.9
