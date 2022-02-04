@@ -2,4 +2,4 @@ pytest
 pytest-cov
 pytest-mock
 pytest-sftpserver
-coverage
+coverage[toml]
