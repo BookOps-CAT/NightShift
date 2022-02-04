@@ -25,11 +25,11 @@ from nightshift.datastore import (
 
 def test_conf_db(mock_db_env):
     assert sorted(conf_db().keys()) == [
-        "NS_DBHOST",
-        "NS_DBNAME",
-        "NS_DBPASSW",
-        "NS_DBPORT",
-        "NS_DBUSER",
+        "POSTGRES_DB",
+        "POSTGRES_HOST",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_PORT",
+        "POSTGRES_USER",
     ]
 
 

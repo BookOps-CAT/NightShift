@@ -35,18 +35,18 @@ def conf_db():
         db settings as dictionary
     """
     return dict(
-        NS_DBUSER=os.getenv("NS_DBUSER"),
-        NS_DBPASSW=os.getenv("NS_DBPASSW"),
-        NS_DBHOST=os.getenv("NS_DBHOST"),
-        NS_DBPORT=os.getenv("NS_DBPORT"),
-        NS_DBNAME=os.getenv("NS_DBNAME"),
+        POSTGRES_USER=os.getenv("POSTGRES_USER"),
+        POSTGRES_PASSWORD=os.getenv("POSTGRES_PASSWORD"),
+        POSTGRES_HOST=os.getenv("POSTGRES_HOST"),
+        POSTGRES_PORT=os.getenv("POSTGRES_PORT"),
+        POSTGRES_DB=os.getenv("POSTGRES_DB"),
     )
 
 
 class DataAccessLayer:
     def __init__(self):
         db = conf_db()
-        self.conn = f"postgresql://{db['NS_DBUSER']}:{db['NS_DBPASSW']}@{db['NS_DBHOST']}:{db['NS_DBPORT']}/{db['NS_DBNAME']}"
+        self.conn = f"postgresql://{db['POSTGRES_USER']}:{db['POSTGRES_PASSWORD']}@{db['POSTGRES_HOST']}:{db['POSTGRES_PORT']}/{db['POSTGRES_DB']}"
         self.engine = None
 
     def connect(self):
