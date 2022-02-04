@@ -18,8 +18,6 @@ jobs:
         ports:
          - 5432:5432
     steps:
-      - name: Create test database
-        run: psql -c 'create database ns_db;' -U postgres
       - uses: actions/checkout@v2
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
