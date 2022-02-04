@@ -403,6 +403,13 @@ class BibEnhancer:
             logger.debug("Worldcat record failed physical desc. test.")
             return False
 
+        # reject records contributed by certain organizations
+        rotten_apples = [
+            "UKAHL",
+        ]
+        if self.bib["040"]["a"] in rotten_apples:
+            return False
+
         logger.debug("Worldcat record meets minimum criteria.")
         return True
 
