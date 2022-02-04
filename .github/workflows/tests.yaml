@@ -31,7 +31,7 @@ jobs:
       - name: Run test suite
         run: pytest -m "not firewalled and not local" --cov=nightshift/
       - name: Send report to Coveralls
-        uses: AndreMiras/coveralls-python-action@develop
+        uses: miurahr/coveralls-python-action@patch-pyprject-toml
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
