@@ -74,6 +74,19 @@ def test_init_db(mock_db_env, test_connection):
     Base.metadata.drop_all(engine)
 
 
+def test_init_db_invalid_data(mock_db_env, test_connection, mock_init_libraries):
+    engine = create_engine(test_connection)
+
+    with pytest.raises(AssertionError) as exc:
+        init_db()
+
+    assert "Invalid number of initial libraries." in str(exc.value)
+
+    # clean-up
+    engine = create_engine(test_connection)
+    Base.metadata.drop_all(engine)
+
+
 def test_add_event(test_session, test_data_rich):
     resource = test_session.query(Resource).where(Resource.nid == 1).one()
     event = add_event(test_session, resource, outcome="expired")

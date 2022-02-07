@@ -5,7 +5,8 @@ from typing import Optional
 from sqlalchemy import create_engine, delete, update
 from sqlalchemy.orm import Session
 
-from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
+# from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
+from nightshift import constants
 from nightshift.datastore import (
     DataAccessLayer,
     Event,
@@ -33,15 +34,29 @@ def init_db() -> None:
     session = dal.Session()
 
     # recreate schema & prepopulate needed tables
-    for k, v in LIBRARIES.items():
+    for k, v in constants.LIBRARIES.items():
         session.add(Library(nid=v["nid"], code=k))
 
-    for k, v in RESOURCE_CATEGORIES.items():
+    for k, v in constants.RESOURCE_CATEGORIES.items():
         session.add(
             ResourceCategory(nid=v["nid"], name=k, description=v["description"]),
         )
-
     session.commit()
+
+    # verify integrity
+    libraries = session.query(Library).all()
+    assert len(libraries) == 2, "Invalid number of initial libraries."
+    codes = [row.code for row in libraries]
+    assert "NYP" in codes, "'NYP' code missing in 'Library' table."
+    assert "BPL" in codes, "'BPL' code missing in 'Library' table."
+
+    categories = session.query(ResourceCategory).all()
+    names = [row.name for row in categories]
+    assert len(categories) == 11, "Invalid number of 'ResourceCategory' records."
+    assert "ebook" in names, "Missing 'ebook' category in 'ResourceCategory' table."
+    assert "eaudio" in names, "Missing 'eaudio' category in 'ResourceCategory' table."
+    assert "evideo" in names, "Missing 'evideo' category in 'ResourceCategory' table."
+
     session.close()
 
 
