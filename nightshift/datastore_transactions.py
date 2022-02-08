@@ -380,8 +380,8 @@ def retrieve_processed_files(session: Session, libraryId: int) -> list[str]:
     Returns:
         list of file handles
     """
-    instances = session.query(SourceFile).filter_by(libraryId=libraryId).all()
-    return [instance.handle for instance in instances]
+    instances = session.query(SourceFile.handle).filter_by(libraryId=libraryId).all()
+    return [instance[0] for instance in instances]
 
 
 def set_resources_to_expired(
