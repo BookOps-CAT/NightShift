@@ -72,6 +72,12 @@ class Worldcat:
         token = self._get_access_token(creds)
         self.session = self._create_worldcat_session(token)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.session.close()
+
     def _create_worldcat_session(
         self, access_token: WorldcatAccessToken
     ) -> MetadataSession:
@@ -98,6 +104,7 @@ class Worldcat:
         """
         try:
             access_token = WorldcatAccessToken(**credentials)
+            logger.info("Worldcat Metadata API access token obtained.")
             return access_token
         except WorldcatAuthorizationError:
             logger.error("Unable to obtain Worldcat MetadataAPI access token.")
@@ -182,7 +189,8 @@ class Worldcat:
                     )
                 )
         logging.debug(
-            f"Query payload for {self.library} Sierra bib # b{resource.sierraId}a: {payloads}."
+            f"Query payload for {self.library} Sierra bib # b{resource.sierraId}a: "
+            f"{payloads}."
         )
         return payloads
 
@@ -204,7 +212,9 @@ class Worldcat:
                 payloads = self._prep_resource_queries_payloads(resource)
                 if not payloads:
                     logger.warning(
-                        f"Unable to create a payload for brief bib query for {self.library} resource nid={resource.nid}, sierraId=b{resource.sierraId}a."
+                        f"Unable to create a payload for brief bib query for "
+                        f"{self.library} resource nid={resource.nid}, "
+                        f"sierraId=b{resource.sierraId}a."
                     )
                     continue
 
@@ -218,11 +228,13 @@ class Worldcat:
 
                     brief_bib_response = BriefBibResponse(response)
                     logger.debug(
-                        f"Brief bib Worldcat query for {self.library} Sierra bib # b{resource.sierraId}a: {response.url}."
+                        f"Brief bib Worldcat query for {self.library} Sierra bib "
+                        f"# b{resource.sierraId}a: {response.url}."
                     )
                     if brief_bib_response.is_match:
                         logger.debug(
-                            f"Match found for {self.library} Sierra bib # b{resource.sierraId}a."
+                            f"Match found for {self.library} Sierra bib # "
+                            f"b{resource.sierraId}a."
                         )
                         break
 
@@ -244,7 +256,8 @@ class Worldcat:
                     oclcNumber=resource.oclcMatchNumber
                 )
                 logger.debug(
-                    f"Full bib Worldcat request for {self.library} Sierra bib # b{resource.sierraId}a: {response.url}."
+                    f"Full bib Worldcat request for {self.library} Sierra bib # "
+                    f"b{resource.sierraId}a: {response.url}."
                 )
                 yield (resource, response.content)
         except WorldcatSessionError:

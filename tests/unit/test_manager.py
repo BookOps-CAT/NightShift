@@ -1,134 +1,161 @@
-from datetime import datetime
+from contextlib import nullcontext as does_not_raise
+from datetime import datetime, timedelta
 import logging
 
-from bookops_worldcat.errors import WorldcatSessionError
 import pytest
 
-from nightshift.datastore import session_scope, Resource
+from nightshift.comms.storage import get_credentials, Drive
+from nightshift.constants import RESOURCE_CATEGORIES
+from nightshift.datastore import Event, Resource, WorldcatQuery
+from nightshift.manager import process_resources, perform_db_maintenance
 
-from nightshift.manager import get_worldcat_brief_bib_matches, get_worldcat_full_bibs
 
-from .conftest import (
-    MockSuccessfulHTTP200SessionResponse,
-    MockSuccessfulHTTP200SessionResponseNoMatches,
+class TestProcessResourcesMocked:
+    """
+    These test runs using higher level patching: mocked SFTP, Worldcat, NYPL Platform
+    and BPL Solr. It still uses local Postgres db
+    """
+
+    def test_new_resources(
+        self,
+        env_var,
+        test_session,
+        test_data_core,
+        mock_sftp_env,
+        mock_drive_unprocessed_files,
+        mock_drive_fetch_file,
+        mock_worldcat_brief_bib_matches,
+        mock_check_resources_sierra_state_open,
+        mock_get_worldcat_full_bibs,
+        mock_transfer_to_drive,
+    ):
+        with does_not_raise():
+            process_resources()
+
+        results = test_session.query(Resource).all()
+        assert len(results) == 2
+        for res in results:
+            assert len(res.queries) == 1
+            assert res.oclcMatchNumber is not None
+            assert res.fullBib is not None
+            assert res.outputId is not None
+            assert res.status == "bot_enhanced"
+            assert res.enhanceTimestamp is not None
+
+    def test_older_resources(
+        self,
+        env_var,
+        test_session,
+        test_data_rich,
+        mock_sftp_env,
+        stub_resource,
+        mock_drive_unprocessed_files_empty,
+        mock_check_resources_sierra_state_open,
+        mock_worldcat_brief_bib_matches,
+        mock_get_worldcat_full_bibs,
+        mock_transfer_to_drive,
+    ):
+        resource = stub_resource
+        resource.status = "open"
+        resource.fullBib = None
+        resource.oclcMatchNumber = None
+        resource.enhanceTimestamp = None
+        resource.queries = [
+            WorldcatQuery(
+                match=False,
+                timestamp=datetime.utcnow().date() - timedelta(days=31),
+            )
+        ]
+        resource.outputId = None
+
+        test_session.add(resource)
+        test_session.commit()
+
+        with does_not_raise():
+            process_resources()
+
+        results = test_session.query(Resource).all()
+        assert len(results) == 1
+
+        res = results[0]
+
+        assert len(res.queries) == 2
+        assert res.queries[0].match is False
+        assert res.queries[1].match is True
+        assert res.oclcMatchNumber is not None
+        assert res.fullBib is not None
+        assert res.outputId is not None
+        assert res.status == "bot_enhanced"
+        assert res.enhanceTimestamp is not None
+
+
+@pytest.mark.parametrize(
+    "age,status,tally", [(91, "open", 0), (179, "open", 0), (181, "expired", 1)]
 )
-
-
-LOGGER = logging.getLogger(__name__)
-
-
-# def test_processing_resources_logging(caplog, test_connection, test_session, test_data):
-#     # from nightshift.bot import run
-
-#     dal.conn = test_connection
-
-#     bib_date = datetime.utcnow().date()
-#     test_session.add(
-#         Resource(
-#             sierraId=11111111,
-#             libraryId=1,
-#             resourceCategoryId=1,
-#             bibDate=bib_date,
-#             distributorNumber="123",
-#             sourceId=1,
-#             status="open",
-#         )
-#     )
-
-#     with caplog.at_level(logging.INFO):
-#         process_resources()
-#     assert "Processing NYP new resources" in caplog.text
-#     assert "Processing BPL new resources" in caplog.text
-
-
-def test_get_worldcat_brief_bib_matches_success(
-    test_session,
-    test_data_core,
-    mock_Worldcat,
-    mock_successful_session_get_request,
+def test_perform_db_maintenance_set_expired(
+    caplog, env_var, test_session, test_data_rich, age, status, tally
 ):
+    # expired resource
     test_session.add(
         Resource(
-            nid=1,
-            sierraId=11111111,
+            sierraId=22222222,
             libraryId=1,
-            resourceCategoryId=1,
             sourceId=1,
-            bibDate=datetime.utcnow().date(),
-            title="Pride and prejudice.",
-            distributorNumber="123",
+            resourceCategoryId=1,
             status="open",
+            bibDate=datetime.utcnow().date() - timedelta(days=age),
+            queries=[WorldcatQuery(match=False)],
         )
     )
     test_session.commit()
-    resources = test_session.query(Resource).filter_by(nid=1).all()
-    get_worldcat_brief_bib_matches(test_session, mock_Worldcat, resources)
 
-    res = test_session.query(Resource).filter_by(nid=1).all()[0]
-    query = res.queries[0]
-    assert query.nid == 1
-    assert query.match
-    assert query.response == MockSuccessfulHTTP200SessionResponse().json()
-    assert res.oclcMatchNumber == "44959645"
-    assert res.status == "open"
+    with caplog.at_level(logging.INFO):
+        perform_db_maintenance()
+
+    assert f"Changed {tally} ebook resource(s) status to 'expired'." in caplog.text
+
+    resource = test_session.query(Resource).filter_by(sierraId=22222222).one()
+    assert resource.status == status
+
+    # check the Event table
+    event = test_session.query(Event).filter_by(sierraId=22222222).one_or_none()
+    if tally == 0:
+        assert event is None
+    else:
+        assert event is not None
+        assert event.status == "expired"
+        assert event.timestamp.date() == datetime.utcnow().date()
 
 
-def test_get_worldcat_brief_bib_matches_failed(
-    test_session,
-    test_data_core,
-    mock_Worldcat,
-    mock_successful_session_get_request_no_matches,
+@pytest.mark.parametrize(
+    "age,tally,expectation",
+    [(91, 0, Resource), (191, 0, Resource), (300, 1, type(None))],
+)
+def test_perform_db_maintenance_delete(
+    caplog, env_var, test_session, test_data_rich, age, tally, expectation
 ):
+    expiration_age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    # expired resource
     test_session.add(
         Resource(
-            nid=1,
-            sierraId=11111111,
+            sierraId=22222222,
             libraryId=1,
-            resourceCategoryId=1,
             sourceId=1,
-            bibDate=datetime.utcnow().date(),
-            title="Pride and prejudice.",
-            distributorNumber="123",
+            resourceCategoryId=1,
             status="open",
+            bibDate=datetime.utcnow().date() - timedelta(days=age),
+            queries=[WorldcatQuery(match=False)],
         )
     )
     test_session.commit()
-    resources = test_session.query(Resource).filter_by(nid=1).all()
-    get_worldcat_brief_bib_matches(test_session, mock_Worldcat, resources)
 
-    res = test_session.query(Resource).filter_by(nid=1).all()[0]
-    query = res.queries[0]
-    assert query.nid == 1
-    assert query.resourceId == 1
-    assert query.match is False
-    assert query.response == MockSuccessfulHTTP200SessionResponseNoMatches().json()
-    assert res.oclcMatchNumber is None
-    assert res.status == "open"
+    with caplog.at_level(logging.INFO):
+        perform_db_maintenance()
 
-
-def test_get_worldcat_full_bibs(
-    test_session,
-    test_data_core,
-    mock_Worldcat,
-    mock_successful_session_get_request,
-):
-    test_session.add(
-        Resource(
-            nid=1,
-            sierraId=11111111,
-            libraryId=1,
-            resourceCategoryId=1,
-            sourceId=1,
-            bibDate=datetime.utcnow().date(),
-            title="Pride and prejudice.",
-            distributorNumber="123",
-            status="open",
-            oclcMatchNumber="44959645",
-        )
+    assert (
+        f"Deleted {tally} ebook resource(s) older than {expiration_age + 90} days from the database."
+        in caplog.text
     )
-    test_session.commit()
-    resources = test_session.query(Resource).filter_by(nid=1).all()
-    get_worldcat_full_bibs(test_session, mock_Worldcat, resources)
-
-    res = test_session.query(Resource).filter_by(nid=1).all()[0]
-    assert res.fullBib == MockSuccessfulHTTP200SessionResponse().content
+    resource = test_session.query(Resource).filter_by(sierraId=22222222).one_or_none()
+    assert isinstance(resource, expectation)

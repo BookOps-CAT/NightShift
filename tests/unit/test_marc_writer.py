@@ -54,7 +54,7 @@ class TestBibEnhancer:
             library = "BPL"
         be = BibEnhancer(stub_resource)
         with caplog.at_level(logging.DEBUG):
-            be._add_call_number()
+            assert be._add_call_number() is True
         assert f"Added {expectation} to {library} b11111111a." in caplog.text
         bib = be.bib
         assert str(bib[tag]) == f"={tag}  \\\\$a{expectation}"
@@ -68,28 +68,24 @@ class TestBibEnhancer:
         be.library = library
 
         with caplog.at_level(logging.WARN):
-            be._add_call_number()
+            assert be._add_call_number() is False
 
-        assert "091" not in be.bib
-        assert "099" not in be.bib
-        assert (
-            f"Attempting to create a call number for unsupported resource category for {library} b11111111a."
-            in caplog.text
-        )
+        assert be.bib is None
+        assert f"Unable to create call number for {library} b11111111a." in caplog.text
 
     @pytest.mark.parametrize(
         "resourceId,suppressed,libraryId,expectation",
         [
-            pytest.param(1, False, 1, "*ov=b11111111a;b2=z;", id="nyp-ebook"),
-            pytest.param(1, False, 2, "*ov=b11111111a;b2=x;", id="bpl-ebook"),
-            pytest.param(1, True, 1, "*ov=b11111111a;b2=z;b3=n;", id="nyp-ebook-supp"),
-            pytest.param(1, True, 2, "*ov=b11111111a;b2=x;b3=n;", id="bpl-ebook-supp"),
-            pytest.param(2, False, 1, "*ov=b11111111a;b2=n;", id="nyp-eaudio"),
-            pytest.param(2, False, 2, "*ov=b11111111a;b2=z;", id="bpl-eaudio"),
-            pytest.param(3, True, 1, "*ov=b11111111a;b2=3;b3=n;", id="nyp-evideo-supp"),
-            pytest.param(3, True, 2, "*ov=b11111111a;b2=v;b3=n;", id="bpl-evideo-supp"),
-            pytest.param(4, False, 1, "*ov=b11111111a;b2=a;", id="nyp-print"),
-            pytest.param(4, False, 2, "*ov=b11111111a;b2=a;", id="bpl-print"),
+            pytest.param(1, False, 1, "*b2=z;", id="nyp-ebook"),
+            pytest.param(1, False, 2, "*b2=x;", id="bpl-ebook"),
+            pytest.param(1, True, 1, "*b2=z;b3=n;", id="nyp-ebook-supp"),
+            pytest.param(1, True, 2, "*b2=x;b3=n;", id="bpl-ebook-supp"),
+            pytest.param(2, False, 1, "*b2=n;", id="nyp-eaudio"),
+            pytest.param(2, False, 2, "*b2=z;", id="bpl-eaudio"),
+            pytest.param(3, True, 1, "*b2=3;b3=n;", id="nyp-evideo-supp"),
+            pytest.param(3, True, 2, "*b2=v;b3=n;", id="bpl-evideo-supp"),
+            pytest.param(4, False, 1, "*b2=a;", id="nyp-print"),
+            pytest.param(4, False, 2, "*b2=a;", id="bpl-print"),
         ],
     )
     def test_add_command_tag(
@@ -176,6 +172,24 @@ class TestBibEnhancer:
         be._add_initials_tag()
         assert str(be.bib) == bib_before
 
+    @pytest.mark.parametrize(
+        "library,tag,field_str",
+        [
+            ("NYP", "945", "=945  \\\\$a.b11111111a"),
+            ("BPL", "907", "=907  \\\\$a.b11111111a"),
+        ],
+    )
+    def test_add_sierraId(self, stub_resource, library, tag, field_str):
+        be = BibEnhancer(stub_resource)
+        be.library = library
+        be._add_sierraId()
+        assert str(be.bib[tag]) == field_str
+
+    def test_digits_only_in_tag_001(self, stub_resource):
+        be = BibEnhancer(stub_resource)
+        be._digits_only_in_tag_001()
+        assert be.bib["001"].data == "850939580"
+
     def test_purge_tags(self, caplog, stub_resource):
         be = BibEnhancer(stub_resource)
         fields = [
@@ -215,6 +229,112 @@ class TestBibEnhancer:
         with does_not_raise():
             be._purge_tags()
 
+    @pytest.mark.parametrize("arg", ["ocm12345", "ocn12345", "on12345", "12345"])
+    def test_remove_oclc_prefix(self, arg, stub_resource):
+        be = BibEnhancer(stub_resource)
+        assert be._remove_oclc_prefix(arg) == "12345"
+
+    @pytest.mark.parametrize(
+        "tag,expectation",
+        [
+            pytest.param(
+                Field(tag="650", indicators=[" ", "0"], subfields=["a", "Foo."]),
+                1,
+                id="LCSH",
+            ),
+            pytest.param(
+                Field(tag="690", indicators=[" ", "0"], subfields=["a", "Foo."]),
+                0,
+                id="local SH",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "lcsh"],
+                ),
+                1,
+                id="LCSH subfield $2 7",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "fast"],
+                ),
+                1,
+                id="FAST",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "gsafd"],
+                ),
+                1,
+                id="GSAFD",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "lcgft"],
+                ),
+                1,
+                id="LCGFT",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "lctgm"],
+                ),
+                1,
+                id="LCTGM",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "sears"],
+                ),
+                0,
+                id="Other dict",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "4"],
+                    subfields=["a", "Foo.", "2", "lcsh"],
+                ),
+                0,
+                id="2nd ind = 4",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "1"],
+                    subfields=["a", "Foo."],
+                ),
+                0,
+                id="Children's LCSH",
+            ),
+        ],
+    )
+    def test_remove_unsupported_subject_tags(self, stub_resource, tag, expectation):
+        be = BibEnhancer(stub_resource)
+
+        # prep - remove any existing tags for tests
+        for f in be.bib.subjects():
+            be.bib.remove_field(f)
+
+        assert len(be.bib.subjects()) == 0
+
+        be.bib.add_field(tag)
+        be._remove_unsupported_subject_tags()
+
+        assert len(be.bib.subjects()) == expectation
+
     def test_manipulate(self, stub_resource):
         stub_resource.resourceCategoryId = 1
         stub_resource.libraryId = 1
@@ -243,7 +363,13 @@ class TestBibEnhancer:
         assert str(be.bib["856"]) == "=856  04$uurl_here$2opac msg"
         assert str(be.bib["091"]) == "=091  \\\\$aeNYPL Book"
         assert str(be.bib["901"]) == f"=901  \\\\$a{__title__}/{__version__}"
-        assert str(be.bib["949"]) == "=949  \\\\$a*ov=b11111111a;b2=z;"
+        assert str(be.bib["945"]) == "=945  \\\\$a.b11111111a"
+        assert str(be.bib["949"]) == "=949  \\\\$a*b2=z;"
+
+        # check if fields have been duplicated by accident
+        assert len(be.bib.get_fields("001")) == 1
+        assert len(be.bib.get_fields("091")) == 1
+        assert len(be.bib.get_fields("037")) == 1
 
     def test_save2file(self, caplog, stub_resource):
         be = BibEnhancer(stub_resource)
@@ -267,3 +393,16 @@ class TestBibEnhancer:
                 be.save2file()
 
         assert "Unable to save record to a temp file. Error" in caplog.text
+
+    def test_save2file_when_unable_to_create_call_number(
+        self, caplog, stub_resource, tmpdir
+    ):
+        outfile = tmpdir.join("foo.mrc")
+        stub_resource.resourceCategoryId = 99
+        be = BibEnhancer(stub_resource)
+        be.bib = None
+        with caplog.at_level(logging.WARNING):
+            be.manipulate()
+            be.save2file(outfile)
+
+        assert "No pymarc object to serialize to MARC21" in caplog.text

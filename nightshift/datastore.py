@@ -27,6 +27,19 @@ from sqlalchemy.orm import relationship, sessionmaker
 Base = declarative_base()
 
 
+STATUS = ENUM(
+    "bot_enhanced",
+    "expired",
+    "open",
+    "staff_deleted",
+    "staff_enhanced",
+    "worldcat_miss",
+    "worldcat_hit",
+    name="status",
+    metadata=Base.metadata,
+)
+
+
 def conf_db():
     """
     Retrieves db configuation from env variables
@@ -73,6 +86,37 @@ def session_scope():
         session.close()
 
 
+class Event(Base):
+    """
+    Statistics table.
+    Stores information about transactions affecting resources, such as
+    WorldCat matches/upgrades, resources being dropped out from the process because
+    they were cataloged or deleted by cataloging staff, finally, marks resources
+    that expired from the process because of they age.
+    """
+
+    __tablename__ = "event"
+
+    nid = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow())
+    libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
+    sierraId = Column(Integer, nullable=False)
+    bibDate = Column(Date, nullable=False)
+    resourceCategoryId = Column(
+        Integer, ForeignKey("resource_category.nid"), nullable=False
+    )
+    status = Column(STATUS)
+
+    def __repr__(self):
+        return (
+            f"<Event(nid='{self.nid}', timestamp='{self.timestamp}', "
+            f"libraryId='{self.libraryId}', sierraId='{self.sierraId}', "
+            f"bibDate='{self.bibDate}', "
+            f"resourceCategoryId='{self.resourceCategoryId}', "
+            f"status='{self.status}')>"
+        )
+
+
 class Library(Base):
     """
     Library system.
@@ -111,7 +155,7 @@ class OutputFile(Base):
 
 class Resource(Base):
     """
-    Resource to be upgraded info.
+    Resource to be upgraded.
     """
 
     __tablename__ = "resource"
@@ -138,22 +182,11 @@ class Resource(Base):
     standardNumber = Column(String)
     suppressed = Column(Boolean, nullable=False, default=False)
 
-    deleted = Column(Boolean, nullable=False, default=False)
-    deletedTimestamp = Column(DateTime)
     oclcMatchNumber = Column(String)
     fullBib = Column(BYTEA)
     outputId = Column(Integer, ForeignKey("output_file.nid"))
-    status = Column(
-        ENUM(
-            "open",
-            "expired",
-            "deleted_staff",
-            "upgraded_bot",
-            "upgraded_staff",
-            name="status",
-        )
-    )
-    upgradeTimestamp = Column(DateTime)
+    status = Column(STATUS)
+    enhanceTimestamp = Column(DateTime)
 
     queries = relationship("WorldcatQuery", cascade="all, delete-orphan")
 
@@ -173,11 +206,9 @@ class Resource(Base):
             f"distributorNumber='{self.distributorNumber}', "
             f"suppressed='{self.suppressed}', "
             f"status='{self.status}', "
-            f"deleted='{self.deleted}', "
-            f"deletedTimestamp='{self.deletedTimestamp}', "
             f"outputId='{self.outputId}', "
             f"oclcMatchNumber='{self.oclcMatchNumber}', "
-            f"upgradeTimestamp='{self.upgradeTimestamp}')>"
+            f"enhanceTimestamp='{self.enhanceTimestamp}')>"
         )
 
 
@@ -230,10 +261,12 @@ class WorldcatQuery(Base):
     __tablename__ = "worldcat_query"
 
     nid = Column(Integer, primary_key=True)
-    resourceId = Column(Integer, ForeignKey("resource.nid"), nullable=False)
+    resourceId = Column(
+        Integer, ForeignKey("resource.nid", ondelete="CASCADE"), nullable=False
+    )
     match = Column(Boolean, nullable=False)
     response = Column(JSONB)
-    timestamp = Column(DateTime, default=datetime.now(), nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow(), nullable=False)
 
     def __repr__(self):
         return (

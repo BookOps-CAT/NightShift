@@ -1,11 +1,10 @@
 """
-Configures logging
+Configures app logging
 """
 import os
-from typing import Dict, List
 
 
-def get_handlers() -> List:
+def get_handlers() -> list:
     """
     Retrieves from env variables logging handlers to be used and
     returns them as a list
@@ -26,7 +25,7 @@ def get_token() -> str:
     return os.getenv("LOGGLY_TOKEN")
 
 
-def log_conf() -> Dict:
+def log_conf() -> dict:
     """
     Returns dictionary with logger configuration. Depends on
     environmental variables to access loggly token and specify logger.

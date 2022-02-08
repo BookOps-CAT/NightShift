@@ -7,6 +7,9 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 
+
+from nightshift.constants import RESOURCE_CATEGORIES
+
 from nightshift.datastore import (
     Base,
     Library,
@@ -16,28 +19,39 @@ from nightshift.datastore import (
     WorldcatQuery,
 )
 from nightshift.datastore_transactions import (
+    add_event,
+    add_output_file,
     add_resource,
+    add_source_file,
+    delete_resources,
     init_db,
     insert_or_ignore,
+    retrieve_expired_resources,
     retrieve_open_matched_resources_with_full_bib_obtained,
     retrieve_open_matched_resources_without_full_bib,
     retrieve_new_resources,
     retrieve_open_older_resources,
+    retrieve_processed_files,
+    set_resources_to_expired,
     update_resource,
 )
 
 
 def test_init_db(mock_db_env, test_connection):
+    # make sure drop any tables left over after any previous
+    # failed test
+    engine = create_engine(test_connection)
+    Base.metadata.drop_all(engine)
 
     # initiate database
     with does_not_raise():
         init_db()
 
     # verify tables created and populated
-    engine = create_engine(test_connection)
     insp = inspect(engine)
     assert sorted(insp.get_table_names()) == sorted(
         [
+            "event",
             "library",
             "output_file",
             "source_file",
@@ -61,6 +75,40 @@ def test_init_db(mock_db_env, test_connection):
 
     # tear db down
     Base.metadata.drop_all(engine)
+
+
+def test_init_db_invalid_data(mock_db_env, test_connection, mock_init_libraries):
+    # drop in case any tables left after failed test
+    engine = create_engine(test_connection)
+    Base.metadata.drop_all(engine)
+
+    with pytest.raises(AssertionError) as exc:
+        init_db()
+
+    assert "Invalid number of initial libraries." in str(exc.value)
+
+    # clean-up
+    Base.metadata.drop_all(engine)
+
+
+def test_add_event(test_session, test_data_rich):
+    resource = test_session.query(Resource).where(Resource.nid == 1).one()
+    event = add_event(test_session, resource, status="expired")
+    test_session.commit()
+
+    assert event.nid == 1
+    assert event.libraryId == resource.libraryId
+    assert event.sierraId == resource.sierraId
+    assert event.bibDate == resource.bibDate
+    assert event.resourceCategoryId == resource.resourceCategoryId
+    assert event.status == "expired"
+
+
+def test_add_output_file(test_session, test_data_core):
+    result = add_output_file(test_session, 1, "bar.mrc")
+    assert result.nid == 1
+    assert result.handle == "bar.mrc"
+    assert result.libraryId == 1
 
 
 @pytest.mark.parametrize(
@@ -122,6 +170,80 @@ def test_add_resource_unique_constraint_violation(test_session, test_data_core):
         assert result is None
 
 
+def test_add_source_file(test_session, test_data_core):
+    rec = add_source_file(test_session, 1, "bar.mrc")
+    assert rec.nid == 3
+    assert rec.libraryId == 1
+    assert rec.handle == "bar.mrc"
+
+
+def test_delete_resources(test_session, test_data_rich):
+    nid = RESOURCE_CATEGORIES["ebook"]["nid"]
+    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            status="expired",
+            bibDate=datetime.utcnow() - timedelta(days=age + 91),
+            queries=[WorldcatQuery(match=False)],
+        )
+    )
+    test_session.commit()
+
+    result = delete_resources(test_session, nid, age + 90)
+    assert result == 1
+
+    control_resource = test_session.query(Resource).filter_by(sierraId=11111111).one()
+    resource_deleted = (
+        test_session.query(Resource).filter_by(sierraId=22222222).one_or_none()
+    )
+    assert control_resource.status == "bot_enhanced"
+    assert resource_deleted is None
+
+    # check related table queries
+    # only query related to control resource
+    result = test_session.query(WorldcatQuery).all()
+    assert len(result) == 1
+    assert result[0].resourceId == 1
+
+
+def test_delete_resources_too_early(test_session, test_data_rich):
+    nid = RESOURCE_CATEGORIES["ebook"]["nid"]
+    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            status="expired",
+            bibDate=datetime.utcnow() - timedelta(days=age + 89),
+            queries=[WorldcatQuery(match=False)],
+        )
+    )
+    test_session.commit()
+
+    result = delete_resources(test_session, nid, age + 90)
+    assert result == 0
+
+    control_resource = test_session.query(Resource).filter_by(sierraId=11111111).one()
+    resource_deleted = (
+        test_session.query(Resource).filter_by(sierraId=22222222).one_or_none()
+    )
+    assert control_resource.status == "bot_enhanced"
+    assert resource_deleted is not None
+
+    # check related table queries
+    # only query related to control resource
+    result = test_session.query(WorldcatQuery).all()
+    assert len(result) == 2
+
+
 def test_insert_or_ignore_new(test_session):
     rec = insert_or_ignore(test_session, Library, code="NYP")
     test_session.commit()
@@ -170,20 +292,72 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(
         test_session.commit()
 
 
+def test_retrieve_expired_resources(test_session, test_data_rich):
+    # single test record serves as control data
+    # it should not be caught by this query
+
+    nid = RESOURCE_CATEGORIES["ebook"]["nid"]
+    expiration_age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=nid,
+            status="open",
+            bibDate=datetime.utcnow() - timedelta(days=expiration_age + 1),
+        )
+    )
+    test_session.commit()
+
+    resources = retrieve_expired_resources(test_session, nid, expiration_age)
+
+    assert len(resources) == 1
+    assert resources[0].nid == 2
+
+
+def test_retrieve_expired_resources_too_early(test_session, test_data_rich):
+    # single test record serves as control data
+    # it should not be caught by this query
+
+    nid = RESOURCE_CATEGORIES["ebook"]["nid"]
+    expiration_age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=nid,
+            status="open",
+            bibDate=datetime.utcnow() - timedelta(days=expiration_age - 1),
+        )
+    )
+    test_session.commit()
+
+    resources = retrieve_expired_resources(test_session, nid, expiration_age)
+
+    assert len(resources) == 0
+
+
 @pytest.mark.parametrize(
-    "library_id,status,deleted,full_bib,expectation",
+    "library_id, resource_cat_id, status,full_bib,expectation",
     [
-        pytest.param(1, "expired", False, b"<foo>spam</foo>", [], id="wrong status"),
-        pytest.param(1, "open", True, b"<foo>spam</foo", [], id="deleted resource"),
-        pytest.param(1, "open", False, None, [], id="missing full bib"),
-        pytest.param(1, "open", False, b"<foo>spam</foo>", [2], id="found 1 match"),
-        pytest.param(
-            2, "open", False, b"<foo>spam</foo>", [1, 2], id="found 2 matches"
-        ),
+        pytest.param(1, 1, "expired", b"<foo>spam</foo>", [], id="wrong status"),
+        pytest.param(1, 1, "open", None, [], id="missing full bib"),
+        pytest.param(1, 1, "open", b"<foo>spam</foo>", [2], id="found 1 match"),
+        pytest.param(2, 1, "open", b"<foo>spam</foo>", [1, 2], id="found 2 matches"),
     ],
 )
 def test_retrieve_open_matched_resources_with_full_bib_obtained(
-    test_session, test_data_core, library_id, status, deleted, full_bib, expectation
+    test_session,
+    test_data_core,
+    library_id,
+    resource_cat_id,
+    status,
+    full_bib,
+    expectation,
 ):
     bib_date = datetime.utcnow().date()
     test_session.add(
@@ -196,7 +370,6 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
             bibDate=bib_date,
             title="TEST TITLE 1",
             status="open",
-            deleted=False,
             fullBib=b"<foo>spam</foo>",
         )
     )
@@ -210,24 +383,22 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
             bibDate=bib_date,
             title="TEST TITLE 2",
             status=status,
-            deleted=deleted,
             fullBib=full_bib,
         )
     )
     test_session.commit()
     res = retrieve_open_matched_resources_with_full_bib_obtained(
-        test_session, library_id
+        test_session, library_id, resource_cat_id
     )
     assert [r.nid for r in res] == expectation
 
 
 @pytest.mark.parametrize(
-    "bib_date,status,deleted,oclc_number,match,days_since_last_query,expectation",
+    "bib_date,status,oclc_number,match,days_since_last_query,expectation",
     [
         pytest.param(
             datetime.utcnow() - timedelta(days=80),
             "open",
-            False,
             None,
             False,
             31,
@@ -237,7 +408,6 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
         pytest.param(
             datetime.utcnow() - timedelta(days=80),
             "open",
-            False,
             None,
             False,
             15,
@@ -247,7 +417,6 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
         pytest.param(
             datetime.utcnow() - timedelta(days=80),
             "open",
-            False,
             None,
             False,
             100,
@@ -257,7 +426,6 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
         pytest.param(
             datetime.utcnow() - timedelta(days=100),
             "open",
-            False,
             None,
             False,
             31,
@@ -267,7 +435,6 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
         pytest.param(
             datetime.utcnow() - timedelta(days=80),
             "expired",
-            False,
             None,
             False,
             31,
@@ -275,19 +442,8 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
             id="expired status",
         ),
         pytest.param(
-            datetime.utcnow() - timedelta(days=80),
-            "open",
-            True,
-            None,
-            False,
-            31,
-            [],
-            id="deleted resource",
-        ),
-        pytest.param(
             datetime.utcnow() - timedelta(days=100),
             "open",
-            False,
             "123",
             True,
             31,
@@ -301,7 +457,6 @@ def test_retrieve_open_older_resources(
     test_data_core,
     bib_date,
     status,
-    deleted,
     oclc_number,
     match,
     days_since_last_query,
@@ -319,7 +474,6 @@ def test_retrieve_open_older_resources(
             sourceId=1,
             oclcMatchNumber=oclc_number,
             status=status,
-            deleted=deleted,
             queries=[
                 WorldcatQuery(
                     nid=1,
@@ -338,7 +492,7 @@ def test_retrieve_open_older_resources(
     )
     test_session.commit()
 
-    res = retrieve_open_older_resources(test_session, 1, 30, 90)
+    res = retrieve_open_older_resources(test_session, 1, 1, 30, 90)
     assert [r.nid for r in res] == expectation
 
 
@@ -355,7 +509,6 @@ def test_retrieve_new_resources(test_session, test_data_core):
             title="TEST TITLE 5",
             sourceId=2,
             status="open",
-            deleted=False,
         )
     )
 
@@ -370,7 +523,6 @@ def test_retrieve_new_resources(test_session, test_data_core):
             title="TEST TITLE 1",
             sourceId=1,
             status="open",
-            deleted=False,
         )
     )
     test_session.add(
@@ -383,7 +535,6 @@ def test_retrieve_new_resources(test_session, test_data_core):
             title="TEST TITLE 2",
             sourceId=1,
             status="open",
-            deleted=False,
         )
     )
     test_session.add(
@@ -396,7 +547,6 @@ def test_retrieve_new_resources(test_session, test_data_core):
             title="TEST TITLE 3",
             sourceId=1,
             status="open",
-            deleted=False,
         )
     )
     test_session.add(
@@ -409,7 +559,6 @@ def test_retrieve_new_resources(test_session, test_data_core):
             title="TEST TITLE 4",
             sourceId=1,
             status="open",
-            deleted=False,
             queries=[WorldcatQuery(resourceId=5, match=False)],
         )
     )
@@ -438,9 +587,8 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
             bibDate=some_date,
             title="TEST TITLE 5",
             sourceId=2,
-            status="upgraded_bot",
+            status="bot_enhanced",
             oclcMatchNumber="123",
-            deleted=False,
         )
     )
 
@@ -456,7 +604,6 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
             sourceId=1,
             status="open",
             oclcMatchNumber=None,
-            deleted=False,
         )
     )
     test_session.add(
@@ -470,7 +617,6 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
             sourceId=1,
             status="open",
             oclcMatchNumber="123",
-            deleted=False,
         )
     )
     test_session.add(
@@ -484,7 +630,6 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
             sourceId=1,
             status="open",
             oclcMatchNumber="124",
-            deleted=False,
         )
     )
     test_session.add(
@@ -498,7 +643,6 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
             sourceId=1,
             status="open",
             oclcMatchNumber="125",
-            deleted=False,
         )
     )
     # exclude (full bib already obtained)
@@ -514,7 +658,6 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
             status="open",
             oclcMatchNumber="126",
             fullBib=b"<foo>spam</foo>",
-            deleted=False,
         )
     )
     test_session.commit()
@@ -529,6 +672,74 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
     assert res2[0].nid == 4
     assert res2[1].nid == 5
     assert res2[2].nid == 3
+
+
+@pytest.mark.parametrize(
+    "libraryId,expectation", [(1, ["foo1.mrc"]), (2, ["foo2.mrc"])]
+)
+def test_retrieve_processed_files(test_session, test_data_rich, libraryId, expectation):
+    results = retrieve_processed_files(test_session, libraryId)
+    assert results == expectation
+
+
+def test_set_resources_to_expired(test_session, test_data_rich, stub_resource):
+    nid = RESOURCE_CATEGORIES["ebook"]["nid"]
+    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            status="open",
+            bibDate=datetime.utcnow() - timedelta(days=age + 1),
+        )
+    )
+    test_session.commit()
+
+    result = set_resources_to_expired(test_session, nid, age)
+    assert result == 1
+
+    resource_not_changed = (
+        test_session.query(Resource).filter_by(sierraId=11111111).one()
+    )
+    resource_set_to_expired = (
+        test_session.query(Resource).filter_by(sierraId=22222222).one()
+    )
+    assert resource_not_changed.status == "bot_enhanced"
+    assert resource_set_to_expired.status == "expired"
+
+
+def test_set_resources_to_expired_too_early(
+    test_session, test_data_rich, stub_resource
+):
+    nid = RESOURCE_CATEGORIES["ebook"]["nid"]
+    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            status="open",
+            bibDate=datetime.utcnow() - timedelta(days=age - 1),
+        )
+    )
+    test_session.commit()
+
+    result = set_resources_to_expired(test_session, nid, age)
+    assert result == 0
+
+    resource_not_changed = (
+        test_session.query(Resource).filter_by(sierraId=11111111).one()
+    )
+    resource_set_to_expired = (
+        test_session.query(Resource).filter_by(sierraId=22222222).one()
+    )
+    assert resource_not_changed.status == "bot_enhanced"
+    assert resource_set_to_expired.status == "open"
 
 
 def test_update_resource(test_session):

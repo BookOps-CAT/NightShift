@@ -1,0 +1,27 @@
+---
+NS_DBHOST: localhost
+NS_DBUSER: ns_test
+NS_DBPASSW: some_password
+NS_DBPORT: "5432"
+NS_DBNAME: ns_db
+WCNYP_KEY: nypl_worldcat_key
+WCNYP_SECRET: nypl_worldcat_secret
+WCNYP_PRINCIPALID: nypl_principal_id
+WCNYP_PRINCIPALIDNS: nypl_principal_idns
+WCBPL_KEY: bpl_worldcat_key
+WCBPL_SECRET: bpl_worlcat_secret
+WCBPL_PRINCIPALID: bpl_worlcat_principal_id
+WCBPL_PRINCIPALIDNS: bpl_worlcat_principal_idns
+LOGGLY_TOKEN: loggly_token
+LOG_HANDLERS: "loggly,file,console"
+SFTP_HOST: sftp_host
+SFTP_USER: sftp_user
+SFTP_PASSW: sfpt_password
+SFTP_NS_SRC: "/NSDROP/sierra_dumps/nightshift"
+SFTP_NS_DST:  "/NSDROP/load"
+NYPL_PLATFORM_CLIENT: nypl_platform_client
+NYPL_PLATFORM_SECRET: nypl_platform_secret
+NYPL_PLATFORM_OAUTH: nypl_platform_oauth_server
+NYPL_PLATFORM_ENV: prod
+BPL_SOLR_CLIENT_KEY: bpl_solr_client_key
+BPL_SOLR_ENDPOINT: bpl_solr_endpoint

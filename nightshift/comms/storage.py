@@ -68,12 +68,38 @@ class Drive:
     def __exit__(self, *args):
         self.close()
 
+    def check_file_exists(self, remote_file_path: str) -> bool:
+        """
+        Checks if file exists in 'load' directory of the SFTP drive
+
+        Args:
+            remote_file_path:           file path to check on the SFTP
+
+        Returns:
+            bool
+
+        Raises:
+            DriveError
+        """
+        if self.sftp:
+            try:
+                self.sftp.stat(remote_file_path)
+                logger.debug(f"'{remote_file_path}' found on SFTP.")
+                return True
+            except FileNotFoundError:
+                logger.debug(f"'{remote_file_path}' not found on SFTP.")
+                return False
+        else:
+            logger.error("Attempted operation on a closed SFTP session.")
+            raise DriveError
+
     def fetch_file(self, src_fh: str) -> Optional[BytesIO]:
         """
         Retrieves file of the given path
 
         Args:
-            path:                       path to file on the SFTP server
+            src_fh:                     file handle of file in the
+                                        'sierra_dump' directory
 
         Returns:
             bytes stream
@@ -82,7 +108,7 @@ class Drive:
             DriveError
         """
         src_file_path = self._construct_src_file_path(src_fh)
-        logging.info(f"Fetching {src_file_path} file from the SFTP.")
+        logger.info(f"Fetching {src_file_path} file from the SFTP.")
         if self.sftp:
             try:
                 with self.sftp.file(src_file_path, mode="r") as file:
@@ -95,7 +121,7 @@ class Drive:
                 )
                 raise DriveError
         else:
-            logger.error("Attempted an operation on a closed SFTP session.")
+            logger.error("Attempted operation on a closed SFTP session.")
             raise DriveError
 
     def list_src_directory(self) -> Optional[list[str]]:
@@ -112,27 +138,38 @@ class Drive:
                 logger.error(f"Unable to reach {self.src_dir} on the SFTP. {exc}")
                 raise DriveError
 
-    def output_file(self, local_file_path: str) -> None:
+    def output_file(self, local_file_path: str, remote_file_name_base: str) -> str:
         """
         Appends stream to a file in SFTP/Drive load directory
 
         Args:
             local_file_path:            path to a local file to be transfered to SFTP
+            remote_file_name_base:      file name base for the file on SFTP
 
+        Returns:
+            remote file handle
+
+        Raises:
+            DriveError
         """
-        remote_file_path = self._construct_dst_file_path(local_file_path)
         if self.sftp:
             try:
+
+                remote_file_path = self._construct_dst_file_path(remote_file_name_base)
                 self.sftp.put(local_file_path, remote_file_path)
                 logger.info(f"Successfully created {remote_file_path} on the SFTP.")
+                return os.path.basename(remote_file_path)
+
             except IOError as exc:
                 logger.error(
-                    f"IOError. Unable to output {local_file_path} to {remote_file_path} on the SFTP. {exc}"
+                    f"IOError. Unable to output {local_file_path} to "
+                    f"{remote_file_path} on the SFTP. {exc}"
                 )
                 raise DriveError
         else:
             logger.error(
-                f"SFTP session closed. Unable to output {local_file_path} to {remote_file_path} on the drive."
+                f"SFTP session closed. Unable to output {local_file_path} "
+                f"to {remote_file_name_base} on the drive."
             )
             raise DriveError
 
@@ -149,18 +186,45 @@ class Drive:
             self.transport.close()
             logging.debug("Secure channels closed.")
 
-    def _construct_dst_file_path(self, local_fh: str) -> str:
+    def _construct_dst_handle(self, base_name: str, n: int) -> str:
         """
-        Creates a file path to the destination folder (load) on the SFTP server.
+        Creates full file handle with given numeration and MARC21 extension
 
         Args:
-            local_fh:                local file handle
+            base_name:              base name of the file
+            n:                      sequence number to be added to the file name
+
+        Returns:
+            file handle
+        """
+        return f"{base_name}-{str(n).zfill(2)}.mrc"
+
+    def _construct_dst_file_path(self, file_base_name: str) -> str:
+        """
+        Creates a file path to the destination folder (load) on the SFTP server.
+        If such a file already exists, appends a consecutive number to
+        avoid overwriting file on the SFTP.
+
+        Args:
+            file_base_name:         base name of the file
 
         Returns:
             file_path
         """
-        file_name = os.path.basename(local_fh)
-        return f"{self.dst_dir}/{file_name}"
+        n = 1
+        remote_handle = self._construct_dst_handle(file_base_name, n)
+        remote_file_path = f"{self.dst_dir}/{remote_handle}"
+        while self.check_file_exists(remote_file_path):
+            logger.debug(
+                f"'{remote_file_path}' is already taken. "
+                "Checking next consecutive number."
+            )
+            n += 1
+            remote_handle = self._construct_dst_handle(file_base_name, n)
+            remote_file_path = f"{self.dst_dir}/{remote_handle}"
+
+        logger.debug(f"'{remote_file_path}' is available.")
+        return remote_file_path
 
     def _construct_src_file_path(self, src_fh: str) -> str:
         """

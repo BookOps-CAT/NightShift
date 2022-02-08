@@ -14,7 +14,7 @@ from nightshift.comms.sierra_search_platform import (
     SearchResponse,
 )
 
-from .conftest import (
+from ..conftest import (
     MockPlatformSessionResponseNotFound,
     MockPlatformSessionResponseSuccess,
     MockSearchSessionHTTPError,
@@ -121,13 +121,13 @@ class TestSearchResponse:
     @pytest.mark.parametrize(
         "deleted,tag,tag_content,sub_content,expectation",
         [
-            (True, "091", None, "eNYPL Book", "deleted"),
-            (False, "100", None, "author", "brief-bib"),
-            (False, "003", "OCoLC", None, "full-bib"),
-            (False, "003", "RLIN", None, "brief-bib"),
-            (False, "091", None, "FIC", "full-bib"),
-            (False, "091", None, "eNYPL Book", "brief-bib"),
-            (False, "091", None, "eNYPL Audio", "brief-bib"),
+            (True, "091", None, "eNYPL Book", "staff_deleted"),
+            (False, "100", None, "author", "open"),
+            (False, "003", "OCoLC", None, "staff_enhanced"),
+            (False, "091", None, "JX 532", "staff_enhanced"),
+            (False, "091", None, "FIC", "staff_enhanced"),
+            (False, "091", None, "eNYPL Book", "open"),
+            (False, "091", None, "eNYPL Audio", "open"),
         ],
     )
     def test_determine_nyp_bib_status(
@@ -157,18 +157,18 @@ class TestSearchResponse:
     def test_determine_bpl_bib_status_not_found(self):
         response = MockSolrSessionResponseNotFound()
         sr = SearchResponse(11111111, "BPL", response)
-        assert sr._determine_bpl_bib_status() == "deleted"
+        assert sr._determine_bpl_bib_status() == "staff_deleted"
 
     @pytest.mark.parametrize(
         "deleted,field,value,expectation",
         [
-            (True, "call_number", "eBOOK", "deleted"),
-            (False, "ss_marc_tag_003", "OCoLC", "full-bib"),
-            (False, "ss_marc_tag_003", "BT", "brief-bib"),
-            (False, "call_number", "eBOOK", "brief-bib"),
-            (False, "call_number", "eAUDIO", "brief-bib"),
-            (False, "call_number", "eVIDEO", "brief-bib"),
-            (False, "call_number", "FIC EGAN", "full-bib"),
+            (True, "call_number", "eBOOK", "staff_deleted"),
+            (False, "ss_marc_tag_003", "OCoLC", "staff_enhanced"),
+            (False, "ss_marc_tag_003", "BT", "open"),
+            (False, "call_number", "eBOOK", "open"),
+            (False, "call_number", "eAUDIO", "open"),
+            (False, "call_number", "eVIDEO", "open"),
+            (False, "call_number", "FIC EGAN", "staff_enhanced"),
         ],
     )
     def test_determine_bpl_bib_status(self, deleted, field, value, expectation):
@@ -192,22 +192,22 @@ class TestSearchResponse:
     @pytest.mark.parametrize(
         "library,response,expectation",
         [
-            ("NYP", MockPlatformSessionResponseSuccess(), "full-bib"),
-            ("BPL", MockSolrSessionResponseSuccess(), "brief-bib"),
-            ("BPL", MockSolrSessionResponseNotFound(), "deleted"),
+            ("NYP", MockPlatformSessionResponseSuccess(), "staff_enhanced"),
+            ("BPL", MockSolrSessionResponseSuccess(), "open"),
+            ("BPL", MockSolrSessionResponseNotFound(), "staff_deleted"),
         ],
     )
     def test_get_status(self, caplog, library, response, expectation):
         sr = SearchResponse(11111111, library, response)
         with caplog.at_level(logging.DEBUG):
             assert sr.get_status() == expectation
-        assert f"{library.upper()} Sierra bib # 11111111 status: {expectation}"
+        assert f"{library} Sierra bib # 11111111 status: {expectation}"
 
     def test_get_status_404_http_response(self, caplog):
         response = MockPlatformSessionResponseNotFound()
         sr = SearchResponse(11111111, "NYP", response)
         with caplog.at_level(logging.WARN):
-            assert sr.get_status() == "deleted"
+            assert sr.get_status() == "staff_deleted"
         assert "NYP Sierra bib # 11111111 not found on Platform."
 
 
