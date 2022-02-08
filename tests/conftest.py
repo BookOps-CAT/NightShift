@@ -82,7 +82,7 @@ def local_test_config():
     BPL_SOLR_CLIENT_KEY: bpl_solr_client_key
     BPL_SOLR_ENDPOINT: bpl_solr_endpoint
     """
-    with open("tests/envar.yaml", "r") as f:
+    with open("tests/envar-old.yaml", "r") as f:
         data = yaml.safe_load(f)
         return data
 
@@ -99,7 +99,7 @@ def env_var(monkeypatch):
         )
     else:
         # local and firewalled tests
-        with open("tests/envar.yaml", "r") as f:
+        with open("tests/envar-old.yaml", "r") as f:
             data = yaml.safe_load(f)
 
     for k, v in data.items():
@@ -136,7 +136,7 @@ def mock_db_env(monkeypatch):
             POSTGRES_DB="ns_db",
         )
     else:
-        with open("tests/envar.yaml", "r") as f:
+        with open("tests/envar-old.yaml", "r") as f:
             data = yaml.safe_load(f)
 
     monkeypatch.setenv("POSTGRES_USER", data["POSTGRES_USER"])

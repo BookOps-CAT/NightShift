@@ -2,10 +2,11 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import create_engine, delete, update
+from sqlalchemy import create_engine, delete, inspect, update
 from sqlalchemy.orm import Session
 
-from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
+# from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
+from nightshift import constants
 from nightshift.datastore import (
     DataAccessLayer,
     Event,
@@ -33,26 +34,63 @@ def init_db() -> None:
     session = dal.Session()
 
     # recreate schema & prepopulate needed tables
-    for k, v in LIBRARIES.items():
+    for k, v in constants.LIBRARIES.items():
         session.add(Library(nid=v["nid"], code=k))
 
-    for k, v in RESOURCE_CATEGORIES.items():
+    for k, v in constants.RESOURCE_CATEGORIES.items():
         session.add(
             ResourceCategory(nid=v["nid"], name=k, description=v["description"]),
         )
-
     session.commit()
-    session.close()
+
+    # verify integrity of the database
+    try:
+        # check all tables were created
+        insp = inspect(dal.engine)
+        assert sorted(insp.get_table_names()) == sorted(
+            [
+                "event",
+                "library",
+                "output_file",
+                "resource",
+                "resource_category",
+                "source_file",
+                "worldcat_query",
+            ]
+        ), "Database is missing requried tables."
+
+        # check both libraries were added
+        libraries = session.query(Library).all()
+        assert len(libraries) == 2, "Invalid number of initial libraries."
+        codes = [row.code for row in libraries]
+        assert "NYP" in codes, "'NYP' code missing in 'Library' table."
+        assert "BPL" in codes, "'BPL' code missing in 'Library' table."
+
+        # check e-resource names in ResourceCategory table
+        categories = session.query(ResourceCategory).all()
+        names = [row.name for row in categories]
+        assert len(categories) == 11, "Invalid number of 'ResourceCategory' records."
+        assert "ebook" in names, "Missing 'ebook' category in 'ResourceCategory' table."
+        assert (
+            "eaudio" in names
+        ), "Missing 'eaudio' category in 'ResourceCategory' table."
+        assert (
+            "evideo" in names
+        ), "Missing 'evideo' category in 'ResourceCategory' table."
+    except AssertionError:
+        raise
+    finally:
+        session.close()
 
 
-def add_event(session: Session, resource: Resource, outcome: str) -> Optional[Event]:
+def add_event(session: Session, resource: Resource, status: str) -> Optional[Event]:
     """
     Inserts an event row.
 
     Args:
         session:                `sqlalchemy.Session` instance
         resource:               datastore Resource record
-        outcome:                one of `datastore.Event.outcome` enum values:
+        status:                 one of `datastore.Event.outcome` enum values:
                                     'expired',
                                     'staff_enhanced',
                                     'staff_deleted',
@@ -70,7 +108,7 @@ def add_event(session: Session, resource: Resource, outcome: str) -> Optional[Ev
         sierraId=resource.sierraId,
         bibDate=resource.bibDate,
         resourceCategoryId=resource.resourceCategoryId,
-        outcome=outcome,
+        status=status,
     )
     return instance
 
@@ -152,13 +190,15 @@ def delete_resources(session: Session, resourceCategoryId: int, age: int) -> int
     Returns:
         number of deleted rows in the database
     """
-    result = session.execute(
-        delete(Resource).where(
-            (Resource.resourceCategoryId == resourceCategoryId)
-            & (Resource.bibDate < datetime.utcnow() - timedelta(days=age)),
+    rowcount = (
+        session.query(Resource)
+        .filter(
+            Resource.resourceCategoryId == resourceCategoryId,
+            Resource.bibDate < datetime.utcnow() - timedelta(days=age),
         )
+        .delete()
     )
-    return result.rowcount
+    return rowcount
 
 
 def insert_or_ignore(session, model, **kwargs):
@@ -223,13 +263,11 @@ def retrieve_expired_resources(
     """
     resources = (
         session.query(Resource)
-        .where(
-            (Resource.resourceCategoryId == resourceCategoryId)
-            & (Resource.status == "open")
-            & (
-                Resource.bibDate
-                < datetime.utcnow().date() - timedelta(days=expiration_age)
-            )
+        .filter(
+            Resource.resourceCategoryId == resourceCategoryId,
+            Resource.status == "open",
+            Resource.bibDate
+            < datetime.utcnow().date() - timedelta(days=expiration_age),
         )
         .all()
     )
@@ -342,8 +380,8 @@ def retrieve_processed_files(session: Session, libraryId: int) -> list[str]:
     Returns:
         list of file handles
     """
-    instances = session.query(SourceFile).filter_by(libraryId=libraryId).all()
-    return [instance.handle for instance in instances]
+    instances = session.query(SourceFile.handle).filter_by(libraryId=libraryId).all()
+    return [instance[0] for instance in instances]
 
 
 def set_resources_to_expired(
@@ -361,16 +399,16 @@ def set_resources_to_expired(
     Returns:
         number of updated rows in the database
     """
-    result = session.execute(
-        update(Resource)
-        .where(
-            (Resource.resourceCategoryId == resourceCategoryId)
-            & (Resource.status == "open")
-            & (Resource.bibDate < datetime.utcnow().date() - timedelta(days=age))
+    rowcount = (
+        session.query(Resource)
+        .filter(
+            Resource.resourceCategoryId == resourceCategoryId,
+            Resource.status == "open",
+            Resource.bibDate < datetime.utcnow().date() - timedelta(days=age),
         )
-        .values(status="expired")
+        .update({"status": "expired"})
     )
-    return result.rowcount
+    return rowcount
 
 
 def update_resource(session, sierraId, libraryId, **kwargs) -> Optional[Resource]:

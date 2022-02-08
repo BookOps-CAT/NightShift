@@ -123,7 +123,7 @@ def test_perform_db_maintenance_set_expired(
         assert event is None
     else:
         assert event is not None
-        assert event.outcome == "expired"
+        assert event.status == "expired"
         assert event.timestamp.date() == datetime.utcnow().date()
 
 
