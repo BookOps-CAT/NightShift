@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import create_engine, delete, update
+from sqlalchemy import create_engine, delete, inspect, update
 from sqlalchemy.orm import Session
 
 # from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
@@ -43,21 +43,44 @@ def init_db() -> None:
         )
     session.commit()
 
-    # verify integrity
-    libraries = session.query(Library).all()
-    assert len(libraries) == 2, "Invalid number of initial libraries."
-    codes = [row.code for row in libraries]
-    assert "NYP" in codes, "'NYP' code missing in 'Library' table."
-    assert "BPL" in codes, "'BPL' code missing in 'Library' table."
+    # verify integrity of the database
+    try:
+        # check all tables were created
+        insp = inspect(dal.engine)
+        assert sorted(insp.get_table_names()) == sorted(
+            [
+                "event",
+                "library",
+                "output_file",
+                "resource",
+                "resource_category",
+                "source_file",
+                "worldcat_query",
+            ]
+        ), "Database is missing requried tables."
 
-    categories = session.query(ResourceCategory).all()
-    names = [row.name for row in categories]
-    assert len(categories) == 11, "Invalid number of 'ResourceCategory' records."
-    assert "ebook" in names, "Missing 'ebook' category in 'ResourceCategory' table."
-    assert "eaudio" in names, "Missing 'eaudio' category in 'ResourceCategory' table."
-    assert "evideo" in names, "Missing 'evideo' category in 'ResourceCategory' table."
+        # check both libraries were added
+        libraries = session.query(Library).all()
+        assert len(libraries) == 2, "Invalid number of initial libraries."
+        codes = [row.code for row in libraries]
+        assert "NYP" in codes, "'NYP' code missing in 'Library' table."
+        assert "BPL" in codes, "'BPL' code missing in 'Library' table."
 
-    session.close()
+        # check e-resource names in ResourceCategory table
+        categories = session.query(ResourceCategory).all()
+        names = [row.name for row in categories]
+        assert len(categories) == 11, "Invalid number of 'ResourceCategory' records."
+        assert "ebook" in names, "Missing 'ebook' category in 'ResourceCategory' table."
+        assert (
+            "eaudio" in names
+        ), "Missing 'eaudio' category in 'ResourceCategory' table."
+        assert (
+            "evideo" in names
+        ), "Missing 'evideo' category in 'ResourceCategory' table."
+    except AssertionError:
+        raise
+    finally:
+        session.close()
 
 
 def add_event(session: Session, resource: Resource, outcome: str) -> Optional[Event]:

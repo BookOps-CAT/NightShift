@@ -38,13 +38,16 @@ from nightshift.datastore_transactions import (
 
 
 def test_init_db(mock_db_env, test_connection):
+    # make sure drop any tables left over after any previous
+    # failed test
+    engine = create_engine(test_connection)
+    Base.metadata.drop_all(engine)
 
     # initiate database
     with does_not_raise():
         init_db()
 
     # verify tables created and populated
-    engine = create_engine(test_connection)
     insp = inspect(engine)
     assert sorted(insp.get_table_names()) == sorted(
         [
@@ -75,7 +78,9 @@ def test_init_db(mock_db_env, test_connection):
 
 
 def test_init_db_invalid_data(mock_db_env, test_connection, mock_init_libraries):
+    # drop in case any tables left after failed test
     engine = create_engine(test_connection)
+    Base.metadata.drop_all(engine)
 
     with pytest.raises(AssertionError) as exc:
         init_db()
@@ -83,7 +88,6 @@ def test_init_db_invalid_data(mock_db_env, test_connection, mock_init_libraries)
     assert "Invalid number of initial libraries." in str(exc.value)
 
     # clean-up
-    engine = create_engine(test_connection)
     Base.metadata.drop_all(engine)
 
 

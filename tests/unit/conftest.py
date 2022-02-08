@@ -87,6 +87,14 @@ def mock_init_db_value_error(monkeypatch):
 
 
 @pytest.fixture
+def mock_init_db_invalid_structure(monkeypatch):
+    def _patch(*args, **kwargs):
+        raise AssertionError("Foo Error")
+
+    monkeypatch.setattr(datastore_transactions, "init_db", _patch)
+
+
+@pytest.fixture
 def mock_init_libraries(monkeypatch):
     monkeypatch.setattr(constants, "LIBRARIES", {"NYP": {"nid": 1}})
 
