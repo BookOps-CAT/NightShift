@@ -190,13 +190,15 @@ def delete_resources(session: Session, resourceCategoryId: int, age: int) -> int
     Returns:
         number of deleted rows in the database
     """
-    result = session.execute(
-        delete(Resource).where(
+    rowcount = (
+        session.query(Resource)
+        .where(
             (Resource.resourceCategoryId == resourceCategoryId)
-            & (Resource.bibDate < datetime.utcnow() - timedelta(days=age)),
+            & (Resource.bibDate < datetime.utcnow() - timedelta(days=age))
         )
+        .delete()
     )
-    return result.rowcount
+    return rowcount
 
 
 def insert_or_ignore(session, model, **kwargs):
