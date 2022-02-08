@@ -159,7 +159,7 @@ def perform_db_maintenance() -> None:
                 db_session, res_cat_data["nid"], expiration_age
             )
             for resource in resources:
-                add_event(db_session, resource, outcome="expired")
+                add_event(db_session, resource, status="expired")
 
             # change status in Resource table
             tally = set_resources_to_expired(

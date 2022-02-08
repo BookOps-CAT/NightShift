@@ -83,14 +83,14 @@ def init_db() -> None:
         session.close()
 
 
-def add_event(session: Session, resource: Resource, outcome: str) -> Optional[Event]:
+def add_event(session: Session, resource: Resource, status: str) -> Optional[Event]:
     """
     Inserts an event row.
 
     Args:
         session:                `sqlalchemy.Session` instance
         resource:               datastore Resource record
-        outcome:                one of `datastore.Event.outcome` enum values:
+        status:                 one of `datastore.Event.outcome` enum values:
                                     'expired',
                                     'staff_enhanced',
                                     'staff_deleted',
@@ -108,7 +108,7 @@ def add_event(session: Session, resource: Resource, outcome: str) -> Optional[Ev
         sierraId=resource.sierraId,
         bibDate=resource.bibDate,
         resourceCategoryId=resource.resourceCategoryId,
-        outcome=outcome,
+        status=status,
     )
     return instance
 

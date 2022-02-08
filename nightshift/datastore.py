@@ -27,6 +27,19 @@ from sqlalchemy.orm import relationship, sessionmaker
 Base = declarative_base()
 
 
+STATUS = ENUM(
+    "bot_enhanced",
+    "expired",
+    "open",
+    "staff_deleted",
+    "staff_enhanced",
+    "worldcat_miss",
+    "worldcat_hit",
+    name="status",
+    metadata=Base.metadata,
+)
+
+
 def conf_db():
     """
     Retrieves db configuation from env variables
@@ -92,17 +105,7 @@ class Event(Base):
     resourceCategoryId = Column(
         Integer, ForeignKey("resource_category.nid"), nullable=False
     )
-    outcome = Column(
-        ENUM(
-            "expired",
-            "staff_enhanced",
-            "staff_deleted",
-            "bot_enhanced",
-            "worldcat_hit",
-            "worldcat_miss",
-            name="outcome",
-        )
-    )
+    status = Column(STATUS)
 
     def __repr__(self):
         return (
@@ -110,7 +113,7 @@ class Event(Base):
             f"libraryId='{self.libraryId}', sierraId='{self.sierraId}', "
             f"bibDate='{self.bibDate}', "
             f"resourceCategoryId='{self.resourceCategoryId}', "
-            f"outcome='{self.outcome}')>"
+            f"status='{self.status}')>"
         )
 
 
@@ -182,16 +185,7 @@ class Resource(Base):
     oclcMatchNumber = Column(String)
     fullBib = Column(BYTEA)
     outputId = Column(Integer, ForeignKey("output_file.nid"))
-    status = Column(
-        ENUM(
-            "bot_enhanced",
-            "expired",
-            "open",
-            "staff_deleted",
-            "staff_enhanced",
-            name="status",
-        )
-    )
+    status = Column(STATUS)
     enhanceTimestamp = Column(DateTime)
 
     queries = relationship("WorldcatQuery", cascade="all, delete-orphan")

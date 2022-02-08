@@ -93,7 +93,7 @@ def test_init_db_invalid_data(mock_db_env, test_connection, mock_init_libraries)
 
 def test_add_event(test_session, test_data_rich):
     resource = test_session.query(Resource).where(Resource.nid == 1).one()
-    event = add_event(test_session, resource, outcome="expired")
+    event = add_event(test_session, resource, status="expired")
     test_session.commit()
 
     assert event.nid == 1
@@ -101,7 +101,7 @@ def test_add_event(test_session, test_data_rich):
     assert event.sierraId == resource.sierraId
     assert event.bibDate == resource.bibDate
     assert event.resourceCategoryId == resource.resourceCategoryId
-    assert event.outcome == "expired"
+    assert event.status == "expired"
 
 
 def test_add_output_file(test_session, test_data_core):
