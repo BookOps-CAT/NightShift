@@ -192,9 +192,9 @@ def delete_resources(session: Session, resourceCategoryId: int, age: int) -> int
     """
     rowcount = (
         session.query(Resource)
-        .where(
-            (Resource.resourceCategoryId == resourceCategoryId)
-            & (Resource.bibDate < datetime.utcnow() - timedelta(days=age))
+        .filter(
+            Resource.resourceCategoryId == resourceCategoryId,
+            Resource.bibDate < datetime.utcnow() - timedelta(days=age),
         )
         .delete()
     )
@@ -263,13 +263,11 @@ def retrieve_expired_resources(
     """
     resources = (
         session.query(Resource)
-        .where(
-            (Resource.resourceCategoryId == resourceCategoryId)
-            & (Resource.status == "open")
-            & (
-                Resource.bibDate
-                < datetime.utcnow().date() - timedelta(days=expiration_age)
-            )
+        .filter(
+            Resource.resourceCategoryId == resourceCategoryId,
+            Resource.status == "open",
+            Resource.bibDate
+            < datetime.utcnow().date() - timedelta(days=expiration_age),
         )
         .all()
     )
@@ -401,16 +399,16 @@ def set_resources_to_expired(
     Returns:
         number of updated rows in the database
     """
-    result = session.execute(
-        update(Resource)
-        .where(
-            (Resource.resourceCategoryId == resourceCategoryId)
-            & (Resource.status == "open")
-            & (Resource.bibDate < datetime.utcnow().date() - timedelta(days=age))
+    rowcount = (
+        session.query(Resource)
+        .filter(
+            Resource.resourceCategoryId == resourceCategoryId,
+            Resource.status == "open",
+            Resource.bibDate < datetime.utcnow().date() - timedelta(days=age),
         )
-        .values(status="expired")
+        .update({"status": "expired"})
     )
-    return result.rowcount
+    return rowcount
 
 
 def update_resource(session, sierraId, libraryId, **kwargs) -> Optional[Resource]:
