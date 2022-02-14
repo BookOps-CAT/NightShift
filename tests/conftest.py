@@ -8,7 +8,7 @@ import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from bookops_worldcat import WorldcatAccessToken, MetadataSession
-from bookops_worldcat.errors import WorldcatSessionError
+from bookops_worldcat.errors import WorldcatRequestError
 import yaml
 
 
@@ -260,11 +260,12 @@ class MockAuthServerResponseSuccess:
         }
 
 
-class MockSuccessfulHTTP200SessionResponse:
+class MockSuccessfulHTTP200SessionResponse(requests.Response):
     def __init__(self):
         self.status_code = 200
-        self.content = b"some content here"
+        self._content = b"some content here"
         self.url = "request_url_here"
+        self.reason = "foo"
 
     def json(self):
         return {
@@ -295,10 +296,12 @@ class MockSuccessfulHTTP200SessionResponse:
         }
 
 
-class MockSuccessfulHTTP200SessionResponseNoMatches:
+class MockSuccessfulHTTP200SessionResponseNoMatches(requests.Response):
     def __init__(self):
         self.status_code = 200
         self.url = "request_url_here"
+        self.reason = "foo"
+        self._content = b"some content here"
 
     def json(self):
         return {
@@ -308,7 +311,7 @@ class MockSuccessfulHTTP200SessionResponseNoMatches:
 
 class MockSessionError:
     def __init__(self, *args, **kwargs):
-        raise WorldcatSessionError("Timeout error")
+        raise WorldcatRequestError("Timeout error")
 
 
 @pytest.fixture
@@ -342,7 +345,7 @@ def mock_successful_session_get_request(monkeypatch):
     def mock_api_response(*args, **kwargs):
         return MockSuccessfulHTTP200SessionResponse()
 
-    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+    monkeypatch.setattr(requests.Session, "send", mock_api_response)
 
 
 @pytest.fixture
@@ -350,12 +353,12 @@ def mock_successful_session_get_request_no_matches(monkeypatch):
     def mock_api_response(*args, **kwargs):
         return MockSuccessfulHTTP200SessionResponseNoMatches()
 
-    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+    monkeypatch.setattr(requests.Session, "send", mock_api_response)
 
 
 @pytest.fixture
 def mock_session_error(monkeypatch):
-    monkeypatch.setattr("requests.Session.get", MockSessionError)
+    monkeypatch.setattr("requests.Session.send", MockSessionError)
 
 
 @pytest.fixture
