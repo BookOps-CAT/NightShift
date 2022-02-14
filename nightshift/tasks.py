@@ -274,7 +274,8 @@ def manipulate_and_serialize_bibs(
         pass
     except OSError as exc:
         logger.error(
-            f"Unable to delete '{file_path}' file before serializaition to MARC. Error {exc}"
+            f"Unable to empty temp file '{file_path}' before appending MARC records. "
+            f"Error {exc}"
         )
         raise
 
@@ -347,17 +348,6 @@ def transfer_to_drive(
         except DriveError:
             raise
 
-    # clean up temp/src file after job completed
-    try:
-        os.remove(src_file)
-    except (FileNotFoundError, TypeError):
-        pass
-    except OSError as exc:
-        logger.error(
-            f"Unable to delete '{src_file}' file after completing the job. Error {exc}"
-        )
-        raise
-    else:
         return remote_file
 
 
