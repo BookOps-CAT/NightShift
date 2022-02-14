@@ -127,14 +127,20 @@ class TestWorldcatMocked:
         [
             pytest.param(
                 1,
-                [{"q": "sn=111", "itemType": "book", "itemSubType": "book-digital"}],
+                [
+                    {
+                        "q": "sn=111 NOT lv:3",
+                        "itemType": "book",
+                        "itemSubType": "book-digital",
+                    }
+                ],
                 id="ebook",
             ),
             pytest.param(
                 2,
                 [
                     {
-                        "q": "sn=111",
+                        "q": "sn=111 NOT lv:3",
                         "itemType": "audiobook",
                         "itemSubType": "audiobook-digital",
                     }
@@ -143,7 +149,13 @@ class TestWorldcatMocked:
             ),
             pytest.param(
                 3,
-                [{"q": "sn=111", "itemType": "video", "itemSubType": "video-digital"}],
+                [
+                    {
+                        "q": "sn=111 NOT lv:3",
+                        "itemType": "video",
+                        "itemSubType": "video-digital",
+                    }
+                ],
                 id="evideo",
             ),
             pytest.param(
