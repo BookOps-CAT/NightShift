@@ -25,11 +25,11 @@ from nightshift.datastore import (
 
 def test_conf_db(mock_db_env):
     assert sorted(conf_db().keys()) == [
-        "NS_DBHOST",
-        "NS_DBNAME",
-        "NS_DBPASSW",
-        "NS_DBPORT",
-        "NS_DBUSER",
+        "POSTGRES_DB",
+        "POSTGRES_HOST",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_PORT",
+        "POSTGRES_USER",
     ]
 
 
@@ -71,11 +71,11 @@ def test_Event_tbl_repr():
                 sierraId=11111111,
                 bibDate=today,
                 resourceCategoryId=1,
-                outcome="bot_cataloged",
+                status="bot_cataloged",
             )
         )
         == f"<Event(nid='1', timestamp='{stamp}', libraryId='1', sierraId='11111111', "
-        f"bibDate='{today}', resourceCategoryId='1', outcome='bot_cataloged')>"
+        f"bibDate='{today}', resourceCategoryId='1', status='bot_cataloged')>"
     )
 
 

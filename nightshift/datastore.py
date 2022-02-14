@@ -27,6 +27,19 @@ from sqlalchemy.orm import relationship, sessionmaker
 Base = declarative_base()
 
 
+STATUS = ENUM(
+    "bot_enhanced",
+    "expired",
+    "open",
+    "staff_deleted",
+    "staff_enhanced",
+    "worldcat_miss",
+    "worldcat_hit",
+    name="status",
+    metadata=Base.metadata,
+)
+
+
 def conf_db():
     """
     Retrieves db configuation from env variables
@@ -35,18 +48,18 @@ def conf_db():
         db settings as dictionary
     """
     return dict(
-        NS_DBUSER=os.getenv("NS_DBUSER"),
-        NS_DBPASSW=os.getenv("NS_DBPASSW"),
-        NS_DBHOST=os.getenv("NS_DBHOST"),
-        NS_DBPORT=os.getenv("NS_DBPORT"),
-        NS_DBNAME=os.getenv("NS_DBNAME"),
+        POSTGRES_USER=os.getenv("POSTGRES_USER"),
+        POSTGRES_PASSWORD=os.getenv("POSTGRES_PASSWORD"),
+        POSTGRES_HOST=os.getenv("POSTGRES_HOST"),
+        POSTGRES_PORT=os.getenv("POSTGRES_PORT"),
+        POSTGRES_DB=os.getenv("POSTGRES_DB"),
     )
 
 
 class DataAccessLayer:
     def __init__(self):
         db = conf_db()
-        self.conn = f"postgresql://{db['NS_DBUSER']}:{db['NS_DBPASSW']}@{db['NS_DBHOST']}:{db['NS_DBPORT']}/{db['NS_DBNAME']}"
+        self.conn = f"postgresql://{db['POSTGRES_USER']}:{db['POSTGRES_PASSWORD']}@{db['POSTGRES_HOST']}:{db['POSTGRES_PORT']}/{db['POSTGRES_DB']}"
         self.engine = None
 
     def connect(self):
@@ -92,17 +105,7 @@ class Event(Base):
     resourceCategoryId = Column(
         Integer, ForeignKey("resource_category.nid"), nullable=False
     )
-    outcome = Column(
-        ENUM(
-            "expired",
-            "staff_enhanced",
-            "staff_deleted",
-            "bot_enhanced",
-            "worldcat_hit",
-            "worldcat_miss",
-            name="outcome",
-        )
-    )
+    status = Column(STATUS)
 
     def __repr__(self):
         return (
@@ -110,7 +113,7 @@ class Event(Base):
             f"libraryId='{self.libraryId}', sierraId='{self.sierraId}', "
             f"bibDate='{self.bibDate}', "
             f"resourceCategoryId='{self.resourceCategoryId}', "
-            f"outcome='{self.outcome}')>"
+            f"status='{self.status}')>"
         )
 
 
@@ -182,16 +185,7 @@ class Resource(Base):
     oclcMatchNumber = Column(String)
     fullBib = Column(BYTEA)
     outputId = Column(Integer, ForeignKey("output_file.nid"))
-    status = Column(
-        ENUM(
-            "bot_enhanced",
-            "expired",
-            "open",
-            "staff_deleted",
-            "staff_enhanced",
-            name="status",
-        )
-    )
+    status = Column(STATUS)
     enhanceTimestamp = Column(DateTime)
 
     queries = relationship("WorldcatQuery", cascade="all, delete-orphan")

@@ -55,7 +55,7 @@ def test_check_resources_sierra_state_nyp_platform(
     assert event.sierraId == 11111111
     assert isinstance(event.bibDate, date)
     assert event.resourceCategoryId == 1
-    assert event.outcome == "staff_enhanced"
+    assert event.status == "staff_enhanced"
 
 
 def test_check_resources_sierra_state_nyp_platform_deleted_record(
@@ -86,7 +86,7 @@ def test_check_resources_sierra_state_nyp_platform_deleted_record(
     assert event.sierraId == 11111111
     assert isinstance(event.bibDate, date)
     assert event.resourceCategoryId == 1
-    assert event.outcome == "staff_deleted"
+    assert event.status == "staff_deleted"
 
 
 def test_check_resources_sierra_state_bpl_solr(
@@ -132,7 +132,7 @@ def test_check_resources_sierra_state_bpl_solr_no_record(
     assert event.sierraId == 11111111
     assert isinstance(event.bibDate, date)
     assert event.resourceCategoryId == 1
-    assert event.outcome == "staff_deleted"
+    assert event.status == "staff_deleted"
 
 
 def test_check_resources_sierra_state_invalid_library_arg(caplog):
@@ -212,7 +212,7 @@ def test_get_worldcat_brief_bib_matches_success(
     assert event.sierraId == 11111111
     assert isinstance(event.bibDate, date)
     assert event.resourceCategoryId == 1
-    assert event.outcome == "worldcat_hit"
+    assert event.status == "worldcat_hit"
 
 
 @pytest.mark.parametrize("library,library_id", [("NYP", 1), ("BPL", 2)])
@@ -259,7 +259,7 @@ def test_get_worldcat_brief_bib_matches_failed(
     assert event.sierraId == 11111111
     assert isinstance(event.bibDate, date)
     assert event.resourceCategoryId == 1
-    assert event.outcome == "worldcat_miss"
+    assert event.status == "worldcat_miss"
 
 
 def test_get_worldcat_full_bibs(
@@ -499,7 +499,7 @@ def test_update_status_to_upgraded(test_session, test_data_rich, caplog):
     assert event.sierraId == 11111111
     assert isinstance(event.bibDate, date)
     assert event.resourceCategoryId == 1
-    assert event.outcome == "bot_enhanced"
+    assert event.status == "bot_enhanced"
 
 
 def test_update_status_to_upgraded_no_new_file(caplog, test_session):

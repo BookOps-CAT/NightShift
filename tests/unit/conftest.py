@@ -8,7 +8,7 @@ from pymarc import Field
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from nightshift import bot, datastore_transactions, manager, tasks
+from nightshift import bot, datastore_transactions, manager, tasks, constants
 from nightshift.comms.storage import Drive
 from nightshift.datastore import OutputFile, WorldcatQuery
 from nightshift.marc.marc_parser import BibReader
@@ -37,7 +37,7 @@ def mock_log_env(monkeypatch):
 
 @pytest.fixture(scope="function")
 def test_log(monkeypatch, local_test_config):
-    if not os.getenv("TRAVIS"):
+    if not os.getenv("GITHUB_ACTIONS"):
         monkeypatch.setenv("LOGGLY_TOKEN", local_test_config["LOGGLY_TOKEN"])
         monkeypatch.setenv("LOG_HANDLERS", local_test_config["LOG_HANDLERS"])
 
@@ -84,6 +84,19 @@ def mock_init_db_value_error(monkeypatch):
         raise ValueError
 
     monkeypatch.setattr(datastore_transactions, "init_db", _patch)
+
+
+@pytest.fixture
+def mock_init_db_invalid_structure(monkeypatch):
+    def _patch(*args, **kwargs):
+        raise AssertionError("Foo Error")
+
+    monkeypatch.setattr(datastore_transactions, "init_db", _patch)
+
+
+@pytest.fixture
+def mock_init_libraries(monkeypatch):
+    monkeypatch.setattr(constants, "LIBRARIES", {"NYP": {"nid": 1}})
 
 
 # Bibs fixtures ##############

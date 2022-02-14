@@ -60,7 +60,7 @@ def check_resources_sierra_state(
         resource.status = response.get_status()
 
         if resource.status in ("staff_enhanced", "staff_deleted"):
-            add_event(db_session, resource, outcome=resource.status)
+            add_event(db_session, resource, status=resource.status)
 
     sierra_platform.close()
 
@@ -133,12 +133,12 @@ def get_worldcat_brief_bib_matches(
                 )
 
                 # add event for stats
-                add_event(db_session, resource, outcome="worldcat_hit")
+                add_event(db_session, resource, status="worldcat_hit")
             else:
                 resource.queries.append(
                     WorldcatQuery(match=False, response=response.as_json)
                 )
-                add_event(db_session, resource, outcome="worldcat_miss")
+                add_event(db_session, resource, status="worldcat_miss")
             db_session.commit()
 
 
@@ -383,7 +383,7 @@ def update_status_to_upgraded(
                 enhanceTimestamp=datetime.utcnow(),
             )
 
-            add_event(db_session, resource, outcome="bot_enhanced")
+            add_event(db_session, resource, status="bot_enhanced")
 
         db_session.commit()
     else:

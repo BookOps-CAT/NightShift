@@ -51,6 +51,8 @@ def configure_database(env: str = "prod") -> None:
         )
     except ValueError:
         print(f"Environmental variables are not configured properly.")
+    except AssertionError as exc:
+        print(f"Created database has invalid structure. Error: {exc}.")
 
 
 def run(env: str = "prod") -> None:

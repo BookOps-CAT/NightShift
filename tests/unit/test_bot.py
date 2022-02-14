@@ -59,6 +59,14 @@ def test_configure_database_without_env_variables(capfd, mock_init_db_value_erro
     assert "Environmental variables are not configured properly." in captured.out
 
 
+def test_configure_database_with_improper_structure(
+    capfd, mock_init_db_invalid_structure
+):
+    configure_database()
+    captured = capfd.readouterr()
+    assert "Created database has invalid structure. Error: Foo Error." in captured.out
+
+
 def test_run_local(
     caplog,
     patch_config_local_env_variables,

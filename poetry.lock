@@ -180,6 +180,9 @@ category = "dev"
 optional = false
 python-versions = ">=3.7"
 
+[package.dependencies]
+tomli = {version = "*", optional = true, markers = "extra == \"toml\""}
+
 [package.extras]
 toml = ["tomli"]
 
@@ -623,7 +626,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "e06afb23721293d78eb266d6e6aafe212b4d73848b4d05cc88a7cb05e6cea178"
+content-hash = "1d58f7ec4922c5e755f06081f69056b6320cdfab9d0b287c6179d66a22d47e3a"
 
 [metadata.files]
 atomicwrites = [

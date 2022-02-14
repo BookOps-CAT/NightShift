@@ -465,10 +465,18 @@ class BibEnhancer:
                 )
 
             elif field.indicator2 == "0":  # LCSH
+                # accept
                 pass
             elif field.indicator2 == "7":
                 term_src = field["2"]
-                if term_src.lower() in (
+
+                if term_src is None:
+                    logger.debug(
+                        f"Incomplete field. Removed {field} from "
+                        f"{self.library} b{self.resource.sierraId}a"
+                    )
+                    self.bib.remove_field(field)
+                elif term_src.lower() in (
                     "lcsh",
                     "fast",
                     "homoit",
@@ -476,6 +484,7 @@ class BibEnhancer:
                     "lcgft",
                     "lctgm",
                 ):
+                    # accept
                     pass
                 else:
                     logger.debug(
