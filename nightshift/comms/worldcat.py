@@ -143,7 +143,7 @@ class Worldcat:
             if resource.distributorNumber:
                 payloads.append(
                     dict(
-                        q=f"sn={resource.distributorNumber}",
+                        q=f"sn={resource.distributorNumber} NOT lv:3",
                         itemType="book",
                         itemSubType="book-digital",
                     )
@@ -153,7 +153,7 @@ class Worldcat:
             if resource.distributorNumber:
                 payloads.append(
                     dict(
-                        q=f"sn={resource.distributorNumber}",
+                        q=f"sn={resource.distributorNumber} NOT lv:3",
                         itemType="audiobook",
                         itemSubType="audiobook-digital",
                     )
@@ -163,7 +163,7 @@ class Worldcat:
             if resource.distributorNumber:
                 payloads.append(
                     dict(
-                        q=f"sn={resource.distributorNumber}",
+                        q=f"sn={resource.distributorNumber} NOT lv:3",
                         itemType="video",
                         itemSubType="video-digital",
                     )
