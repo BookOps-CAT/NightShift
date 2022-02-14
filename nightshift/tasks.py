@@ -267,6 +267,17 @@ def manipulate_and_serialize_bibs(
     enhanced_resources = []
     skipped_resources = []
 
+    # make sure to start from scratch
+    try:
+        os.remove(file_path)
+    except (FileNotFoundError):
+        pass
+    except OSError as exc:
+        logger.error(
+            f"Unable to delete '{file_path}' file before serializaition to MARC. Error {exc}"
+        )
+        raise
+
     for resource in resources:
         be = BibEnhancer(resource)
         be.manipulate()
