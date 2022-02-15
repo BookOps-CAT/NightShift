@@ -29,28 +29,28 @@ class TestWorldcatSearch:
     @pytest.mark.parametrize(
         "q,hits,match_number",
         [
-            # pytest.param(
-            #     "sn=8B24FBF1-9CD3-4FD4-89BD-5782B6B5E1BC AND (dx:rda OR dx:pn)",
-            #     0,
-            #     None,
-            #     id="no rda and no pn",
-            # ),
-            # pytest.param(
-            #     "sn=9C24F5B1-3AC2-4197-AAE0-7E5B10DBEBE9 AND (dx:rda OR dx:pn)",
-            #     2,
-            #     "936069070",
-            #     id="1 rda and 2 pn available",
-            # ),
-            # pytest.param(
-            #     "sn=19B05CB6-0C5A-4432-8785-AAE0977B1877 AND (dx:rda OR dx:pn)",
-            #     1,
-            #     "1132404223",
-            #     id="only pn available",
-            # ),
             pytest.param(
-                "sn=C59B8B76-A8B9-47F1-B69C-030A821046A3 AND lv:b",
+                "sn=8B24FBF1-9CD3-4FD4-89BD-5782B6B5E1BC AND (dx:rda OR dx:pn)",
+                0,
+                None,
+                id="no rda and no pn",
+            ),
+            pytest.param(
+                "sn=9C24F5B1-3AC2-4197-AAE0-7E5B10DBEBE9 AND (dx:rda OR dx:pn)",
+                2,
+                "936069070",
+                id="1 rda and 2 pn available",
+            ),
+            pytest.param(
+                "sn=19B05CB6-0C5A-4432-8785-AAE0977B1877 AND (dx:rda OR dx:pn)",
                 1,
-                "883320526",
+                "1132404223",
+                id="only pn available",
+            ),
+            pytest.param(
+                "sn=C0DDF2F1-5943-45BB-BB1E-0667EA3B8229 NOT lv:3 NOT cs=UKAHL",
+                0,
+                None,
                 id="test",
             ),
         ],
@@ -67,6 +67,7 @@ class TestWorldcatSearch:
         response = wcat.session.search_brief_bibs(
             **payload, inCatalogLanguage="eng", orderBy="mostWidelyHeld", limit=1
         )
+        print(response.url)
         print(response.json())
         assert response.json()["numberOfRecords"] == hits
 
