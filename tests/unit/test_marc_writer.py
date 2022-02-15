@@ -528,10 +528,19 @@ class TestBibEnhancer:
                 Field(
                     tag="650",
                     indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "gmgpc"],
+                ),
+                1,
+                id="GMGPC",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "7"],
                     subfields=["a", "Foo.", "2", "sears"],
                 ),
                 0,
-                id="Other dict",
+                id="Other dict: sears",
             ),
             pytest.param(
                 Field(
@@ -551,6 +560,11 @@ class TestBibEnhancer:
                 0,
                 id="Children's LCSH",
             ),
+            pytest.param(
+                Field(tag="650", indicators=[" ", "7"], subfields=["a", "Foo."]),
+                0,
+                id="Incomplete field for other dict",
+            ),
         ],
     )
     def test_remove_unsupported_subject_tags(self, stub_resource, tag, expectation):
@@ -563,8 +577,9 @@ class TestBibEnhancer:
         assert len(be.bib.subjects()) == 0
 
         be.bib.add_field(tag)
-        be._remove_unsupported_subject_tags()
+        assert len(be.bib.subjects()) == 1
 
+        be._remove_unsupported_subject_tags()
         assert len(be.bib.subjects()) == expectation
 
     def test_save2file(self, caplog, stub_resource):

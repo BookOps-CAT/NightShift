@@ -403,13 +403,6 @@ class BibEnhancer:
             logger.debug("Worldcat record failed physical desc. test.")
             return False
 
-        # reject records contributed by certain organizations
-        rotten_apples = [
-            "UKAHL",
-        ]
-        if self.bib["040"]["a"] in rotten_apples:
-            return False
-
         logger.debug("Worldcat record meets minimum criteria.")
         return True
 
@@ -471,11 +464,11 @@ class BibEnhancer:
                 term_src = field["2"]
 
                 if term_src is None:
+                    self.bib.remove_field(field)
                     logger.debug(
                         f"Incomplete field. Removed {field} from "
                         f"{self.library} b{self.resource.sierraId}a"
                     )
-                    self.bib.remove_field(field)
                 elif term_src.lower() in (
                     "lcsh",
                     "fast",
@@ -483,15 +476,16 @@ class BibEnhancer:
                     "gsafd",
                     "lcgft",
                     "lctgm",
+                    "gmgpc",
                 ):
                     # accept
                     pass
                 else:
+                    self.bib.remove_field(field)
                     logger.debug(
                         "Unsupported thesaurus. "
                         f"Removed {field} from {self.library} "
                         f"b{self.resource.sierraId}a."
                     )
-                    self.bib.remove_field(field)
             else:
                 self.bib.remove_field(field)
