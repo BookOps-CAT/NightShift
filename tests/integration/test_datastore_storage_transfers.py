@@ -78,8 +78,6 @@ def test_enhance_and_transfer_to_drive(caplog, env_var, test_data_rich, stub_res
         with caplog.at_level(logging.DEBUG):
             enhance_and_output_bibs(db_session, "NYP", 1, "ebook", resources)
 
-        assert not os.path.exists("temp.mrc")
-
     today = datetime.datetime.now().date()
     drive_creds = get_credentials()
 

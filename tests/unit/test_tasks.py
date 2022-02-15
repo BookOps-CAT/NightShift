@@ -155,10 +155,7 @@ def test_enhance_and_output_bibs(
 
     assert "NYP b11111111a has been output to 'temp.mrc'." in caplog.text
 
-    # make sure temp file cleaned up
-    assert not os.path.exists("temp.mrc")
     # check database state
-
     output_record = (
         test_session.query(OutputFile).where(OutputFile.nid == 2).one_or_none()
     )
@@ -433,31 +430,12 @@ def test_transfer_to_drive(mock_drive, caplog, sftpserver, tmpdir):
             ]
     assert f"NYP ebook records have been output to remote '{base_name}-02.mrc'"
 
-    # make sure temp file cleanup
-    assert not os.path.exists(tmpfile)
-
 
 def test_transfer_to_drive_temp_file_not_created(mock_sftp_env, sftpserver, caplog):
     with caplog.at_level(logging.INFO):
         remote_file = transfer_to_drive("NYP", "ebook", None)
     assert remote_file is None
     assert "No source file to output to SFTP" in caplog.text
-
-
-def test_transfer_to_drive_unable_to_del_temp_file_exception(
-    caplog, mock_sftp_env, sftpserver, mock_os_error_on_remove, tmpdir
-):
-    tmpfile = tmpdir.join("temp.mrc")
-    tmpfile.write("spam")
-    with sftpserver.serve_content({"load_dir": {"foo.mrc": "spam"}}):
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(OSError):
-                transfer_to_drive("NYP", "ebook", str(tmpfile))
-
-    assert (
-        f"Unable to delete '{str(tmpfile)}' file after completing the job. Error "
-        in caplog.text
-    )
 
 
 def test_transfer_to_drive_sftp_error(mock_sftp_env, sftpserver, mock_io_error, tmpdir):
