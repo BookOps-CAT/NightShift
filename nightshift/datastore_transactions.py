@@ -14,6 +14,8 @@ from nightshift.datastore import (
     OutputFile,
     Resource,
     ResourceCategory,
+    RottenApple,
+    RottenAppleResource,
     SourceFile,
     WorldcatQuery,
 )
@@ -41,6 +43,16 @@ def init_db() -> None:
         session.add(
             ResourceCategory(nid=v["nid"], name=k, description=v["description"]),
         )
+
+    for code, resource_cat_ids in constants.ROTTEN_APPLES.items():
+        ids = [
+            RottenAppleResource(
+                resourceCategoryId=constants.RESOURCE_CATEGORIES[n]["nid"]
+            )
+            for n in resource_cat_ids
+        ]
+        session.add(RottenApple(code=code, applicableResourceIds=ids))
+
     session.commit()
 
     # verify integrity of the database

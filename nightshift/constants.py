@@ -97,6 +97,9 @@ RESOURCE_CATEGORIES = {
 }
 
 
+ROTTEN_APPLES = {"UKAHL": ["ebook", "eaudio", "evideo"]}
+
+
 SIERRA_FORMATS = {
     "NYP": {
         "ebook": "z",
