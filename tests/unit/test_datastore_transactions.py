@@ -56,6 +56,8 @@ def test_init_db(mock_db_env, test_connection):
             "output_file",
             "source_file",
             "resource",
+            "rotten_apple",
+            "rotten_apple_resource",
             "resource_category",
             "worldcat_query",
         ]

@@ -54,6 +54,8 @@ def init_db() -> None:
                 "output_file",
                 "resource",
                 "resource_category",
+                "rotten_apple",
+                "rotten_apple_resource",
                 "source_file",
                 "worldcat_query",
             ]

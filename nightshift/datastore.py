@@ -231,6 +231,45 @@ class ResourceCategory(Base):
         )
 
 
+class RottenApple(Base):
+    """
+    List of OCLC organization codes which records
+    should be rejected because of poor quality
+    """
+
+    __tablename__ = "rotten_apple"
+
+    nid = Column(Integer, primary_key=True)
+    code = Column(String, nullable=False, unique=True)
+
+    applicableResourceIds = relationship(
+        "RottenAppleResource", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self):
+        return f"<RottenApple(nid='{self.nid}', code='{self.code}')>"
+
+
+class RottenAppleResource(Base):
+    """
+    Specifies applicable `ResourceCategory` instances for each
+    RottenApple
+    """
+
+    __tablename__ = "rotten_apple_resource"
+
+    rottenAppleId = Column(Integer, ForeignKey("rotten_apple.nid"), primary_key=True)
+    resourceCategoryId = Column(
+        Integer, ForeignKey("resource_category.nid"), primary_key=True
+    )
+
+    def __repr__(self):
+        return (
+            f"<RottenAppleResource(rottenAppleId='{self.rottenAppleId}', "
+            f"resourceCategoryId='{self.resourceCategoryId}')>"
+        )
+
+
 class SourceFile(Base):
     """
     Source MARC file info.
