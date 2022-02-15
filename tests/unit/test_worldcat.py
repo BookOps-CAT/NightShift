@@ -85,6 +85,23 @@ class TestWorldcatMocked:
     def test_create_worldcat_session(self, mock_Worldcat):
         assert isinstance(mock_Worldcat.session, MetadataSession)
 
+    @pytest.mark.parametrize(
+        "resource_cat_id,rotten_apples,expectation",
+        [
+            (1, {1: ["FOO", "BAR"]}, " NOT cs=FOO NOT cs=BAR"),
+            (2, {}, ""),
+            (3, {1: ["FOO"]}, ""),
+            (4, {1: ["FOO"], 4: ["BAR"]}, " NOT cs=BAR"),
+        ],
+    )
+    def test_format_rotten_apples(
+        self, mock_Worldcat, resource_cat_id, rotten_apples, expectation
+    ):
+        assert (
+            mock_Worldcat._format_rotten_apples(resource_cat_id, rotten_apples)
+            == expectation
+        )
+
     def test_get_full_bibs(
         self, caplog, mock_Worldcat, mock_successful_session_get_request
     ):
@@ -123,13 +140,14 @@ class TestWorldcatMocked:
         assert "WorldcatSessionError. Aborting." in caplog.text
 
     @pytest.mark.parametrize(
-        "arg,expectation",
+        "resource_cat_id,rotten_apples,expectation",
         [
             pytest.param(
                 1,
+                {1: ["FOO", "BAR"]},
                 [
                     {
-                        "q": "sn=111 NOT lv:3",
+                        "q": "sn=111 NOT lv:3 NOT cs=FOO NOT cs=BAR",
                         "itemType": "book",
                         "itemSubType": "book-digital",
                     }
@@ -138,6 +156,7 @@ class TestWorldcatMocked:
             ),
             pytest.param(
                 2,
+                {},
                 [
                     {
                         "q": "sn=111 NOT lv:3",
@@ -149,6 +168,7 @@ class TestWorldcatMocked:
             ),
             pytest.param(
                 3,
+                {1: ["FOO", "BAR"]},
                 [
                     {
                         "q": "sn=111 NOT lv:3",
@@ -160,6 +180,7 @@ class TestWorldcatMocked:
             ),
             pytest.param(
                 4,
+                {},
                 [
                     {
                         "q": "bn:222",
@@ -179,17 +200,19 @@ class TestWorldcatMocked:
         ],
     )
     def test_prep_resource_queries_payloads(
-        self, caplog, arg, expectation, mock_Worldcat
+        self, caplog, resource_cat_id, rotten_apples, expectation, mock_Worldcat
     ):
         resource = Resource(
-            resourceCategoryId=arg,
+            resourceCategoryId=resource_cat_id,
             sierraId=22222222,
             distributorNumber=111,
             standardNumber=222,
             congressNumber=333,
         )
         with caplog.at_level(logging.DEBUG):
-            payloads = mock_Worldcat._prep_resource_queries_payloads(resource)
+            payloads = mock_Worldcat._prep_resource_queries_payloads(
+                resource, rotten_apples
+            )
         assert payloads == expectation
         assert f"Query payload for NYP Sierra bib # b22222222a: {expectation}."
 

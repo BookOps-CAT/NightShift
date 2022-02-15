@@ -92,6 +92,30 @@ class Worldcat:
         with MetadataSession(authorization=access_token) as session:
             return session
 
+    def _format_rotten_apples(
+        self, resource_category_id: int, rotten_apples: dict[int, list[str]]
+    ) -> str:
+        """
+        Formats a list of forbidden org codes to be includes in a Worldcat query
+
+        Args:
+            resource_category_id:       `nid` of applicable resource category
+            rotten_apples:              dictionary of OCLC organization codes
+                                        to be excluded from results;
+                                        dict key is `ResourceCategory.nid`.
+
+        Returns:
+            a segment of query string
+        """
+        try:
+            rotten_apples_str = "".join(
+                [f" NOT cs={a}" for a in rotten_apples[resource_category_id]]
+            )
+        except KeyError:
+            rotten_apples_str = ""
+
+        return rotten_apples_str
+
     def _get_access_token(self, credentials: dict) -> WorldcatAccessToken:
         """
         Requests from the OCLC's authentication server an access token
@@ -126,24 +150,36 @@ class Worldcat:
             agent=f"{__title__}/{__version__}",
         )
 
-    def _prep_resource_queries_payloads(self, resource: Resource) -> list[dict]:
+    def _prep_resource_queries_payloads(
+        self, resource: Resource, rotten_apples: dict[int, list[str]]
+    ) -> list[dict]:
         """
         Prepares payloads with query parameters for different resources.
 
         Args:
             resource:                   `datastore.Resource` instance
+            rotten_apples:              dictionary of OCLC organization codes
+                                        to be excluded from results;
+                                        dict key is `ResourceCategory.nid`.
 
         Returns:
             payloads
         """
         payloads = []
 
+        forbidden_sources = self._format_rotten_apples(
+            resource.resourceCategoryId, rotten_apples
+        )
+
         if resource.resourceCategoryId == 1:
             # ebook
             if resource.distributorNumber:
                 payloads.append(
                     dict(
-                        q=f"sn={resource.distributorNumber} NOT lv:3",
+                        q=(
+                            f"sn={resource.distributorNumber} "
+                            f"NOT lv:3{forbidden_sources}"
+                        ),
                         itemType="book",
                         itemSubType="book-digital",
                     )
@@ -153,7 +189,7 @@ class Worldcat:
             if resource.distributorNumber:
                 payloads.append(
                     dict(
-                        q=f"sn={resource.distributorNumber} NOT lv:3",
+                        q=f"sn={resource.distributorNumber} NOT lv:3{forbidden_sources}",
                         itemType="audiobook",
                         itemSubType="audiobook-digital",
                     )
@@ -163,7 +199,7 @@ class Worldcat:
             if resource.distributorNumber:
                 payloads.append(
                     dict(
-                        q=f"sn={resource.distributorNumber} NOT lv:3",
+                        q=f"sn={resource.distributorNumber} NOT lv:3{forbidden_sources}",
                         itemType="video",
                         itemSubType="video-digital",
                     )
@@ -173,7 +209,7 @@ class Worldcat:
             if resource.standardNumber:
                 payloads.append(
                     dict(
-                        q=f"bn:{resource.standardNumber}",
+                        q=f"bn:{resource.standardNumber}{forbidden_sources}",
                         itemType="book",
                         itemSubType="book-printbook",
                         catalogSource="DLC",
@@ -182,7 +218,7 @@ class Worldcat:
             if resource.congressNumber:
                 payloads.append(
                     dict(
-                        q=f"ln:{resource.congressNumber}",
+                        q=f"ln:{resource.congressNumber}{forbidden_sources}",
                         itemType="book",
                         itemSubType="book-printbook",
                         catalogSource="DLC",
@@ -195,21 +231,28 @@ class Worldcat:
         return payloads
 
     def get_brief_bibs(
-        self, resources: list[Resource]
+        self, resources: list[Resource], rotten_apples: dict[int, list[str]] = {}
     ) -> Iterator[tuple[Resource, BriefBibResponse]]:
         """
         Performes WorldCat queries for each resource in the passed library batch.
         Resources must belong to the same library.
 
         Args:
-            resources:                   `datastore.Resource` instances
+            resources:                  `datastore.Resource` instances
+            rotten_apples:              use to exclude a particular contributor to
+                                        Worldcat from the results;
+                                        pass as a dictionary where key is
+                                        `ResourceCategory.nid` and value a list of
+                                        OCLC organization codes
 
+        yields:
+            (`Resource`, `BriefBibResponse`)
 
         """
         try:
             for resource in resources:
 
-                payloads = self._prep_resource_queries_payloads(resource)
+                payloads = self._prep_resource_queries_payloads(resource, rotten_apples)
                 if not payloads:
                     logger.warning(
                         f"Unable to create a payload for brief bib query for "
