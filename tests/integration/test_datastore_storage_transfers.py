@@ -10,11 +10,7 @@ from nightshift.datastore_transactions import insert_or_ignore, add_resource
 from nightshift.comms.storage import get_credentials, Drive
 from nightshift.marc.marc_parser import BibReader
 from nightshift.constants import LIBRARIES
-from nightshift.tasks import (
-    enhance_and_output_bibs,
-    isolate_unprocessed_files,
-    ingest_new_files,
-)
+from nightshift.tasks import Tasks
 
 
 @pytest.mark.firewalled
@@ -76,7 +72,8 @@ def test_enhance_and_transfer_to_drive(caplog, env_var, test_data_rich, stub_res
         )
 
         with caplog.at_level(logging.DEBUG):
-            enhance_and_output_bibs(db_session, "NYP", 1, "ebook", resources)
+            tasks = Tasks(db_session, "NYP", 1)
+            tasks.enhance_and_output_bibs("ebook", resources)
 
     today = datetime.datetime.now().date()
     drive_creds = get_credentials()
@@ -96,7 +93,8 @@ def test_isolate_unprocessed_files(env_var, test_data_rich, caplog):
         drive_creds = get_credentials()
         with Drive(*drive_creds) as drive:
             with caplog.at_level(logging.DEBUG):
-                unproc = isolate_unprocessed_files(db_session, drive, "BPL", 2)
+                tasks = Tasks(db_session, "BPL", 2)
+                unproc = tasks.isolate_unprocessed_files(drive)
 
             assert (
                 "Found following remote files for BPL: ['BPLeres210701.pout']"
@@ -109,7 +107,8 @@ def test_isolate_unprocessed_files(env_var, test_data_rich, caplog):
 def test_ingest_new_files(env_var, test_data_rich, caplog):
     with session_scope() as db_session:
         with caplog.at_level(logging.INFO):
-            ingest_new_files(db_session, "NYP", 1)
+            tasks = Tasks(db_session, "NYP", 1)
+            tasks.ingest_new_files()
 
         assert (
             "Found following unprocessed files: ['NYPeres210701.pout']." in caplog.text

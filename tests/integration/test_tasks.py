@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import update
 
 from nightshift.datastore import Resource
-from nightshift import tasks
+from nightshift.tasks import Tasks
 
 
 @pytest.mark.local
@@ -21,7 +21,8 @@ def test_get_worldcat_brief_bib_matches_success(test_session, test_data_rich, en
 
     resources = test_session.query(Resource).filter_by(nid=1).all()
 
-    tasks.get_worldcat_brief_bib_matches(test_session, "NYP", resources)
+    tasks = Tasks(test_session, "NYP", 1)
+    tasks.get_worldcat_brief_bib_matches(resources)
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]
     query_record = res.queries[1]
@@ -48,7 +49,8 @@ def test_get_worldcat_brief_bib_matches_failure(test_session, test_data_rich, en
     resources = test_session.query(Resource).filter_by(nid=1).all()
     assert len(resources) == 1
 
-    tasks.get_worldcat_brief_bib_matches(test_session, "NYP", resources)
+    tasks = Tasks(test_session, "NYP", 1)
+    tasks.get_worldcat_brief_bib_matches(resources)
 
     res = test_session.query(Resource).filter_by(nid=1).one()
     assert res.oclcMatchNumber is None
@@ -72,7 +74,8 @@ def test_get_worldcat_full_bibs(test_session, test_data_rich, env_var):
     resources = test_session.query(Resource).filter_by(nid=1).all()
     assert len(resources) == 1
 
-    tasks.get_worldcat_full_bibs(test_session, "NYP", resources)
+    tasks = Tasks(test_session, "NYP", 1)
+    tasks.get_worldcat_full_bibs(resources)
 
     res = test_session.query(Resource).filter_by(nid=1).one()
     assert isinstance(res.fullBib, bytes)

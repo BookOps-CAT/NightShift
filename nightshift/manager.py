@@ -18,7 +18,7 @@ from nightshift.datastore_transactions import (
 )
 
 
-from nightshift import tasks
+from nightshift.tasks import Tasks
 
 
 logger = logging.getLogger("nightshift")
@@ -58,8 +58,11 @@ def process_resources() -> None:
 
             logger.info(f"Processing {library} resources.")
 
+            # initiate Task client for the library
+            tasks = Tasks(db_session, library, lib_nid)
+
             # ingest new resources
-            tasks.ingest_new_files(db_session, library, lib_nid)
+            tasks.ingest_new_files()
             logger.info(f"New {library} remote files have been ingested.")
 
             # search newly added resources
@@ -67,7 +70,7 @@ def process_resources() -> None:
 
             # perform searches for each resource and store results
             if resources:
-                tasks.get_worldcat_brief_bib_matches(db_session, library, resources)
+                tasks.get_worldcat_brief_bib_matches(resources)
                 logger.info(
                     f"Obtaining Worldcat matches for {len(resources)} {library} "
                     "new resources completed."
@@ -85,9 +88,7 @@ def process_resources() -> None:
                     )
                     # query Sierra platform to update their status if changed
                     if resources:
-                        tasks.check_resources_sierra_state(
-                            db_session, library, resources
-                        )
+                        tasks.check_resources_sierra_state(resources)
                         logger.info(
                             f"Checking Sierra status of {len(resources)} {library} "
                             f"{res_category} older resources completed."
@@ -107,9 +108,7 @@ def process_resources() -> None:
 
                     # perform WorldCat searches for open older resources
                     if resources:
-                        tasks.get_worldcat_brief_bib_matches(
-                            db_session, library, resources
-                        )
+                        tasks.get_worldcat_brief_bib_matches(resources)
                         logger.info(
                             f"Obtainig WorldCat matches for {len(resources)} "
                             f"{library} {res_category} older resources completed."
@@ -120,7 +119,7 @@ def process_resources() -> None:
                 db_session, lib_nid
             )
             if resources:
-                tasks.get_worldcat_full_bibs(db_session, library, resources)
+                tasks.get_worldcat_full_bibs(resources)
                 logger.info(
                     f"Downloading {len(resources)} {library} {res_category} "
                     "full records from WorldCat completed."
@@ -134,9 +133,7 @@ def process_resources() -> None:
 
                 # manipulate Worldcat bibs, serialize to MARC21 and save to SFTP
                 if resources:
-                    tasks.enhance_and_output_bibs(
-                        db_session, library, lib_nid, res_category, resources
-                    )
+                    tasks.enhance_and_output_bibs(res_category, resources)
 
                     logger.info(
                         f"Enhancement and serializaiton of {library} {res_category} "
