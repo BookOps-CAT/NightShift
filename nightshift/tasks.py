@@ -20,6 +20,7 @@ from nightshift.datastore_transactions import (
     add_resource,
     add_source_file,
     retrieve_processed_files,
+    retrieve_rotten_apples,
     update_resource,
 )
 from nightshift.marc.marc_parser import BibReader
@@ -43,6 +44,15 @@ class Tasks:
         self.db_session = db_session
         self.library = library
         self.library_id = library_id
+        self.rotten_apples = dict()
+
+    def _create_rotten_apples_idx(self) -> dict[int, list[str]]:
+        """
+        Creates a dictionary of forbiddent organization codes which records
+        should be excluded from retrieved from Worldcat results
+        """
+        rotten_apples = retrieve_rotten_apples(self.db_session)
+        return rotten_apples
 
     def check_resources_sierra_state(self, resources: list[Resource]) -> None:
         """
@@ -119,8 +129,13 @@ class Tasks:
             f"Searching Worldcat for brief records for {len(resources)} resources."
         )
 
+        if not self.rotten_apples:
+            self.rotten_apples = self._create_rotten_apples_idx()
+
         with Worldcat(self.library) as worldcat:
-            results = worldcat.get_brief_bibs(resources=resources)
+            results = worldcat.get_brief_bibs(
+                resources, rotten_apples=self.rotten_apples
+            )
             for resource, response in results:
                 if response.is_match:
                     instance = update_resource(

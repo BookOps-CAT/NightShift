@@ -14,13 +14,15 @@ import yaml
 
 from nightshift.comms.storage import get_credentials, Drive
 from nightshift.comms.worldcat import Worldcat
-from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
+from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES, ROTTEN_APPLES
 from nightshift.datastore import (
     Base,
     Library,
     OutputFile,
     Resource,
     ResourceCategory,
+    RottenApple,
+    RottenAppleResource,
     SourceFile,
     WorldcatQuery,
 )
@@ -176,6 +178,12 @@ def test_data_core(test_session):
         test_session.add(
             ResourceCategory(nid=v["nid"], name=k, description=v["description"])
         )
+    for code, resource_cat_ids in ROTTEN_APPLES.items():
+        ids = [
+            RottenAppleResource(resourceCategoryId=RESOURCE_CATEGORIES[n]["nid"])
+            for n in resource_cat_ids
+        ]
+        test_session.add(RottenApple(code=code, applicableResourceIds=ids))
     test_session.add(SourceFile(libraryId=1, handle="foo1.mrc"))
     test_session.add(SourceFile(libraryId=2, handle="foo2.mrc"))
     test_session.commit()
