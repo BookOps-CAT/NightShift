@@ -418,6 +418,18 @@ def test_manipulate_and_serialize_bibs_failed(test_session, test_data_rich, capl
     assert len(resources) == 0
 
 
+def test_manipulate_and_serialize_bibs_os_error_on_temp_file_removal(
+    test_session, test_data_rich, caplog, mock_os_error_on_remove
+):
+    resource = test_session.query(Resource).one()
+    with pytest.raises(OSError):
+        with caplog.at_level(logging.ERROR):
+            tasks = Tasks(test_session, "NYP", 1)
+            tasks.manipulate_and_serialize_bibs("ebook", [resource])
+
+    assert "Unable to empty temp file 'temp.mrc'" in caplog.text
+
+
 def test_transfer_to_drive(mock_drive, caplog, sftpserver, tmpdir):
     base_name = f"{datetime.now().date():%y%m%d}-NYP-ebook"
     tmpfile = tmpdir.join("temp.mrc")
