@@ -236,29 +236,6 @@ def insert_or_ignore(session, model, **kwargs):
         return None
 
 
-def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
-    """
-    Retrieves resources that have been added to the db
-    but has not been processed yet.
-    The results are grouped by the resource category and ordered by
-    resource nid.
-
-    Args:
-        session:                `sqlalchemy.Session` instance
-        libraryId:              `Library.nid`
-
-    Returns:
-        list of `Resource` instances
-    """
-    resources = (
-        session.query(Resource)
-        .filter_by(libraryId=libraryId, status="open", queries=None)
-        .order_by(Resource.resourceCategoryId, Resource.nid)
-        .all()
-    )
-    return resources
-
-
 def retrieve_expired_resources(
     session: Session, resourceCategoryId: int, expiration_age: int
 ) -> list[Resource]:
@@ -283,6 +260,29 @@ def retrieve_expired_resources(
             Resource.bibDate
             < datetime.utcnow().date() - timedelta(days=expiration_age),
         )
+        .all()
+    )
+    return resources
+
+
+def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
+    """
+    Retrieves resources that have been added to the db
+    but has not been processed yet.
+    The results are grouped by the resource category and ordered by
+    resource nid.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+        libraryId:              `Library.nid`
+
+    Returns:
+        list of `Resource` instances
+    """
+    resources = (
+        session.query(Resource)
+        .filter_by(libraryId=libraryId, status="open", queries=None)
+        .order_by(Resource.resourceCategoryId, Resource.nid)
         .all()
     )
     return resources
@@ -396,6 +396,35 @@ def retrieve_processed_files(session: Session, libraryId: int) -> list[str]:
     """
     instances = session.query(SourceFile.handle).filter_by(libraryId=libraryId).all()
     return [instance[0] for instance in instances]
+
+
+def retrieve_rotten_apples(session: Session) -> dict[int, list[str]]:
+    """
+    Retrieves OCLC codes of organizations that result should be excluded from
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+
+    Returns:
+        dictionary of resource category ids and list of org codes
+    """
+    results = (
+        session.query(RottenAppleResource.resourceCategoryId, RottenApple.code)
+        .join(RottenApple, RottenApple.nid == RottenAppleResource.rottenAppleId)
+        .all()
+    )
+
+    rotten_apples = dict()
+
+    for r in results:
+        if r.resourceCategoryId in rotten_apples:
+            codes = rotten_apples[r.resourceCategoryId]
+            codes.append(r.code)
+            rotten_apples[r.resourceCategoryId] = codes
+        else:
+            rotten_apples[r.resourceCategoryId] = [r.code]
+
+    return rotten_apples
 
 
 def set_resources_to_expired(
