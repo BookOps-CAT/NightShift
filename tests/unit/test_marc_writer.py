@@ -112,45 +112,47 @@ class TestBibEnhancer:
         assert str(bib["949"]) == f"=949  \\\\$a{expectation}"
 
     @pytest.mark.parametrize(
-        "res_cat_id, tag, indicators, subfields, log_msg",
+        "res_cat_id, tag, indicators, subfields, log_msgs",
         [
             pytest.param(
                 1,
                 None,
                 [],
                 [],
-                "Added ebook genre 655 tag.",
+                ["Added 'Electronic books' genre to 655 tag."],
                 id="ebook: No previous tags",
             ),
             pytest.param(
-                1,
-                "650",
-                [" ", "0"],
-                ["a", "Electronic books."],
-                "Added ebook genre 655 tag.",
-                id="ebook: 650  0 $Electronic books.",
-            ),
-            pytest.param(
                 2,
-                "655",
-                [" ", "0"],
-                ["a", "Audiobooks."],
-                "Added 2 eaudiobook genre 655 tags.",
-                id="eaudio: 655  0 $a Audiobooks.",
+                None,
+                [],
+                [],
+                [
+                    "Added 'Audiobooks' genre to 655 tag.",
+                    "Added 'Electronic audiobooks' genre to 655 tags.",
+                ],
+                id="eaudio: No previous tags",
             ),
             pytest.param(
                 3,
-                "655",
-                [" ", "0"],
-                ["a", "Internet videos."],
-                "Added evideo genre 655 tag.",
-                id="evideo: 650  0 $a Internet videos.",
+                None,
+                [],
+                [],
+                ["Added 'Internet videos' genre to 655 tag."],
+                id="evideo: No previous tags",
             ),
-            pytest.param(99, None, [], [], "", id="invalid resource category"),
+            pytest.param(
+                99,
+                None,
+                [],
+                [],
+                [],
+                id="illegal resource category",
+            ),
         ],
     )
-    def test_add_genre_tags(
-        self, caplog, stub_resource, res_cat_id, tag, indicators, subfields, log_msg
+    def test_add_genre_tags_when_missing(
+        self, caplog, stub_resource, res_cat_id, tag, indicators, subfields, log_msgs
     ):
         stub_resource.resourceCategoryId = res_cat_id
         be = BibEnhancer(stub_resource)
@@ -161,7 +163,8 @@ class TestBibEnhancer:
         with caplog.at_level(logging.DEBUG):
             be._add_genre_tags()
 
-        assert log_msg in caplog.text
+        for log_msg in log_msgs:
+            assert log_msg in caplog.text
 
         if res_cat_id == 1:
             assert len(be.bib.get_fields("655")) == 1
@@ -176,6 +179,83 @@ class TestBibEnhancer:
             assert str(be.bib["655"]) == "=655  \\7$aInternet videos.$2lcgft"
         else:
             assert len(be.bib.get_fields("655")) == 0
+
+    @pytest.mark.parametrize(
+        "res_cat_id,tag,indicators,subfields",
+        [
+            pytest.param(
+                1,
+                "655",
+                [" ", "0"],
+                ["a", "Electronic books."],
+                id="ebook: Electronic books - lcsh",
+            ),
+            pytest.param(
+                1,
+                "655",
+                [" ", "7"],
+                ["a", "Electronic books.", "2", "lcgft"],
+                id="ebook: Electronic books - lcgft",
+            ),
+            pytest.param(
+                1,
+                "655",
+                [" ", "0"],
+                ["a", "Children's electronic books."],
+                id="ebook: Children's electronic books.",
+            ),
+            pytest.param(
+                2,
+                "655",
+                [" ", "7"],
+                ["a", "Audiobooks.", "2", "lcgft"],
+                id="eaudio: Audiobooks - lcgft",
+            ),
+            pytest.param(
+                2,
+                "655",
+                [" ", "7"],
+                ["a", "Chidlren's Audiobooks.", "2", "lcgft"],
+                id="eaudio: Children's audiobooks - lcgft",
+            ),
+            pytest.param(
+                2,
+                "655",
+                [" ", "7"],
+                ["a", "Electronic audiobooks.", "2", "local"],
+                id="eaudio: Electronic audiobooks - local",
+            ),
+            pytest.param(
+                3,
+                "655",
+                [" ", "7"],
+                ["a", "Internet videos.", "2", "lcgft"],
+                id="evideo: Internet videos - lcgft.",
+            ),
+        ],
+    )
+    def test_add_genre_tags_when_present(
+        self, stub_resource, res_cat_id, tag, indicators, subfields
+    ):
+        stub_resource.resourceCategoryId = res_cat_id
+        be = BibEnhancer(stub_resource)
+
+        # make sure no other subjects interfere
+        be.bib.remove_fields("650", "655")
+        be.bib.add_field(Field(tag=tag, indicators=indicators, subfields=subfields))
+
+        be._add_genre_tags()
+
+        if res_cat_id == 1:
+            assert len(be.bib.get_fields("655")) == 1
+            assert "electronic books." in str(be.bib["655"]).lower()
+        elif res_cat_id == 2:
+            tags = be.bib.get_fields("655")
+            assert len(tags) >= 1
+            assert "audiobooks." in str(be.bib["655"]).lower()
+        elif res_cat_id == 3:
+            assert len(be.bib.get_fields("655")) == 1
+            assert str(be.bib["655"]) == "=655  \\7$aInternet videos.$2lcgft"
 
     def test_add_local_tags(self, caplog, stub_resource):
         fields = [

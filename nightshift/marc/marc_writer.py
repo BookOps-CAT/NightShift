@@ -264,48 +264,70 @@ class BibEnhancer:
             resource_cat = None
 
         if resource_cat == "ebook":
+            found = False
             for field in self.bib.subjects():
-                if field.value().lower() == "electronic books.":
-                    self.bib.remove_field(field)
-            self.bib.add_field(
-                Field(
-                    tag="655",
-                    indicators=[" ", "0"],
-                    subfields=["a", "Electronic books."],
+                if "electronic books." in field.value().lower():
+                    found = True
+                    break
+            if not found:
+                self.bib.add_field(
+                    Field(
+                        tag="655",
+                        indicators=[" ", "0"],
+                        subfields=["a", "Electronic books."],
+                    )
                 )
-            )
-            logger.debug("Added ebook genre 655 tag.")
+                logger.debug("Added 'Electronic books' genre to 655 tag.")
+
         elif resource_cat == "eaudio":
+
+            # 'Audiobooks' term
+            found = False
             for field in self.bib.subjects():
-                if field.value().lower() in ("audiobooks.", "electronic audiobooks."):
-                    self.bib.remove_field(field)
-            self.bib.add_field(
-                Field(
-                    tag="655",
-                    indicators=[" ", "7"],
-                    subfields=["a", "Audiobooks.", "2", "lcgft"],
+                if "audiobooks." in field.value().lower():
+                    found = True
+                    break
+            if not found:
+                self.bib.add_field(
+                    Field(
+                        tag="655",
+                        indicators=[" ", "7"],
+                        subfields=["a", "Audiobooks.", "2", "lcgft"],
+                    )
                 )
-            )
-            self.bib.add_field(
-                Field(
-                    tag="655",
-                    indicators=[" ", "7"],
-                    subfields=["a", "Electronic audiobooks.", "2", "local"],
+                logger.debug("Added 'Audiobooks' genre to 655 tag.")
+
+            # 'Electronic audiobooks' term
+            found = False
+            for field in self.bib.subjects():
+                if "electronic audiobooks." in field.value().lower():
+                    found = True
+                    break
+            if not found:
+                self.bib.add_field(
+                    Field(
+                        tag="655",
+                        indicators=[" ", "7"],
+                        subfields=["a", "Electronic audiobooks.", "2", "local"],
+                    )
                 )
-            )
-            logger.debug("Added 2 eaudiobook genre 655 tags.")
+                logger.debug("Added 'Electronic audiobooks' genre to 655 tags.")
+
         elif resource_cat == "evideo":
+            found = False
             for field in self.bib.subjects():
                 if "internet videos." in field.value().lower():
-                    self.bib.remove_field(field)
-            self.bib.add_field(
-                Field(
-                    tag="655",
-                    indicators=[" ", "7"],
-                    subfields=["a", "Internet videos.", "2", "lcgft"],
+                    found = True
+                    break
+            if not found:
+                self.bib.add_field(
+                    Field(
+                        tag="655",
+                        indicators=[" ", "7"],
+                        subfields=["a", "Internet videos.", "2", "lcgft"],
+                    )
                 )
-            )
-            logger.debug("Added evideo genre 655 tag.")
+                logger.debug("Added 'Internet videos' genre to 655 tag.")
 
     def _add_local_tags(self) -> None:
         """
