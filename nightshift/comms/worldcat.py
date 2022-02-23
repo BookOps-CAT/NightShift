@@ -199,7 +199,7 @@ class Worldcat:
             if resource.distributorNumber:
                 payloads.append(
                     dict(
-                        q=f"sn={resource.distributorNumber} NOT lv:3{forbidden_sources}",
+                        q=f"sn={resource.distributorNumber} NOT lv:3 NOT lv:M{forbidden_sources}",
                         itemType="video",
                         itemSubType="video-digital",
                     )

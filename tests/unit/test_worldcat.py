@@ -171,7 +171,7 @@ class TestWorldcatMocked:
                 {1: ["FOO", "BAR"]},
                 [
                     {
-                        "q": "sn=111 NOT lv:3",
+                        "q": "sn=111 NOT lv:3 NOT lv:M",
                         "itemType": "video",
                         "itemSubType": "video-digital",
                     }
