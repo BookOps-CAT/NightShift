@@ -128,10 +128,12 @@ class Worldcat:
         """
         try:
             access_token = WorldcatAccessToken(**credentials)
-            logger.info("Worldcat Metadata API access token obtained.")
+            logger.info(f"{self.library} Worldcat Metadata API access token obtained.")
             return access_token
         except WorldcatAuthorizationError:
-            logger.error("Unable to obtain Worldcat MetadataAPI access token.")
+            logger.error(
+                f"Unable to obtain {self.library} Worldcat MetadataAPI access token."
+            )
             raise
 
     def _get_credentials(self) -> dict:

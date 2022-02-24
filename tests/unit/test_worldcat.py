@@ -80,7 +80,7 @@ class TestWorldcatMocked:
         with caplog.at_level(logging.ERROR):
             with pytest.raises(WorldcatAuthorizationError):
                 Worldcat("NYP")
-        assert "Unable to obtain Worldcat MetadataAPI access token." in caplog.text
+        assert "Unable to obtain NYP Worldcat MetadataAPI access token." in caplog.text
 
     def test_create_worldcat_session(self, mock_Worldcat):
         assert isinstance(mock_Worldcat.session, MetadataSession)
