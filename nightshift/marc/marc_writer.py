@@ -445,11 +445,11 @@ class BibEnhancer:
         """
         Removes from e-resource bib any tags indicating distributor
         """
-        vendors = ["Overdrive", "CloudLibrary", "3M", "Recorded Books"]
+        vendors = ["overdrive", "cloudlibrary", "3m", "recorded books"]
 
         for tag in self.bib.get_fields("710"):
             for vendor in vendors:
-                if vendor in tag.value():
+                if vendor in tag.value().lower():
                     self.bib.remove_field(tag)
 
     def _remove_oclc_prefix(self, controlNo: str) -> str:
