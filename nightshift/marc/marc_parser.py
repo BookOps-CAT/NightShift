@@ -110,7 +110,12 @@ class BibReader:
             resource_category
         """
         # Overdrive MarcExpress records control number starts with ODN
-        control_number = bib.control_number()
+        try:
+            control_number = bib.control_number()
+        except AttributeError:
+            # malformed MARC records may be returned by bookops-marc as none
+            return None
+
         if control_number and control_number.startswith("ODN"):
             rec_type = bib.record_type()
             if rec_type == "a":
@@ -126,7 +131,8 @@ class BibReader:
             # determine particular resource category for print material here
             # based it on order information from the 960/961 tags
             logger.warning(
-                f"Unsuppported bib type. Unable to ingest {self.library} bib # {bib.sierra_bib_id()}."
+                f"Unsuppported bib type. Unable to ingest {self.library} bib # "
+                f"{bib.sierra_bib_id()}."
             )
             return None
 
