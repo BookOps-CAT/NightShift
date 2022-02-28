@@ -240,12 +240,13 @@ class TestWorldcatMocked:
         assert data.as_json == MockSuccessfulHTTP200SessionResponse().json()
         assert data.oclc_number == "44959645"
         assert (
-            "Brief bib Worldcat query for NYP Sierra bib # b22222222a: request_url_here."
+            "Brief bib Worldcat query for NYP Sierra bib # b22222222a: request_url_here"
             in caplog.text
         )
 
     def test_get_brief_bibs_no_matches_found(
         self,
+        caplog,
         mock_Worldcat,
         mock_successful_session_get_request_no_matches,
     ):
@@ -257,7 +258,8 @@ class TestWorldcatMocked:
             title="TEST TITLE",
             distributorNumber="111",
         )
-        result = next(mock_Worldcat.get_brief_bibs([resource]))
+        with caplog.at_level(logging.DEBUG):
+            result = next(mock_Worldcat.get_brief_bibs([resource]))
 
         assert isinstance(result, tuple)
 
@@ -269,6 +271,11 @@ class TestWorldcatMocked:
         assert data.as_json == MockSuccessfulHTTP200SessionResponseNoMatches().json()
         assert not data.is_match
         assert data.oclc_number is None
+
+        assert (
+            "No matches found for NYP Sierra bib # b22222222a: request_url_here"
+            in caplog.text
+        )
 
     def test_get_brief_bibs_session_error(
         self, caplog, mock_Worldcat, mock_session_error

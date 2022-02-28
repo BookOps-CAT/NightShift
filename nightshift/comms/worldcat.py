@@ -274,7 +274,7 @@ class Worldcat:
                     brief_bib_response = BriefBibResponse(response)
                     logger.debug(
                         f"Brief bib Worldcat query for {self.library} Sierra bib "
-                        f"# b{resource.sierraId}a: {response.url}."
+                        f"# b{resource.sierraId}a: {response.url}"
                     )
                     if brief_bib_response.is_match:
                         logger.debug(
@@ -282,6 +282,11 @@ class Worldcat:
                             f"b{resource.sierraId}a."
                         )
                         break
+                    else:
+                        logger.debug(
+                            f"No matches found for {self.library} Sierra bib # "
+                            f"b{resource.sierraId}a: {response.url}"
+                        )
 
                 yield (resource, brief_bib_response)
 
