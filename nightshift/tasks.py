@@ -237,7 +237,7 @@ class Tasks:
 
         # select only files with library code and .pout extension
         library_remote_files = [
-            file for file in remote_files if self.library in file and ".pout" in file
+            file for file in remote_files if self.library in file and "-pout" in file
         ]
         logging.debug(
             f"Found following remote files for {self.library}: {library_remote_files}."
