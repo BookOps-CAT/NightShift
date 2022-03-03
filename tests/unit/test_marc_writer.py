@@ -480,6 +480,66 @@ class TestBibEnhancer:
 
         assert "Worldcat record failed physical desc. test." in caplog.text
 
+    @pytest.mark.parametrize(
+        "tag,value,expectation, msg",
+        [
+            pytest.param(
+                "100",
+                "spam",
+                True,
+                "Worldcat record meets minimum criteria.",
+                id="meets in 100",
+            ),
+            pytest.param(
+                "245",
+                "spam",
+                True,
+                "Worldcat record meets minimum criteria.",
+                id="meets in 245",
+            ),
+            pytest.param(
+                "100",
+                "℗",
+                False,
+                "Worldcat record failed characters encoding test.",
+                id="prod symbol in 100",
+            ),
+            pytest.param(
+                "245",
+                "℗",
+                False,
+                "Worldcat record failed characters encoding test.",
+                id="prod symbol in 245",
+            ),
+            pytest.param(
+                "100",
+                "©",
+                False,
+                "Worldcat record failed characters encoding test.",
+                id="copyright symbol in 100",
+            ),
+            pytest.param(
+                "245",
+                "©",
+                False,
+                "Worldcat record failed characters encoding test.",
+                id="copyright symbol in 245",
+            ),
+        ],
+    )
+    def test_meets_minimum_criteria_diacritics_copyright_symbol(
+        self, stub_resource, tag, value, expectation, msg, caplog
+    ):
+        be = BibEnhancer(stub_resource)
+        be.bib.remove_fields(tag)
+        be.bib.add_field(
+            Field(tag=tag, subfields=["a", "Foo ", "b", value, "c", "bar"])
+        )
+        with caplog.at_level(logging.DEBUG):
+            assert be._meets_minimum_criteria() == expectation
+
+        assert msg in caplog.text
+
     def test_purge_tags(self, caplog, stub_resource):
         be = BibEnhancer(stub_resource)
         fields = [
