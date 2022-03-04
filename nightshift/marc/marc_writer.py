@@ -427,18 +427,22 @@ class BibEnhancer:
 
         # messed up diacritics indicated by presence of "©" (b"\xc2\xa9") or
         # "℗" (b"\xe2\x84\x97")
-        diacritics_msg = "Worldcat record failed characters encoding test."
-        if b"\xc2\xa9" in bytes(self.bib.author(), "utf-8") or b"\xc2\xa9" in bytes(
-            self.bib.title(), "utf-8"
-        ):
-            logger.debug(diacritics_msg)
-            return False
+        try:
+            diacritics_msg = "Worldcat record failed characters encoding test."
+            if b"\xc2\xa9" in bytes(self.bib.author(), "utf-8") or b"\xc2\xa9" in bytes(
+                self.bib.title(), "utf-8"
+            ):
+                logger.debug(diacritics_msg)
+                return False
 
-        if b"\xe2\x84\x97" in bytes(
-            self.bib.author(), "utf-8"
-        ) or b"\xe2\x84\x97" in bytes(self.bib.title(), "utf-8"):
-            logger.debug(diacritics_msg)
-            return False
+            if b"\xe2\x84\x97" in bytes(
+                self.bib.author(), "utf-8"
+            ) or b"\xe2\x84\x97" in bytes(self.bib.title(), "utf-8"):
+                logger.debug(diacritics_msg)
+                return False
+        except TypeError:
+            # hanldes records without the author
+            pass
 
         logger.debug("Worldcat record meets minimum criteria.")
         return True

@@ -499,6 +499,13 @@ class TestBibEnhancer:
             ),
             pytest.param(
                 "100",
+                None,
+                True,
+                "Worldcat record meets minimum criteria.",
+                id="no author field",
+            ),
+            pytest.param(
+                "100",
                 "℗",
                 False,
                 "Worldcat record failed characters encoding test.",
@@ -532,9 +539,10 @@ class TestBibEnhancer:
     ):
         be = BibEnhancer(stub_resource)
         be.bib.remove_fields(tag)
-        be.bib.add_field(
-            Field(tag=tag, subfields=["a", "Foo ", "b", value, "c", "bar"])
-        )
+        if value:
+            be.bib.add_field(
+                Field(tag=tag, subfields=["a", "Foo ", "b", value, "c", "bar"])
+            )
         with caplog.at_level(logging.DEBUG):
             assert be._meets_minimum_criteria() == expectation
 
