@@ -425,6 +425,11 @@ class BibEnhancer:
             logger.debug("Worldcat record failed physical desc. test.")
             return False
 
+        # checks if 3xx RDA fields are present
+        if "336" not in self.bib:
+            logger.debug("Worldcat record failed 336 tag test.")
+            return False
+
         # messed up diacritics indicated by presence of "©" (b"\xc2\xa9") or
         # "℗" (b"\xe2\x84\x97")
         try:

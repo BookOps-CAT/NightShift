@@ -548,6 +548,22 @@ class TestBibEnhancer:
 
         assert msg in caplog.text
 
+    def test_meets_minimum_critera_missing_missing_336_tag_failed(
+        self, stub_resource, caplog
+    ):
+        be = BibEnhancer(stub_resource)
+        be.bib.remove_fields("336")
+        with caplog.at_level(logging.DEBUG):
+            assert be._meets_minimum_criteria() is False
+
+        assert "Worldcat record failed 336 tag test." in caplog.text
+
+    def test_meets_minimum_critera_missing_missing_336_tag_success(
+        self, stub_resource, caplog
+    ):
+        be = BibEnhancer(stub_resource)
+        assert be._meets_minimum_criteria() is True
+
     def test_purge_tags(self, caplog, stub_resource):
         be = BibEnhancer(stub_resource)
         fields = [
