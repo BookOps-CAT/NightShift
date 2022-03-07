@@ -88,6 +88,15 @@ class BibEnhancer:
         a call number can be cosntructed.
         """
 
+        # delete unwanted MARC tags
+        self._purge_tags()
+
+        # remove 6xx tags with terms from unsupported thesauri
+        self._remove_unsupported_subject_tags()
+
+        # remove e-resources vendor tags
+        self._remove_eresource_vendors()
+
         # if does not meet criteria delete Worldcat bib
         if not self._is_acceptable():
             logger.info(
@@ -101,17 +110,8 @@ class BibEnhancer:
                 "Meets minimum requriements."
             )
 
-            # delete unwanted MARC tags
-            self._purge_tags()
-
-            # remove 6xx tags with terms from unsupported thesauri
-            self._remove_unsupported_subject_tags()
-
             # add genre tags
             self._add_genre_tags()
-
-            # remove e-resources vendor tags
-            self._remove_eresource_vendors()
 
             # add tags from the local bib
             self._add_local_tags()
@@ -425,6 +425,11 @@ class BibEnhancer:
             logger.debug("Worldcat record failed physical desc. test.")
             return False
 
+        # has at least one valid subject tag
+        if not self.bib.subjects():
+            logger.debug("Worldcat record failed subjects test.")
+            return False
+
         # messed up diacritics indicated by presence of "©" (b"\xc2\xa9") or
         # "℗" (b"\xe2\x84\x97")
         try:
@@ -452,13 +457,16 @@ class BibEnhancer:
         Removes MARC tags indicated in `constants.RESOURCE_CATEGORIES`
         from the WorldCat bib.
         """
-        for tag in DELETE_TAGS[self.resource.resourceCategoryId]:
-            if tag in self.bib:
-                self.bib.remove_fields(tag)
-        logger.debug(
-            f"Removed {DELETE_TAGS[self.resource.resourceCategoryId]} from "
-            f"{self.library} b{self.resource.sierraId}a."
-        )
+        try:
+            for tag in DELETE_TAGS[self.resource.resourceCategoryId]:
+                if tag in self.bib:
+                    self.bib.remove_fields(tag)
+            logger.debug(
+                f"Removed {DELETE_TAGS[self.resource.resourceCategoryId]} from "
+                f"{self.library} b{self.resource.sierraId}a."
+            )
+        except KeyError:
+            logger.warning("Encountered unsupported resource category.")
 
     def _remove_eresource_vendors(self) -> None:
         """

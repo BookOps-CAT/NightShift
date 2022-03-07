@@ -548,6 +548,14 @@ class TestBibEnhancer:
 
         assert msg in caplog.text
 
+    def test_meets_minimum_criteria_no_subject_tags(self, stub_resource, caplog):
+        be = BibEnhancer(stub_resource)
+        be.bib.remove_fields("650")
+        with caplog.at_level(logging.DEBUG):
+            assert be._meets_minimum_criteria() is False
+
+        assert "Worldcat record failed subjects test." in caplog.text
+
     def test_purge_tags(self, caplog, stub_resource):
         be = BibEnhancer(stub_resource)
         fields = [
