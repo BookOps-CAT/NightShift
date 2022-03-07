@@ -97,7 +97,7 @@ RESOURCE_CATEGORIES = {
 }
 
 
-ROTTEN_APPLES = {"UKAHL": ["ebook", "eaudio", "evideo"]}
+ROTTEN_APPLES = {"UKAHL": ["ebook", "eaudio", "evideo"], "UAH": ["ebook"]}
 
 
 SIERRA_FORMATS = {

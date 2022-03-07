@@ -690,10 +690,10 @@ def test_retrieve_processed_files(test_session, test_data_rich, libraryId, expec
 def test_retrieve_rotten_apples(test_session, test_data_core):
     test_session.add(RottenApple(code="FOO"))
     test_session.commit()
-    test_session.add(RottenAppleResource(resourceCategoryId=1, rottenAppleId=2))
+    test_session.add(RottenAppleResource(resourceCategoryId=1, rottenAppleId=3))
     test_session.commit()
     orgs = retrieve_rotten_apples(test_session)
-    assert orgs == {1: ["UKAHL", "FOO"], 2: ["UKAHL"], 3: ["UKAHL"]}
+    assert orgs == {1: ["UKAHL", "UAH", "FOO"], 2: ["UKAHL"], 3: ["UKAHL"]}
 
 
 def test_set_resources_to_expired(test_session, test_data_rich, stub_resource):
