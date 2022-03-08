@@ -425,11 +425,6 @@ class BibEnhancer:
             logger.debug("Worldcat record failed physical desc. test.")
             return False
 
-        # has at least one valid subject tag
-        if not self.bib.subjects():
-            logger.debug("Worldcat record failed subjects test.")
-            return False
-
         # messed up diacritics indicated by presence of "©" (b"\xc2\xa9") or
         # "℗" (b"\xe2\x84\x97")
         try:
@@ -445,9 +440,15 @@ class BibEnhancer:
             ) or b"\xe2\x84\x97" in bytes(self.bib.title(), "utf-8"):
                 logger.debug(diacritics_msg)
                 return False
+
         except TypeError:
             # hanldes records without the author
             pass
+
+        # has at least one valid subject tag
+        if not self.bib.subjects():
+            logger.debug("Worldcat record failed subjects test.")
+            return False
 
         logger.debug("Worldcat record meets minimum criteria.")
         return True
