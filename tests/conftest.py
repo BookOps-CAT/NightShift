@@ -55,11 +55,11 @@ def local_test_config():
     Requires yaml file with local logging configuration
     example:
     ---
-    NS_DBHOST: localhost
-    NS_DBUSER: ns_test
-    NS_DBPASSW: some_password
-    NS_DBPORT: 5432
-    NS_DBNAME: ns_db
+    POSTGRES_HOST: postgres_host
+    POSTGRES_USER: postgres_user
+    POSTGRES_PASSWORD: postgres_password
+    POSTGRES_PORT: postgres_port
+    POSTGRES_DB: postgred_db_name
     WCNYP_KEY: nypl_worldcat_key
     WCNYP_SECRET: nypl_worldcat_secret
     WCNYP_PRINCIPALID: nypl_principal_id
@@ -82,24 +82,24 @@ def local_test_config():
     BPL_SOLR_CLIENT_KEY: bpl_solr_client_key
     BPL_SOLR_ENDPOINT: bpl_solr_endpoint
     """
-    with open("tests/envar-old.yaml", "r") as f:
+    with open("tests/envar.yaml", "r") as f:
         data = yaml.safe_load(f)
         return data
 
 
 @pytest.fixture
 def env_var(monkeypatch):
-    if os.getenv("TRAVIS"):
+    if os.getenv("GITHUB_ACTIONS"):
         data = dict(
-            NS_DBUSER="postgres",
-            NS_DBPASSW="",
-            NS_DBHOST="127.0.0.1",
-            NS_DBPORT="5433",
-            NS_DBNAME="ns_db",
+            POSTGRES_HOST="127.0.0.1",
+            POSTGRES_USER="postgres",
+            POSTGRES_PASSWORD="postgres",
+            POSTGRES_PORT="5432",
+            POSTGRES_DB="ns_db",
         )
     else:
         # local and firewalled tests
-        with open("tests/envar-old.yaml", "r") as f:
+        with open("tests/envar.yaml", "r") as f:
             data = yaml.safe_load(f)
 
     for k, v in data.items():
@@ -127,32 +127,29 @@ def stub_resource():
 
 @pytest.fixture(scope="function")
 def mock_db_env(monkeypatch):
-    if os.getenv("TRAVIS"):
+    if os.getenv("GITHUB_ACTIONS"):
         data = dict(
-            NS_DBUSER="postgres",
-            NS_DBPASSW="",
-            NS_DBHOST="127.0.0.1",
-            NS_DBPORT="5433",
-            NS_DBNAME="ns_db",
+            POSTGRES_HOST="127.0.0.1",
+            POSTGRES_USER="postgres",
+            POSTGRES_PASSWORD="postgres",
+            POSTGRES_PORT="5432",
+            POSTGRES_DB="ns_db",
         )
     else:
-        with open("tests/envar-old.yaml", "r") as f:
+        with open("tests/envar.yaml", "r") as f:
             data = yaml.safe_load(f)
 
-    monkeypatch.setenv("NS_DBUSER", data["NS_DBUSER"])
-    monkeypatch.setenv("NS_DBPASSW", data["NS_DBPASSW"])
-    monkeypatch.setenv("NS_DBHOST", data["NS_DBHOST"])
-    monkeypatch.setenv("NS_DBPORT", data["NS_DBPORT"])
-    monkeypatch.setenv("NS_DBNAME", data["NS_DBNAME"])
+    monkeypatch.setenv("POSTGRES_USER", data["POSTGRES_USER"])
+    monkeypatch.setenv("POSTGRES_PASSWORD", data["POSTGRES_PASSWORD"])
+    monkeypatch.setenv("POSTGRES_HOST", data["POSTGRES_HOST"])
+    monkeypatch.setenv("POSTGRES_PORT", data["POSTGRES_PORT"])
+    monkeypatch.setenv("POSTGRES_DB", data["POSTGRES_DB"])
 
 
 @pytest.fixture(scope="function")
 def test_connection(mock_db_env):
-    # create db engine differently on local machine or Travis
-    if os.getenv("TRAVIS"):
-        conn = f"postgresql://{os.getenv('NS_DBUSER')}@{os.getenv('NS_DBHOST')}:{os.getenv('NS_DBPORT')}/{os.getenv('NS_DBNAME')}"
-    else:
-        conn = f"postgresql://{os.getenv('NS_DBUSER')}:{os.getenv('NS_DBPASSW')}@{os.getenv('NS_DBHOST')}:{os.getenv('NS_DBPORT')}/{os.getenv('NS_DBNAME')}"
+    # create db engine differently on local machine or Github Actions
+    conn = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
     return conn
 
 

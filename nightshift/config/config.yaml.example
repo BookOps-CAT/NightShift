@@ -1,9 +1,9 @@
 ---
-NS_DBHOST: localhost
-NS_DBUSER: ns_test
-NS_DBPASSW: some_password
-NS_DBPORT: "5432"
-NS_DBNAME: ns_db
+POSTGRES_HOST: postgres_host
+POSTGRES_USER: postgres_user
+POSTGRES_PASSWORD: postgres_password
+POSTGRES_PORT: postgres_port
+POSTGRES_DB: postgred_db_name
 WCNYP_KEY: nypl_worldcat_key
 WCNYP_SECRET: nypl_worldcat_secret
 WCNYP_PRINCIPALID: nypl_principal_id
