@@ -106,6 +106,7 @@ class TestWorldcatSearch:
         assert be._meets_minimum_criteria() is False
 
 
+@pytest.mark.local
 def test_creds():
     with open("nightshift/config/config.yaml", "r") as f:
         data = yaml.safe_load(f)
