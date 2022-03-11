@@ -32,7 +32,8 @@ logger = logging.getLogger("nightshift")
 
 class Tasks:
     """
-    Hmmm....
+    Handles various operations related to ingetings new files, searching Worldcat,
+    manipulating results and outputing the results to SFTP.
     """
 
     def __init__(
