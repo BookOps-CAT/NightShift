@@ -1,96 +1,145 @@
 # -*- coding: utf-8 -*-
+"""
+Use following patterns to record data:
+    src_tags2delete & dst_tags2delete: string of MARC tags separated by comma, example:
+        "020,037,856"
+
+    queryDays: 
+        record as string;
+
+        all numbers indicate days since bib was created, example: '15' means 15 days after
+        bib created date
+
+        to indicate an individual period record the starting and ending age in days separated
+        by hyphen, example: '15-30' which means query should happen between 15th and 30th day
+        since bib was created
+
+        separate individual periods with a comma, example: '15-30,30-60'
+
+        multiple time periods will trigger as many query attemps, one in each period
+        
+"""
+
 
 LIBRARIES = {"NYP": {"nid": 1}, "BPL": {"nid": 2}}
 
-PRINT_TAGS_TO_DELETE = ["029", "090", "263", "936", "938"]
-PRINT_QUERY_DAYS = [(15, 30), (30, 45)]
+PRINT_TAGS_TO_DELETE = "029,090,263,936,938"
+PRINT_QUERY_DAYS = "15-30,30-45"
+
+BPL_SIERRA_FORMAT = {
+    "ebook": "x",
+    "eaudio": "z",
+    "evideo": "v",
+    "print": "a",
+    "large_print": "l",
+}
+
+NYP_SIERRA_FORMAT = {
+    "ebook": "z",
+    "eaudio": "n",
+    "evideo": "3",
+    "print": "a",
+    "large_print": "l",
+}
+
 
 RESOURCE_CATEGORIES = {
     "ebook": {
         "nid": 1,
         "description": "digital book",
-        "sierra_format_code": {"NYP": "z", "BPL": "x"},
-        "src_tags2keep": ["020", "037", "856"],
-        "dst_tags2delete": ["020", "029", "037", "090", "263", "856", "910", "938"],
-        "query_days": [(30, 90), (90, 180)],
+        "sierraBibFormatBpl": BPL_SIERRA_FORMAT["ebook"],
+        "sierraBibFormatNyp": NYP_SIERRA_FORMAT["ebook"],
+        "src_tags2keep": "020,037,856",
+        "dst_tags2delete": "020,029,037,090,263,856,910,938",
+        "query_days": "30-90,90-180",
     },
     "eaudio": {
         "nid": 2,
         "description": "digital audiobook",
-        "sierra_format_code": {"NYP": "n", "BPL": "z"},
-        "src_tags2keep": ["020", "037", "856"],
-        "dst_tags2delete": ["020", "029", "037", "090", "263", "856", "910", "938"],
-        "query_days": [(30, 90), (90, 180)],
+        "sierraBibFormatBpl": BPL_SIERRA_FORMAT["eaudio"],
+        "sierraBibFormatNyp": NYP_SIERRA_FORMAT["eaudio"],
+        "src_tags2keep": "020,037,856",
+        "dst_tags2delete": "020,029,037,090,263,856,910,938",
+        "query_days": "30-90,90-180",
     },
     "evideo": {
         "nid": 3,
         "description": "video digital",
-        "sierra_format_code": {"NYP": "3", "BPL": "v"},
-        "src_tags2keep": ["020", "037", "856"],
-        "dst_tags2delete": ["020", "029", "037", "090", "263", "856", "910", "938"],
-        "query_days": [(30, 90)],
+        "sierraBibFormatBpl": BPL_SIERRA_FORMAT["evideo"],
+        "sierraBibFormatNyp": NYP_SIERRA_FORMAT["evideo"],
+        "src_tags2keep": "020,037,856",
+        "dst_tags2delete": "020,029,037,090,263,856,910,938",
+        "query_days": "30-90",
     },
     "print_eng_adult_fic": {
         "nid": 4,
         "description": "Print English general adult fiction",
-        "sierra_format_code": {"NYP": "a", "BPL": "a"},
-        "src_tags2keep": ["910"],
+        "sierraBibFormatBpl": BPL_SIERRA_FORMAT["print"],
+        "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
+        "src_tags2keep": "910",
         "dst_tags2delete": PRINT_TAGS_TO_DELETE,
         "query_days": PRINT_QUERY_DAYS,
     },
     "print_eng_adult_bio": {
         "nid": 5,
         "description": "Print English adult biography",
-        "sierra_format_code": {"NYP": "a", "BPL": "a"},
-        "src_tags2keep": ["910"],
+        "sierraBibFormatBpl": BPL_SIERRA_FORMAT["print"],
+        "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
+        "src_tags2keep": "910",
         "dst_tags2delete": PRINT_TAGS_TO_DELETE,
         "query_days": PRINT_QUERY_DAYS,
     },
     "print_eng_adult_nonfic": {
         "nid": 6,
         "description": "Print English adult non-fiction",
-        "sierra_format_code": {"NYP": "a", "BPL": "a"},
-        "src_tags2keep": ["910"],
+        "sierraBibFormatBpl": BPL_SIERRA_FORMAT["print"],
+        "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
+        "src_tags2keep": "910",
         "dst_tags2delete": PRINT_TAGS_TO_DELETE,
         "query_days": PRINT_QUERY_DAYS,
     },
     "print_eng_adult_mystery": {
         "nid": 7,
         "description": "Print English adult mysteries",
-        "sierra_format_code": {"NYP": "a", "BPL": "a"},
-        "src_tags2keep": ["910"],
+        "sierraBibFormatBpl": BPL_SIERRA_FORMAT["print"],
+        "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
+        "src_tags2keep": "910",
         "dst_tags2delete": PRINT_TAGS_TO_DELETE,
         "query_days": PRINT_QUERY_DAYS,
     },
     "print_eng_adult_scifi": {
         "nid": 8,
         "description": "Print English adult science-fiction",
-        "sierra_format_code": {"NYP": "a", "BPL": "a"},
-        "src_tags2keep": ["910"],
+        "sierraBibFormatBpl": BPL_SIERRA_FORMAT["print"],
+        "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
+        "src_tags2keep": "910",
         "dst_tags2delete": PRINT_TAGS_TO_DELETE,
         "query_days": PRINT_QUERY_DAYS,
     },
     "print_eng_juv_fic": {
         "nid": 9,
         "description": "Print English juvenile fiction",
-        "sierra_format_code": {"NYP": "a", "BPL": "a"},
-        "src_tags2keep": ["910"],
+        "sierraBibFormatBpl": BPL_SIERRA_FORMAT["print"],
+        "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
+        "src_tags2keep": "910",
         "dst_tags2delete": PRINT_TAGS_TO_DELETE,
         "query_days": PRINT_QUERY_DAYS,
     },
     "print_eng_juv_bio": {
         "nid": 10,
         "description": "Print English juvenile bio",
-        "sierra_format_code": {"NYP": "a", "BPL": "a"},
-        "src_tags2keep": ["910"],
+        "sierraBibFormatBpl": BPL_SIERRA_FORMAT["print"],
+        "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
+        "src_tags2keep": "910",
         "dst_tags2delete": PRINT_TAGS_TO_DELETE,
         "query_days": PRINT_QUERY_DAYS,
     },
     "print_eng_juv_nonfic": {
         "nid": 11,
         "description": "Print English juvenile fiction",
-        "sierra_format_code": {"NYP": "a", "BPL": "a"},
-        "src_tags2keep": ["910"],
+        "sierraBibFormatBpl": BPL_SIERRA_FORMAT["print"],
+        "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
+        "src_tags2keep": "910",
         "dst_tags2delete": PRINT_TAGS_TO_DELETE,
         "query_days": PRINT_QUERY_DAYS,
     },
@@ -98,24 +147,6 @@ RESOURCE_CATEGORIES = {
 
 
 ROTTEN_APPLES = {"UKAHL": ["ebook", "eaudio", "evideo"], "UAH": ["ebook"]}
-
-
-SIERRA_FORMATS = {
-    "NYP": {
-        "ebook": "z",
-        "eaudio": "n",
-        "evideo": "3",
-        "print": "a",
-        "large_print": "l",
-    },
-    "BPL": {
-        "ebook": "x",
-        "eaudio": "z",
-        "evideo": "v",
-        "print": "a",
-        "large_print": "l",
-    },
-}
 
 
 def library_by_id() -> dict[int, str]:
