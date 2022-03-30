@@ -51,7 +51,7 @@ RESOURCE_CATEGORIES = {
         "sierraBibFormatNyp": NYP_SIERRA_FORMAT["ebook"],
         "srcTags2Keep": "020,037,856",
         "dstTags2Delete": "020,029,037,090,263,856,910,938",
-        "query_days": "30-90,90-180",
+        "queryDays": "30-90,90-180",
     },
     "eaudio": {
         "nid": 2,
@@ -60,7 +60,7 @@ RESOURCE_CATEGORIES = {
         "sierraBibFormatNyp": NYP_SIERRA_FORMAT["eaudio"],
         "srcTags2Keep": "020,037,856",
         "dstTags2Delete": "020,029,037,090,263,856,910,938",
-        "query_days": "30-90,90-180",
+        "queryDays": "30-90,90-180",
     },
     "evideo": {
         "nid": 3,
@@ -69,7 +69,7 @@ RESOURCE_CATEGORIES = {
         "sierraBibFormatNyp": NYP_SIERRA_FORMAT["evideo"],
         "srcTags2Keep": "020,037,856",
         "dstTags2Delete": "020,029,037,090,263,856,910,938",
-        "query_days": "30-90",
+        "queryDays": "30-90",
     },
     "print_eng_adult_fic": {
         "nid": 4,
@@ -78,7 +78,7 @@ RESOURCE_CATEGORIES = {
         "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
         "srcTags2Keep": "910",
         "dstTags2Delete": PRINT_TAGS_TO_DELETE,
-        "query_days": PRINT_QUERY_DAYS,
+        "queryDays": PRINT_QUERY_DAYS,
     },
     "print_eng_adult_bio": {
         "nid": 5,
@@ -87,7 +87,7 @@ RESOURCE_CATEGORIES = {
         "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
         "srcTags2Keep": "910",
         "dstTags2Delete": PRINT_TAGS_TO_DELETE,
-        "query_days": PRINT_QUERY_DAYS,
+        "queryDays": PRINT_QUERY_DAYS,
     },
     "print_eng_adult_nonfic": {
         "nid": 6,
@@ -96,7 +96,7 @@ RESOURCE_CATEGORIES = {
         "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
         "srcTags2Keep": "910",
         "dstTags2Delete": PRINT_TAGS_TO_DELETE,
-        "query_days": PRINT_QUERY_DAYS,
+        "queryDays": PRINT_QUERY_DAYS,
     },
     "print_eng_adult_mystery": {
         "nid": 7,
@@ -105,7 +105,7 @@ RESOURCE_CATEGORIES = {
         "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
         "srcTags2Keep": "910",
         "dstTags2Delete": PRINT_TAGS_TO_DELETE,
-        "query_days": PRINT_QUERY_DAYS,
+        "queryDays": PRINT_QUERY_DAYS,
     },
     "print_eng_adult_scifi": {
         "nid": 8,
@@ -114,7 +114,7 @@ RESOURCE_CATEGORIES = {
         "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
         "srcTags2Keep": "910",
         "dstTags2Delete": PRINT_TAGS_TO_DELETE,
-        "query_days": PRINT_QUERY_DAYS,
+        "queryDays": PRINT_QUERY_DAYS,
     },
     "print_eng_juv_fic": {
         "nid": 9,
@@ -123,7 +123,7 @@ RESOURCE_CATEGORIES = {
         "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
         "srcTags2Keep": "910",
         "dstTags2Delete": PRINT_TAGS_TO_DELETE,
-        "query_days": PRINT_QUERY_DAYS,
+        "queryDays": PRINT_QUERY_DAYS,
     },
     "print_eng_juv_bio": {
         "nid": 10,
@@ -132,7 +132,7 @@ RESOURCE_CATEGORIES = {
         "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
         "srcTags2Keep": "910",
         "dstTags2Delete": PRINT_TAGS_TO_DELETE,
-        "query_days": PRINT_QUERY_DAYS,
+        "queryDays": PRINT_QUERY_DAYS,
     },
     "print_eng_juv_nonfic": {
         "nid": 11,
@@ -141,7 +141,7 @@ RESOURCE_CATEGORIES = {
         "sierraBibFormatNyp": NYP_SIERRA_FORMAT["print"],
         "srcTags2Keep": "910",
         "dstTags2Delete": PRINT_TAGS_TO_DELETE,
-        "query_days": PRINT_QUERY_DAYS,
+        "queryDays": PRINT_QUERY_DAYS,
     },
 }
 
