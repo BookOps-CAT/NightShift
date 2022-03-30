@@ -222,12 +222,22 @@ class ResourceCategory(Base):
     nid = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
     description = Column(String)
+    sierraBibFormatBpl = Column(String, nullable=False)
+    sierraBibFormatNyp = Column(String, nullable=False)
+    srcTags2Keep = Column(String)
+    dstTags2Delete = Column(String)
+    queryDays = Column(String, nullable=False)
 
     def __repr__(self):
         return (
             f"<ResourceCategory(nid='{self.nid}', "
             f"name='{self.name}', "
-            f"description='{self.description}')>"
+            f"description='{self.description}', "
+            f"sierraBibFormatBpl='{self.sierraBibFormatBpl}', "
+            f"sierraBibFormatNyp='{self.sierraBibFormatNyp}', "
+            f"srcTags2Keep='{self.srcTags2Keep}', "
+            f"dstTags2Delete='{self.dstTags2Delete}', "
+            f"queryDays='{self.queryDays}')>"
         )
 
 
