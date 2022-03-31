@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -18,6 +19,30 @@ from nightshift.datastore import (
     RottenAppleResource,
     SourceFile,
     WorldcatQuery,
+)
+
+ResCatNid = namedtuple(
+    "ResCatNid",
+    [
+        "name",
+        "sierraBibFormatBpl",
+        "sierraBibFormatNyp",
+        "srcTags2Keep",
+        "dstTags2Delete",
+        "queryDays",
+    ],
+)
+
+ResCatName = namedtuple(
+    "ResCatName",
+    [
+        "nid",
+        "sierraBibFormatBpl",
+        "sierraBibFormatNyp",
+        "srcTags2Keep",
+        "dstTags2Delete",
+        "queryDays",
+    ],
 )
 
 
@@ -41,7 +66,16 @@ def init_db() -> None:
 
     for k, v in constants.RESOURCE_CATEGORIES.items():
         session.add(
-            ResourceCategory(nid=v["nid"], name=k, description=v["description"]),
+            ResourceCategory(
+                nid=v["nid"],
+                name=k,
+                description=v["description"],
+                sierraBibFormatBpl=v["sierraBibFormatBpl"],
+                sierraBibFormatNyp=v["sierraBibFormatNyp"],
+                srcTags2Keep=v["srcTags2Keep"],
+                dstTags2Delete=v["dstTags2Delete"],
+                queryDays=v["queryDays"],
+            ),
         )
 
     for code, resource_cat_ids in constants.ROTTEN_APPLES.items():
@@ -236,6 +270,97 @@ def insert_or_ignore(session, model, **kwargs):
         return None
 
 
+def library_by_id(session: Session) -> dict[int, str]:
+    """
+    Creates a dictionary where the key is `datastore.Library.nid` and a value is the
+    library code.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+
+    Returns:
+        dict of `nid` and library `codes`
+    """
+    instances = session.query(Library).all()
+    return {i.nid: i.code for i in instances}
+
+
+def parse_query_days(query_days: str) -> list[tuple[int, int]]:
+    """
+    Parses query days stored as strings in the datastore
+    into proper format.
+
+    Args:
+        query_days:             `datastore.ResourceCategory.queryDays` value
+
+    Returns:
+        list of day periods tuples
+    """
+    periods = []
+
+    values = query_days.split(",")
+    for v in values:
+        periods.append(tuple([int(x) for x in v.split("-")]))
+
+    return periods
+
+
+def resource_category_by_id(
+    resource_categories: list[ResourceCategory],
+) -> dict[int, ResCatNid]:
+    """
+    Creates a dictionary of resource categories with `nid` as the key
+
+    Args:
+        resource_categories:    list of `ResourceCategory` instances
+
+    Returns:
+        dict of `nid` and resource category data as value
+    """
+    data = dict()
+    for rs in resource_categories:
+        queryDays = parse_query_days(rs.queryDays)
+        srcTags2Keep = rs.srcTags2Keep.split(",")
+        dstTags2Delete = rs.dstTags2Delete.split(",")
+        data[rs.nid] = ResCatNid(
+            rs.name,
+            rs.sierraBibFormatBpl,
+            rs.sierraBibFormatNyp,
+            srcTags2Keep,
+            dstTags2Delete,
+            queryDays,
+        )
+
+    return data
+
+
+def resource_category_by_name(resource_categories) -> dict[str, ResCatName]:
+    """
+    Creates a dictionary of resource categories with names as the key.
+
+    Args:
+        resource_categories:    list of `ResourceCategory` instances
+
+    Returns:
+        dict of `names` and resource category data as values
+    """
+    data = dict()
+    for rs in resource_categories:
+        queryDays = parse_query_days(rs.queryDays)
+        srcTags2Keep = rs.srcTags2Keep.split(",")
+        dstTags2Delete = rs.dstTags2Delete.split(",")
+
+        data[rs.name] = ResCatName(
+            rs.nid,
+            rs.sierraBibFormatBpl,
+            rs.sierraBibFormatNyp,
+            srcTags2Keep,
+            dstTags2Delete,
+            queryDays,
+        )
+    return data
+
+
 def retrieve_expired_resources(
     session: Session, resourceCategoryId: int, expiration_age: int
 ) -> list[Resource]:
@@ -396,6 +521,20 @@ def retrieve_processed_files(session: Session, libraryId: int) -> list[str]:
     """
     instances = session.query(SourceFile.handle).filter_by(libraryId=libraryId).all()
     return [instance[0] for instance in instances]
+
+
+def retrieve_resource_categories(session: Session) -> list[ResourceCategory]:
+    """
+    Retrieves all ResourceCategory records.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+
+    Returns:
+        list of results
+    """
+    instances = session.query(ResourceCategory).all()
+    return instances
 
 
 def retrieve_rotten_apples(session: Session) -> dict[int, list[str]]:
