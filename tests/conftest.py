@@ -176,7 +176,16 @@ def test_data_core(test_session):
         test_session.add(Library(nid=v["nid"], code=k))
     for k, v in RESOURCE_CATEGORIES.items():
         test_session.add(
-            ResourceCategory(nid=v["nid"], name=k, description=v["description"])
+            ResourceCategory(
+                nid=v["nid"],
+                name=k,
+                description=v["description"],
+                sierraBibFormatBpl=v["sierraBibFormatBpl"],
+                sierraBibFormatNyp=v["sierraBibFormatNyp"],
+                srcTags2Keep=v["srcTags2Keep"],
+                dstTags2Delete=v["dstTags2Delete"],
+                queryDays=v["queryDays"],
+            )
         )
     for code, resource_cat_ids in ROTTEN_APPLES.items():
         ids = [
