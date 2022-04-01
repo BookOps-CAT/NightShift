@@ -10,12 +10,6 @@ import pickle
 from pymarc import Field
 
 from .. import __title__, __version__
-from ..constants import (
-    library_by_id,
-    resource_category_by_id,
-    sierra_format_code,
-    tags2delete,
-)
 from ..datastore import Resource
 from .marc_parser import worldcat_response_to_pymarc
 
@@ -23,10 +17,10 @@ from .marc_parser import worldcat_response_to_pymarc
 logger = logging.getLogger("nightshift")
 
 
-DELETE_TAGS = tags2delete()
-LIB_IDX = library_by_id()
-RES_IDX = resource_category_by_id()
-SIERRA_FORMAT = sierra_format_code()
+# DELETE_TAGS = tags2delete()
+# LIB_IDX = library_by_id()
+# RES_IDX = resource_category_by_id()
+# SIERRA_FORMAT = sierra_format_code()
 
 
 class BibEnhancer:

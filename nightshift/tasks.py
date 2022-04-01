@@ -15,6 +15,7 @@ from nightshift.comms.sierra_search_platform import NypPlatform, BplSolr
 from nightshift.comms.storage import get_credentials, Drive
 from nightshift.datastore import Resource, WorldcatQuery
 from nightshift.datastore_transactions import (
+    ResCatName,
     add_event,
     add_output_file,
     add_resource,
@@ -41,6 +42,8 @@ class Tasks:
         db_session: Session,
         library: str,
         library_id: int,
+        library_idx: dict[int, str],
+        resource_categories: dict[str, ResCatName],
     ) -> None:
         self.db_session = db_session
         self.library = library
