@@ -29,27 +29,26 @@ def test_wordcat_response_to_pymarc_invalid_data_type(caplog):
     )
 
 
-@pytest.mark.parametrize("arg", ["NYP", "BPL"])
-def test_BibReader_library_arg(arg):
+def test_BibReader_library_successful_init(stub_resource_categories):
     with does_not_raise():
-        BibReader(marc_target=BytesIO(b"some records"), library=arg)
+        BibReader(
+            marc_target=BytesIO(b"some records"),
+            library="NYP",
+            libraryId=1,
+            resource_categories=stub_resource_categories,
+        )
 
 
-def test_BibReader_invalid_library():
-    with pytest.raises(ValueError):
-        BibReader(BytesIO(b"some records"), "QPL")
-
-
-def test_BibReader_invalid_marc_target(caplog):
+def test_BibReader_invalid_marc_target(caplog, stub_resource_categories):
     with pytest.raises(TypeError):
         with caplog.at_level(logging.ERROR):
-            BibReader(123, "NYP")
+            BibReader(123, "NYP", 1, stub_resource_categories)
 
     assert "Invalid 'marc_target' argument: 123 (Int)."
 
 
-def test_BibReader_iterator():
-    reader = BibReader("tests/nyp-ebook-sample.mrc", "NYP")
+def test_BibReader_iterator(stub_resource_categories):
+    reader = BibReader("tests/nyp-ebook-sample.mrc", "NYP", 1, stub_resource_categories)
     with does_not_raise():
         for bib in reader:
             continue
