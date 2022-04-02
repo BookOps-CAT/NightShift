@@ -17,7 +17,7 @@ from pymarc import parse_xml_to_array, Record
 
 
 from ..datastore import Resource
-from ..datastore_transactions import ResCatName
+from ..datastore_transactions import ResCatByName
 
 logger = logging.getLogger("nightshift")
 
@@ -57,7 +57,7 @@ class BibReader:
         marc_target: Union[BytesIO, BinaryIO],
         library: str,
         libraryId: int,
-        resource_categories: dict[str, ResCatName],
+        resource_categories: dict[str, ResCatByName],
         hide_utf8_warnings: bool = True,
     ) -> None:
         """

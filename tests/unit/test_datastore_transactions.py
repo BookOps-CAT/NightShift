@@ -21,8 +21,8 @@ from nightshift.datastore import (
     WorldcatQuery,
 )
 from nightshift.datastore_transactions import (
-    ResCatNid,
-    ResCatName,
+    ResCatById,
+    ResCatByName,
     add_event,
     add_output_file,
     add_resource,
@@ -378,7 +378,7 @@ def test_resource_category_by_id(
     rs = resource_category_by_id(results)
     assert isinstance(rs, dict)
 
-    assert isinstance(rs[nid], ResCatNid)
+    assert isinstance(rs[nid], ResCatById)
     assert rs[nid].name == name
     assert rs[nid].sierraBibFormatBpl == formatBpl
     assert rs[nid].sierraBibFormatNyp == formatNyp
@@ -447,7 +447,7 @@ def test_resource_category_by_name(
     rs = resource_category_by_name(results)
     assert isinstance(rs, dict)
 
-    assert isinstance(rs[name], ResCatName)
+    assert isinstance(rs[name], ResCatByName)
     assert rs[name].nid == nid
     assert rs[name].sierraBibFormatBpl == formatBpl
     assert rs[name].sierraBibFormatNyp == formatNyp

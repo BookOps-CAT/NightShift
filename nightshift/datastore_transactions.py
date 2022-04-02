@@ -21,8 +21,8 @@ from nightshift.datastore import (
     WorldcatQuery,
 )
 
-ResCatNid = namedtuple(
-    "ResCatNid",
+ResCatById = namedtuple(
+    "ResCatById",
     [
         "name",
         "sierraBibFormatBpl",
@@ -33,8 +33,8 @@ ResCatNid = namedtuple(
     ],
 )
 
-ResCatName = namedtuple(
-    "ResCatName",
+ResCatByName = namedtuple(
+    "ResCatByName",
     [
         "nid",
         "sierraBibFormatBpl",
@@ -307,7 +307,7 @@ def parse_query_days(query_days: str) -> list[tuple[int, int]]:
 
 def resource_category_by_id(
     resource_categories: list[ResourceCategory],
-) -> dict[int, ResCatNid]:
+) -> dict[int, ResCatById]:
     """
     Creates a dictionary of resource categories with `nid` as the key
 
@@ -322,7 +322,7 @@ def resource_category_by_id(
         queryDays = parse_query_days(rs.queryDays)
         srcTags2Keep = rs.srcTags2Keep.split(",")
         dstTags2Delete = rs.dstTags2Delete.split(",")
-        data[rs.nid] = ResCatNid(
+        data[rs.nid] = ResCatById(
             rs.name,
             rs.sierraBibFormatBpl,
             rs.sierraBibFormatNyp,
@@ -334,7 +334,7 @@ def resource_category_by_id(
     return data
 
 
-def resource_category_by_name(resource_categories) -> dict[str, ResCatName]:
+def resource_category_by_name(resource_categories) -> dict[str, ResCatByName]:
     """
     Creates a dictionary of resource categories with names as the key.
 
@@ -350,7 +350,7 @@ def resource_category_by_name(resource_categories) -> dict[str, ResCatName]:
         srcTags2Keep = rs.srcTags2Keep.split(",")
         dstTags2Delete = rs.dstTags2Delete.split(",")
 
-        data[rs.name] = ResCatName(
+        data[rs.name] = ResCatByName(
             rs.nid,
             rs.sierraBibFormatBpl,
             rs.sierraBibFormatNyp,
