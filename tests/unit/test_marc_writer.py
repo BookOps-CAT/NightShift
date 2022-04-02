@@ -17,10 +17,10 @@ from nightshift.marc.marc_writer import BibEnhancer
 
 
 class TestBibEnhancer:
-    def test_init(self, caplog, stub_resource):
+    def test_init(self, caplog, stub_resource, stub_res_cat_by_id):
         with does_not_raise():
             with caplog.at_level(logging.INFO):
-                result = BibEnhancer(stub_resource)
+                result = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
 
         assert result.library == "NYP"
         assert isinstance(result.resource, Resource)
@@ -44,7 +44,14 @@ class TestBibEnhancer:
         ],
     )
     def test_add_call_number_supported_resource_categories(
-        self, caplog, stub_resource, resourceId, libraryId, tag, expectation
+        self,
+        caplog,
+        stub_resource,
+        stub_res_cat_by_id,
+        resourceId,
+        libraryId,
+        tag,
+        expectation,
     ):
         stub_resource.resourceCategoryId = resourceId
         stub_resource.libraryId = libraryId
@@ -52,7 +59,7 @@ class TestBibEnhancer:
             library = "NYP"
         elif libraryId == 2:
             library = "BPL"
-        be = BibEnhancer(stub_resource)
+        be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
         with caplog.at_level(logging.DEBUG):
             assert be._add_call_number() is True
         assert f"Added {expectation} to {library} b11111111a." in caplog.text
@@ -61,11 +68,10 @@ class TestBibEnhancer:
 
     @pytest.mark.parametrize("library,resourceId", [("QPL", 1), ("NYP", 4), ("BPL", 4)])
     def test_add_call_number_unsupported_resources(
-        self, caplog, stub_resource, library, resourceId
+        self, caplog, stub_resource, stub_res_cat_by_id, library, resourceId
     ):
         stub_resource.resourceCategoryId = resourceId
-        be = BibEnhancer(stub_resource)
-        be.library = library
+        be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
 
         with caplog.at_level(logging.WARN):
             assert be._add_call_number() is False
@@ -88,7 +94,14 @@ class TestBibEnhancer:
         ],
     )
     def test_add_command_tag(
-        self, caplog, resourceId, suppressed, libraryId, expectation, stub_resource
+        self,
+        caplog,
+        stub_resource,
+        stub_res_cat_by_id,
+        resourceId,
+        suppressed,
+        libraryId,
+        expectation,
     ):
         stub_resource.resourceCategoryId = resourceId
         stub_resource.suppressed = suppressed
@@ -98,7 +111,7 @@ class TestBibEnhancer:
         elif libraryId == 2:
             library = "BPL"
 
-        be = BibEnhancer(stub_resource)
+        be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
         with caplog.at_level(logging.DEBUG):
             be._add_command_tag()
 
@@ -152,10 +165,18 @@ class TestBibEnhancer:
         ],
     )
     def test_add_genre_tags_when_missing(
-        self, caplog, stub_resource, res_cat_id, tag, indicators, subfields, log_msgs
+        self,
+        caplog,
+        stub_resource,
+        stub_res_cat_by_id,
+        res_cat_id,
+        tag,
+        indicators,
+        subfields,
+        log_msgs,
     ):
         stub_resource.resourceCategoryId = res_cat_id
-        be = BibEnhancer(stub_resource)
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
 
         if tag:
             be.bib.add_field(Field(tag=tag, indicators=indicators, subfields=subfields))
@@ -235,10 +256,10 @@ class TestBibEnhancer:
         ],
     )
     def test_add_genre_tags_when_present(
-        self, stub_resource, res_cat_id, tag, indicators, subfields
+        self, stub_resource, stub_res_cat_by_id, res_cat_id, tag, indicators, subfields
     ):
         stub_resource.resourceCategoryId = res_cat_id
-        be = BibEnhancer(stub_resource)
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
 
         # make sure no other subjects interfere
         be.bib.remove_fields("650", "655")
@@ -257,7 +278,7 @@ class TestBibEnhancer:
             assert len(be.bib.get_fields("655")) == 1
             assert str(be.bib["655"]) == "=655  \\7$aInternet videos.$2lcgft"
 
-    def test_add_local_tags(self, caplog, stub_resource):
+    def test_add_local_tags(self, caplog, stub_resource, stub_res_cat_by_id):
         fields = [
             Field(tag="020", indicators=[" ", " "], subfields=["a", "978123456789x"]),
             Field(
@@ -273,7 +294,7 @@ class TestBibEnhancer:
         ]
         pickled_fields = pickle.dumps(fields)
         stub_resource.srcFieldsToKeep = pickled_fields
-        be = BibEnhancer(stub_resource)
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         with caplog.at_level(logging.DEBUG):
             be._add_local_tags()
         assert (
@@ -287,8 +308,10 @@ class TestBibEnhancer:
         assert str(bib["037"]) == "=037  \\\\$a123$bOverdrive Inc."
         assert str(bib["856"]) == "=856  04$uurl_here$2opac msg"
 
-    def test_add_local_tags_missing_tags(self, caplog, stub_resource):
-        be = BibEnhancer(stub_resource)
+    def test_add_local_tags_missing_tags(
+        self, caplog, stub_resource, stub_res_cat_by_id
+    ):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         with caplog.at_level(logging.DEBUG):
             be._add_local_tags()
 
@@ -301,19 +324,24 @@ class TestBibEnhancer:
             ("BPL", "947"),
         ],
     )
-    def test_add_initials_tag(self, caplog, library, tag, stub_resource):
-        be = BibEnhancer(stub_resource)
-        be.library = library
+    def test_add_initials_tag(
+        self,
+        caplog,
+        stub_resource,
+        stub_res_cat_by_id,
+        library,
+        tag,
+    ):
+        be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
         with caplog.at_level(logging.DEBUG):
             be._add_initials_tag()
 
         assert f"Added initials tag {tag} to {library} b11111111a." in caplog.text
         assert str(be.bib[tag]) == f"={tag}  \\\\$a{__title__}/{__version__}"
 
-    def test_add_initials_tag_invalid_library(self, stub_resource):
-        be = BibEnhancer(stub_resource)
+    def test_add_initials_tag_invalid_library(self, stub_resource, stub_res_cat_by_id):
+        be = BibEnhancer(stub_resource, "foo", stub_res_cat_by_id)
         bib_before = str(be.bib)
-        be.library = "foo"
         be._add_initials_tag()
         assert str(be.bib) == bib_before
 
@@ -324,19 +352,20 @@ class TestBibEnhancer:
             ("BPL", "907", "=907  \\\\$a.b11111111a"),
         ],
     )
-    def test_add_sierraId(self, stub_resource, library, tag, field_str):
-        be = BibEnhancer(stub_resource)
-        be.library = library
+    def test_add_sierraId(
+        self, stub_resource, stub_res_cat_by_id, library, tag, field_str
+    ):
+        be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
         be._add_sierraId()
         assert str(be.bib[tag]) == field_str
 
-    def test_digits_only_in_tag_001(self, stub_resource):
-        be = BibEnhancer(stub_resource)
+    def test_digits_only_in_tag_001(self, stub_resource, stub_res_cat_by_id):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be._digits_only_in_tag_001()
         assert be.bib["001"].data == "850939580"
 
-    def test_is_acceptable_success(self, stub_resource):
-        be = BibEnhancer(stub_resource)
+    def test_is_acceptable_success(self, stub_resource, stub_res_cat_by_id):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be.bib.remove_fields("245")
         be.bib.add_field(
             Field(
@@ -348,23 +377,25 @@ class TestBibEnhancer:
         )
         assert be._is_acceptable() is True
 
-    def test_is_acceptable_no_minimum_met(self, stub_resource):
-        be = BibEnhancer(stub_resource)
+    def test_is_acceptable_no_minimum_met(self, stub_resource, stub_res_cat_by_id):
+        be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
         be.bib.remove_fields("300")
 
         assert be._is_acceptable() is False
 
-    def test_is_acceptable_unable_to_create_call_number(self, stub_resource):
+    def test_is_acceptable_unable_to_create_call_number(
+        self, stub_resource, stub_res_cat_by_id
+    ):
         stub_resource.resourceCategoryId = 99
-        be = BibEnhancer(stub_resource)
+        be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
 
         assert be._is_acceptable() is False
 
-    def test_manipulate_failed(self, stub_resource, caplog):
+    def test_manipulate_failed(self, caplog, stub_resource, stub_res_cat_by_id):
         stub_resource.resourceCategoryId = 99
 
         with caplog.at_level(logging.INFO):
-            be = BibEnhancer(stub_resource)
+            be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
             be.manipulate()
 
             assert be.bib is None
@@ -374,7 +405,7 @@ class TestBibEnhancer:
             in caplog.text
         )
 
-    def test_manipulate_success(self, stub_resource, caplog):
+    def test_manipulate_success(self, caplog, stub_resource, stub_res_cat_by_id):
         stub_resource.resourceCategoryId = 1
         stub_resource.libraryId = 1
         fields = [
@@ -393,7 +424,7 @@ class TestBibEnhancer:
         pickled_fields = pickle.dumps(fields)
         stub_resource.srcFieldsToKeep = pickled_fields
 
-        be = BibEnhancer(stub_resource)
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be.bib.remove_fields("245", "300")
         be.bib.add_field(
             Field(
@@ -424,8 +455,10 @@ class TestBibEnhancer:
         assert len(be.bib.get_fields("091")) == 1
         assert len(be.bib.get_fields("037")) == 1
 
-    def test_meets_minimum_criteria_success(self, stub_resource, caplog):
-        be = BibEnhancer(stub_resource)
+    def test_meets_minimum_criteria_success(
+        self, caplog, stub_resource, stub_res_cat_by_id
+    ):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be.bib.remove_fields("245", "300")
         be.bib.add_field(
             Field(
@@ -440,8 +473,10 @@ class TestBibEnhancer:
 
         assert "Worldcat record meets minimum criteria." in caplog.text
 
-    def test_meets_minimum_criteria_upper_case_title(self, stub_resource, caplog):
-        be = BibEnhancer(stub_resource)
+    def test_meets_minimum_criteria_upper_case_title(
+        self, caplog, stub_resource, stub_res_cat_by_id
+    ):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be.bib.remove_fields("245")
         be.bib.add_field(
             Field(
@@ -454,9 +489,9 @@ class TestBibEnhancer:
         assert "Worldcat record failed uppercase title test." in caplog.text
 
     def test_meets_minimum_criteria_statement_of_responsibility(
-        self, stub_resource, caplog
+        self, caplog, stub_resource, stub_res_cat_by_id
     ):
-        be = BibEnhancer(stub_resource)
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be.bib.remove_fields("245")
         be.bib.add_field(
             Field(tag="245", indicators=["1", "0"], subfields=["a", "Foo."])
@@ -466,8 +501,10 @@ class TestBibEnhancer:
 
         assert "Worldcat record failed statement of resp. test." in caplog.text
 
-    def test_meets_minimum_criteria_physical_desc(self, stub_resource, caplog):
-        be = BibEnhancer(stub_resource)
+    def test_meets_minimum_criteria_physical_desc(
+        self, caplog, stub_resource, stub_res_cat_by_id
+    ):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be.bib.remove_fields("245")
         be.bib.add_field(
             Field(
@@ -535,9 +572,9 @@ class TestBibEnhancer:
         ],
     )
     def test_meets_minimum_criteria_diacritics_copyright_symbol(
-        self, stub_resource, tag, value, expectation, msg, caplog
+        self, caplog, stub_resource, stub_res_cat_by_id, tag, value, expectation, msg
     ):
-        be = BibEnhancer(stub_resource)
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be.bib.remove_fields(tag)
         if value:
             be.bib.add_field(
@@ -548,16 +585,18 @@ class TestBibEnhancer:
 
         assert msg in caplog.text
 
-    def test_meets_minimum_criteria_no_subject_tags(self, stub_resource, caplog):
-        be = BibEnhancer(stub_resource)
+    def test_meets_minimum_criteria_no_subject_tags(
+        self, caplog, stub_resource, stub_res_cat_by_id
+    ):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be.bib.remove_fields("650")
         with caplog.at_level(logging.DEBUG):
             assert be._meets_minimum_criteria() is False
 
         assert "Worldcat record failed subjects test." in caplog.text
 
-    def test_purge_tags(self, caplog, stub_resource):
-        be = BibEnhancer(stub_resource)
+    def test_purge_tags(self, caplog, stub_resource, stub_res_cat_by_id):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         fields = [
             Field(tag="020", indicators=[" ", " "], subfields=["a", "978123456789x"]),
             Field(
@@ -590,8 +629,8 @@ class TestBibEnhancer:
         for field in fields:
             assert field.tag not in be.bib
 
-    def test_purge_tags_non_existent(self, stub_resource):
-        be = BibEnhancer(stub_resource)
+    def test_purge_tags_non_existent(self, stub_resource, stub_res_cat_by_id):
+        be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
         with does_not_raise():
             be._purge_tags()
 
@@ -599,8 +638,8 @@ class TestBibEnhancer:
         "vendor",
         ["Overdrive, Inc.", "3M Company", "Recorded Books, Inc", "CloudLibrary"],
     )
-    def test_remove_eresource_vendors(self, stub_resource, vendor):
-        be = BibEnhancer(stub_resource)
+    def test_remove_eresource_vendors(self, stub_resource, stub_res_cat_by_id, vendor):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be.bib.add_field(
             Field(tag="710", indicators=[" ", "0"], subfields=["a", vendor])
         )
@@ -609,8 +648,8 @@ class TestBibEnhancer:
         assert len(be.bib.get_fields("710")) == 0
 
     @pytest.mark.parametrize("arg", ["ocm12345", "ocn12345", "on12345", "12345"])
-    def test_remove_oclc_prefix(self, arg, stub_resource):
-        be = BibEnhancer(stub_resource)
+    def test_remove_oclc_prefix(self, stub_resource, stub_res_cat_by_id, arg):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         assert be._remove_oclc_prefix(arg) == "12345"
 
     @pytest.mark.parametrize(
@@ -723,8 +762,10 @@ class TestBibEnhancer:
             ),
         ],
     )
-    def test_remove_unsupported_subject_tags(self, stub_resource, tag, expectation):
-        be = BibEnhancer(stub_resource)
+    def test_remove_unsupported_subject_tags(
+        self, stub_resource, stub_res_cat_by_id, tag, expectation
+    ):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
 
         # prep - remove any existing tags for tests
         for f in be.bib.subjects():
@@ -738,8 +779,8 @@ class TestBibEnhancer:
         be._remove_unsupported_subject_tags()
         assert len(be.bib.subjects()) == expectation
 
-    def test_save2file(self, caplog, stub_resource):
-        be = BibEnhancer(stub_resource)
+    def test_save2file(self, caplog, stub_resource, stub_res_cat_by_id):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         with caplog.at_level(logging.DEBUG):
             be.save2file()
         assert "Saving to file NYP record b11111111a." in caplog.text
@@ -753,8 +794,10 @@ class TestBibEnhancer:
         # cleanup
         os.remove("temp.mrc")
 
-    def test_save2file_os_error(self, caplog, stub_resource, mock_os_error):
-        be = BibEnhancer(stub_resource)
+    def test_save2file_os_error(
+        self, caplog, stub_resource, stub_res_cat_by_id, mock_os_error
+    ):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         with caplog.at_level(logging.ERROR):
             with pytest.raises(OSError):
                 be.save2file()
@@ -762,11 +805,11 @@ class TestBibEnhancer:
         assert "Unable to save record to a temp file. Error" in caplog.text
 
     def test_save2file_when_unable_to_create_call_number(
-        self, caplog, stub_resource, tmpdir
+        self, caplog, tmpdir, stub_resource, stub_res_cat_by_id
     ):
         outfile = tmpdir.join("foo.mrc")
         stub_resource.resourceCategoryId = 99
-        be = BibEnhancer(stub_resource)
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         with caplog.at_level(logging.WARNING):
             be.manipulate()
             be.save2file(outfile)

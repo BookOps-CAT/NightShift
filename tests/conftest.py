@@ -26,7 +26,7 @@ from nightshift.datastore import (
     SourceFile,
     WorldcatQuery,
 )
-from nightshift.datastore_transactions import ResCatByName, parse_query_days
+from nightshift.datastore_transactions import ResCatById, ResCatByName, parse_query_days
 
 
 class FakeUtcNow(datetime.datetime):
@@ -129,11 +129,26 @@ def stub_resource():
 
 
 @pytest.fixture
-def stub_resource_categories():
+def stub_res_cat_by_name():
     data = dict()
     for k, v in RESOURCE_CATEGORIES.items():
         data[k] = ResCatByName(
             v["nid"],
+            v["sierraBibFormatBpl"],
+            v["sierraBibFormatNyp"],
+            v["srcTags2Keep"].split(","),
+            v["dstTags2Delete"].split(","),
+            parse_query_days(v["queryDays"]),
+        )
+    return data
+
+
+@pytest.fixture
+def stub_res_cat_by_id():
+    data = dict()
+    for k, v in RESOURCE_CATEGORIES.items():
+        data[v["nid"]] = ResCatById(
+            k,
             v["sierraBibFormatBpl"],
             v["sierraBibFormatNyp"],
             v["srcTags2Keep"].split(","),

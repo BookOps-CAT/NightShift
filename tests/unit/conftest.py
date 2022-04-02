@@ -141,8 +141,8 @@ def stub_marc():
 
 
 @pytest.fixture
-def fake_BibReader(stub_resource_categories):
-    return BibReader(BytesIO(b"some records"), "NYP", 1, stub_resource_categories)
+def fake_BibReader(stub_res_cat_by_name):
+    return BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
 
 
 @pytest.fixture
