@@ -21,6 +21,7 @@ def test_check_resources_sierra_state_nyp_platform(
     test_session,
     test_data_rich,
     stub_resource,
+    stub_res_cat_by_name,
     mock_platform_env,
     mock_successful_platform_post_token_response,
     mock_successful_platform_session_response,
@@ -31,7 +32,7 @@ def test_check_resources_sierra_state_nyp_platform(
 
     test_session.commit()
 
-    tasks = Tasks(test_session, "NYP", 1)
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
     tasks.check_resources_sierra_state([stub_resource])
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -53,6 +54,7 @@ def test_check_resources_sierra_state_nyp_platform_deleted_record(
     test_session,
     test_data_rich,
     stub_resource,
+    stub_res_cat_by_name,
     mock_platform_env,
     mock_successful_platform_post_token_response,
     mock_successful_platform_session_response_deleted_record,
@@ -63,7 +65,7 @@ def test_check_resources_sierra_state_nyp_platform_deleted_record(
 
     test_session.commit()
 
-    tasks = Tasks(test_session, "NYP", 1)
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
     tasks.check_resources_sierra_state([stub_resource])
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -85,6 +87,7 @@ def test_check_resources_sierra_state_bpl_solr(
     test_session,
     test_data_rich,
     stub_resource,
+    stub_res_cat_by_name,
     mock_solr_env,
     mock_successful_solr_session_response,
 ):
@@ -93,7 +96,7 @@ def test_check_resources_sierra_state_bpl_solr(
     stub_resource.status = "open"
     test_session.commit()
 
-    tasks = Tasks(test_session, "BPL", 2)
+    tasks = Tasks(test_session, "BPL", 2, stub_res_cat_by_name)
     tasks.check_resources_sierra_state([stub_resource])
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -104,6 +107,7 @@ def test_check_resources_sierra_state_bpl_solr(
 def test_check_resources_sierra_state_bpl_solr_no_record(
     test_session,
     test_data_rich,
+    stub_res_cat_by_name,
     mock_solr_env,
     mock_failed_solr_session_response,
 ):
@@ -112,7 +116,7 @@ def test_check_resources_sierra_state_bpl_solr_no_record(
     resource.status = "open"
     test_session.commit()
 
-    tasks = Tasks(test_session, "BPL", 2)
+    tasks = Tasks(test_session, "BPL", 2, stub_res_cat_by_name)
     tasks.check_resources_sierra_state([resource])
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -132,21 +136,27 @@ def test_check_resources_sierra_state_bpl_solr_no_record(
 def test_check_resources_sierra_state_invalid_library_arg(caplog):
     with pytest.raises(ValueError):
         with caplog.at_level(logging.ERROR):
-            tasks = Tasks(None, "QPL", 3)
+            tasks = Tasks(None, "QPL", 3, {})
             tasks.check_resources_sierra_state([])
 
     assert "Invalid library argument passed: 'QPL'. Must be 'NYP' or 'BPL'"
 
 
 def test_enhance_and_output_bibs(
-    caplog, test_session, test_data_rich, sftpserver, mock_drive, mock_sftp_env
+    caplog,
+    sftpserver,
+    test_session,
+    test_data_rich,
+    stub_res_cat_by_name,
+    mock_drive,
+    mock_sftp_env,
 ):
     remote_file = f"{datetime.now().date():%y%m%d}-NYP-ebook-01.mrc"
     resources = test_session.query(Resource).where(Resource.nid == 1).all()
 
     with caplog.at_level(logging.DEBUG):
         with sftpserver.serve_content({"load_dir": {}}):
-            tasks = Tasks(test_session, "NYP", 1)
+            tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
             tasks.enhance_and_output_bibs("ebook", resources)
 
     assert "NYP b11111111a has been output to 'temp.mrc'." in caplog.text
@@ -168,6 +178,7 @@ def test_enhance_and_output_bibs(
 def test_get_worldcat_brief_bib_matches_success(
     test_session,
     test_data_core,
+    stub_res_cat_by_name,
     mock_worldcat_creds,
     mock_successful_post_token_response,
     mock_successful_session_get_request,
@@ -187,7 +198,7 @@ def test_get_worldcat_brief_bib_matches_success(
     )
     test_session.commit()
     resources = test_session.query(Resource).filter_by(nid=1).all()
-    tasks = Tasks(test_session, "NYP", 1)
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
     tasks.get_worldcat_brief_bib_matches(resources)
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]

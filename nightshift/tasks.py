@@ -41,13 +41,21 @@ class Tasks:
         self,
         db_session: Session,
         library: str,
-        library_id: int,
-        library_idx: dict[int, str],
+        libraryId: int,
         resource_categories: dict[str, ResCatByName],
     ) -> None:
+        """
+        Args:
+            db_session:                         `sqlalchemy.Session` instance
+            library:                            'NYP' or 'BPL'
+            libraryId:                          `datastore.Library.nid`
+            resource_categories:                dictionary by category name with
+                                                associated data
+        """
         self.db_session = db_session
         self.library = library
-        self.library_id = library_id
+        self.libraryId = libraryId
+        self._res_cat = resource_categories
         self.rotten_apples = dict()
 
     def _create_rotten_apples_idx(self) -> dict[int, list[str]]:
@@ -212,7 +220,7 @@ class Tasks:
 
             # add records data to the db
             for handle in unproc_files:
-                file_record = add_source_file(self.db_session, self.library_id, handle)
+                file_record = add_source_file(self.db_session, self.libraryId, handle)
                 logging.debug(f"Added SourceFile record for '{handle}': {file_record}")
                 marc_target = drive.fetch_file(handle)
                 marc_reader = BibReader(marc_target, self.library)
@@ -247,7 +255,7 @@ class Tasks:
             f"Found following remote files for {self.library}: {library_remote_files}."
         )
 
-        proc_files = retrieve_processed_files(self.db_session, self.library_id)
+        proc_files = retrieve_processed_files(self.db_session, self.libraryId)
 
         return [f for f in library_remote_files if f not in proc_files]
 
@@ -286,8 +294,7 @@ class Tasks:
             raise
 
         for resource in resources:
-            be = BibEnhancer(resource)
-            be.manipulate()
+            be = BibEnhancer(resource, self.library, self._res_cat)
             if be.bib is not None:
                 be.save2file(file_path)
                 logger.debug(
@@ -375,7 +382,7 @@ class Tasks:
             )
 
             out_file_record = add_output_file(
-                self.db_session, self.library_id, out_file_handle
+                self.db_session, self.libraryId, out_file_handle
             )
 
             for resource in resources:
