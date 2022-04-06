@@ -17,6 +17,8 @@ from nightshift.datastore import (
     OutputFile,
     Resource,
     ResourceCategory,
+    RottenApple,
+    RottenAppleResource,
     session_scope,
     SourceFile,
     WorldcatQuery,
@@ -135,11 +137,22 @@ def test_ResourceCategory_tbl_repr():
     )
 
 
+def test_RottenApple_tbl_repr():
+    assert str(RottenApple(nid=1, code="FOO")) == "<RottenApple(nid='1', code='FOO')>"
+
+
+def test_RottenAppleResource_tbl_repr():
+    assert (
+        str(RottenAppleResource(rottenAppleId=1, resourceCategoryId=2))
+        == "<RottenAppleResource(rottenAppleId='1', resourceCategoryId='2')>"
+    )
+
+
 def test_SourceFile_tbl_repr():
     stamp = datetime.now()
-    assert (
-        str(SourceFile(nid=1, libraryId=2, handle="foo.mrc", timestamp=stamp))
-        == f"<SourceFile(nid='1', libraryId='2', handle='foo.mrc', timestamp='{stamp}')>"
+    assert str(SourceFile(nid=1, libraryId=2, handle="foo.mrc", timestamp=stamp)) == (
+        f"<SourceFile(nid='1', libraryId='2', handle='foo.mrc', "
+        f"timestamp='{stamp}')>"
     )
 
 

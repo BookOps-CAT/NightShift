@@ -80,10 +80,27 @@ class TestWorldcatMocked:
         with caplog.at_level(logging.ERROR):
             with pytest.raises(WorldcatAuthorizationError):
                 Worldcat("NYP")
-        assert "Unable to obtain Worldcat MetadataAPI access token." in caplog.text
+        assert "Unable to obtain NYP Worldcat MetadataAPI access token." in caplog.text
 
     def test_create_worldcat_session(self, mock_Worldcat):
         assert isinstance(mock_Worldcat.session, MetadataSession)
+
+    @pytest.mark.parametrize(
+        "resource_cat_id,rotten_apples,expectation",
+        [
+            (1, {1: ["FOO", "BAR"]}, " NOT cs=FOO NOT cs=BAR"),
+            (2, {}, ""),
+            (3, {1: ["FOO"]}, ""),
+            (4, {1: ["FOO"], 4: ["BAR"]}, " NOT cs=BAR"),
+        ],
+    )
+    def test_format_rotten_apples(
+        self, mock_Worldcat, resource_cat_id, rotten_apples, expectation
+    ):
+        assert (
+            mock_Worldcat._format_rotten_apples(resource_cat_id, rotten_apples)
+            == expectation
+        )
 
     def test_get_full_bibs(
         self, caplog, mock_Worldcat, mock_successful_session_get_request
@@ -123,18 +140,26 @@ class TestWorldcatMocked:
         assert "WorldcatSessionError. Aborting." in caplog.text
 
     @pytest.mark.parametrize(
-        "arg,expectation",
+        "resource_cat_id,rotten_apples,expectation",
         [
             pytest.param(
                 1,
-                [{"q": "sn=111", "itemType": "book", "itemSubType": "book-digital"}],
+                {1: ["FOO", "BAR"]},
+                [
+                    {
+                        "q": "sn=111 NOT lv:3 NOT cs=FOO NOT cs=BAR",
+                        "itemType": "book",
+                        "itemSubType": "book-digital",
+                    }
+                ],
                 id="ebook",
             ),
             pytest.param(
                 2,
+                {},
                 [
                     {
-                        "q": "sn=111",
+                        "q": "sn=111 NOT lv:3",
                         "itemType": "audiobook",
                         "itemSubType": "audiobook-digital",
                     }
@@ -143,11 +168,19 @@ class TestWorldcatMocked:
             ),
             pytest.param(
                 3,
-                [{"q": "sn=111", "itemType": "video", "itemSubType": "video-digital"}],
+                {1: ["FOO", "BAR"]},
+                [
+                    {
+                        "q": "sn=111 NOT lv:3 NOT lv:M",
+                        "itemType": "video",
+                        "itemSubType": "video-digital",
+                    }
+                ],
                 id="evideo",
             ),
             pytest.param(
                 4,
+                {},
                 [
                     {
                         "q": "bn:222",
@@ -167,17 +200,19 @@ class TestWorldcatMocked:
         ],
     )
     def test_prep_resource_queries_payloads(
-        self, caplog, arg, expectation, mock_Worldcat
+        self, caplog, resource_cat_id, rotten_apples, expectation, mock_Worldcat
     ):
         resource = Resource(
-            resourceCategoryId=arg,
+            resourceCategoryId=resource_cat_id,
             sierraId=22222222,
             distributorNumber=111,
             standardNumber=222,
             congressNumber=333,
         )
         with caplog.at_level(logging.DEBUG):
-            payloads = mock_Worldcat._prep_resource_queries_payloads(resource)
+            payloads = mock_Worldcat._prep_resource_queries_payloads(
+                resource, rotten_apples
+            )
         assert payloads == expectation
         assert f"Query payload for NYP Sierra bib # b22222222a: {expectation}."
 
@@ -205,12 +240,13 @@ class TestWorldcatMocked:
         assert data.as_json == MockSuccessfulHTTP200SessionResponse().json()
         assert data.oclc_number == "44959645"
         assert (
-            "Brief bib Worldcat query for NYP Sierra bib # b22222222a: request_url_here."
+            "Brief bib Worldcat query for NYP Sierra bib # b22222222a: request_url_here"
             in caplog.text
         )
 
     def test_get_brief_bibs_no_matches_found(
         self,
+        caplog,
         mock_Worldcat,
         mock_successful_session_get_request_no_matches,
     ):
@@ -222,7 +258,8 @@ class TestWorldcatMocked:
             title="TEST TITLE",
             distributorNumber="111",
         )
-        result = next(mock_Worldcat.get_brief_bibs([resource]))
+        with caplog.at_level(logging.DEBUG):
+            result = next(mock_Worldcat.get_brief_bibs([resource]))
 
         assert isinstance(result, tuple)
 
@@ -234,6 +271,11 @@ class TestWorldcatMocked:
         assert data.as_json == MockSuccessfulHTTP200SessionResponseNoMatches().json()
         assert not data.is_match
         assert data.oclc_number is None
+
+        assert (
+            "No matches found for NYP Sierra bib # b22222222a: request_url_here"
+            in caplog.text
+        )
 
     def test_get_brief_bibs_session_error(
         self, caplog, mock_Worldcat, mock_session_error

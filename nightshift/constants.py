@@ -11,7 +11,7 @@ RESOURCE_CATEGORIES = {
         "description": "digital book",
         "sierra_format_code": {"NYP": "z", "BPL": "x"},
         "src_tags2keep": ["020", "037", "856"],
-        "dst_tags2delete": ["020", "029", "037", "090", "856", "910", "938"],
+        "dst_tags2delete": ["020", "029", "037", "090", "263", "856", "910", "938"],
         "query_days": [(30, 90), (90, 180)],
     },
     "eaudio": {
@@ -19,7 +19,7 @@ RESOURCE_CATEGORIES = {
         "description": "digital audiobook",
         "sierra_format_code": {"NYP": "n", "BPL": "z"},
         "src_tags2keep": ["020", "037", "856"],
-        "dst_tags2delete": ["020", "029", "037", "090", "856", "910", "938"],
+        "dst_tags2delete": ["020", "029", "037", "090", "263", "856", "910", "938"],
         "query_days": [(30, 90), (90, 180)],
     },
     "evideo": {
@@ -27,7 +27,7 @@ RESOURCE_CATEGORIES = {
         "description": "video digital",
         "sierra_format_code": {"NYP": "3", "BPL": "v"},
         "src_tags2keep": ["020", "037", "856"],
-        "dst_tags2delete": ["020", "029", "037", "090", "856", "910", "938"],
+        "dst_tags2delete": ["020", "029", "037", "090", "263", "856", "910", "938"],
         "query_days": [(30, 90)],
     },
     "print_eng_adult_fic": {
@@ -95,6 +95,9 @@ RESOURCE_CATEGORIES = {
         "query_days": PRINT_QUERY_DAYS,
     },
 }
+
+
+ROTTEN_APPLES = {"UKAHL": ["ebook", "eaudio", "evideo"], "UAH": ["ebook"]}
 
 
 SIERRA_FORMATS = {

@@ -48,4 +48,6 @@ Next, previously ingested records that have not been successfully enhanced (no s
 
 If a good match in WorldCat has been found, the bot manipulates the downloaded full record by supplying a call number, deleting specified tags, merging fields from original Sierra bib with WorldCat record, etc. An enhanced in this way record is serialized to MARC21 format and saved to SFTP/shared drive (R:/NSDROP/load/) directory and can be loaded to Sierra. Enhanced records overlay original existing brief bibs in Sierra.
 
+If for any reason the bot is interrupted (API error, etc.), the process can be restarted using `run [local, prod]` command again. The bot should pick up exactly where it left.
+
 ## Changelog

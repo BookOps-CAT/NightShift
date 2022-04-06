@@ -55,5 +55,5 @@ def test_tags2delete_correct_values():
     for v in values:
         assert isinstance(v, list)
 
-    assert result[1] == ["020", "029", "037", "090", "856", "910", "938"]
+    assert result[1] == ["020", "029", "037", "090", "263", "856", "910", "938"]
     assert result[4] == ["029", "090", "263", "936", "938"]

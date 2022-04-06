@@ -45,6 +45,7 @@ class BibEnhancer:
         `constants.RESOURCE_CATEGORIES`
      - creates for each resource type an appropriate call number tag (099 for BPL or
         091 for NYPL)
+     - enforces presence of appropriate genre heading in 655 ('Electronic books', etc.)
      - adds a Sierra command tag in the 949 tag that specifies Sierra bib format
         code and optionally Sierra bib code 3 for records suppressed from public view
     - adds Nightshift name and version to bib Sierra initials MARC tag (947 for BPL,
@@ -83,18 +84,34 @@ class BibEnhancer:
         Manipulates WorldCat record according to `nightshift.constants` module
         specs.
 
-        Full manipulation happens only if call number can be cosntructed.
+        Full manipulation happens only if records meets minimum requirements and
+        a call number can be cosntructed.
         """
 
-        # add call number field
-        call_number = self._add_call_number()
+        # delete unwanted MARC tags
+        self._purge_tags()
 
-        if call_number:
-            # delete unwanted MARC tags
-            self._purge_tags()
+        # remove 6xx tags with terms from unsupported thesauri
+        self._remove_unsupported_subject_tags()
 
-            # remove 6xx tags with terms from unsupported thesauri
-            self._remove_unsupported_subject_tags()
+        # remove e-resources vendor tags
+        self._remove_eresource_vendors()
+
+        # if does not meet criteria delete Worldcat bib
+        if not self._is_acceptable():
+            logger.info(
+                f"Worldcat record # {self.resource.oclcMatchNumber} is rejected. "
+                "Does not meet minimum requirements."
+            )
+            self.bib = None
+        else:
+            logger.info(
+                f"Worldcat record # {self.resource.oclcMatchNumber} is acceptable. "
+                "Meets minimum requriements."
+            )
+
+            # add genre tags
+            self._add_genre_tags()
 
             # add tags from the local bib
             self._add_local_tags()
@@ -102,7 +119,7 @@ class BibEnhancer:
             # add Sierra bib # for overlaying
             self._add_sierraId()
 
-            # add Sierra import command tag
+            # add Sierra import command tags
             self._add_command_tag()
 
             # add bot's initials
@@ -185,7 +202,6 @@ class BibEnhancer:
             )
             return True
         else:
-            self.bib = None
             logger.warning(
                 f"Unable to create call number for {self.library} "
                 f"b{self.resource.sierraId}a."
@@ -212,6 +228,12 @@ class BibEnhancer:
         if self.resource.suppressed:
             commands.append("b3=n")
 
+        # set default location
+        if self.library == "NYP":
+            commands.append("bn=ia")
+        elif self.library == "BPL":
+            commands.append("bn=elres")
+
         command_str = ";".join(commands)
 
         # add command to bib
@@ -228,6 +250,84 @@ class BibEnhancer:
             f"Added 949 command tag: {command_tag.value()} to {self.library} "
             f"b{self.resource.sierraId}a."
         )
+
+    def _add_genre_tags(self) -> None:
+        """
+        Adds genre tags to e-resources.
+
+        Occasionally genre terms may be recorded in 650 tag in Worldcat records
+        and it is safer to remove all and add 655 from scratch.
+        """
+        try:
+            resource_cat = RES_IDX[self.resource.resourceCategoryId]
+        except KeyError:
+            resource_cat = None
+
+        if resource_cat == "ebook":
+            found = False
+            for field in self.bib.subjects():
+                if "electronic books." in field.value().lower():
+                    found = True
+                    break
+            if not found:
+                self.bib.add_field(
+                    Field(
+                        tag="655",
+                        indicators=[" ", "0"],
+                        subfields=["a", "Electronic books."],
+                    )
+                )
+                logger.debug("Added 'Electronic books' genre to 655 tag.")
+
+        elif resource_cat == "eaudio":
+
+            # 'Audiobooks' term
+            found = False
+            for field in self.bib.subjects():
+                if "audiobooks." in field.value().lower():
+                    found = True
+                    break
+            if not found:
+                self.bib.add_field(
+                    Field(
+                        tag="655",
+                        indicators=[" ", "7"],
+                        subfields=["a", "Audiobooks.", "2", "lcgft"],
+                    )
+                )
+                logger.debug("Added 'Audiobooks' genre to 655 tag.")
+
+            # 'Electronic audiobooks' term
+            found = False
+            for field in self.bib.subjects():
+                if "electronic audiobooks." in field.value().lower():
+                    found = True
+                    break
+            if not found:
+                self.bib.add_field(
+                    Field(
+                        tag="655",
+                        indicators=[" ", "7"],
+                        subfields=["a", "Electronic audiobooks.", "2", "local"],
+                    )
+                )
+                logger.debug("Added 'Electronic audiobooks' genre to 655 tags.")
+
+        elif resource_cat == "evideo":
+            found = False
+            for field in self.bib.subjects():
+                if "internet videos." in field.value().lower():
+                    found = True
+                    break
+            if not found:
+                self.bib.add_field(
+                    Field(
+                        tag="655",
+                        indicators=[" ", "7"],
+                        subfields=["a", "Internet videos.", "2", "lcgft"],
+                    )
+                )
+                logger.debug("Added 'Internet videos' genre to 655 tag.")
 
     def _add_local_tags(self) -> None:
         """
@@ -296,18 +396,89 @@ class BibEnhancer:
         controlNo_without_prefix = self._remove_oclc_prefix(controlNo)
         self.bib["001"].data = controlNo_without_prefix
 
+    def _is_acceptable(self) -> bool:
+        """
+        Checks if full Worldcat record meet minimum criteria and
+        a valid call number can be construced.
+        """
+        if self._meets_minimum_criteria() and self._add_call_number():
+            return True
+        else:
+            return False
+
+    def _meets_minimum_criteria(self) -> bool:
+        """
+        Checks if Worldcat record meets minimum criteria
+        """
+        # check uppercase title (indicates poor quality)
+        if self.bib.title().isupper():
+            logger.debug("Worldcat record failed uppercase title test.")
+            return False
+
+        # missing statement of responsibility
+        if "c" not in self.bib["245"]:
+            logger.debug("Worldcat record failed statement of resp. test.")
+            return False
+
+        # no physical description
+        if "300" not in self.bib:
+            logger.debug("Worldcat record failed physical desc. test.")
+            return False
+
+        # messed up diacritics indicated by presence of "©" (b"\xc2\xa9") or
+        # "℗" (b"\xe2\x84\x97")
+        try:
+            diacritics_msg = "Worldcat record failed characters encoding test."
+            if b"\xc2\xa9" in bytes(self.bib.author(), "utf-8") or b"\xc2\xa9" in bytes(
+                self.bib.title(), "utf-8"
+            ):
+                logger.debug(diacritics_msg)
+                return False
+
+            if b"\xe2\x84\x97" in bytes(
+                self.bib.author(), "utf-8"
+            ) or b"\xe2\x84\x97" in bytes(self.bib.title(), "utf-8"):
+                logger.debug(diacritics_msg)
+                return False
+
+        except TypeError:
+            # hanldes records without the author
+            pass
+
+        # has at least one valid subject tag
+        if not self.bib.subjects():
+            logger.debug("Worldcat record failed subjects test.")
+            return False
+
+        logger.debug("Worldcat record meets minimum criteria.")
+        return True
+
     def _purge_tags(self) -> None:
         """
         Removes MARC tags indicated in `constants.RESOURCE_CATEGORIES`
         from the WorldCat bib.
         """
-        for tag in DELETE_TAGS[self.resource.resourceCategoryId]:
-            if tag in self.bib:
-                self.bib.remove_fields(tag)
-        logger.debug(
-            f"Removed {DELETE_TAGS[self.resource.resourceCategoryId]} from "
-            f"{self.library} b{self.resource.sierraId}a."
-        )
+        try:
+            for tag in DELETE_TAGS[self.resource.resourceCategoryId]:
+                if tag in self.bib:
+                    self.bib.remove_fields(tag)
+            logger.debug(
+                f"Removed {DELETE_TAGS[self.resource.resourceCategoryId]} from "
+                f"{self.library} b{self.resource.sierraId}a."
+            )
+        except KeyError:
+            logger.warning("Encountered unsupported resource category.")
+
+    def _remove_eresource_vendors(self) -> None:
+        """
+        Removes from e-resource bib any tags indicating distributor
+        """
+        vendors = ["overdrive", "cloudlibrary", "3m", "recorded books"]
+
+        for tag in self.bib.get_fields("710"):
+            for vendor in vendors:
+                if vendor in tag.value().lower():
+                    self.bib.remove_field(tag)
 
     def _remove_oclc_prefix(self, controlNo: str) -> str:
         """
@@ -337,17 +508,34 @@ class BibEnhancer:
                 )
 
             elif field.indicator2 == "0":  # LCSH
+                # accept
                 pass
             elif field.indicator2 == "7":
                 term_src = field["2"]
-                if term_src.lower() in ("lcsh", "fast", "gsafd", "lcgft", "lctgm"):
+
+                if term_src is None:
+                    self.bib.remove_field(field)
+                    logger.debug(
+                        f"Incomplete field. Removed {field} from "
+                        f"{self.library} b{self.resource.sierraId}a"
+                    )
+                elif term_src.lower() in (
+                    "lcsh",
+                    "fast",
+                    "homoit",
+                    "gsafd",
+                    "lcgft",
+                    "lctgm",
+                    "gmgpc",
+                ):
+                    # accept
                     pass
                 else:
+                    self.bib.remove_field(field)
                     logger.debug(
                         "Unsupported thesaurus. "
                         f"Removed {field} from {self.library} "
                         f"b{self.resource.sierraId}a."
                     )
-                    self.bib.remove_field(field)
             else:
                 self.bib.remove_field(field)

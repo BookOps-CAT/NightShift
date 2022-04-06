@@ -74,6 +74,10 @@ def test_BibReader_determine_resource_category(
     assert fake_BibReader._determine_resource_category(stub_marc) == expectation
 
 
+def test_BibReader_determine_resource_category_bib_none(fake_BibReader):
+    assert fake_BibReader._determine_resource_category(None) is None
+
+
 def test_BibReader_unsupported_resource_type_log_warning(
     caplog, stub_marc, fake_BibReader
 ):

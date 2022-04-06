@@ -15,6 +15,8 @@ from nightshift.datastore import (
     Library,
     Resource,
     ResourceCategory,
+    RottenApple,
+    RottenAppleResource,
     SourceFile,
     WorldcatQuery,
 )
@@ -32,6 +34,7 @@ from nightshift.datastore_transactions import (
     retrieve_new_resources,
     retrieve_open_older_resources,
     retrieve_processed_files,
+    retrieve_rotten_apples,
     set_resources_to_expired,
     update_resource,
 )
@@ -56,6 +59,8 @@ def test_init_db(mock_db_env, test_connection):
             "output_file",
             "source_file",
             "resource",
+            "rotten_apple",
+            "rotten_apple_resource",
             "resource_category",
             "worldcat_query",
         ]
@@ -680,6 +685,15 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
 def test_retrieve_processed_files(test_session, test_data_rich, libraryId, expectation):
     results = retrieve_processed_files(test_session, libraryId)
     assert results == expectation
+
+
+def test_retrieve_rotten_apples(test_session, test_data_core):
+    test_session.add(RottenApple(code="FOO"))
+    test_session.commit()
+    test_session.add(RottenAppleResource(resourceCategoryId=1, rottenAppleId=3))
+    test_session.commit()
+    orgs = retrieve_rotten_apples(test_session)
+    assert orgs == {1: ["UKAHL", "UAH", "FOO"], 2: ["UKAHL"], 3: ["UKAHL"]}
 
 
 def test_set_resources_to_expired(test_session, test_data_rich, stub_resource):

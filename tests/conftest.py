@@ -8,19 +8,21 @@ import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from bookops_worldcat import WorldcatAccessToken, MetadataSession
-from bookops_worldcat.errors import WorldcatSessionError
+from bookops_worldcat.errors import WorldcatRequestError
 import yaml
 
 
 from nightshift.comms.storage import get_credentials, Drive
 from nightshift.comms.worldcat import Worldcat
-from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
+from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES, ROTTEN_APPLES
 from nightshift.datastore import (
     Base,
     Library,
     OutputFile,
     Resource,
     ResourceCategory,
+    RottenApple,
+    RottenAppleResource,
     SourceFile,
     WorldcatQuery,
 )
@@ -116,7 +118,7 @@ def stub_resource():
         bibDate=datetime.datetime.utcnow().date() - datetime.timedelta(days=31),
         title="TITLE 1",
         status="bot_enhanced",
-        fullBib=b'<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<entry xmlns="http://www.w3.org/2005/Atom">\n  <content type="application/xml">\n    <response xmlns="http://worldcat.org/rb" mimeType="application/vnd.oclc.marc21+xml">\n      <record xmlns="http://www.loc.gov/MARC21/slim">\n        <leader>00000cam a2200000Ia 4500</leader>\n        <controlfield tag="001">ocn850939580</controlfield>\n        <controlfield tag="003">OCoLC</controlfield>\n        <controlfield tag="005">20190426152409.0</controlfield>\n        <controlfield tag="008">120827s2012    nyua   a      000 f eng d</controlfield>\n        <datafield tag="040" ind1=" " ind2=" ">\n          <subfield code="a">OCPSB</subfield>\n          <subfield code="b">eng</subfield>\n          <subfield code="c">OCPSB</subfield>\n          <subfield code="d">OCPSB</subfield>\n          <subfield code="d">OCLCQ</subfield>\n          <subfield code="d">OCPSB</subfield>\n          <subfield code="d">OCLCQ</subfield>\n          <subfield code="d">NYP</subfield>\n    </datafield>\n        <datafield tag="035" ind1=" " ind2=" ">\n          <subfield code="a">(OCoLC)850939580</subfield>\n    </datafield>\n        <datafield tag="020" ind1=" " ind2=" ">\n          <subfield code="a">some isbn</subfield>\n    </datafield>\n        <datafield tag="049" ind1=" " ind2=" ">\n          <subfield code="a">NYPP</subfield>\n    </datafield>\n        <datafield tag="100" ind1="0" ind2=" ">\n          <subfield code="a">OCLC RecordBuilder.</subfield>\n    </datafield>\n        <datafield tag="245" ind1="1" ind2="0">\n          <subfield code="a">Record Builder Added This Test Record On 06/26/2013 13:06:26.</subfield>\n    </datafield>\n        <datafield tag="336" ind1=" " ind2=" ">\n          <subfield code="a">text</subfield>\n          <subfield code="b">txt</subfield>\n          <subfield code="2">rdacontent</subfield>\n    </datafield>\n        <datafield tag="337" ind1=" " ind2=" ">\n          <subfield code="a">unmediated</subfield>\n          <subfield code="b">n</subfield>\n          <subfield code="2">rdamedia</subfield>\n    </datafield>\n        <datafield tag="500" ind1=" " ind2=" ">\n          <subfield code="a">TEST RECORD -- DO NOT USE.</subfield>\n    </datafield>\n        <datafield tag="500" ind1=" " ind2=" ">\n          <subfield code="a">Added Field by MarcEdit.</subfield>\n    </datafield>\n  </record>\n    </response>\n  </content>\n  <id>http://worldcat.org/oclc/850939580</id>\n  <link href="http://worldcat.org/oclc/850939580"/>\n</entry>',
+        fullBib=b'<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<entry xmlns="http://www.w3.org/2005/Atom">\n  <content type="application/xml">\n    <response xmlns="http://worldcat.org/rb" mimeType="application/vnd.oclc.marc21+xml">\n      <record xmlns="http://www.loc.gov/MARC21/slim">\n        <leader>00000cam a2200000Ia 4500</leader>\n        <controlfield tag="001">ocn850939580</controlfield>\n        <controlfield tag="003">OCoLC</controlfield>\n        <controlfield tag="005">20190426152409.0</controlfield>\n        <controlfield tag="008">120827s2012    nyua   a      000 f eng d</controlfield>\n        <datafield tag="040" ind1=" " ind2=" ">\n          <subfield code="a">OCPSB</subfield>\n          <subfield code="b">eng</subfield>\n          <subfield code="c">OCPSB</subfield>\n          <subfield code="d">OCPSB</subfield>\n          <subfield code="d">OCLCQ</subfield>\n          <subfield code="d">OCPSB</subfield>\n          <subfield code="d">OCLCQ</subfield>\n          <subfield code="d">NYP</subfield>\n    </datafield>\n        <datafield tag="035" ind1=" " ind2=" ">\n          <subfield code="a">(OCoLC)850939580</subfield>\n    </datafield>\n        <datafield tag="020" ind1=" " ind2=" ">\n          <subfield code="a">some isbn</subfield>\n    </datafield>\n        <datafield tag="049" ind1=" " ind2=" ">\n          <subfield code="a">NYPP</subfield>\n    </datafield>\n        <datafield tag="100" ind1="0" ind2=" ">\n          <subfield code="a">OCLC RecordBuilder.</subfield>\n    </datafield>\n        <datafield tag="245" ind1="1" ind2="0">\n          <subfield code="a">Record Builder Added This Test Record</subfield>\n    <subfield code="c">spam.</subfield>\n    </datafield>\n        <datafield tag="300" ind1=" " ind2=" ">\n          <subfield code="a">1 online resource</subfield>\n    </datafield>\n        <datafield tag="336" ind1=" " ind2=" ">\n          <subfield code="a">text</subfield>\n          <subfield code="b">txt</subfield>\n          <subfield code="2">rdacontent</subfield>\n    </datafield>\n        <datafield tag="337" ind1=" " ind2=" ">\n          <subfield code="a">unmediated</subfield>\n          <subfield code="b">n</subfield>\n          <subfield code="2">rdamedia</subfield>\n    </datafield>\n        <datafield tag="500" ind1=" " ind2=" ">\n          <subfield code="a">TEST RECORD -- DO NOT USE.</subfield>\n    </datafield>\n        <datafield tag="500" ind1=" " ind2=" ">\n          <subfield code="a">Added Field by MarcEdit.</subfield>\n    </datafield>\n  <datafield tag="650" ind1=" " ind2="0">\n          <subfield code="a">Test.</subfield>\n    </datafield>\n        </record>\n    </response>\n  </content>\n  <id>http://worldcat.org/oclc/850939580</id>\n  <link href="http://worldcat.org/oclc/850939580"/>\n</entry>',
         oclcMatchNumber="850939580",
         enhanceTimestamp=datetime.datetime.utcnow().date()
         - datetime.timedelta(days=15),
@@ -176,6 +178,12 @@ def test_data_core(test_session):
         test_session.add(
             ResourceCategory(nid=v["nid"], name=k, description=v["description"])
         )
+    for code, resource_cat_ids in ROTTEN_APPLES.items():
+        ids = [
+            RottenAppleResource(resourceCategoryId=RESOURCE_CATEGORIES[n]["nid"])
+            for n in resource_cat_ids
+        ]
+        test_session.add(RottenApple(code=code, applicableResourceIds=ids))
     test_session.add(SourceFile(libraryId=1, handle="foo1.mrc"))
     test_session.add(SourceFile(libraryId=2, handle="foo2.mrc"))
     test_session.commit()
@@ -260,11 +268,12 @@ class MockAuthServerResponseSuccess:
         }
 
 
-class MockSuccessfulHTTP200SessionResponse:
+class MockSuccessfulHTTP200SessionResponse(requests.Response):
     def __init__(self):
         self.status_code = 200
-        self.content = b"some content here"
+        self._content = b"some content here"
         self.url = "request_url_here"
+        self.reason = "foo"
 
     def json(self):
         return {
@@ -295,10 +304,12 @@ class MockSuccessfulHTTP200SessionResponse:
         }
 
 
-class MockSuccessfulHTTP200SessionResponseNoMatches:
+class MockSuccessfulHTTP200SessionResponseNoMatches(requests.Response):
     def __init__(self):
         self.status_code = 200
         self.url = "request_url_here"
+        self.reason = "foo"
+        self._content = b"some content here"
 
     def json(self):
         return {
@@ -308,7 +319,7 @@ class MockSuccessfulHTTP200SessionResponseNoMatches:
 
 class MockSessionError:
     def __init__(self, *args, **kwargs):
-        raise WorldcatSessionError("Timeout error")
+        raise WorldcatRequestError("Timeout error")
 
 
 @pytest.fixture
@@ -342,7 +353,7 @@ def mock_successful_session_get_request(monkeypatch):
     def mock_api_response(*args, **kwargs):
         return MockSuccessfulHTTP200SessionResponse()
 
-    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+    monkeypatch.setattr(requests.Session, "send", mock_api_response)
 
 
 @pytest.fixture
@@ -350,12 +361,12 @@ def mock_successful_session_get_request_no_matches(monkeypatch):
     def mock_api_response(*args, **kwargs):
         return MockSuccessfulHTTP200SessionResponseNoMatches()
 
-    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+    monkeypatch.setattr(requests.Session, "send", mock_api_response)
 
 
 @pytest.fixture
 def mock_session_error(monkeypatch):
-    monkeypatch.setattr("requests.Session.get", MockSessionError)
+    monkeypatch.setattr("requests.Session.send", MockSessionError)
 
 
 @pytest.fixture

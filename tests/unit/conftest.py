@@ -8,10 +8,11 @@ from pymarc import Field
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from nightshift import bot, datastore_transactions, manager, tasks, constants
+from nightshift import bot, datastore_transactions, manager, constants
 from nightshift.comms.storage import Drive
 from nightshift.datastore import OutputFile, WorldcatQuery
 from nightshift.marc.marc_parser import BibReader
+from nightshift.tasks import Tasks
 
 
 class MockOSError:
@@ -167,27 +168,20 @@ def mock_drive_unprocessed_files(monkeypatch):
     """
 
     def _files(*args):
-        if args[2] == "NYP":
+        if args[0].library == "NYP":
             return ["NYP-bar.pout"]
         else:
             return []
 
-    monkeypatch.setattr(tasks, "isolate_unprocessed_files", _files)
+    monkeypatch.setattr(Tasks, "isolate_unprocessed_files", _files)
 
 
 @pytest.fixture
 def mock_drive_unprocessed_files_empty(monkeypatch):
-    """
-    mocks workflow only for NYP
-    """
-
     def _files(*args):
-        if args[2] == "NYP":
-            return []
-        else:
-            return []
+        return []
 
-    monkeypatch.setattr(tasks, "isolate_unprocessed_files", _files)
+    monkeypatch.setattr(Tasks, "isolate_unprocessed_files", _files)
 
 
 @pytest.fixture
@@ -204,59 +198,57 @@ def mock_drive_fetch_file(monkeypatch):
 @pytest.fixture
 def mock_worldcat_brief_bib_matches(monkeypatch):
     def _patch(*args):
-        session = args[0]
-        resources = args[2]
+        test_session = args[0].db_session
+        resources = args[1]
         n = 0
         for res in resources:
             n += 1
             instance = datastore_transactions.update_resource(
-                session, res.sierraId, res.libraryId, oclcMatchNumber=str(n)
+                test_session, res.sierraId, res.libraryId, oclcMatchNumber=str(n)
             )
             instance.queries.append(WorldcatQuery(resourceId=res.nid, match=True))
-        session.commit()
+        test_session.commit()
 
-    monkeypatch.setattr(tasks, "get_worldcat_brief_bib_matches", _patch)
+    monkeypatch.setattr(Tasks, "get_worldcat_brief_bib_matches", _patch)
 
 
 @pytest.fixture
-def mock_check_resources_sierra_state_open(monkeypatch):
+def mock_check_resources_sierra_state_open(monkeypatch, test_session):
     def _patch(*args):
-        session = args[0]
-        resources = args[2]
+        test_session = args[0].db_session
+        resources = args[1]
         for res in resources:
             res.suppressed = False
             res.status = "open"
-        session.commit()
+        test_session.commit()
 
-    monkeypatch.setattr(tasks, "check_resources_sierra_state", _patch)
+    monkeypatch.setattr(Tasks, "check_resources_sierra_state", _patch)
 
 
 @pytest.fixture
-def mock_get_worldcat_full_bibs(monkeypatch):
+def mock_get_worldcat_full_bibs(monkeypatch, test_session):
     def _patch(*args):
-        session = args[0]
-        resources = args[2]
+        test_session = args[0].db_session
+        resources = args[1]
+        fullBib = b'<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<entry xmlns="http://www.w3.org/2005/Atom">\n  <content type="application/xml">\n    <response xmlns="http://worldcat.org/rb" mimeType="application/vnd.oclc.marc21+xml">\n      <record xmlns="http://www.loc.gov/MARC21/slim">\n        <leader>00000cam a2200000Ia 4500</leader>\n        <controlfield tag="001">ocn850939580</controlfield>\n        <controlfield tag="003">OCoLC</controlfield>\n        <controlfield tag="005">20190426152409.0</controlfield>\n        <controlfield tag="008">120827s2012    nyua   a      000 f eng d</controlfield>\n        <datafield tag="040" ind1=" " ind2=" ">\n          <subfield code="a">OCPSB</subfield>\n          <subfield code="b">eng</subfield>\n          <subfield code="c">OCPSB</subfield>\n          <subfield code="d">OCPSB</subfield>\n          <subfield code="d">OCLCQ</subfield>\n          <subfield code="d">OCPSB</subfield>\n          <subfield code="d">OCLCQ</subfield>\n          <subfield code="d">NYP</subfield>\n    </datafield>\n        <datafield tag="035" ind1=" " ind2=" ">\n          <subfield code="a">(OCoLC)850939580</subfield>\n    </datafield>\n        <datafield tag="020" ind1=" " ind2=" ">\n          <subfield code="a">some isbn</subfield>\n    </datafield>\n        <datafield tag="049" ind1=" " ind2=" ">\n          <subfield code="a">NYPP</subfield>\n    </datafield>\n        <datafield tag="100" ind1="0" ind2=" ">\n          <subfield code="a">OCLC RecordBuilder.</subfield>\n    </datafield>\n        <datafield tag="245" ind1="1" ind2="0">\n          <subfield code="a">Record Builder Added This Test Record</subfield>\n    <subfield code="c">spam.</subfield>\n    </datafield>\n        <datafield tag="300" ind1=" " ind2=" ">\n          <subfield code="a">1 online resource</subfield>\n    </datafield>\n        <datafield tag="336" ind1=" " ind2=" ">\n          <subfield code="a">text</subfield>\n          <subfield code="b">txt</subfield>\n          <subfield code="2">rdacontent</subfield>\n    </datafield>\n        <datafield tag="337" ind1=" " ind2=" ">\n          <subfield code="a">unmediated</subfield>\n          <subfield code="b">n</subfield>\n          <subfield code="2">rdamedia</subfield>\n    </datafield>\n        <datafield tag="500" ind1=" " ind2=" ">\n          <subfield code="a">TEST RECORD -- DO NOT USE.</subfield>\n    </datafield>\n        <datafield tag="500" ind1=" " ind2=" ">\n          <subfield code="a">Added Field by MarcEdit.</subfield>\n    </datafield>\n  <datafield tag="650" ind1=" " ind2="0">\n          <subfield code="a">Test.</subfield>\n    </datafield>\n        </record>\n    </response>\n  </content>\n  <id>http://worldcat.org/oclc/850939580</id>\n  <link href="http://worldcat.org/oclc/850939580"/>\n</entry>'
         for res in resources:
             datastore_transactions.update_resource(
-                session,
-                res.sierraId,
-                res.libraryId,
-                fullBib=b'<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<entry xmlns="http://www.w3.org/2005/Atom">\n  <content type="application/xml">\n    <response xmlns="http://worldcat.org/rb" mimeType="application/vnd.oclc.marc21+xml">\n      <record xmlns="http://www.loc.gov/MARC21/slim">\n        <leader>00000cam a2200000Ia 4500</leader>\n        <controlfield tag="001">ocn850939580</controlfield>\n        <controlfield tag="003">OCoLC</controlfield>\n        <controlfield tag="005">20190426152409.0</controlfield>\n        <controlfield tag="008">120827s2012    nyua   a      000 f eng d</controlfield>\n        <datafield tag="040" ind1=" " ind2=" ">\n          <subfield code="a">OCPSB</subfield>\n          <subfield code="b">eng</subfield>\n          <subfield code="c">OCPSB</subfield>\n          <subfield code="d">OCPSB</subfield>\n          <subfield code="d">OCLCQ</subfield>\n          <subfield code="d">OCPSB</subfield>\n          <subfield code="d">OCLCQ</subfield>\n          <subfield code="d">NYP</subfield>\n    </datafield>\n        <datafield tag="035" ind1=" " ind2=" ">\n          <subfield code="a">(OCoLC)850939580</subfield>\n    </datafield>\n        <datafield tag="020" ind1=" " ind2=" ">\n          <subfield code="a">some isbn</subfield>\n    </datafield>\n        <datafield tag="049" ind1=" " ind2=" ">\n          <subfield code="a">NYPP</subfield>\n    </datafield>\n        <datafield tag="100" ind1="0" ind2=" ">\n          <subfield code="a">OCLC RecordBuilder.</subfield>\n    </datafield>\n        <datafield tag="245" ind1="1" ind2="0">\n          <subfield code="a">Record Builder Added This Test Record On 06/26/2013 13:06:26.</subfield>\n    </datafield>\n        <datafield tag="336" ind1=" " ind2=" ">\n          <subfield code="a">text</subfield>\n          <subfield code="b">txt</subfield>\n          <subfield code="2">rdacontent</subfield>\n    </datafield>\n        <datafield tag="337" ind1=" " ind2=" ">\n          <subfield code="a">unmediated</subfield>\n          <subfield code="b">n</subfield>\n          <subfield code="2">rdamedia</subfield>\n    </datafield>\n        <datafield tag="500" ind1=" " ind2=" ">\n          <subfield code="a">TEST RECORD -- DO NOT USE.</subfield>\n    </datafield>\n        <datafield tag="500" ind1=" " ind2=" ">\n          <subfield code="a">Added Field by MarcEdit.</subfield>\n    </datafield>\n  </record>\n    </response>\n  </content>\n  <id>http://worldcat.org/oclc/850939580</id>\n  <link href="http://worldcat.org/oclc/850939580"/>\n</entry>',
+                test_session, res.sierraId, res.libraryId, fullBib=fullBib
             )
-        session.commit()
+        test_session.commit()
 
-    monkeypatch.setattr(tasks, "get_worldcat_full_bibs", _patch)
+    monkeypatch.setattr(Tasks, "get_worldcat_full_bibs", _patch)
 
 
 @pytest.fixture
 def mock_transfer_to_drive(monkeypatch):
     def _patch(*args):
         today = datetime.now().date()
-        library = args[0]
+        library = args[0].library
         res_cat = args[1]
         return f"{today:%y%m%d}-{library}-{res_cat}.mrc"
 
-    monkeypatch.setattr(tasks, "transfer_to_drive", _patch)
+    monkeypatch.setattr(Tasks, "transfer_to_drive", _patch)
 
     yield
 
