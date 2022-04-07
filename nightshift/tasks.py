@@ -15,6 +15,7 @@ from nightshift.comms.sierra_search_platform import NypPlatform, BplSolr
 from nightshift.comms.storage import get_credentials, Drive
 from nightshift.datastore import Resource, WorldcatQuery
 from nightshift.datastore_transactions import (
+    ResCatById,
     ResCatByName,
     add_event,
     add_output_file,
@@ -56,7 +57,27 @@ class Tasks:
         self.library = library
         self.libraryId = libraryId
         self._res_cat = resource_categories
+        self._res_cat_idx = self._create_resource_category_idx()
         self.rotten_apples = dict()
+
+    def _create_resource_category_idx(self) -> dict[int, ResCatById]:
+        """
+        Creates a dictionary of resource categories by their id
+
+        Returns:
+            resource categories by id
+        """
+        res_cat_idx = dict()
+        for k, v in self._res_cat.items():
+            res_cat_idx[v.nid] = ResCatById(
+                k,
+                v.sierraBibFormatBpl,
+                v.sierraBibFormatNyp,
+                v.srcTags2Keep,
+                v.dstTags2Delete,
+                v.queryDays,
+            )
+        return res_cat_idx
 
     def _create_rotten_apples_idx(self) -> dict[int, list[str]]:
         """
@@ -223,7 +244,9 @@ class Tasks:
                 file_record = add_source_file(self.db_session, self.libraryId, handle)
                 logging.debug(f"Added SourceFile record for '{handle}': {file_record}")
                 marc_target = drive.fetch_file(handle)
-                marc_reader = BibReader(marc_target, self.library)
+                marc_reader = BibReader(
+                    marc_target, self.library, self.libraryId, self._res_cat
+                )
 
                 n = 0
                 for resource in marc_reader:
@@ -294,7 +317,8 @@ class Tasks:
             raise
 
         for resource in resources:
-            be = BibEnhancer(resource, self.library, self._res_cat)
+            be = BibEnhancer(resource, self.library, self._res_cat_idx)
+            be.manipulate()
             if be.bib is not None:
                 be.save2file(file_path)
                 logger.debug(
