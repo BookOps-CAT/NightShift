@@ -132,9 +132,16 @@ def test_perform_db_maintenance_set_expired(
     [(91, 0, Resource), (191, 0, Resource), (300, 1, type(None))],
 )
 def test_perform_db_maintenance_delete(
-    caplog, env_var, test_session, test_data_rich, age, tally, expectation
+    caplog,
+    env_var,
+    test_session,
+    test_data_rich,
+    stub_res_cat_by_name,
+    age,
+    tally,
+    expectation,
 ):
-    expiration_age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+    expiration_age = stub_res_cat_by_name["ebook"].queryDays[-1][1]
 
     # expired resource
     test_session.add(

@@ -7,7 +7,9 @@ import os
 from pymarc import MARCReader
 import pytest
 
+from nightshift.constants import ROTTEN_APPLES
 from nightshift.datastore import Event, Resource, OutputFile, SourceFile
+from nightshift.datastore_transactions import ResCatByName, ResCatById
 from nightshift.ns_exceptions import DriveError
 from nightshift.tasks import Tasks
 
@@ -15,6 +17,29 @@ from ..conftest import (
     MockSuccessfulHTTP200SessionResponse,
     MockSuccessfulHTTP200SessionResponseNoMatches,
 )
+
+
+def test_create_resource_category_idx(test_session, stub_res_cat_by_name):
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+    tasks._res_cat = dict(
+        ebook=ResCatByName(9, "a", "b", ["999"], ["099", "199"], [(15, 30), (30, 60)]),
+    )
+    res = tasks._create_resource_category_idx()
+    assert isinstance(res, dict)
+    assert len(res) == 1
+    assert isinstance(res[9], ResCatById)
+    assert res[9].name == "ebook"
+    assert res[9].sierraBibFormatBpl == "a"
+    assert res[9].sierraBibFormatNyp == "b"
+    assert res[9].srcTags2Keep == ["999"]
+    assert res[9].dstTags2Delete == ["099", "199"]
+    assert res[9].queryDays == [(15, 30), (30, 60)]
+
+
+def test_create_rotten_apples_idx(test_session, test_data_core, stub_res_cat_by_name):
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+    res = tasks._create_rotten_apples_idx()
+    assert res == {1: ["UKAHL", "UAH"], 2: ["UKAHL"], 3: ["UKAHL"]}
 
 
 def test_check_resources_sierra_state_nyp_platform(
