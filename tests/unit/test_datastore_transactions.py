@@ -32,10 +32,8 @@ from nightshift.datastore_transactions import (
     insert_or_ignore,
     library_by_id,
     parse_query_days,
-    resource_category_by_id,
     resource_category_by_name,
     retrieve_expired_resources,
-    retrieve_resource_categories,
     retrieve_open_matched_resources_with_full_bib_obtained,
     retrieve_open_matched_resources_without_full_bib,
     retrieve_new_resources,
@@ -266,7 +264,7 @@ def test_insert_or_ignore_new(test_session):
     assert rec.nid == 1
 
 
-def test_insert_or_ingore_dup(test_session):
+def test_insert_or_ignore_dup(test_session):
     rec1 = insert_or_ignore(test_session, Library, code="BPL")
     test_session.commit()
     assert rec1.nid == 1
@@ -363,75 +361,6 @@ def test_parse_query_days(arg, expectation):
         ),
     ],
 )
-def test_resource_category_by_id(
-    test_session,
-    test_data_core,
-    nid,
-    name,
-    formatBpl,
-    formatNyp,
-    srcTags,
-    dstTags,
-    days,
-):
-    results = retrieve_resource_categories(test_session)
-    rs = resource_category_by_id(results)
-    assert isinstance(rs, dict)
-
-    assert isinstance(rs[nid], ResCatById)
-    assert rs[nid].name == name
-    assert rs[nid].sierraBibFormatBpl == formatBpl
-    assert rs[nid].sierraBibFormatNyp == formatNyp
-    assert rs[nid].srcTags2Keep == srcTags
-    assert rs[nid].dstTags2Delete == dstTags
-    assert rs[nid].queryDays == days
-
-
-@pytest.mark.parametrize(
-    "nid, name, formatBpl, formatNyp, srcTags, dstTags, days",
-    [
-        pytest.param(
-            1,
-            "ebook",
-            "x",
-            "z",
-            ["020", "037", "856"],
-            ["020", "029", "037", "090", "263", "856", "910", "938"],
-            [(30, 90), (90, 180)],
-            id="ebook",
-        ),
-        pytest.param(
-            2,
-            "eaudio",
-            "z",
-            "n",
-            ["020", "037", "856"],
-            ["020", "029", "037", "090", "263", "856", "910", "938"],
-            [(30, 90), (90, 180)],
-            id="eaudio",
-        ),
-        pytest.param(
-            3,
-            "evideo",
-            "v",
-            "3",
-            ["020", "037", "856"],
-            ["020", "029", "037", "090", "263", "856", "910", "938"],
-            [(30, 90)],
-            id="evideo",
-        ),
-        pytest.param(
-            4,
-            "print_eng_adult_fic",
-            "a",
-            "a",
-            ["910"],
-            ["029", "090", "263", "936", "938"],
-            [(15, 30), (30, 45)],
-            id="eng adult fic",
-        ),
-    ],
-)
 def test_resource_category_by_name(
     test_session,
     test_data_core,
@@ -443,8 +372,7 @@ def test_resource_category_by_name(
     dstTags,
     days,
 ):
-    results = retrieve_resource_categories(test_session)
-    rs = resource_category_by_name(results)
+    rs = resource_category_by_name(test_session)
     assert isinstance(rs, dict)
 
     assert isinstance(rs[name], ResCatByName)
@@ -846,27 +774,6 @@ def test_retrieve_open_matched_resources_without_full_bib(test_session, test_dat
 def test_retrieve_processed_files(test_session, test_data_rich, libraryId, expectation):
     results = retrieve_processed_files(test_session, libraryId)
     assert results == expectation
-
-
-def test_retrieve_resource_categories(test_session):
-    test_session.add(
-        ResourceCategory(
-            name="foo",
-            description="spam",
-            sierraBibFormatBpl="a",
-            sierraBibFormatNyp="b",
-            srcTags2Keep="001,002",
-            dstTags2Delete="003",
-            queryDays="1-30",
-        )
-    )
-    test_session.commit()
-
-    results = retrieve_resource_categories(test_session)
-    assert len(results) == 1
-    assert isinstance(results, list)
-
-    assert isinstance(results[0], ResourceCategory)
 
 
 def test_retrieve_rotten_apples(test_session, test_data_core):

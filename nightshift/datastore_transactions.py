@@ -305,55 +305,27 @@ def parse_query_days(query_days: str) -> list[tuple[int, int]]:
     return periods
 
 
-def resource_category_by_id(
-    resource_categories: list[ResourceCategory],
-) -> dict[int, ResCatById]:
-    """
-    Creates a dictionary of resource categories with `nid` as the key
-
-    Args:
-        resource_categories:    list of `ResourceCategory` instances
-
-    Returns:
-        dict of `nid` and resource category data as value
-    """
-    data = dict()
-    for rs in resource_categories:
-        queryDays = parse_query_days(rs.queryDays)
-        srcTags2Keep = rs.srcTags2Keep.split(",")
-        dstTags2Delete = rs.dstTags2Delete.split(",")
-        data[rs.nid] = ResCatById(
-            rs.name,
-            rs.sierraBibFormatBpl,
-            rs.sierraBibFormatNyp,
-            srcTags2Keep,
-            dstTags2Delete,
-            queryDays,
-        )
-
-    return data
-
-
-def resource_category_by_name(resource_categories) -> dict[str, ResCatByName]:
+def resource_category_by_name(session: Session) -> dict[str, ResCatByName]:
     """
     Creates a dictionary of resource categories with names as the key.
 
     Args:
-        resource_categories:    list of `ResourceCategory` instances
+        session:                `sqlalchemy.Session` instance
 
     Returns:
         dict of `names` and resource category data as values
     """
+    instances = session.query(ResourceCategory).all()
     data = dict()
-    for rs in resource_categories:
-        queryDays = parse_query_days(rs.queryDays)
-        srcTags2Keep = rs.srcTags2Keep.split(",")
-        dstTags2Delete = rs.dstTags2Delete.split(",")
+    for i in instances:
+        queryDays = parse_query_days(i.queryDays)
+        srcTags2Keep = i.srcTags2Keep.split(",")
+        dstTags2Delete = i.dstTags2Delete.split(",")
 
-        data[rs.name] = ResCatByName(
-            rs.nid,
-            rs.sierraBibFormatBpl,
-            rs.sierraBibFormatNyp,
+        data[i.name] = ResCatByName(
+            i.nid,
+            i.sierraBibFormatBpl,
+            i.sierraBibFormatNyp,
             srcTags2Keep,
             dstTags2Delete,
             queryDays,
@@ -521,20 +493,6 @@ def retrieve_processed_files(session: Session, libraryId: int) -> list[str]:
     """
     instances = session.query(SourceFile.handle).filter_by(libraryId=libraryId).all()
     return [instance[0] for instance in instances]
-
-
-def retrieve_resource_categories(session: Session) -> list[ResourceCategory]:
-    """
-    Retrieves all ResourceCategory records.
-
-    Args:
-        session:                `sqlalchemy.Session` instance
-
-    Returns:
-        list of results
-    """
-    instances = session.query(ResourceCategory).all()
-    return instances
 
 
 def retrieve_rotten_apples(session: Session) -> dict[int, list[str]]:
