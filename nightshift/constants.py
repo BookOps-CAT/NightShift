@@ -147,34 +147,3 @@ RESOURCE_CATEGORIES = {
 
 
 ROTTEN_APPLES = {"UKAHL": ["ebook", "eaudio", "evideo"], "UAH": ["ebook"]}
-
-
-# def library_by_id() -> dict[int, str]:
-#     """
-#     Creates a dictionary where the key is `datastore.Library.nid` and a value is the
-#     library code.
-#     """
-#     return {v["nid"]: k for k, v in LIBRARIES.items()}
-
-
-# def resource_category_by_id() -> dict[int, str]:
-#     """
-#     Creates a dictionary of resource categories by their id
-#     """
-#     return {v["nid"]: k for k, v in RESOURCE_CATEGORIES.items()}
-
-
-# def sierra_format_code() -> dict[int, dict[str, str]]:
-#     """
-#     Returns dictionary of sierra codes for each resource category with keys being
-#     resource IDs.
-#     """
-#     return {v["nid"]: v["sierra_format_code"] for v in RESOURCE_CATEGORIES.values()}
-
-
-# def tags2delete() -> dict[int, list[str]]:
-#     """
-#     Produces a dictionary of tags to be deleted from WorldCat records.
-#     The dictionary's keys are IDs of rows in the `datastore.ResourceCategory` table.
-#     """
-#     return {v["nid"]: v["dst_tags2delete"] for v in RESOURCE_CATEGORIES.values()}
