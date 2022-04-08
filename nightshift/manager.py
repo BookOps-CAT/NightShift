@@ -4,11 +4,13 @@ This module incldues top level processes to be performed by the app
 import logging
 
 
-from nightshift.constants import library_by_id, RESOURCE_CATEGORIES
+from nightshift.constants import RESOURCE_CATEGORIES
 from nightshift.datastore import session_scope
 from nightshift.datastore_transactions import (
     add_event,
     delete_resources,
+    library_by_id,
+    resource_category_by_name,
     retrieve_new_resources,
     retrieve_expired_resources,
     retrieve_open_matched_resources_with_full_bib_obtained,
@@ -39,7 +41,7 @@ def process_resources() -> None:
     2. Searches WorldCat for these newly added resources and records any matching
         OCLC numbers.
     3. Selects older, not enhanced yet resources that can be queried in WorldCat
-        according to their schedule (encoded in 'query_days' of the
+        according to their schedule (encoded in 'queryDays' of the
         `constants.RESOURCE_CATEGORIES`) and checks via NYPL Platform or
         BPL Solr API if their status have changed since previous query (enhanced
         by staff, deleted, or suppressed). Records changes in status in the database.
@@ -54,12 +56,15 @@ def process_resources() -> None:
     """
     with session_scope() as db_session:
 
-        for lib_nid, library in library_by_id().items():
+        lib_idx = library_by_id(db_session)
+        res_cat = resource_category_by_name(db_session)
+
+        for lib_nid, library in lib_idx.items():
 
             logger.info(f"Processing {library} resources.")
 
             # initiate Task client for the library
-            tasks = Tasks(db_session, library, lib_nid)
+            tasks = Tasks(db_session, library, lib_nid, res_cat)
 
             # ingest new resources
             tasks.ingest_new_files()
@@ -77,12 +82,12 @@ def process_resources() -> None:
                 )
 
             # check & update status of older resources if changed in Sierra
-            for res_category, res_cat_data in RESOURCE_CATEGORIES.items():
-                for age_min, age_max in res_cat_data["query_days"]:
+            for res_category, res_cat_data in res_cat.items():
+                for age_min, age_max in res_cat_data.queryDays:
                     resources = retrieve_open_older_resources(
                         db_session,
                         lib_nid,
-                        res_cat_data["nid"],
+                        res_cat_data.nid,
                         age_min,
                         age_max,
                     )
@@ -96,12 +101,12 @@ def process_resources() -> None:
 
             # search again older resources dropping any resources already enhanced
             # or deleted
-            for res_category, res_cat_data in RESOURCE_CATEGORIES.items():
-                for ageMin, ageMax in res_cat_data["query_days"]:
+            for res_category, res_cat_data in res_cat.items():
+                for ageMin, ageMax in res_cat_data.queryDays:
                     resources = retrieve_open_older_resources(
                         db_session,
                         lib_nid,
-                        res_cat_data["nid"],
+                        res_cat_data.nid,
                         age_min,
                         age_max,
                     )
@@ -126,9 +131,9 @@ def process_resources() -> None:
                 )
 
             # serialize as MARC21 and output to a file of enhanced bibs
-            for res_category, res_cat_data in RESOURCE_CATEGORIES.items():
+            for res_category, res_cat_data in res_cat.items():
                 resources = retrieve_open_matched_resources_with_full_bib_obtained(
-                    db_session, lib_nid, res_cat_data["nid"]
+                    db_session, lib_nid, res_cat_data.nid
                 )
 
                 # manipulate Worldcat bibs, serialize to MARC21 and save to SFTP
@@ -146,21 +151,24 @@ def perform_db_maintenance() -> None:
     Marks resources as expired or deletes them if past certain age.
     """
     with session_scope() as db_session:
-        for res_category, res_cat_data in RESOURCE_CATEGORIES.items():
+
+        res_cat = resource_category_by_name(db_session)
+
+        for res_category, res_cat_data in res_cat.items():
 
             # set to expired
-            expiration_age = res_cat_data["query_days"][-1][1]
+            expiration_age = res_cat_data.queryDays[-1][1]
 
             # record status change for statistical purposes in Event table
             resources = retrieve_expired_resources(
-                db_session, res_cat_data["nid"], expiration_age
+                db_session, res_cat_data.nid, expiration_age
             )
             for resource in resources:
                 add_event(db_session, resource, status="expired")
 
             # change status in Resource table
             tally = set_resources_to_expired(
-                db_session, res_cat_data["nid"], age=expiration_age
+                db_session, res_cat_data.nid, age=expiration_age
             )
             db_session.commit()
             logger.info(
@@ -169,7 +177,7 @@ def perform_db_maintenance() -> None:
 
             # delete resources 3 months older after they expired
             deletion_age = expiration_age + 90
-            tally = delete_resources(db_session, res_cat_data["nid"], deletion_age)
+            tally = delete_resources(db_session, res_cat_data.nid, deletion_age)
             db_session.commit()
             logger.info(
                 f"Deleted {tally} {res_category} resource(s) older than "

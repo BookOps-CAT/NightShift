@@ -15,6 +15,8 @@ from nightshift.comms.sierra_search_platform import NypPlatform, BplSolr
 from nightshift.comms.storage import get_credentials, Drive
 from nightshift.datastore import Resource, WorldcatQuery
 from nightshift.datastore_transactions import (
+    ResCatById,
+    ResCatByName,
     add_event,
     add_output_file,
     add_resource,
@@ -40,12 +42,42 @@ class Tasks:
         self,
         db_session: Session,
         library: str,
-        library_id: int,
+        libraryId: int,
+        resource_categories: dict[str, ResCatByName],
     ) -> None:
+        """
+        Args:
+            db_session:                         `sqlalchemy.Session` instance
+            library:                            'NYP' or 'BPL'
+            libraryId:                          `datastore.Library.nid`
+            resource_categories:                dictionary by category name with
+                                                associated data
+        """
         self.db_session = db_session
         self.library = library
-        self.library_id = library_id
+        self.libraryId = libraryId
+        self._res_cat = resource_categories
+        self._res_cat_idx = self._create_resource_category_idx()
         self.rotten_apples = dict()
+
+    def _create_resource_category_idx(self) -> dict[int, ResCatById]:
+        """
+        Creates a dictionary of resource categories by their id
+
+        Returns:
+            resource categories by id
+        """
+        res_cat_idx = dict()
+        for name, data in self._res_cat.items():
+            res_cat_idx[data.nid] = ResCatById(
+                name,
+                data.sierraBibFormatBpl,
+                data.sierraBibFormatNyp,
+                data.srcTags2Keep,
+                data.dstTags2Delete,
+                data.queryDays,
+            )
+        return res_cat_idx
 
     def _create_rotten_apples_idx(self) -> dict[int, list[str]]:
         """
@@ -209,10 +241,12 @@ class Tasks:
 
             # add records data to the db
             for handle in unproc_files:
-                file_record = add_source_file(self.db_session, self.library_id, handle)
+                file_record = add_source_file(self.db_session, self.libraryId, handle)
                 logging.debug(f"Added SourceFile record for '{handle}': {file_record}")
                 marc_target = drive.fetch_file(handle)
-                marc_reader = BibReader(marc_target, self.library)
+                marc_reader = BibReader(
+                    marc_target, self.library, self.libraryId, self._res_cat
+                )
 
                 n = 0
                 for resource in marc_reader:
@@ -244,7 +278,7 @@ class Tasks:
             f"Found following remote files for {self.library}: {library_remote_files}."
         )
 
-        proc_files = retrieve_processed_files(self.db_session, self.library_id)
+        proc_files = retrieve_processed_files(self.db_session, self.libraryId)
 
         return [f for f in library_remote_files if f not in proc_files]
 
@@ -283,7 +317,7 @@ class Tasks:
             raise
 
         for resource in resources:
-            be = BibEnhancer(resource)
+            be = BibEnhancer(resource, self.library, self._res_cat_idx)
             be.manipulate()
             if be.bib is not None:
                 be.save2file(file_path)
@@ -372,7 +406,7 @@ class Tasks:
             )
 
             out_file_record = add_output_file(
-                self.db_session, self.library_id, out_file_handle
+                self.db_session, self.libraryId, out_file_handle
             )
 
             for resource in resources:

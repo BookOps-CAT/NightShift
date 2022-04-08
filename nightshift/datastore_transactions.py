@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -18,6 +19,30 @@ from nightshift.datastore import (
     RottenAppleResource,
     SourceFile,
     WorldcatQuery,
+)
+
+ResCatById = namedtuple(
+    "ResCatById",
+    [
+        "name",
+        "sierraBibFormatBpl",
+        "sierraBibFormatNyp",
+        "srcTags2Keep",
+        "dstTags2Delete",
+        "queryDays",
+    ],
+)
+
+ResCatByName = namedtuple(
+    "ResCatByName",
+    [
+        "nid",
+        "sierraBibFormatBpl",
+        "sierraBibFormatNyp",
+        "srcTags2Keep",
+        "dstTags2Delete",
+        "queryDays",
+    ],
 )
 
 
@@ -41,7 +66,16 @@ def init_db() -> None:
 
     for k, v in constants.RESOURCE_CATEGORIES.items():
         session.add(
-            ResourceCategory(nid=v["nid"], name=k, description=v["description"]),
+            ResourceCategory(
+                nid=v["nid"],
+                name=k,
+                description=v["description"],
+                sierraBibFormatBpl=v["sierraBibFormatBpl"],
+                sierraBibFormatNyp=v["sierraBibFormatNyp"],
+                srcTags2Keep=v["srcTags2Keep"],
+                dstTags2Delete=v["dstTags2Delete"],
+                queryDays=v["queryDays"],
+            ),
         )
 
     for code, resource_cat_ids in constants.ROTTEN_APPLES.items():
@@ -234,6 +268,69 @@ def insert_or_ignore(session, model, **kwargs):
         return instance
     else:
         return None
+
+
+def library_by_id(session: Session) -> dict[int, str]:
+    """
+    Creates a dictionary where the key is `datastore.Library.nid` and a value is the
+    library code.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+
+    Returns:
+        dict of `nid` and library `codes`
+    """
+    instances = session.query(Library).all()
+    return {i.nid: i.code for i in instances}
+
+
+def parse_query_days(query_days: str) -> list[tuple[int, int]]:
+    """
+    Parses query days stored as strings in the datastore
+    into proper format.
+
+    Args:
+        query_days:             `datastore.ResourceCategory.queryDays` value
+
+    Returns:
+        list of day periods tuples
+    """
+    periods = []
+
+    values = query_days.split(",")
+    for v in values:
+        periods.append(tuple([int(x) for x in v.split("-")]))
+
+    return periods
+
+
+def resource_category_by_name(session: Session) -> dict[str, ResCatByName]:
+    """
+    Creates a dictionary of resource categories with names as the key.
+
+    Args:
+        session:                `sqlalchemy.Session` instance
+
+    Returns:
+        dict of `names` and resource category data as values
+    """
+    instances = session.query(ResourceCategory).all()
+    data = dict()
+    for i in instances:
+        queryDays = parse_query_days(i.queryDays)
+        srcTags2Keep = i.srcTags2Keep.split(",")
+        dstTags2Delete = i.dstTags2Delete.split(",")
+
+        data[i.name] = ResCatByName(
+            i.nid,
+            i.sierraBibFormatBpl,
+            i.sierraBibFormatNyp,
+            srcTags2Keep,
+            dstTags2Delete,
+            queryDays,
+        )
+    return data
 
 
 def retrieve_expired_resources(

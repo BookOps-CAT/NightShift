@@ -9,7 +9,6 @@ from nightshift.manager import process_resources
 
 
 @pytest.mark.firewalled
-@pytest.mark.local
 def test_process_resources_live(env_var, test_data_rich, test_session):
     """
     This tests runs using real data and live services

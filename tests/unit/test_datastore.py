@@ -132,8 +132,21 @@ def test_Resource_tbl_repr():
 
 def test_ResourceCategory_tbl_repr():
     assert (
-        str(ResourceCategory(nid=1, name="foo", description="spam"))
-        == "<ResourceCategory(nid='1', name='foo', description='spam')>"
+        str(
+            ResourceCategory(
+                nid=1,
+                name="foo",
+                description="spam",
+                sierraBibFormatBpl="x",
+                sierraBibFormatNyp="v",
+                srcTags2Keep="020,037",
+                dstTags2Delete="019,020",
+                queryDays="15-30,30-45",
+            )
+        )
+        == "<ResourceCategory(nid='1', name='foo', description='spam', "
+        "sierraBibFormatBpl='x', sierraBibFormatNyp='v', srcTags2Keep='020,037', "
+        "dstTags2Delete='019,020', queryDays='15-30,30-45')>"
     )
 
 

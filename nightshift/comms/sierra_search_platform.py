@@ -123,7 +123,7 @@ class SearchResponse:
             # no results, treat as deleted
             return "staff_deleted"
         else:
-            if data["deleted"]:
+            if data["bs_deleted_in_sierra"]:
                 return "staff_deleted"
             # if bib orignated from Worldcat asssume full bib
             if "ss_marc_tag_003" in data and data["ss_marc_tag_003"] == "OCoLC":

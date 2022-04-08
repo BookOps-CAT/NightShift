@@ -16,9 +16,8 @@ from bookops_marc import SierraBibReader, Bib
 from pymarc import parse_xml_to_array, Record
 
 
-from ..constants import LIBRARIES, RESOURCE_CATEGORIES
 from ..datastore import Resource
-
+from ..datastore_transactions import ResCatByName
 
 logger = logging.getLogger("nightshift")
 
@@ -57,6 +56,8 @@ class BibReader:
         self,
         marc_target: Union[BytesIO, BinaryIO],
         library: str,
+        libraryId: int,
+        resource_categories: dict[str, ResCatByName],
         hide_utf8_warnings: bool = True,
     ) -> None:
         """
@@ -64,11 +65,13 @@ class BibReader:
         Args:
             marc_target:                    MARC file or file-like object
             library:                        'NYP' or 'BPL'
+            libraryId:                     `datastore.Library.nid`
+            resource_categories:            a dicitonary of resource categories and
+                                            data associated them as namedtuple
             hide_utf8_warnings:             hides character encoding warnings
+
         """
         logger.info(f"Initating BibReader.")
-        if library not in LIBRARIES.keys():
-            raise ValueError("Invalid 'library' argument. Must be 'NYP' or 'BPL'.")
 
         if isinstance(marc_target, BytesIO):
             self.marc_target = marc_target
@@ -76,11 +79,20 @@ class BibReader:
             self.marc_target = open(marc_target, "rb")
         else:
             logger.error(
-                f"Invalid 'marc_target' argument: {marc_target} ({type(marc_target).__name__})"
+                f"Invalid 'marc_target' argument: '{marc_target}' ({type(marc_target).__name__}))"
             )
             raise TypeError("Invalid 'marc_target' argument. Must be file-like object.")
 
+        if not isinstance(resource_categories, dict):
+            logger.error("Invalid 'resource_categories' argument.")
+            raise TypeError(
+                "Invalid 'resource_categories' argument. Must be a dictionary with a "
+                "name as key, and value as a namedtuple (ResCatName)."
+            )
+
         self.library = library
+        self.libraryId = libraryId
+        self._res_cat = resource_categories
         self.hide_utf8_warnings = hide_utf8_warnings
 
     def __iter__(self) -> Iterator[Resource]:
@@ -144,7 +156,7 @@ class BibReader:
         Resource category specific MARC tags to be carried over to output records
         """
         keep = []
-        tags2keep = RESOURCE_CATEGORIES[resource_category]["src_tags2keep"]
+        tags2keep = self._res_cat[resource_category].srcTags2Keep
         keep.extend(bib.get_fields(*tags2keep))
         pickled_keep = self._pickle_obj(keep)
 
@@ -161,8 +173,7 @@ class BibReader:
             Resource:                       `datastore.Resource` instance
         """
         sierraId = bib.sierra_bib_id_normalized()
-        libraryId = LIBRARIES[self.library]["nid"]
-        resourceCategoryId = RESOURCE_CATEGORIES[resource_category]["nid"]
+        resourceCategoryId = self._res_cat[resource_category].nid
         bibDate = bib.created_date()
         author = bib.author()
         title = bib.title()
@@ -177,7 +188,7 @@ class BibReader:
 
         resource = Resource(
             sierraId=sierraId,
-            libraryId=libraryId,
+            libraryId=self.libraryId,
             resourceCategoryId=resourceCategoryId,
             bibDate=bibDate,
             author=author,

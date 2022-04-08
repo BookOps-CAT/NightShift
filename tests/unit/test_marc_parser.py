@@ -29,27 +29,38 @@ def test_wordcat_response_to_pymarc_invalid_data_type(caplog):
     )
 
 
-@pytest.mark.parametrize("arg", ["NYP", "BPL"])
-def test_BibReader_library_arg(arg):
+def test_BibReader_library_successful_init(stub_res_cat_by_name):
     with does_not_raise():
-        BibReader(marc_target=BytesIO(b"some records"), library=arg)
+        BibReader(
+            marc_target=BytesIO(b"some records"),
+            library="NYP",
+            libraryId=1,
+            resource_categories=stub_res_cat_by_name,
+        )
 
 
-def test_BibReader_invalid_library():
-    with pytest.raises(ValueError):
-        BibReader(BytesIO(b"some records"), "QPL")
-
-
-def test_BibReader_invalid_marc_target(caplog):
+def test_BibReader_invalid_marc_target(caplog, stub_res_cat_by_name):
     with pytest.raises(TypeError):
         with caplog.at_level(logging.ERROR):
-            BibReader(123, "NYP")
+            BibReader(123, "NYP", 1, stub_res_cat_by_name)
 
-    assert "Invalid 'marc_target' argument: 123 (Int)."
+    assert "Invalid 'marc_target' argument: '123' (int)" in caplog.text
 
 
-def test_BibReader_iterator():
-    reader = BibReader("tests/nyp-ebook-sample.mrc", "NYP")
+def test_BibReader_invalid_resource_categories_arg(caplog):
+    with pytest.raises(TypeError):
+        with caplog.at_level(logging.ERROR):
+            BibReader(
+                marc_target=BytesIO(b"foo"),
+                library="NYP",
+                libraryId=1,
+                resource_categories=[],
+            )
+    assert "Invalid 'resource_categories' argument" in caplog.text
+
+
+def test_BibReader_iterator(stub_res_cat_by_name):
+    reader = BibReader("tests/nyp-ebook-sample.mrc", "NYP", 1, stub_res_cat_by_name)
     with does_not_raise():
         for bib in reader:
             continue

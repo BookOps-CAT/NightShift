@@ -26,6 +26,7 @@ from nightshift.datastore import (
     SourceFile,
     WorldcatQuery,
 )
+from nightshift.datastore_transactions import ResCatById, ResCatByName, parse_query_days
 
 
 class FakeUtcNow(datetime.datetime):
@@ -127,6 +128,36 @@ def stub_resource():
     )
 
 
+@pytest.fixture
+def stub_res_cat_by_name():
+    data = dict()
+    for k, v in RESOURCE_CATEGORIES.items():
+        data[k] = ResCatByName(
+            v["nid"],
+            v["sierraBibFormatBpl"],
+            v["sierraBibFormatNyp"],
+            v["srcTags2Keep"].split(","),
+            v["dstTags2Delete"].split(","),
+            parse_query_days(v["queryDays"]),
+        )
+    return data
+
+
+@pytest.fixture
+def stub_res_cat_by_id():
+    data = dict()
+    for k, v in RESOURCE_CATEGORIES.items():
+        data[v["nid"]] = ResCatById(
+            k,
+            v["sierraBibFormatBpl"],
+            v["sierraBibFormatNyp"],
+            v["srcTags2Keep"].split(","),
+            v["dstTags2Delete"].split(","),
+            parse_query_days(v["queryDays"]),
+        )
+    return data
+
+
 @pytest.fixture(scope="function")
 def mock_db_env(monkeypatch):
     if os.getenv("GITHUB_ACTIONS"):
@@ -176,7 +207,16 @@ def test_data_core(test_session):
         test_session.add(Library(nid=v["nid"], code=k))
     for k, v in RESOURCE_CATEGORIES.items():
         test_session.add(
-            ResourceCategory(nid=v["nid"], name=k, description=v["description"])
+            ResourceCategory(
+                nid=v["nid"],
+                name=k,
+                description=v["description"],
+                sierraBibFormatBpl=v["sierraBibFormatBpl"],
+                sierraBibFormatNyp=v["sierraBibFormatNyp"],
+                srcTags2Keep=v["srcTags2Keep"],
+                dstTags2Delete=v["dstTags2Delete"],
+                queryDays=v["queryDays"],
+            )
         )
     for code, resource_cat_ids in ROTTEN_APPLES.items():
         ids = [
@@ -581,6 +621,7 @@ class MockSolrSessionResponseSuccess:
                         "id": "12234255",
                         "suppressed": True,
                         "deleted": False,
+                        "bs_deleted_in_sierra": False,
                         "call_number": "eBOOK",
                     }
                 ],

@@ -10,23 +10,12 @@ import pickle
 from pymarc import Field
 
 from .. import __title__, __version__
-from ..constants import (
-    library_by_id,
-    resource_category_by_id,
-    sierra_format_code,
-    tags2delete,
-)
 from ..datastore import Resource
+from ..datastore_transactions import ResCatById
 from .marc_parser import worldcat_response_to_pymarc
 
 
 logger = logging.getLogger("nightshift")
-
-
-DELETE_TAGS = tags2delete()
-LIB_IDX = library_by_id()
-RES_IDX = resource_category_by_id()
-SIERRA_FORMAT = sierra_format_code()
 
 
 class BibEnhancer:
@@ -56,28 +45,33 @@ class BibEnhancer:
     into MARC 21 and saves it to a temporary file.
     """
 
-    def __init__(self, resource: Resource) -> None:
+    def __init__(
+        self,
+        resource: Resource,
+        library: str,
+        resource_categories: dict[int, ResCatById],
+    ) -> None:
         """
         Initiates BibEnhancer by parsing WorldCat MARC XML byte string received
         from MetadataAPI service.
 
         Args:
             resource:                       `datastore.Resource` instance
+            library:                        'NYP' or 'BPL'
+                                            as a key and code as value
+            resource_categories:            resource categories data with
+                                            `datastore.ResourceCategory.nid` as key
 
         Raises:
             TypeError
         """
-
-        self.library = LIB_IDX[resource.libraryId]
+        self.resource = resource
+        self.library = library
+        self._res_cat = resource_categories
 
         logger.info(f"Enhancing {self.library} Sierra bib # b{resource.sierraId}a.")
 
-        self.resource = resource
-        try:
-            self.bib = worldcat_response_to_pymarc(resource.fullBib)
-        except TypeError:
-            logger.error("Unable to serialize Worldcat response to pymarc object.")
-            raise
+        self.bib = worldcat_response_to_pymarc(resource.fullBib)
 
     def manipulate(self) -> None:
         """
@@ -164,7 +158,7 @@ class BibEnhancer:
             bool
         """
         try:
-            resource_cat = RES_IDX[self.resource.resourceCategoryId]
+            resource_cat = self._res_cat[self.resource.resourceCategoryId].name
         except KeyError:
             resource_cat = None
 
@@ -219,9 +213,15 @@ class BibEnhancer:
         commands = []
 
         # Sierra bib format
-        sierra_format_code = SIERRA_FORMAT[self.resource.resourceCategoryId][
-            self.library
-        ]
+        if self.library == "NYP":
+            sierra_format_code = self._res_cat[
+                self.resource.resourceCategoryId
+            ].sierraBibFormatNyp
+        elif self.library == "BPL":
+            sierra_format_code = self._res_cat[
+                self.resource.resourceCategoryId
+            ].sierraBibFormatBpl
+
         commands.append(f"b2={sierra_format_code}")
 
         # Sierra suppression code
@@ -259,7 +259,7 @@ class BibEnhancer:
         and it is safer to remove all and add 655 from scratch.
         """
         try:
-            resource_cat = RES_IDX[self.resource.resourceCategoryId]
+            resource_cat = self._res_cat[self.resource.resourceCategoryId].name
         except KeyError:
             resource_cat = None
 
@@ -459,11 +459,11 @@ class BibEnhancer:
         from the WorldCat bib.
         """
         try:
-            for tag in DELETE_TAGS[self.resource.resourceCategoryId]:
+            for tag in self._res_cat[self.resource.resourceCategoryId].dstTags2Delete:
                 if tag in self.bib:
                     self.bib.remove_fields(tag)
             logger.debug(
-                f"Removed {DELETE_TAGS[self.resource.resourceCategoryId]} from "
+                f"Removed {self._res_cat[self.resource.resourceCategoryId].dstTags2Delete} from "
                 f"{self.library} b{self.resource.sierraId}a."
             )
         except KeyError:

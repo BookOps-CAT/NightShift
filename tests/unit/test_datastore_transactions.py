@@ -21,6 +21,8 @@ from nightshift.datastore import (
     WorldcatQuery,
 )
 from nightshift.datastore_transactions import (
+    ResCatById,
+    ResCatByName,
     add_event,
     add_output_file,
     add_resource,
@@ -28,6 +30,9 @@ from nightshift.datastore_transactions import (
     delete_resources,
     init_db,
     insert_or_ignore,
+    library_by_id,
+    parse_query_days,
+    resource_category_by_name,
     retrieve_expired_resources,
     retrieve_open_matched_resources_with_full_bib_obtained,
     retrieve_open_matched_resources_without_full_bib,
@@ -184,7 +189,8 @@ def test_add_source_file(test_session, test_data_core):
 
 def test_delete_resources(test_session, test_data_rich):
     nid = RESOURCE_CATEGORIES["ebook"]["nid"]
-    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+    last_period = RESOURCE_CATEGORIES["ebook"]["queryDays"].split(",")[-1]
+    last_day = int(last_period.split("-")[-1])
 
     test_session.add(
         Resource(
@@ -193,13 +199,13 @@ def test_delete_resources(test_session, test_data_rich):
             sourceId=1,
             resourceCategoryId=1,
             status="expired",
-            bibDate=datetime.utcnow() - timedelta(days=age + 91),
+            bibDate=datetime.utcnow() - timedelta(days=last_day + 91),
             queries=[WorldcatQuery(match=False)],
         )
     )
     test_session.commit()
 
-    result = delete_resources(test_session, nid, age + 90)
+    result = delete_resources(test_session, nid, last_day + 90)
     assert result == 1
 
     control_resource = test_session.query(Resource).filter_by(sierraId=11111111).one()
@@ -218,7 +224,8 @@ def test_delete_resources(test_session, test_data_rich):
 
 def test_delete_resources_too_early(test_session, test_data_rich):
     nid = RESOURCE_CATEGORIES["ebook"]["nid"]
-    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+    last_period = RESOURCE_CATEGORIES["ebook"]["queryDays"].split(",")[-1]
+    last_day = int(last_period.split("-")[-1])
 
     test_session.add(
         Resource(
@@ -227,13 +234,13 @@ def test_delete_resources_too_early(test_session, test_data_rich):
             sourceId=1,
             resourceCategoryId=1,
             status="expired",
-            bibDate=datetime.utcnow() - timedelta(days=age + 89),
+            bibDate=datetime.utcnow() - timedelta(days=last_day + 89),
             queries=[WorldcatQuery(match=False)],
         )
     )
     test_session.commit()
 
-    result = delete_resources(test_session, nid, age + 90)
+    result = delete_resources(test_session, nid, last_day + 90)
     assert result == 0
 
     control_resource = test_session.query(Resource).filter_by(sierraId=11111111).one()
@@ -257,7 +264,7 @@ def test_insert_or_ignore_new(test_session):
     assert rec.nid == 1
 
 
-def test_insert_or_ingore_dup(test_session):
+def test_insert_or_ignore_dup(test_session):
     rec1 = insert_or_ignore(test_session, Library, code="BPL")
     test_session.commit()
     assert rec1.nid == 1
@@ -297,12 +304,93 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(
         test_session.commit()
 
 
+def test_library_by_id(test_session, test_data_core):
+    assert library_by_id(test_session) == {1: "NYP", 2: "BPL"}
+
+
+@pytest.mark.parametrize(
+    "arg,expectation",
+    [("15-30", [(15, 30)]), ("1-5,5-6,7-8", [(1, 5), (5, 6), (7, 8)])],
+)
+def test_parse_query_days(arg, expectation):
+    assert parse_query_days(arg) == expectation
+
+
+@pytest.mark.parametrize(
+    "nid, name, formatBpl, formatNyp, srcTags, dstTags, days",
+    [
+        pytest.param(
+            1,
+            "ebook",
+            "x",
+            "z",
+            ["020", "037", "856"],
+            ["020", "029", "037", "090", "263", "856", "910", "938"],
+            [(30, 90), (90, 180)],
+            id="ebook",
+        ),
+        pytest.param(
+            2,
+            "eaudio",
+            "z",
+            "n",
+            ["020", "037", "856"],
+            ["020", "029", "037", "090", "263", "856", "910", "938"],
+            [(30, 90), (90, 180)],
+            id="eaudio",
+        ),
+        pytest.param(
+            3,
+            "evideo",
+            "v",
+            "3",
+            ["020", "037", "856"],
+            ["020", "029", "037", "090", "263", "856", "910", "938"],
+            [(30, 90)],
+            id="evideo",
+        ),
+        pytest.param(
+            4,
+            "print_eng_adult_fic",
+            "a",
+            "a",
+            ["910"],
+            ["029", "090", "263", "936", "938"],
+            [(15, 30), (30, 45)],
+            id="eng adult fic",
+        ),
+    ],
+)
+def test_resource_category_by_name(
+    test_session,
+    test_data_core,
+    nid,
+    name,
+    formatBpl,
+    formatNyp,
+    srcTags,
+    dstTags,
+    days,
+):
+    rs = resource_category_by_name(test_session)
+    assert isinstance(rs, dict)
+
+    assert isinstance(rs[name], ResCatByName)
+    assert rs[name].nid == nid
+    assert rs[name].sierraBibFormatBpl == formatBpl
+    assert rs[name].sierraBibFormatNyp == formatNyp
+    assert rs[name].srcTags2Keep == srcTags
+    assert rs[name].dstTags2Delete == dstTags
+    assert rs[name].queryDays == days
+
+
 def test_retrieve_expired_resources(test_session, test_data_rich):
     # single test record serves as control data
     # it should not be caught by this query
 
     nid = RESOURCE_CATEGORIES["ebook"]["nid"]
-    expiration_age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+    last_period = RESOURCE_CATEGORIES["ebook"]["queryDays"].split(",")[-1]
+    last_day = int(last_period.split("-")[-1])
 
     test_session.add(
         Resource(
@@ -311,12 +399,12 @@ def test_retrieve_expired_resources(test_session, test_data_rich):
             sourceId=1,
             resourceCategoryId=nid,
             status="open",
-            bibDate=datetime.utcnow() - timedelta(days=expiration_age + 1),
+            bibDate=datetime.utcnow() - timedelta(days=last_day + 1),
         )
     )
     test_session.commit()
 
-    resources = retrieve_expired_resources(test_session, nid, expiration_age)
+    resources = retrieve_expired_resources(test_session, nid, last_day)
 
     assert len(resources) == 1
     assert resources[0].nid == 2
@@ -327,7 +415,8 @@ def test_retrieve_expired_resources_too_early(test_session, test_data_rich):
     # it should not be caught by this query
 
     nid = RESOURCE_CATEGORIES["ebook"]["nid"]
-    expiration_age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+    last_period = RESOURCE_CATEGORIES["ebook"]["queryDays"].split(",")[-1]
+    last_day = int(last_period.split("-")[-1])
 
     test_session.add(
         Resource(
@@ -336,12 +425,12 @@ def test_retrieve_expired_resources_too_early(test_session, test_data_rich):
             sourceId=1,
             resourceCategoryId=nid,
             status="open",
-            bibDate=datetime.utcnow() - timedelta(days=expiration_age - 1),
+            bibDate=datetime.utcnow() - timedelta(days=last_day - 1),
         )
     )
     test_session.commit()
 
-    resources = retrieve_expired_resources(test_session, nid, expiration_age)
+    resources = retrieve_expired_resources(test_session, nid, last_day)
 
     assert len(resources) == 0
 
@@ -698,7 +787,8 @@ def test_retrieve_rotten_apples(test_session, test_data_core):
 
 def test_set_resources_to_expired(test_session, test_data_rich, stub_resource):
     nid = RESOURCE_CATEGORIES["ebook"]["nid"]
-    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+    last_period = RESOURCE_CATEGORIES["ebook"]["queryDays"].split(",")[-1]
+    last_day = int(last_period.split("-")[-1])
 
     test_session.add(
         Resource(
@@ -707,12 +797,12 @@ def test_set_resources_to_expired(test_session, test_data_rich, stub_resource):
             sourceId=1,
             resourceCategoryId=1,
             status="open",
-            bibDate=datetime.utcnow() - timedelta(days=age + 1),
+            bibDate=datetime.utcnow() - timedelta(days=last_day + 1),
         )
     )
     test_session.commit()
 
-    result = set_resources_to_expired(test_session, nid, age)
+    result = set_resources_to_expired(test_session, nid, last_day)
     assert result == 1
 
     resource_not_changed = (
@@ -729,7 +819,8 @@ def test_set_resources_to_expired_too_early(
     test_session, test_data_rich, stub_resource
 ):
     nid = RESOURCE_CATEGORIES["ebook"]["nid"]
-    age = RESOURCE_CATEGORIES["ebook"]["query_days"][-1][1]
+    last_period = RESOURCE_CATEGORIES["ebook"]["queryDays"].split(",")[-1]
+    last_day = int(last_period.split("-")[-1])
 
     test_session.add(
         Resource(
@@ -738,12 +829,12 @@ def test_set_resources_to_expired_too_early(
             sourceId=1,
             resourceCategoryId=1,
             status="open",
-            bibDate=datetime.utcnow() - timedelta(days=age - 1),
+            bibDate=datetime.utcnow() - timedelta(days=last_day - 1),
         )
     )
     test_session.commit()
 
-    result = set_resources_to_expired(test_session, nid, age)
+    result = set_resources_to_expired(test_session, nid, last_day)
     assert result == 0
 
     resource_not_changed = (
@@ -758,7 +849,14 @@ def test_set_resources_to_expired_too_early(
 
 def test_update_resource(test_session):
     lib_rec = insert_or_ignore(test_session, Library, code="NYP")
-    cat_rec = insert_or_ignore(test_session, ResourceCategory, name="ebook")
+    cat_rec = insert_or_ignore(
+        test_session,
+        ResourceCategory,
+        name="ebook",
+        sierraBibFormatBpl="x",
+        sierraBibFormatNyp="z",
+        queryDays="1-5",
+    )
     test_session.commit()
     src_rec = insert_or_ignore(
         test_session, SourceFile, libraryId=lib_rec.nid, handle="foo"

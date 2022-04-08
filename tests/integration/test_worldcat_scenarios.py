@@ -90,7 +90,9 @@ class TestWorldcatSearch:
         if hits:
             assert response.json()["briefRecords"][0]["oclcNumber"] == match_number
 
-    def test_get_full_bib_garbled_diacritics(self, wcat, stub_resource):
+    def test_get_full_bib_garbled_diacritics(
+        self, wcat, stub_resource, stub_res_cat_by_name
+    ):
 
         stub_resource.oclcMatchNumber = "1035408434"
         stub_resource.fullBib = None
@@ -102,7 +104,7 @@ class TestWorldcatSearch:
             stub_resource.fullBib = marcxml
             break
 
-        be = BibEnhancer(stub_resource)
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_name)
         assert be._meets_minimum_criteria() is False
 
 

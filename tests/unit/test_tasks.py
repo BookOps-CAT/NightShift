@@ -7,7 +7,9 @@ import os
 from pymarc import MARCReader
 import pytest
 
+from nightshift.constants import ROTTEN_APPLES
 from nightshift.datastore import Event, Resource, OutputFile, SourceFile
+from nightshift.datastore_transactions import ResCatByName, ResCatById
 from nightshift.ns_exceptions import DriveError
 from nightshift.tasks import Tasks
 
@@ -17,10 +19,34 @@ from ..conftest import (
 )
 
 
+def test_create_resource_category_idx(test_session, stub_res_cat_by_name):
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+    tasks._res_cat = dict(
+        ebook=ResCatByName(9, "a", "b", ["999"], ["099", "199"], [(15, 30), (30, 60)]),
+    )
+    res = tasks._create_resource_category_idx()
+    assert isinstance(res, dict)
+    assert len(res) == 1
+    assert isinstance(res[9], ResCatById)
+    assert res[9].name == "ebook"
+    assert res[9].sierraBibFormatBpl == "a"
+    assert res[9].sierraBibFormatNyp == "b"
+    assert res[9].srcTags2Keep == ["999"]
+    assert res[9].dstTags2Delete == ["099", "199"]
+    assert res[9].queryDays == [(15, 30), (30, 60)]
+
+
+def test_create_rotten_apples_idx(test_session, test_data_core, stub_res_cat_by_name):
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+    res = tasks._create_rotten_apples_idx()
+    assert res == {1: ["UKAHL", "UAH"], 2: ["UKAHL"], 3: ["UKAHL"]}
+
+
 def test_check_resources_sierra_state_nyp_platform(
     test_session,
     test_data_rich,
     stub_resource,
+    stub_res_cat_by_name,
     mock_platform_env,
     mock_successful_platform_post_token_response,
     mock_successful_platform_session_response,
@@ -31,7 +57,7 @@ def test_check_resources_sierra_state_nyp_platform(
 
     test_session.commit()
 
-    tasks = Tasks(test_session, "NYP", 1)
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
     tasks.check_resources_sierra_state([stub_resource])
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -53,6 +79,7 @@ def test_check_resources_sierra_state_nyp_platform_deleted_record(
     test_session,
     test_data_rich,
     stub_resource,
+    stub_res_cat_by_name,
     mock_platform_env,
     mock_successful_platform_post_token_response,
     mock_successful_platform_session_response_deleted_record,
@@ -63,7 +90,7 @@ def test_check_resources_sierra_state_nyp_platform_deleted_record(
 
     test_session.commit()
 
-    tasks = Tasks(test_session, "NYP", 1)
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
     tasks.check_resources_sierra_state([stub_resource])
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -85,6 +112,7 @@ def test_check_resources_sierra_state_bpl_solr(
     test_session,
     test_data_rich,
     stub_resource,
+    stub_res_cat_by_name,
     mock_solr_env,
     mock_successful_solr_session_response,
 ):
@@ -93,7 +121,7 @@ def test_check_resources_sierra_state_bpl_solr(
     stub_resource.status = "open"
     test_session.commit()
 
-    tasks = Tasks(test_session, "BPL", 2)
+    tasks = Tasks(test_session, "BPL", 2, stub_res_cat_by_name)
     tasks.check_resources_sierra_state([stub_resource])
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -104,6 +132,7 @@ def test_check_resources_sierra_state_bpl_solr(
 def test_check_resources_sierra_state_bpl_solr_no_record(
     test_session,
     test_data_rich,
+    stub_res_cat_by_name,
     mock_solr_env,
     mock_failed_solr_session_response,
 ):
@@ -112,7 +141,7 @@ def test_check_resources_sierra_state_bpl_solr_no_record(
     resource.status = "open"
     test_session.commit()
 
-    tasks = Tasks(test_session, "BPL", 2)
+    tasks = Tasks(test_session, "BPL", 2, stub_res_cat_by_name)
     tasks.check_resources_sierra_state([resource])
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -132,21 +161,27 @@ def test_check_resources_sierra_state_bpl_solr_no_record(
 def test_check_resources_sierra_state_invalid_library_arg(caplog):
     with pytest.raises(ValueError):
         with caplog.at_level(logging.ERROR):
-            tasks = Tasks(None, "QPL", 3)
+            tasks = Tasks(None, "QPL", 3, {})
             tasks.check_resources_sierra_state([])
 
     assert "Invalid library argument passed: 'QPL'. Must be 'NYP' or 'BPL'"
 
 
 def test_enhance_and_output_bibs(
-    caplog, test_session, test_data_rich, sftpserver, mock_drive, mock_sftp_env
+    caplog,
+    sftpserver,
+    test_session,
+    test_data_rich,
+    stub_res_cat_by_name,
+    mock_drive,
+    mock_sftp_env,
 ):
     remote_file = f"{datetime.now().date():%y%m%d}-NYP-ebook-01.mrc"
     resources = test_session.query(Resource).where(Resource.nid == 1).all()
 
     with caplog.at_level(logging.DEBUG):
         with sftpserver.serve_content({"load_dir": {}}):
-            tasks = Tasks(test_session, "NYP", 1)
+            tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
             tasks.enhance_and_output_bibs("ebook", resources)
 
     assert "NYP b11111111a has been output to 'temp.mrc'." in caplog.text
@@ -168,6 +203,7 @@ def test_enhance_and_output_bibs(
 def test_get_worldcat_brief_bib_matches_success(
     test_session,
     test_data_core,
+    stub_res_cat_by_name,
     mock_worldcat_creds,
     mock_successful_post_token_response,
     mock_successful_session_get_request,
@@ -187,7 +223,7 @@ def test_get_worldcat_brief_bib_matches_success(
     )
     test_session.commit()
     resources = test_session.query(Resource).filter_by(nid=1).all()
-    tasks = Tasks(test_session, "NYP", 1)
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
     tasks.get_worldcat_brief_bib_matches(resources)
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]
@@ -215,6 +251,7 @@ def test_get_worldcat_brief_bib_matches_failed(
     library_id,
     test_session,
     test_data_core,
+    stub_res_cat_by_name,
     mock_worldcat_creds,
     mock_successful_post_token_response,
     mock_successful_session_get_request_no_matches,
@@ -234,7 +271,7 @@ def test_get_worldcat_brief_bib_matches_failed(
     )
     test_session.commit()
     resources = test_session.query(Resource).filter_by(nid=1).all()
-    tasks = Tasks(test_session, library, library_id)
+    tasks = Tasks(test_session, library, library_id, stub_res_cat_by_name)
     tasks.get_worldcat_brief_bib_matches(resources)
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]
@@ -260,6 +297,7 @@ def test_get_worldcat_brief_bib_matches_failed(
 def test_get_worldcat_full_bibs(
     test_session,
     test_data_core,
+    stub_res_cat_by_name,
     mock_worldcat_creds,
     mock_successful_post_token_response,
     mock_successful_session_get_request,
@@ -280,21 +318,23 @@ def test_get_worldcat_full_bibs(
     )
     test_session.commit()
     resources = test_session.query(Resource).filter_by(nid=1).all()
-    tasks = Tasks(test_session, "NYP", 1)
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
     tasks.get_worldcat_full_bibs(resources)
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]
     assert res.fullBib == MockSuccessfulHTTP200SessionResponse().content
 
 
-def test_ingest_new_files(test_session, test_data_core, sftpserver, mock_sftp_env):
+def test_ingest_new_files(
+    sftpserver, test_session, test_data_core, stub_res_cat_by_name, mock_sftp_env
+):
     with open("tests/nyp-ebook-sample.mrc", "rb") as test_file:
         marc_data = test_file.read()
 
     with sftpserver.serve_content(
         {"sierra_dumps_dir": {"foo1-pout": b"foo", "NYP-bar-pout": marc_data}}
     ):
-        tasks = Tasks(test_session, "NYP", 1)
+        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
         tasks.ingest_new_files()
 
     # verify source file has been added to db
@@ -313,13 +353,13 @@ def test_ingest_new_files(test_session, test_data_core, sftpserver, mock_sftp_en
 
 
 def test_isolate_unprocessed_nyp_files(
-    test_session, test_data_core, mock_drive, sftpserver, caplog
+    caplog, sftpserver, stub_res_cat_by_name, test_session, test_data_core, mock_drive
 ):
     with sftpserver.serve_content(
         {"sierra_dumps_dir": {"foo1-pout": b"spam", "NYP-bar-pout": b"spam"}}
     ):
         with caplog.at_level(logging.DEBUG):
-            tasks = Tasks(test_session, "NYP", 1)
+            tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
             results = tasks.isolate_unprocessed_files(mock_drive)
 
         assert "Found following remote files for NYP: ['NYP-bar-pout']." in caplog.text
@@ -328,13 +368,13 @@ def test_isolate_unprocessed_nyp_files(
 
 
 def test_isolate_unprocessed_bpl_files(
-    test_session, test_data_core, mock_drive, sftpserver, caplog
+    caplog, sftpserver, stub_res_cat_by_name, test_session, test_data_core, mock_drive
 ):
     with sftpserver.serve_content(
         {"sierra_dumps_dir": {"foo1-pout": b"spam", "NYP-bar-pout": b"spam"}}
     ):
         with caplog.at_level(logging.DEBUG):
-            tasks = Tasks(test_session, "BPL", 2)
+            tasks = Tasks(test_session, "BPL", 2, stub_res_cat_by_name)
             results = tasks.isolate_unprocessed_files(mock_drive)
         assert "Found following remote files for BPL: []." in caplog.text
 
@@ -342,12 +382,15 @@ def test_isolate_unprocessed_bpl_files(
 
 
 def test_manipulate_and_serialize_bibs_default_outfile(
-    test_session, test_data_rich, caplog
+    caplog,
+    stub_res_cat_by_name,
+    test_session,
+    test_data_rich,
 ):
 
     resources = test_session.query(Resource).all()
     with caplog.at_level(logging.DEBUG):
-        tasks = Tasks(test_session, "NYP", 1)
+        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
         file, resources = tasks.manipulate_and_serialize_bibs("ebook", resources)
 
     assert "NYP b11111111a has been output to 'temp.mrc'." in caplog.text
@@ -375,12 +418,16 @@ def test_manipulate_and_serialize_bibs_default_outfile(
 
 
 def test_manipulate_and_serialize_bibs_custom_outfile(
-    test_session, test_data_rich, caplog, tmpdir
+    caplog,
+    tmpdir,
+    test_session,
+    test_data_rich,
+    stub_res_cat_by_name,
 ):
     outfile = tmpdir.join("custom_file.mrc")
     resources = test_session.query(Resource).all()
     with caplog.at_level(logging.DEBUG):
-        tasks = Tasks(test_session, "NYP", 1)
+        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
         file, resources = tasks.manipulate_and_serialize_bibs(
             "ebook", resources, outfile
         )
@@ -403,13 +450,15 @@ def test_manipulate_and_serialize_bibs_custom_outfile(
     assert bib["901"].value() == "NightShift/0.1.0"
 
 
-def test_manipulate_and_serialize_bibs_failed(test_session, test_data_rich, caplog):
+def test_manipulate_and_serialize_bibs_failed(
+    caplog, test_session, test_data_rich, stub_res_cat_by_name
+):
 
     resource = test_session.query(Resource).one_or_none()
     resource.resourceCategoryId = 5
 
     with caplog.at_level(logging.WARNING):
-        tasks = Tasks(test_session, "NYP", 1)
+        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
         file, resources = tasks.manipulate_and_serialize_bibs("ebook", [resource])
 
     assert "NYP b11111111a enhancement incomplete. Skipping." in caplog.text
@@ -419,24 +468,26 @@ def test_manipulate_and_serialize_bibs_failed(test_session, test_data_rich, capl
 
 
 def test_manipulate_and_serialize_bibs_os_error_on_temp_file_removal(
-    test_session, test_data_rich, caplog, mock_os_error_on_remove
+    caplog, test_session, test_data_rich, stub_res_cat_by_name, mock_os_error_on_remove
 ):
     resource = test_session.query(Resource).one()
     with pytest.raises(OSError):
         with caplog.at_level(logging.ERROR):
-            tasks = Tasks(test_session, "NYP", 1)
+            tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
             tasks.manipulate_and_serialize_bibs("ebook", [resource])
 
     assert "Unable to empty temp file 'temp.mrc'" in caplog.text
 
 
-def test_transfer_to_drive(mock_drive, caplog, sftpserver, tmpdir):
+def test_transfer_to_drive(
+    caplog, sftpserver, tmpdir, mock_drive, stub_res_cat_by_name
+):
     base_name = f"{datetime.now().date():%y%m%d}-NYP-ebook"
     tmpfile = tmpdir.join("temp.mrc")
     tmpfile.write("spam")
     with sftpserver.serve_content({"load_dir": {f"{base_name}-01.mrc": "spam"}}):
         with caplog.at_level(logging.INFO):
-            tasks = Tasks(None, "NYP", 1)
+            tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
             tasks.transfer_to_drive("ebook", str(tmpfile))
             assert mock_drive.sftp.listdir("load_dir") == [
                 f"{base_name}-01.mrc",
@@ -445,28 +496,34 @@ def test_transfer_to_drive(mock_drive, caplog, sftpserver, tmpdir):
     assert f"NYP ebook records have been output to remote '{base_name}-02.mrc'"
 
 
-def test_transfer_to_drive_temp_file_not_created(mock_sftp_env, sftpserver, caplog):
+def test_transfer_to_drive_temp_file_not_created(
+    caplog, sftpserver, mock_sftp_env, stub_res_cat_by_name
+):
     with caplog.at_level(logging.INFO):
-        tasks = Tasks(None, "NYP", 1)
+        tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
         remote_file = tasks.transfer_to_drive("ebook", None)
     assert remote_file is None
     assert "No source file to output to SFTP" in caplog.text
 
 
-def test_transfer_to_drive_sftp_error(mock_sftp_env, sftpserver, mock_io_error, tmpdir):
+def test_transfer_to_drive_sftp_error(
+    tmpdir, sftpserver, stub_res_cat_by_name, mock_sftp_env, mock_io_error
+):
     tmpfile = tmpdir.join("temp.mrc")
     tmpfile.write("spam")
     with sftpserver.serve_content({"laod_dir": {}}):
         with pytest.raises(DriveError):
-            tasks = Tasks(None, "NYP", 1)
+            tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
             tasks.transfer_to_drive("ebook", str(tmpfile))
 
 
-def test_update_status_to_upgraded(test_session, test_data_rich, caplog):
+def test_update_status_to_upgraded(
+    caplog, test_session, test_data_rich, stub_res_cat_by_name
+):
     resources = test_session.query(Resource).all()
     with does_not_raise():
         with caplog.at_level(logging.INFO):
-            tasks = Tasks(test_session, "NYP", 1)
+            tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
             tasks.update_status_to_upgraded("foo3.mrc", resources)
 
         assert "Updating 1 resources status to 'bot_enhanced'." in caplog.text
@@ -497,9 +554,11 @@ def test_update_status_to_upgraded(test_session, test_data_rich, caplog):
     assert event.status == "bot_enhanced"
 
 
-def test_update_status_to_upgraded_no_new_file(caplog, test_session):
+def test_update_status_to_upgraded_no_new_file(
+    caplog, test_session, stub_res_cat_by_name
+):
     with caplog.at_level(logging.INFO):
-        tasks = Tasks(test_session, "NYP", 1)
+        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
         tasks.update_status_to_upgraded(None, [])
 
     assert (
