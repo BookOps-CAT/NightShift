@@ -44,7 +44,19 @@ def test_BibReader_invalid_marc_target(caplog, stub_res_cat_by_name):
         with caplog.at_level(logging.ERROR):
             BibReader(123, "NYP", 1, stub_res_cat_by_name)
 
-    assert "Invalid 'marc_target' argument: 123 (Int)."
+    assert "Invalid 'marc_target' argument: '123' (int)" in caplog.text
+
+
+def test_BibReader_invalid_resource_categories_arg(caplog):
+    with pytest.raises(TypeError):
+        with caplog.at_level(logging.ERROR):
+            BibReader(
+                marc_target=BytesIO(b"foo"),
+                library="NYP",
+                libraryId=1,
+                resource_categories=[],
+            )
+    assert "Invalid 'resource_categories' argument" in caplog.text
 
 
 def test_BibReader_iterator(stub_res_cat_by_name):

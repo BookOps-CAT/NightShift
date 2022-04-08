@@ -71,11 +71,7 @@ class BibEnhancer:
 
         logger.info(f"Enhancing {self.library} Sierra bib # b{resource.sierraId}a.")
 
-        try:
-            self.bib = worldcat_response_to_pymarc(resource.fullBib)
-        except TypeError:
-            logger.error("Unable to serialize Worldcat response to pymarc object.")
-            raise
+        self.bib = worldcat_response_to_pymarc(resource.fullBib)
 
     def manipulate(self) -> None:
         """

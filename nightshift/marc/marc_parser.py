@@ -79,13 +79,14 @@ class BibReader:
             self.marc_target = open(marc_target, "rb")
         else:
             logger.error(
-                f"Invalid 'marc_target' argument: {marc_target} ({type(marc_target).__name__})"
+                f"Invalid 'marc_target' argument: '{marc_target}' ({type(marc_target).__name__}))"
             )
             raise TypeError("Invalid 'marc_target' argument. Must be file-like object.")
 
         if not isinstance(resource_categories, dict):
+            logger.error("Invalid 'resource_categories' argument.")
             raise TypeError(
-                "Invalid 'resource_categories` argument. Must be a dictionary with a "
+                "Invalid 'resource_categories' argument. Must be a dictionary with a "
                 "name as key, and value as a namedtuple (ResCatName)."
             )
 
