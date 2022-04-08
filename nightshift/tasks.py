@@ -68,14 +68,14 @@ class Tasks:
             resource categories by id
         """
         res_cat_idx = dict()
-        for k, v in self._res_cat.items():
-            res_cat_idx[v.nid] = ResCatById(
-                k,
-                v.sierraBibFormatBpl,
-                v.sierraBibFormatNyp,
-                v.srcTags2Keep,
-                v.dstTags2Delete,
-                v.queryDays,
+        for name, data in self._res_cat.items():
+            res_cat_idx[data.nid] = ResCatById(
+                name,
+                data.sierraBibFormatBpl,
+                data.sierraBibFormatNyp,
+                data.srcTags2Keep,
+                data.dstTags2Delete,
+                data.queryDays,
             )
         return res_cat_idx
 
