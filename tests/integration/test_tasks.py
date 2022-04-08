@@ -8,7 +8,9 @@ from nightshift.tasks import Tasks
 
 
 @pytest.mark.local
-def test_get_worldcat_brief_bib_matches_success(test_session, test_data_rich, env_var):
+def test_get_worldcat_brief_bib_matches_success(
+    test_session, test_data_rich, env_var, stub_res_cat_by_name
+):
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
     resource.distributorNumber = "622708F6-78D7-453A-A7C5-3FE6853F3167"
@@ -21,7 +23,7 @@ def test_get_worldcat_brief_bib_matches_success(test_session, test_data_rich, en
 
     resources = test_session.query(Resource).filter_by(nid=1).all()
 
-    tasks = Tasks(test_session, "NYP", 1)
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
     tasks.get_worldcat_brief_bib_matches(resources)
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]
@@ -35,7 +37,9 @@ def test_get_worldcat_brief_bib_matches_success(test_session, test_data_rich, en
 
 
 @pytest.mark.local
-def test_get_worldcat_brief_bib_matches_failure(test_session, test_data_rich, env_var):
+def test_get_worldcat_brief_bib_matches_failure(
+    test_session, test_data_rich, env_var, stub_res_cat_by_name
+):
     # modify existing resource
     resource = test_session.query(Resource).filter_by(nid=1).one()
     resource.distributorNumber = "ABC#1234"
@@ -49,7 +53,7 @@ def test_get_worldcat_brief_bib_matches_failure(test_session, test_data_rich, en
     resources = test_session.query(Resource).filter_by(nid=1).all()
     assert len(resources) == 1
 
-    tasks = Tasks(test_session, "NYP", 1)
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
     tasks.get_worldcat_brief_bib_matches(resources)
 
     res = test_session.query(Resource).filter_by(nid=1).one()
@@ -64,7 +68,9 @@ def test_get_worldcat_brief_bib_matches_failure(test_session, test_data_rich, en
 
 
 @pytest.mark.local
-def test_get_worldcat_full_bibs(test_session, test_data_rich, env_var):
+def test_get_worldcat_full_bibs(
+    test_session, test_data_rich, env_var, stub_res_cat_by_name
+):
     test_session.execute(
         update(Resource).where(Resource.nid == 1).values(oclcMatchNumber="779356905")
     )
@@ -74,7 +80,7 @@ def test_get_worldcat_full_bibs(test_session, test_data_rich, env_var):
     resources = test_session.query(Resource).filter_by(nid=1).all()
     assert len(resources) == 1
 
-    tasks = Tasks(test_session, "NYP", 1)
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
     tasks.get_worldcat_full_bibs(resources)
 
     res = test_session.query(Resource).filter_by(nid=1).one()

@@ -14,7 +14,7 @@ from nightshift.tasks import Tasks
 
 
 @pytest.mark.firewalled
-def test_fetch_file_and_add_to_db(env_var, test_data_rich):
+def test_fetch_file_and_add_to_db(env_var, test_data_rich, stub_res_cat_by_name):
     test_file = "NYPeres210701.pout"
     library = "NYP"
 
@@ -34,7 +34,7 @@ def test_fetch_file_and_add_to_db(env_var, test_data_rich):
         db_session.commit()
 
         # add records from file to db
-        reader = BibReader(file_data, "NYP")
+        reader = BibReader(file_data, "NYP", 1, stub_res_cat_by_name)
         for resource in reader:
             resource.sourceId = sf.nid
             add_resource(db_session, resource)
@@ -52,7 +52,9 @@ def test_fetch_file_and_add_to_db(env_var, test_data_rich):
 
 
 @pytest.mark.firewalled
-def test_enhance_and_transfer_to_drive(caplog, env_var, test_data_rich, stub_resource):
+def test_enhance_and_transfer_to_drive(
+    caplog, env_var, test_data_rich, stub_resource, stub_res_cat_by_name
+):
     new_resource = Resource(
         sierraId=22222222,
         libraryId=1,
@@ -72,7 +74,7 @@ def test_enhance_and_transfer_to_drive(caplog, env_var, test_data_rich, stub_res
         )
 
         with caplog.at_level(logging.DEBUG):
-            tasks = Tasks(db_session, "NYP", 1)
+            tasks = Tasks(db_session, "NYP", 1, stub_res_cat_by_name)
             tasks.enhance_and_output_bibs("ebook", resources)
 
     today = datetime.datetime.now().date()
