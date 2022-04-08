@@ -181,7 +181,7 @@ class TestSearchResponse:
                 "numFoundExact": True,
                 "docs": [
                     {
-                        "deleted": deleted,
+                        "bs_deleted_in_sierra": deleted,
                         field: value,
                     }
                 ],

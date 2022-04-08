@@ -621,6 +621,7 @@ class MockSolrSessionResponseSuccess:
                         "id": "12234255",
                         "suppressed": True,
                         "deleted": False,
+                        "bs_deleted_in_sierra": False,
                         "call_number": "eBOOK",
                     }
                 ],
