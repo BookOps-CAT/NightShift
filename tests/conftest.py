@@ -276,6 +276,7 @@ class MockAuthServerResponseFailure:
 
     def __init__(self):
         self.status_code = 401
+        self.content = b"spam"
 
     def json(self):
         return {
