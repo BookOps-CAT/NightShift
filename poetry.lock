@@ -114,7 +114,7 @@ resolved_reference = "0a5cbf826d9d98b8d47737237a53c61f12ac456a"
 
 [[package]]
 name = "bookops-worldcat"
-version = "0.4.1"
+version = "0.5.0"
 description = "OCLC WorldCat Metadata APIs wrapper"
 category = "main"
 optional = false
@@ -626,7 +626,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "1d58f7ec4922c5e755f06081f69056b6320cdfab9d0b287c6179d66a22d47e3a"
+content-hash = "58ef6fa606bf19ee0f66b1eb9803ac7d620257b77ea79549b6c99b799a7e72b0"
 
 [metadata.files]
 atomicwrites = [
@@ -675,8 +675,8 @@ bookops-bpl-solr = []
 bookops-marc = []
 bookops-nypl-platform = []
 bookops-worldcat = [
-    {file = "bookops-worldcat-0.4.1.tar.gz", hash = "sha256:0c2f5032eb25a5b0adcb867078a22db04a8e0ab4302f7a52c694e029a166192d"},
-    {file = "bookops_worldcat-0.4.1-py3-none-any.whl", hash = "sha256:53010374c9c94d8bda9866925b3384fc8297a8951414bbe3a4e50b8f961ed490"},
+    {file = "bookops-worldcat-0.5.0.tar.gz", hash = "sha256:3d9a5a55395f3ae937d00677f812295bd2ab5c3791b2209bf02ee91320cd492d"},
+    {file = "bookops_worldcat-0.5.0-py3-none-any.whl", hash = "sha256:4170ade047709774eb3dc06e5999ee2436ff05b663bf3a78c3b7ea975d08562a"},
 ]
 certifi = [
     {file = "certifi-2021.10.8-py2.py3-none-any.whl", hash = "sha256:d62a0163eb4c2344ac042ab2bdf75399a71a2d8c7d47eac2e2ee91b9d6339569"},
