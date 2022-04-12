@@ -4,7 +4,7 @@
 Copy cataloging bot.
 
 
- [![Overview](https://github.com/BookOps-CAT/NightShift/blob/main/docs/media/nightshift-overview.png)](https://github.com/BookOps-CAT/NightShift/blob/main/docs/media/nightshift-overview.png)
+ [![Overview](https://github.com/BookOps-CAT/NightShift/blob/main/docs/media/NightShift-concept-0.1.0-2022-04-12.png)](https://github.com/BookOps-CAT/NightShift/blob/main/docs/media/NightShift-concept-0.1.0-2022-04-12.png)
 
 
 ## Version
