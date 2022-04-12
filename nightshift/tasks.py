@@ -270,7 +270,7 @@ class Tasks:
         """
         remote_files = drive.list_src_directory()
 
-        # select only files with library code and .pout extension
+        # select only files with library code and -pout suffix
         library_remote_files = [
             file for file in remote_files if self.library in file and "-pout" in file
         ]

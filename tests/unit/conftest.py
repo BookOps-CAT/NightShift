@@ -169,7 +169,7 @@ def mock_drive_unprocessed_files(monkeypatch):
 
     def _files(*args):
         if args[0].library == "NYP":
-            return ["NYP-bar.pout"]
+            return ["NYP-bar-pout.mrc"]
         else:
             return []
 

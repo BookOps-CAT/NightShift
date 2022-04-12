@@ -15,15 +15,15 @@ class TestDriveLive:
         creds = get_credentials()
         with Drive(*creds) as drive:
             assert sorted(drive.list_src_directory()) == [
-                "BPLeres210701.pout",
-                "NYPeres210701.pout",
+                "BPLeres210701-pout.mrc",
+                "NYPeres210701-pout.mrc",
             ]
 
     def test_fetch_file(self, env_var):
         creds = get_credentials()
         with Drive(*creds) as drive:
             with does_not_raise():
-                file = drive.fetch_file("NYPeres210701.pout")
+                file = drive.fetch_file("NYPeres210701-pout.mrc")
             assert isinstance(file, BytesIO)
 
     def test_construct_dst_file_path(self, env_var):
