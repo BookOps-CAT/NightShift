@@ -21,8 +21,7 @@ Copy cataloging bot.
 3. Export Sierra brief bibs for enhancement 
 	1. use 'Output Order Records (pur)' for NYPL and 'Archive Order Records (pur)' for BPL process to compile a list of records into a proper format 
 	2. use 'Output MARC Records (out)' process to extract bibs from Sierra and save them locally 
-	3. rename files to include library code, example: '220129-NYP.pout' 
-	4 keep Sierra's original .pout extension 
+	3. rename files to include library code ("BPL" or "NYP") and 'pout' suffix, example: 'NYP-MarcExpress-pout-220129.out'
 4. Drop exported files to the shared drive folder: R:/NSDROP/sierra_dumps/nightshift/ 
 
 ### Setup
@@ -48,6 +47,6 @@ Next, previously ingested records that have not been successfully enhanced (no s
 
 If a good match in WorldCat has been found, the bot manipulates the downloaded full record by supplying a call number, deleting specified tags, merging fields from original Sierra bib with WorldCat record, etc. An enhanced in this way record is serialized to MARC21 format and saved to SFTP/shared drive (R:/NSDROP/load/) directory and can be loaded to Sierra. Enhanced records overlay original existing brief bibs in Sierra.
 
-If for any reason the bot is interrupted (API error, etc.), the process can be restarted using `run [local, prod]` command again. The bot should pick up exactly where it left.
+If for any reason the execution of the routine is interrupted (API error, etc.), the process can be restarted using `run [local, prod]` command again. The bot will pick up exactly where it left.
 
 ## Changelog
