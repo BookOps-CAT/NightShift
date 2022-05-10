@@ -1,4 +1,4 @@
-# Loading Enriched by NightShift Records To Sierra
+# Loading enriched by NightShift records to Sierra
 + enhanced by Nightshift records are serialized as UTF-8 encoded MARC21 records
 + CAT staff is notified about presence of new files via NYPL loggly utility (email)
 + processed files can be found at a shared, network drive - R:NSDROP/load/
