@@ -40,7 +40,7 @@ python nightshift/bot.py init local
 
 ### Usage
 
-The bot and its main process can be launched manually by entring following command in the terminal:
+The bot and its main process can be launched manually by entering following command in the terminal:
 
 ```bash
 python nightshift/bot.py run local
