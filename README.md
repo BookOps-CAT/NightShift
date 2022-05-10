@@ -7,8 +7,7 @@ NightShift is a copy cataloging bot. It processes exported from ILS/Sierra bibli
  [![Overview](https://github.com/BookOps-CAT/NightShift/blob/main/docs/media/NightShift-concept-0.1.0-2022-04-12.png)](https://github.com/BookOps-CAT/NightShift/blob/main/docs/media/NightShift-concept-0.1.0-2022-04-12.png)
 
 
-At the moment, NightShift is capable of enhancement of OverDrive MarcExpress records only.
-See application's WorldCat matching and MARC record manipulation details in [records.md document]().
+At the moment, NightShift is capable of enhancement of OverDrive MarcExpress records only. The app utilizes [WorldCat Metadata API](https://www.oclc.org/developer/api/oclc-apis/worldcat-metadata-api.en.html) to query and obtain full MARC XML records from WorldCat. Enriched records are output to a SFTP/network drive from where they can be accessed to be [loaded back to Sierra](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/load.md). 
 
 ## Version
 > 0.1.0
@@ -23,9 +22,9 @@ See application's WorldCat matching and MARC record manipulation details in [rec
 	Follow `nightshift/config/config.yaml.example` to provide all required credentials
 		+ [WorldCat Metadata API](https://www.oclc.org/developer/api/oclc-apis/worldcat-metadata-api.en.html)credentials for BPL and NYPL
 		+ [NYPL Platform](https://platformdocs.nypl.org/) credentials
-		+ BPL Solr credentials
-		+ NYPL loggly token
-		+ SFTP credentials
+		+ BPL Solr credentials (request from BPL Web Applications)
+		+ NYPL loggly token (NYPL ITG)
+		+ SFTP credentials (NYPL ITG)
 3. Export Sierra brief bibs for enhancement 
 	1. use 'Output Order Records (pur)' for NYPL and 'Archive Order Records (pur)' for BPL process to compile a list of records into a proper format 
 	2. use 'Output MARC Records (out)' process to extract bibs from Sierra and save them locally 
