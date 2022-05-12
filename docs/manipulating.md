@@ -1,6 +1,6 @@
 # NightShift record manipulation
 
-The bot during parsing of Sierra bibs for enrichment stores some of the MARC fields to use them instead of their couterparts on the full WordCat record. These fields are defined in `nightshift.constants.RESOURCE_CATEGORIES` dictionary as `srcTags2Keep`. This dictionary also defines MARC tags of the Worldcat record that should be removed from the record (`dstTags2Delete`).
+The bot during parsing of Sierra bibs for enrichment stores some of the MARC fields to use them instead of their counterparts on the full WordCat record. These fields are defined in `nightshift.constants.RESOURCE_CATEGORIES` dictionary as `srcTags2Keep`. This dictionary also defines MARC tags of the Worldcat record that should be removed from the record (`dstTags2Delete`).
 
 When a full record is obtained from WorldCat, Nighshfit performs following manipulations:
 1. Deletes any tags specified in the `nightshift.constants.RESOURCE_CATEGORIES` `dstTags2Delete` (most common are 020, 029, 037, 090, 263, 856, and 9xx)
