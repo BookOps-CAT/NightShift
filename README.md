@@ -9,10 +9,10 @@ NightShift is a copy cataloging bot. It processes exported from ILS/Sierra bibli
 
 At the moment, NightShift is capable of enhancement of OverDrive MarcExpress records only. The bot utilizes [WorldCat Metadata API](https://www.oclc.org/developer/api/oclc-apis/worldcat-metadata-api.en.html) to query and obtain full MARC XML records from WorldCat. Enriched records are output to a SFTP/network drive from where they can be accessed to be loaded back to Sierra.
 
-[Sierra Scheduler configuration](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/sierra.md)
-[WorldCat record matching](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/matching.md)
-[Record manipulation](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/manipulating.md)
-[Sierra loading instructions](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/loading.md)
+[Sierra Scheduler configuration](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/sierra.md) 
+[WorldCat record matching](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/matching.md) 
+[Record manipulation](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/manipulating.md) 
+[Sierra loading instructions](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/loading.md) 
 
 ## Version
 > 0.1.0
