@@ -2,12 +2,12 @@
 
 NightShift uses WorldCat Metadata API /brief-bibs endpoint to query for matching records. Query strategy depends on searched resource type and available data on to-be-upgraded record in Sierra.
 
-A successful match in Worldcat does not quarantee that the record will be accepted for enrichment. Additionally, after a full MARC XML is obtained, the bot performs assement if the match meets certain minimum criteria:
+A successful match in Worldcat does not guarantee that the record will be accepted for enrichment. Additionally, after a full MARC XML is obtained, the bot performs assessment if the match meets certain minimum criteria:
 + no all upper case title
 + record has a statement of responsibility in 245$c
 + record has physical description in the 300 tag
 + record has at least one subject tag (6xx)
-+ call number for the material type can be successfuly created
++ call number for the material type can be successfully created
 
 ## e-resources (OverDrive MARC Express bibs)
 + ebooks:
