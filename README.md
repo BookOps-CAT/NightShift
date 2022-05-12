@@ -11,7 +11,7 @@ At the moment, NightShift is capable of enhancement of OverDrive MarcExpress rec
 
 [WorldCat record matching](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/matching.md)
 
-[Record manipulation](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/record.md)
+[Record manipulation](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/manipulating.md)
 
 [Sierra loading instructions](https://github.com/BookOps-CAT/NightShift/blob/documentation/docs/loading.md)
 
