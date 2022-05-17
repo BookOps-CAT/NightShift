@@ -3,7 +3,7 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import create_engine, delete, inspect, update
+from sqlalchemy import and_, create_engine, delete, func, inspect, update
 from sqlalchemy.orm import Session
 
 # from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
@@ -390,7 +390,7 @@ def retrieve_open_older_resources(
 ) -> list[Resource]:
     """
     Queries resources with open status that has not been queried in WorldCat
-    betweeen minAge and maxAge
+    betweeen minAge and maxAge.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -403,10 +403,8 @@ def retrieve_open_older_resources(
         list of `Row` instances
     """
 
-    resources = (
-        session.query(
-            Resource,
-        )
+    subq = (
+        session.query(Resource, func.max(WorldcatQuery.timestamp).label("last_query"))
         .join(WorldcatQuery)
         .filter(
             Resource.libraryId == libraryId,
@@ -415,9 +413,15 @@ def retrieve_open_older_resources(
             Resource.oclcMatchNumber == None,
             Resource.bibDate > datetime.utcnow() - timedelta(days=maxAge),
         )
+        .group_by(Resource.nid)
+        .subquery()
+    )
+
+    resources = (
+        session.query(Resource)
+        .join(subq, and_(Resource.nid == subq.c.nid))
         .filter(
-            WorldcatQuery.timestamp > datetime.utcnow() - timedelta(days=maxAge),
-            WorldcatQuery.timestamp < datetime.utcnow() - timedelta(days=minAge),
+            subq.c.last_query < Resource.bibDate + timedelta(days=minAge),
         )
         .all()
     )
