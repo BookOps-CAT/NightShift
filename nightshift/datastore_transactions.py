@@ -405,6 +405,7 @@ def retrieve_open_older_resources(
         list of `Row` instances
     """
 
+    # select only resources which age is between minAge & maxAge
     subq = (
         session.query(Resource, func.max(WorldcatQuery.timestamp).label("last_query"))
         .join(WorldcatQuery)
@@ -414,11 +415,13 @@ def retrieve_open_older_resources(
             Resource.status == "open",
             Resource.oclcMatchNumber == None,
             Resource.bibDate > datetime.utcnow() - timedelta(days=maxAge),
+            Resource.bibDate < datetime.utcnow() - timedelta(days=minAge),
         )
         .group_by(Resource.nid)
         .subquery()
     )
 
+    # select resources with last query before minAge of the given period
     resources = (
         session.query(Resource)
         .join(subq, and_(Resource.nid == subq.c.nid))
