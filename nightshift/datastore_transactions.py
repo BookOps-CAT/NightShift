@@ -131,7 +131,7 @@ def init_db() -> None:
         session.close()
 
 
-def add_event(session: Session, resource: Resource, status: str) -> Optional[Event]:
+def add_event(session: Session, resource: Resource, status: str) -> Event:
     """
     Inserts an event row.
 
@@ -149,15 +149,17 @@ def add_event(session: Session, resource: Resource, status: str) -> Optional[Eve
     Returns:
         `nightshift.datastore.Event` instance
     """
-    instance = insert_or_ignore(
-        session,
-        Event,
+    instance = Event(
         libraryId=resource.libraryId,
         sierraId=resource.sierraId,
         bibDate=resource.bibDate,
         resourceCategoryId=resource.resourceCategoryId,
         status=status,
+        timestamp=datetime.utcnow(),
     )
+
+    session.add(instance)
+
     return instance
 
 

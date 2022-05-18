@@ -12,6 +12,7 @@ from nightshift.constants import RESOURCE_CATEGORIES
 
 from nightshift.datastore import (
     Base,
+    Event,
     Library,
     Resource,
     ResourceCategory,
@@ -112,6 +113,17 @@ def test_add_event(test_session, test_data_rich):
     assert event.bibDate == resource.bibDate
     assert event.resourceCategoryId == resource.resourceCategoryId
     assert event.status == "expired"
+
+
+def test_add_event_always_insert(test_session, test_data_rich):
+    resource = test_session.query(Resource).where(Resource.nid == 1).one()
+    event1 = add_event(test_session, resource, status="expired")
+    event2 = add_event(test_session, resource, status="expired")
+    test_session.commit()
+
+    results = test_session.query(Event).all()
+
+    assert len(results) == 2
 
 
 def test_add_output_file(test_session, test_data_core):
