@@ -329,9 +329,10 @@ class BplSolr(SolrSession):
                     "suppressed",
                     "call_number",
                     "ss_marc_tag_003",
-                    "bs_deleted_in_sierra",
+                    # "bs_deleted_in_sierra",
                 ],
             )
+            logger.debug(f"BPL Solr request ({response.status_code}): {response.url}.")
             search_response = SearchResponse(sierraId, "BPL", response)
 
             return search_response
