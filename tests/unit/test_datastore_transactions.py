@@ -12,6 +12,7 @@ from nightshift.constants import RESOURCE_CATEGORIES
 
 from nightshift.datastore import (
     Base,
+    Event,
     Library,
     Resource,
     ResourceCategory,
@@ -112,6 +113,17 @@ def test_add_event(test_session, test_data_rich):
     assert event.bibDate == resource.bibDate
     assert event.resourceCategoryId == resource.resourceCategoryId
     assert event.status == "expired"
+
+
+def test_add_event_always_insert(test_session, test_data_rich):
+    resource = test_session.query(Resource).where(Resource.nid == 1).one()
+    event1 = add_event(test_session, resource, status="expired")
+    event2 = add_event(test_session, resource, status="expired")
+    test_session.commit()
+
+    results = test_session.query(Event).all()
+
+    assert len(results) == 2
 
 
 def test_add_output_file(test_session, test_data_core):
@@ -488,74 +500,17 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
 
 
 @pytest.mark.parametrize(
-    "bib_date,status,oclc_number,match,days_since_last_query,expectation",
+    "min_age,max_age,query_age,expectation",
     [
-        pytest.param(
-            datetime.utcnow() - timedelta(days=80),
-            "open",
-            None,
-            False,
-            31,
-            [1],
-            id="query needed",
-        ),
-        pytest.param(
-            datetime.utcnow() - timedelta(days=80),
-            "open",
-            None,
-            False,
-            15,
-            [],
-            id="already queried",
-        ),
-        pytest.param(
-            datetime.utcnow() - timedelta(days=80),
-            "open",
-            None,
-            False,
-            100,
-            [],
-            id="last query > maxAge",
-        ),
-        pytest.param(
-            datetime.utcnow() - timedelta(days=100),
-            "open",
-            None,
-            False,
-            31,
-            [],
-            id="too old resource",
-        ),
-        pytest.param(
-            datetime.utcnow() - timedelta(days=80),
-            "expired",
-            None,
-            False,
-            31,
-            [],
-            id="expired status",
-        ),
-        pytest.param(
-            datetime.utcnow() - timedelta(days=100),
-            "open",
-            "123",
-            True,
-            31,
-            [],
-            id="matched resource",
-        ),
+        pytest.param(30, 90, 25, [1], id="query needed"),
+        pytest.param(30, 90, 31, [], id="queried already"),
+        pytest.param(30, 70, 1, [], id="resource too old"),
     ],
 )
 def test_retrieve_open_older_resources(
-    test_session,
-    test_data_core,
-    bib_date,
-    status,
-    oclc_number,
-    match,
-    days_since_last_query,
-    expectation,
+    test_session, test_data_core, min_age, max_age, query_age, expectation
 ):
+    bib_date = datetime.utcnow() - timedelta(days=80)
 
     test_session.add(
         Resource(
@@ -566,20 +521,143 @@ def test_retrieve_open_older_resources(
             resourceCategoryId=1,
             title="TEST TITLE",
             sourceId=1,
-            oclcMatchNumber=oclc_number,
+            oclcMatchNumber=None,
+            status="open",
+            queries=[
+                WorldcatQuery(
+                    nid=1,
+                    resourceId=1,
+                    match=False,
+                    timestamp=bib_date + timedelta(days=query_age),
+                ),
+            ],
+        )
+    )
+    test_session.commit()
+
+    res = retrieve_open_older_resources(test_session, 1, 1, min_age, max_age)
+    assert [r.nid for r in res] == expectation
+
+
+def test_retrieve_open_older_resources_no_queries_performed(
+    test_session, test_data_core
+):
+    test_session.add(
+        Resource(
+            nid=1,
+            sierraId=22222222,
+            libraryId=1,
+            bibDate=datetime.utcnow() - timedelta(days=80),
+            resourceCategoryId=1,
+            title="TEST TITLE",
+            sourceId=1,
+            oclcMatchNumber=None,
+            status="open",
+        )
+    )
+    test_session.commit()
+
+    res = retrieve_open_older_resources(test_session, 1, 1, 30, 90)
+    assert res == []
+
+
+@pytest.mark.parametrize(
+    "query_age,expectation",
+    [
+        pytest.param(91, [], id="queried already"),
+        pytest.param(80, [1], id="query needed"),
+    ],
+)
+def test_retrieve_open_older_resources_multiple_queries_performed(
+    test_session, test_data_core, query_age, expectation
+):
+    bib_date = datetime.utcnow() - timedelta(days=100)
+
+    test_session.add(
+        Resource(
+            nid=1,
+            sierraId=22222222,
+            libraryId=1,
+            bibDate=bib_date,
+            resourceCategoryId=1,
+            title="TEST TITLE",
+            sourceId=1,
+            oclcMatchNumber=None,
+            status="open",
+            queries=[
+                WorldcatQuery(
+                    nid=1,
+                    resourceId=1,
+                    match=False,
+                    timestamp=bib_date + timedelta(days=1),
+                ),
+                WorldcatQuery(
+                    nid=2,
+                    resourceId=1,
+                    match=False,
+                    timestamp=bib_date + timedelta(days=30),
+                ),
+                WorldcatQuery(
+                    nid=3,
+                    resourceId=1,
+                    match=True,
+                    timestamp=bib_date + timedelta(days=query_age),
+                ),
+            ],
+        )
+    )
+    test_session.commit()
+
+    res = retrieve_open_older_resources(test_session, 1, 1, 90, 180)
+    assert [r.nid for r in res] == expectation
+
+
+@pytest.mark.parametrize(
+    "lib_id,res_cat_id,status,oclc_match_no,max_age,expectation",
+    [
+        pytest.param(1, 1, "open", None, 50, [1], id="match"),
+        pytest.param(2, 1, "open", None, 50, [], id="wrong library"),
+        pytest.param(1, 2, "open", None, 50, [], id="wrong res category"),
+        pytest.param(1, 1, "staff_deleted", None, 50, [], id="wrong status"),
+        pytest.param(1, 1, "open", "1234", 50, [], id="wrong oclc # value"),
+        pytest.param(1, 1, "open", None, 120, [], id="wrong too old bib"),
+    ],
+)
+def test_retrieve_open_older_resources_invalid_resources(
+    test_session,
+    test_data_core,
+    lib_id,
+    res_cat_id,
+    status,
+    oclc_match_no,
+    max_age,
+    expectation,
+):
+    bib_date = datetime.utcnow() - timedelta(days=max_age)
+
+    test_session.add(
+        Resource(
+            nid=1,
+            sierraId=22222222,
+            libraryId=lib_id,
+            bibDate=bib_date,
+            resourceCategoryId=res_cat_id,
+            title="TEST TITLE",
+            sourceId=1,
+            oclcMatchNumber=oclc_match_no,
             status=status,
             queries=[
                 WorldcatQuery(
                     nid=1,
                     resourceId=1,
                     match=False,
-                    timestamp=datetime.now() - timedelta(days=200),
+                    timestamp=bib_date + timedelta(days=1),
                 ),
                 WorldcatQuery(
                     nid=2,
                     resourceId=1,
-                    match=match,
-                    timestamp=datetime.now() - timedelta(days=days_since_last_query),
+                    match=False,
+                    timestamp=bib_date + timedelta(days=20),
                 ),
             ],
         )

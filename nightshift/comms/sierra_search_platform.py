@@ -123,8 +123,11 @@ class SearchResponse:
             # no results, treat as deleted
             return "staff_deleted"
         else:
-            if data["bs_deleted_in_sierra"]:
-                return "staff_deleted"
+            try:
+                if data["bs_deleted_in_sierra"]:
+                    return "staff_deleted"
+            except KeyError:
+                pass
             # if bib orignated from Worldcat asssume full bib
             if "ss_marc_tag_003" in data and data["ss_marc_tag_003"] == "OCoLC":
                 return "staff_enhanced"
@@ -324,11 +327,12 @@ class BplSolr(SolrSession):
                 response_fields=[
                     "id",
                     "suppressed",
-                    "deleted",
                     "call_number",
                     "ss_marc_tag_003",
+                    # "bs_deleted_in_sierra",
                 ],
             )
+            logger.debug(f"BPL Solr request ({response.status_code}): {response.url}.")
             search_response = SearchResponse(sierraId, "BPL", response)
 
             return search_response

@@ -189,6 +189,23 @@ class TestSearchResponse:
         }
         assert sr._determine_bpl_bib_status() == expectation
 
+    def test_determine_bpl_bib_status_no_bs_deleted_in_sierr_field(self):
+        response = MockSolrSessionResponseSuccess()
+        sr = SearchResponse(11111111, "BPL", response)
+        sr.json_response = {
+            "response": {
+                "numFound": 1,
+                "start": 0,
+                "numFoundExact": True,
+                "docs": [
+                    {
+                        "call_number": "eBOOK",
+                    }
+                ],
+            }
+        }
+        assert sr._determine_bpl_bib_status() == "open"
+
     @pytest.mark.parametrize(
         "library,response,expectation",
         [

@@ -3,7 +3,7 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import create_engine, delete, inspect, update
+from sqlalchemy import and_, create_engine, delete, func, inspect, update
 from sqlalchemy.orm import Session
 
 # from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
@@ -131,7 +131,7 @@ def init_db() -> None:
         session.close()
 
 
-def add_event(session: Session, resource: Resource, status: str) -> Optional[Event]:
+def add_event(session: Session, resource: Resource, status: str) -> Event:
     """
     Inserts an event row.
 
@@ -149,15 +149,17 @@ def add_event(session: Session, resource: Resource, status: str) -> Optional[Eve
     Returns:
         `nightshift.datastore.Event` instance
     """
-    instance = insert_or_ignore(
-        session,
-        Event,
+    instance = Event(
         libraryId=resource.libraryId,
         sierraId=resource.sierraId,
         bibDate=resource.bibDate,
         resourceCategoryId=resource.resourceCategoryId,
         status=status,
+        timestamp=datetime.utcnow(),
     )
+
+    session.add(instance)
+
     return instance
 
 
@@ -390,7 +392,7 @@ def retrieve_open_older_resources(
 ) -> list[Resource]:
     """
     Queries resources with open status that has not been queried in WorldCat
-    betweeen minAge and maxAge
+    betweeen minAge and maxAge.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -403,10 +405,9 @@ def retrieve_open_older_resources(
         list of `Row` instances
     """
 
-    resources = (
-        session.query(
-            Resource,
-        )
+    # select only resources which age is between minAge & maxAge
+    subq = (
+        session.query(Resource, func.max(WorldcatQuery.timestamp).label("last_query"))
         .join(WorldcatQuery)
         .filter(
             Resource.libraryId == libraryId,
@@ -414,10 +415,18 @@ def retrieve_open_older_resources(
             Resource.status == "open",
             Resource.oclcMatchNumber == None,
             Resource.bibDate > datetime.utcnow() - timedelta(days=maxAge),
+            Resource.bibDate < datetime.utcnow() - timedelta(days=minAge),
         )
+        .group_by(Resource.nid)
+        .subquery()
+    )
+
+    # select resources with last query before minAge of the given period
+    resources = (
+        session.query(Resource)
+        .join(subq, and_(Resource.nid == subq.c.nid))
         .filter(
-            WorldcatQuery.timestamp > datetime.utcnow() - timedelta(days=maxAge),
-            WorldcatQuery.timestamp < datetime.utcnow() - timedelta(days=minAge),
+            subq.c.last_query < Resource.bibDate + timedelta(days=minAge),
         )
         .all()
     )

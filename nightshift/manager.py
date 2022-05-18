@@ -102,7 +102,7 @@ def process_resources() -> None:
             # search again older resources dropping any resources already enhanced
             # or deleted
             for res_category, res_cat_data in res_cat.items():
-                for ageMin, ageMax in res_cat_data.queryDays:
+                for age_min, age_max in res_cat_data.queryDays:
                     resources = retrieve_open_older_resources(
                         db_session,
                         lib_nid,

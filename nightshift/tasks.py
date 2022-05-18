@@ -120,10 +120,10 @@ class Tasks:
             if resource.status in ("staff_enhanced", "staff_deleted"):
                 add_event(self.db_session, resource, status=resource.status)
 
-        sierra_platform.close()
+            # persist changes
+            self.db_session.commit()
 
-        # persist changes
-        self.db_session.commit()
+        sierra_platform.close()
 
     def enhance_and_output_bibs(
         self, resource_category: str, resources: list[Resource]
