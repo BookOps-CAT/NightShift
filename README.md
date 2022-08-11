@@ -23,12 +23,13 @@ More info:
 	1. download and install [PostgreSQL server](https://www.postgresql.org/download/) 
 	2. create new database 
 2. Create a configuration file 
-	Follow `nightshift/config/config.yaml.example` to provide all required credentials
-		+ [WorldCat Metadata API](https://www.oclc.org/developer/api/oclc-apis/worldcat-metadata-api.en.html) credentials for BPL and NYPL
-		+ [NYPL Platform](https://platformdocs.nypl.org/) credentials
-		+ BPL Solr credentials (request from BPL Web Applications)
-		+ NYPL loggly token (NYPL ITG)
-		+ SFTP credentials (NYPL ITG)
+	Follow `nightshift/config/config.yaml.example` to provide all required credentials 
+		+ [WorldCat Metadata API](https://www.oclc.org/developer/api/oclc-apis/worldcat-metadata-api.en.html) 
+		+ credentials for BPL and NYPL 
+			+ [NYPL Platform](https://platformdocs.nypl.org/) credentials 
+			+ BPL Solr credentials (request from BPL Web Applications) 
+		+ NYPL loggly token (NYPL ITG) 
+		+ SFTP credentials (NYPL ITG) 
 3. Export Sierra brief bibs for enhancement 
 	1. use 'Output Order Records (pur)' for NYPL and 'Archive Order Records (pur)' for BPL process to compile a list of records into a proper format 
 	2. use 'Output MARC Records (out)' process to extract bibs from Sierra and save them locally 
@@ -52,7 +53,7 @@ python nightshift/bot.py run local
 
 This process can also be automated using cron/scheduled job on system where it runs.
 
-On launch Nightshift accesses SFTP/shared drive folder (R:/NSDROP/sierra_dumps/nightshift/) and discovers any new MARC21 files. MARC records are parsed from each file and the bot queries WorldCat database to find suitable matches. 
+On launch, Nightshift accesses SFTP/shared drive folder (R:/NSDROP/sierra_dumps/nightshift/) and discovers any new MARC21 files. MARC records are parsed from each file and the bot queries WorldCat database to find suitable matches. 
 
 Next, previously ingested records that have not been successfully enhanced (no suitable match in WorldCat) are queried against Sierra to discover any changes to their status. Upgraded by catalogers or deleted bibs are no longer considered in the following process. If Sierra brief bibs are still in need of enhancement, the bot searches WorldCat for full records again. Processing of older records follow specific to each resource category schedule outlined in `nightshift.constants.RESOURCE_CATEGORIES` dictionary (`query_days`).
 
