@@ -12,7 +12,7 @@ The exported file should have following naming convention:
 [3-chr uppercase library code]-nightshift-pout.YYYYMMDDHHSS
 
 Example:
-`NYP-nightshift-pout.20220131065301`
-`BPL-nightshift-pout.20220131065301`
++ `NYP-nightshift-pout.20220131065301`
++ `BPL-nightshift-pout.20220131065301`
 
 The date as an extension is a required element of the Scheduler functionality and does not need to be configured.
