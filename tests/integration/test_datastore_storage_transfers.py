@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from contextlib import nullcontext as does_not_raise
 import datetime
 import logging
 import os
@@ -115,7 +116,7 @@ def test_ingest_new_files(caplog, env_var, test_data_rich, stub_res_cat_by_name)
             tasks.ingest_new_files()
 
         assert (
-            "Found following unprocessed files: ['NYPeres210701-pout.mrc']."
+            "Found following unprocessed files: ['NYPeres210701-pout.mrc', 'NYP-eres-pout.20220811020001']."
             in caplog.text
         )
         assert "Ingested 2 records from the file 'NYPeres210701-pout.mrc'."
@@ -135,3 +136,38 @@ def test_ingest_new_files(caplog, env_var, test_data_rich, stub_res_cat_by_name)
         )
         assert res_rec is not None
         assert res_rec.sierraId == 21642892
+
+
+@pytest.mark.firewalled
+def test_ingest_new_files_empty_file(
+    caplog, env_var, test_data_rich, stub_res_cat_by_name
+):
+    with does_not_raise():
+        with session_scope() as db_session:
+            with caplog.at_level(logging.DEBUG):
+                tasks = Tasks(db_session, "NYP", 1, stub_res_cat_by_name)
+                tasks.ingest_new_files()
+            assert (
+                "Found following unprocessed files: ['NYPeres210701-pout.mrc', 'NYP-eres-pout.20220811020001']."
+                in caplog.text
+            )
+
+            assert (
+                "Added SourceFile record for 'NYP-eres-pout.20220811020001': "
+                in caplog.text
+            )
+
+            # make sure empty Sierra export has been added to the datastore
+            empty_sf_rec = (
+                db_session.query(SourceFile)
+                .where(SourceFile.handle == "NYP-eres-pout.20220811020001")
+                .one_or_none()
+            )
+            assert empty_sf_rec is not None
+            assert empty_sf_rec.nid == 4
+            assert empty_sf_rec.libraryId == 1
+
+            # make sure no resources associated with the empty file are present
+            results = db_session.query(Resource).where(Resource.sourceId == 4).all()
+
+            assert results == []

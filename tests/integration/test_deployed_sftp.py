@@ -16,6 +16,7 @@ class TestDriveLive:
         with Drive(*creds) as drive:
             assert sorted(drive.list_src_directory()) == [
                 "BPLeres210701-pout.mrc",
+                "NYP-eres-pout.20220811020001",
                 "NYPeres210701-pout.mrc",
             ]
 

@@ -352,6 +352,31 @@ def test_ingest_new_files(
     assert len(resources) == 2
 
 
+def test_ingest_new_files_empty_file(
+    sftpserver, test_session, test_data_core, stub_res_cat_by_name, mock_sftp_env
+):
+
+    with sftpserver.serve_content(
+        {"sierra_dumps_dir": {"foo1-pout": b"foo", "NYP-bar-pout": ""}}
+    ):
+        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+        tasks.ingest_new_files()
+
+    # verify source file has been added to db
+    src_file_rec = (
+        test_session.query(SourceFile)
+        .where(SourceFile.libraryId == 1, SourceFile.handle == "NYP-bar-pout")
+        .one_or_none()
+    )
+    assert src_file_rec.libraryId == 1
+    assert src_file_rec.handle == "NYP-bar-pout"
+
+    resources = (
+        test_session.query(Resource).where(Resource.sourceId == src_file_rec.nid).all()
+    )
+    assert resources == []
+
+
 def test_isolate_unprocessed_nyp_files(
     caplog, sftpserver, stub_res_cat_by_name, test_session, test_data_core, mock_drive
 ):
