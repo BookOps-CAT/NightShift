@@ -24,12 +24,12 @@ More info:
 	2. create new database 
 2. Create a configuration file 
 	Follow `nightshift/config/config.yaml.example` to provide all required credentials 
-		+ [WorldCat Metadata API](https://www.oclc.org/developer/api/oclc-apis/worldcat-metadata-api.en.html) 
-		+ credentials for BPL and NYPL 
-			+ [NYPL Platform](https://platformdocs.nypl.org/) credentials 
-			+ BPL Solr credentials (request from BPL Web Applications) 
-		+ NYPL loggly token (NYPL ITG) 
-		+ SFTP credentials (NYPL ITG) 
+		1. [WorldCat Metadata API](https://www.oclc.org/developer/api/oclc-apis/worldcat-metadata-api.en.html) 
+		2. credentials for BPL and NYPL 
+			1. [NYPL Platform](https://platformdocs.nypl.org/) credentials 
+			2. BPL Solr credentials (request from BPL Web Applications) 
+		3. NYPL loggly token (NYPL ITG) 
+		4. SFTP credentials (NYPL ITG) 
 3. Export Sierra brief bibs for enhancement 
 	1. use 'Output Order Records (pur)' for NYPL and 'Archive Order Records (pur)' for BPL process to compile a list of records into a proper format 
 	2. use 'Output MARC Records (out)' process to extract bibs from Sierra and save them locally 
