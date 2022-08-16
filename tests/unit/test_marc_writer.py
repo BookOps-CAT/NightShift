@@ -653,17 +653,11 @@ class TestBibEnhancer:
         assert be._remove_oclc_prefix(arg) == "12345"
 
     @pytest.mark.parametrize(
-        "tag,expectation",
+        "tag",
         [
             pytest.param(
                 Field(tag="650", indicators=[" ", "0"], subfields=["a", "Foo."]),
-                1,
                 id="LCSH",
-            ),
-            pytest.param(
-                Field(tag="690", indicators=[" ", "0"], subfields=["a", "Foo."]),
-                0,
-                id="local SH",
             ),
             pytest.param(
                 Field(
@@ -671,7 +665,6 @@ class TestBibEnhancer:
                     indicators=[" ", "7"],
                     subfields=["a", "Foo.", "2", "lcsh"],
                 ),
-                1,
                 id="LCSH subfield $2 7",
             ),
             pytest.param(
@@ -680,7 +673,6 @@ class TestBibEnhancer:
                     indicators=[" ", "7"],
                     subfields=["a", "Foo.", "2", "fast"],
                 ),
-                1,
                 id="FAST",
             ),
             pytest.param(
@@ -689,7 +681,6 @@ class TestBibEnhancer:
                     indicators=[" ", "7"],
                     subfields=["a", "Foo.", "2", "homoit"],
                 ),
-                1,
                 id="HOMOIT",
             ),
             pytest.param(
@@ -698,7 +689,6 @@ class TestBibEnhancer:
                     indicators=[" ", "7"],
                     subfields=["a", "Foo.", "2", "gsafd"],
                 ),
-                1,
                 id="GSAFD",
             ),
             pytest.param(
@@ -707,7 +697,6 @@ class TestBibEnhancer:
                     indicators=[" ", "7"],
                     subfields=["a", "Foo.", "2", "lcgft"],
                 ),
-                1,
                 id="LCGFT",
             ),
             pytest.param(
@@ -716,54 +705,12 @@ class TestBibEnhancer:
                     indicators=[" ", "7"],
                     subfields=["a", "Foo.", "2", "lctgm"],
                 ),
-                1,
                 id="LCTGM",
-            ),
-            pytest.param(
-                Field(
-                    tag="650",
-                    indicators=[" ", "7"],
-                    subfields=["a", "Foo.", "2", "gmgpc"],
-                ),
-                1,
-                id="GMGPC",
-            ),
-            pytest.param(
-                Field(
-                    tag="650",
-                    indicators=[" ", "7"],
-                    subfields=["a", "Foo.", "2", "sears"],
-                ),
-                0,
-                id="Other dict: sears",
-            ),
-            pytest.param(
-                Field(
-                    tag="650",
-                    indicators=[" ", "4"],
-                    subfields=["a", "Foo.", "2", "lcsh"],
-                ),
-                0,
-                id="2nd ind = 4",
-            ),
-            pytest.param(
-                Field(
-                    tag="650",
-                    indicators=[" ", "1"],
-                    subfields=["a", "Foo."],
-                ),
-                0,
-                id="Children's LCSH",
-            ),
-            pytest.param(
-                Field(tag="650", indicators=[" ", "7"], subfields=["a", "Foo."]),
-                0,
-                id="Incomplete field for other dict",
             ),
         ],
     )
-    def test_remove_unsupported_subject_tags(
-        self, stub_resource, stub_res_cat_by_id, tag, expectation
+    def test_remove_unsupported_subject_tags_good_terms(
+        self, stub_resource, stub_res_cat_by_id, tag
     ):
         be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
 
@@ -774,10 +721,77 @@ class TestBibEnhancer:
         assert len(be.bib.subjects()) == 0
 
         be.bib.add_field(tag)
-        assert len(be.bib.subjects()) == 1
 
-        be._remove_unsupported_subject_tags()
-        assert len(be.bib.subjects()) == expectation
+        be.manipulate()
+        assert len(be.bib.subjects()) == 2
+        assert str(be.bib.subjects()[0]) == str(tag)
+        assert str(be.bib.subjects()[1]) == "=655  \\0$aElectronic books."
+
+    @pytest.mark.parametrize(
+        "tag",
+        [
+            pytest.param(
+                Field(tag="690", indicators=[" ", "0"], subfields=["a", "Foo."]),
+                id="local SH",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "gmgpc"],
+                ),
+                id="GMGPC",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "7"],
+                    subfields=["a", "Foo.", "2", "sears"],
+                ),
+                id="Other dict: sears",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "4"],
+                    subfields=["a", "Foo.", "2", "lcsh"],
+                ),
+                id="2nd ind = 4",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=[" ", "1"],
+                    subfields=["a", "Foo."],
+                ),
+                id="Children's LCSH",
+            ),
+            pytest.param(
+                Field(tag="650", indicators=[" ", "7"], subfields=["a", "Foo."]),
+                id="Incomplete field for other dict",
+            ),
+        ],
+    )
+    def test_remove_unsupported_subject_tags_unwanted_terms(
+        self, stub_resource, stub_res_cat_by_id, tag
+    ):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
+
+        # prep - remove any existing tags for tests
+        for f in be.bib.subjects():
+            be.bib.remove_field(f)
+
+        assert len(be.bib.subjects()) == 0
+
+        be.bib.add_field(tag)
+        be.bib.add_field(
+            Field(tag="650", indicators=[" ", "0"], subfields=["a", "Spam."])
+        )
+
+        be.manipulate()
+        assert len(be.bib.subjects()) == 2
+        assert str(be.bib.subjects()[0]) == "=650  \\0$aSpam."
+        assert str(be.bib.subjects()[1]) == "=655  \\0$aElectronic books."
 
     def test_save2file(self, caplog, stub_resource, stub_res_cat_by_id):
         be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)

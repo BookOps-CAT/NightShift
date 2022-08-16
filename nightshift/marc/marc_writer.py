@@ -12,7 +12,7 @@ from pymarc import Field
 from .. import __title__, __version__
 from ..datastore import Resource
 from ..datastore_transactions import ResCatById
-from .marc_parser import worldcat_response_to_pymarc
+from .marc_parser import worldcat_response_to_bib
 
 
 logger = logging.getLogger("nightshift")
@@ -71,7 +71,7 @@ class BibEnhancer:
 
         logger.info(f"Enhancing {self.library} Sierra bib # b{resource.sierraId}a.")
 
-        self.bib = worldcat_response_to_pymarc(resource.fullBib)
+        self.bib = worldcat_response_to_bib(resource.fullBib, self.library)
 
     def manipulate(self) -> None:
         """
@@ -86,7 +86,7 @@ class BibEnhancer:
         self._purge_tags()
 
         # remove 6xx tags with terms from unsupported thesauri
-        self._remove_unsupported_subject_tags()
+        self.bib.remove_unsupported_subjects()
 
         # remove e-resources vendor tags
         self._remove_eresource_vendors()
@@ -490,52 +490,3 @@ class BibEnhancer:
             return controlNo[2:]
         else:
             return controlNo
-
-    def _remove_unsupported_subject_tags(self) -> None:
-        """
-        Removes from the bib any 6xx tags that include terms from unsupported
-        thesauri.
-        Acceptable terms: LCSH, FAST, GSFAD, LCGFT, lCTGM
-        """
-        for field in self.bib.subjects():
-            # delete locally coded tags
-            if field.tag.startswith("69"):
-                self.bib.remove_field(field)
-                logger.debug(
-                    "Local term in subject tag. "
-                    f"Removed {field.tag} from {self.library} "
-                    f"b{self.resource.sierraId}a."
-                )
-
-            elif field.indicator2 == "0":  # LCSH
-                # accept
-                pass
-            elif field.indicator2 == "7":
-                term_src = field["2"]
-
-                if term_src is None:
-                    self.bib.remove_field(field)
-                    logger.debug(
-                        f"Incomplete field. Removed {field} from "
-                        f"{self.library} b{self.resource.sierraId}a"
-                    )
-                elif term_src.lower() in (
-                    "lcsh",
-                    "fast",
-                    "homoit",
-                    "gsafd",
-                    "lcgft",
-                    "lctgm",
-                    "gmgpc",
-                ):
-                    # accept
-                    pass
-                else:
-                    self.bib.remove_field(field)
-                    logger.debug(
-                        "Unsupported thesaurus. "
-                        f"Removed {field} from {self.library} "
-                        f"b{self.resource.sierraId}a."
-                    )
-            else:
-                self.bib.remove_field(field)
