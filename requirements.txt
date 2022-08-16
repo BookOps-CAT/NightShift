@@ -1,23 +1,23 @@
-bcrypt==3.2.0; python_version >= "3.6"
-bookops-bpl-solr @ git+https://github.com/BookOps-CAT/bookops-bpl-solr@v0.1.1 ; python_version >= "3.7" and python_version < "4.0"
-bookops-marc @ git+https://github.com/BookOps-CAT/bookops-marc@0.5.0 ; python_version >= "3.8" and python_version < "4.0"
-bookops-nypl-platform @ git+https://github.com/BookOps-CAT/bookops-nypl-platform@v0.2.1 ; python_version >= "3.7" and python_version < "4.0"
+bcrypt==3.2.2; python_version >= "3.6"
+bookops-bpl-solr @ git+https://github.com/BookOps-CAT/bookops-bpl-solr@v0.3.0 ; python_version >= "3.7" and python_version < "4.0"
+bookops-marc @ git+https://github.com/BookOps-CAT/bookops-marc@0.8.0 ; python_version >= "3.7" and python_version < "4.0"
+bookops-nypl-platform @ git+https://github.com/BookOps-CAT/bookops-nypl-platform@v0.3.0 ; python_version >= "3.7" and python_version < "4.0"
 bookops-worldcat==0.5.0; python_version >= "3.7" and python_version < "4.0"
-certifi==2021.10.8; python_version >= "3.7" and python_full_version < "3.0.0" and python_version < "4.0" or python_version >= "3.7" and python_version < "4.0" and python_full_version >= "3.6.0"
-cffi==1.15.0; python_version >= "3.6"
-charset-normalizer==2.0.12; python_version >= "3.7" and python_version < "4.0" and python_full_version >= "3.6.0"
-cryptography==36.0.1; python_version >= "3.6"
+certifi==2022.6.15; python_version >= "3.7" and python_version < "4"
+cffi==1.15.1; python_version >= "3.6"
+charset-normalizer==2.1.0; python_version >= "3.7" and python_version < "4" and python_full_version >= "3.6.0"
+cryptography==37.0.4; python_version >= "3.6"
 greenlet==1.1.2; python_version >= "3" and python_full_version < "3.0.0" and (platform_machine == "aarch64" or platform_machine == "ppc64le" or platform_machine == "x86_64" or platform_machine == "amd64" or platform_machine == "AMD64" or platform_machine == "win32" or platform_machine == "WIN32") and (python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.6.0") or python_version >= "3" and (platform_machine == "aarch64" or platform_machine == "ppc64le" or platform_machine == "x86_64" or platform_machine == "amd64" or platform_machine == "AMD64" or platform_machine == "win32" or platform_machine == "WIN32") and (python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.6.0") and python_full_version >= "3.5.0"
-idna==3.3; python_version >= "3.7" and python_full_version < "3.0.0" and python_version < "4.0" or python_version >= "3.7" and python_version < "4.0" and python_full_version >= "3.6.0"
+idna==3.3; python_version >= "3.7" and python_version < "4"
 loggly-python-handler==1.0.1
-paramiko==2.9.2
+paramiko==2.11.0
 psycopg2==2.9.3; python_version >= "3.6"
 pycparser==2.21; python_version >= "3.6" and python_full_version < "3.0.0" or python_full_version >= "3.4.0" and python_version >= "3.6"
-pymarc==4.1.2; python_version >= "3.6"
+pymarc==4.2.0; python_version >= "3.6"
 pynacl==1.5.0; python_version >= "3.6"
-pyyaml==5.4.1; (python_version >= "2.7" and python_full_version < "3.0.0") or (python_full_version >= "3.6.0")
+pyyaml==6.0; python_version >= "3.6"
 requests-futures==1.0.0
-requests==2.27.1; python_version >= "3.7" and python_full_version < "3.0.0" and python_version < "4.0" or python_version >= "3.7" and python_version < "4.0" and python_full_version >= "3.6.0"
-six==1.16.0; python_version >= "3.6" and python_full_version < "3.0.0" or python_full_version >= "3.3.0" and python_version >= "3.6"
-sqlalchemy==1.4.31; (python_version >= "2.7" and python_full_version < "3.0.0") or (python_full_version >= "3.6.0")
-urllib3==1.26.8; python_version >= "3.7" and python_full_version < "3.0.0" and python_version < "4.0" or python_full_version >= "3.6.0" and python_version < "4" and python_version >= "3.7"
+requests==2.28.1; python_version >= "3.7" and python_version < "4"
+six==1.16.0; python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.3.0"
+sqlalchemy==1.4.40; (python_version >= "2.7" and python_full_version < "3.0.0") or (python_full_version >= "3.6.0")
+urllib3==1.26.11; python_version >= "3.7" and python_full_version < "3.0.0" and python_version < "4" or python_full_version >= "3.6.0" and python_version < "4" and python_version >= "3.7"
