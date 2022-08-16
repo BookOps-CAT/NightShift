@@ -3,7 +3,7 @@ attrs==22.1.0; python_version >= "3.7"
 bcrypt==3.2.2; python_version >= "3.6"
 black==22.6.0; python_full_version >= "3.6.2"
 bookops-bpl-solr @ git+https://github.com/BookOps-CAT/bookops-bpl-solr@v0.3.0 ; python_version >= "3.7" and python_version < "4.0"
-bookops-marc @ git+https://github.com/BookOps-CAT/bookops-marc@0.8.0 ; python_version >= "3.7" and python_version < "4.0"
+bookops-marc @ git+https://github.com/BookOps-CAT/bookops-marc.git@0.8.1 ; python_version >= "3.7" and python_version < "4.0"
 bookops-nypl-platform @ git+https://github.com/BookOps-CAT/bookops-nypl-platform@v0.3.0 ; python_version >= "3.7" and python_version < "4.0"
 bookops-worldcat==0.5.0; python_version >= "3.7" and python_version < "4.0"
 certifi==2022.6.15; python_version >= "3.7" and python_version < "4"
@@ -11,7 +11,7 @@ cffi==1.15.1; python_version >= "3.6"
 charset-normalizer==2.1.0; python_version >= "3.7" and python_version < "4" and python_full_version >= "3.6.0"
 click==8.1.3; python_version >= "3.7" and python_full_version >= "3.6.2"
 colorama==0.4.5; sys_platform == "win32" and python_version >= "3.7" and python_full_version >= "3.6.2" and platform_system == "Windows" and (python_version >= "3.7" and python_full_version < "3.0.0" and sys_platform == "win32" or sys_platform == "win32" and python_version >= "3.7" and python_full_version >= "3.5.0")
-coverage==6.4.3; python_version >= "3.7"
+coverage==6.4.4; python_version >= "3.7"
 cryptography==37.0.4; python_version >= "3.6"
 greenlet==1.1.2; python_version >= "3" and python_full_version < "3.0.0" and (platform_machine == "aarch64" or platform_machine == "ppc64le" or platform_machine == "x86_64" or platform_machine == "amd64" or platform_machine == "AMD64" or platform_machine == "win32" or platform_machine == "WIN32") and (python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.6.0") or python_version >= "3" and (platform_machine == "aarch64" or platform_machine == "ppc64le" or platform_machine == "x86_64" or platform_machine == "amd64" or platform_machine == "AMD64" or platform_machine == "win32" or platform_machine == "WIN32") and (python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.6.0") and python_full_version >= "3.5.0"
 idna==3.3; python_version >= "3.7" and python_version < "4"
@@ -40,7 +40,7 @@ requests==2.28.1; python_version >= "3.7" and python_version < "4"
 six==1.16.0; python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.3.0"
 sqlalchemy==1.4.40; (python_version >= "2.7" and python_full_version < "3.0.0") or (python_full_version >= "3.6.0")
 tomli==2.0.1; python_full_version <= "3.11.0a6" and python_full_version >= "3.6.2" and python_version >= "3.7" and python_version < "3.11"
-types-cryptography==3.3.21
+types-cryptography==3.3.22
 types-paramiko==2.11.3
 types-requests==2.28.8
 types-urllib3==1.26.22
