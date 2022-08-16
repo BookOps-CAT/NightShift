@@ -13,6 +13,7 @@ import pickle
 from typing import Any, BinaryIO, Iterator, Optional, Union
 
 from bookops_marc import SierraBibReader, Bib
+from bookops_marc.bib import pymarc_record_to_local_bib
 from pymarc import parse_xml_to_array, Record
 
 
@@ -22,28 +23,30 @@ from ..datastore_transactions import ResCatByName
 logger = logging.getLogger("nightshift")
 
 
-def worldcat_response_to_pymarc(response: bytes) -> Record:
+def worldcat_response_to_bib(response: bytes, library: str) -> Bib:
     """
-    Converts MetadataApi responses into `pymarc.Record` objects.
+    Converts MetadataApi responses into `bookops_marc.Bib` objects.
 
     Args:
         response:                           MARC XML in binary format
-
+        library:                            "NYP" or "BPL"
     Returns:
-        `pymarc.Record` instance
+        `bookops_marc.bib.Bib` instance
 
     Raises:
         TypeError
     """
-    logger.debug("Converting Worldcat response to pymarc object.")
+    logger.debug("Converting Worldcat response to bookops-marc Bib object.")
     if not isinstance(response, bytes):
         logger.error(
-            f"Invalid MARC data format: {type(response).__name__}. Not able to convert to pymarc object."
+            f"Invalid MARC data format: {type(response).__name__}. Not able to convert to bookops-marc Bib object."
         )
         raise TypeError("Invalid MARC data format. Must be bytes.")
     else:
         data = BytesIO(response)
-        return parse_xml_to_array(data)[0]
+        pymarc_record = parse_xml_to_array(data)[0]
+        bib = pymarc_record_to_local_bib(pymarc_record, library)
+        return bib
 
 
 class BibReader:
