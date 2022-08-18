@@ -13,6 +13,7 @@ from nightshift.comms.storage import Drive
 from nightshift.datastore import OutputFile, WorldcatQuery
 from nightshift.marc.marc_parser import BibReader
 from nightshift.tasks import Tasks
+from nightshift.config import logging_conf
 
 
 class MockOSError:
@@ -38,6 +39,9 @@ def mock_log_env(monkeypatch):
 
 @pytest.fixture(scope="function")
 def test_log(monkeypatch, local_test_config):
+    """
+    Use to test loggly on a testing account
+    """
     if not os.getenv("GITHUB_ACTIONS"):
         monkeypatch.setenv("LOGGLY_TOKEN", local_test_config["LOGGLY_TOKEN"])
         monkeypatch.setenv("LOG_HANDLERS", local_test_config["LOG_HANDLERS"])
@@ -48,7 +52,15 @@ def patch_config_local_env_variables(monkeypatch):
     def _patch(*args, **kwargs):
         return
 
+    def _patch_token(*args, **kwargs):
+        return "dummy_token"
+
+    def _patch_handlers(*args, **kwargs):
+        return ["console"]
+
     monkeypatch.setattr(bot, "config_local_env_variables", _patch)
+    monkeypatch.setattr(logging_conf, "get_token", _patch_token)
+    monkeypatch.setattr(logging_conf, "get_handlers", _patch_handlers)
 
 
 # DB fixtures ############
