@@ -21,6 +21,10 @@ def test_config_local_env_variables():
     for k, v in data.items():
         assert os.getenv(k) == v
 
+    # clean up, otherwise vars will linger and mess up other tests
+    for k in data.keys():
+        del os.environ[k]
+
 
 @pytest.mark.local
 def test_config_local_env_variables_default_file():
@@ -31,6 +35,10 @@ def test_config_local_env_variables_default_file():
 
     for k, v in data.items():
         assert os.getenv(k) == v
+
+    # clean up, otherwise vars will linger and mess up other tests
+    for k in data.keys():
+        del os.environ[k]
 
 
 def test_configure_database_local_success(
