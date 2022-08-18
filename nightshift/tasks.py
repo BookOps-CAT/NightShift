@@ -58,7 +58,7 @@ class Tasks:
         self.libraryId = libraryId
         self._res_cat = resource_categories
         self._res_cat_idx = self._create_resource_category_idx()
-        self.rotten_apples = dict()
+        self.rotten_apples: dict[int, list[str]] = dict()
 
     def _create_resource_category_idx(self) -> dict[int, ResCatById]:
         """
@@ -286,8 +286,8 @@ class Tasks:
         self,
         resource_category: str,
         resources: list[Resource],
-        file_path: str = "temp.mrc",
-    ) -> tuple[str, list[Resource]]:
+        out_fh: str = "temp.mrc",
+    ) -> tuple[Optional[str], list[Resource]]:
         """
         Merges Sierra brief bibs data with WroldCat full bib,
         and serializes them into MARC21 format
@@ -296,7 +296,7 @@ class Tasks:
             resource_category:              name of resource cateogry ('ebook', etc.)
             resources:                      list of `nightshift.datastore.Resource`
                                             instances
-            file_path:                      path of the file where records are saved
+            out_fh:                         path of the file where records are saved
 
         Returns:
             tuple (output file, list of enhanced resources)
@@ -306,12 +306,12 @@ class Tasks:
 
         # make sure to start from scratch
         try:
-            os.remove(file_path)
+            os.remove(out_fh)
         except (FileNotFoundError):
             pass
         except OSError as exc:
             logger.error(
-                f"Unable to empty temp file '{file_path}' before appending MARC "
+                f"Unable to empty temp file '{out_fh}' before appending MARC "
                 f"records. Error {exc}"
             )
             raise
@@ -320,10 +320,10 @@ class Tasks:
             be = BibEnhancer(resource, self.library, self._res_cat_idx)
             be.manipulate()
             if be.bib is not None:
-                be.save2file(file_path)
+                be.save2file(out_fh)
                 logger.debug(
                     f"{self.library} b{resource.sierraId}a has been output "
-                    f"to '{file_path}'."
+                    f"to '{out_fh}'."
                 )
                 enhanced_resources.append(resource)
             else:
@@ -347,15 +347,14 @@ class Tasks:
         )
         self.db_session.commit()
 
-        # check if any resources have been actually saved to a file
         if len(enhanced_resources) > 0:
-            out_file = file_path
+            return (out_fh, enhanced_resources)
         else:
-            out_file = None
+            return (None, enhanced_resources)
 
-        return (out_file, enhanced_resources)
-
-    def transfer_to_drive(self, resource_category: str, src_file: str) -> Optional[str]:
+    def transfer_to_drive(
+        self, resource_category: str, src_file: Optional[str]
+    ) -> Optional[str]:
         """
         Transfers local temporary MARC21 file to network drive.
         Arguments `library` and `resource_category` is used to name the MARC file on the
@@ -363,11 +362,14 @@ class Tasks:
         After successful transfer the temporary file is deleted.
 
         Args:
-            resource_category:              name of resource category being processed
+            resource_category:             name of resource category being processed
             src_file:                      temporary local file to be transfered
 
         Returns:
             SFTP file handle
+
+        Raises:
+            DriveError
         """
         today = datetime.now().date()
         remote_file_name_base = f"{today:%y%m%d}-{self.library}-{resource_category}"
@@ -387,7 +389,7 @@ class Tasks:
 
     def update_status_to_upgraded(
         self,
-        out_file_handle: str,
+        out_file_handle: Optional[str],
         resources: list[Resource],
     ) -> None:
         """
