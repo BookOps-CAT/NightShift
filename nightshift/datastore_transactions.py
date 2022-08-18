@@ -163,9 +163,7 @@ def add_event(session: Session, resource: Resource, status: str) -> Event:
     return instance
 
 
-def add_output_file(
-    session: Session, libraryId: int, file_handle: str
-) -> Optional[OutputFile]:
+def add_output_file(session: Session, libraryId: int, file_handle: str) -> OutputFile:
     """
     Adds OutputFile record to db.
 
@@ -208,9 +206,7 @@ def add_resource(session: Session, resource: Resource) -> Optional[Resource]:
         return None
 
 
-def add_source_file(
-    session: Session, libraryId: int, handle: str
-) -> Optional[SourceFile]:
+def add_source_file(session: Session, libraryId: int, handle: str) -> SourceFile:
     """
     Adds SourceFile record to db.
 
