@@ -124,13 +124,13 @@ class Drive:
             logger.error("Attempted operation on a closed SFTP session.")
             raise DriveError
 
-    def list_src_directory(self) -> Optional[list[str]]:
+    def list_src_directory(self) -> list[str]:
         """
         Returns a list of files found in SFTP/Drive sierra_dumps directory
         """
         if self.sftp is None:
             logger.error("Attempted an operation on a closed SFTP session.")
-            return None
+            raise DriveError
         else:
             try:
                 return self.sftp.listdir(path=self.src_dir)
