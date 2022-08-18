@@ -5,6 +5,7 @@ from typing import Optional
 
 from sqlalchemy import and_, create_engine, delete, func, inspect, update
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import NoResultFound
 
 # from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift import constants
@@ -163,9 +164,7 @@ def add_event(session: Session, resource: Resource, status: str) -> Event:
     return instance
 
 
-def add_output_file(
-    session: Session, libraryId: int, file_handle: str
-) -> Optional[OutputFile]:
+def add_output_file(session: Session, libraryId: int, file_handle: str) -> OutputFile:
     """
     Adds OutputFile record to db.
 
@@ -208,9 +207,7 @@ def add_resource(session: Session, resource: Resource) -> Optional[Resource]:
         return None
 
 
-def add_source_file(
-    session: Session, libraryId: int, handle: str
-) -> Optional[SourceFile]:
+def add_source_file(session: Session, libraryId: int, handle: str) -> SourceFile:
     """
     Adds SourceFile record to db.
 
@@ -269,7 +266,7 @@ def insert_or_ignore(session, model, **kwargs):
         session.add(instance)
         return instance
     else:
-        return None
+        return instance
 
 
 def library_by_id(session: Session) -> dict[int, str]:
@@ -560,7 +557,7 @@ def set_resources_to_expired(
     return rowcount
 
 
-def update_resource(session, sierraId, libraryId, **kwargs) -> Optional[Resource]:
+def update_resource(session, sierraId, libraryId, **kwargs) -> Resource:
     """
     Updates Resource record.
 
@@ -572,15 +569,19 @@ def update_resource(session, sierraId, libraryId, **kwargs) -> Optional[Resource
         kwargs:                 Resource table values to be updated as dictionary
     Returns:
         instance of updated record
+
+    Raises:
+        NoResultFound
     """
-    instance = (
-        session.query(Resource)
-        .filter_by(sierraId=sierraId, libraryId=libraryId)
-        .one_or_none()
-    )
-    if instance:
+    try:
+        instance = (
+            session.query(Resource)
+            .filter_by(sierraId=sierraId, libraryId=libraryId)
+            .one()
+        )
+    except NoResultFound:
+        raise
+    else:
         for key, value in kwargs.items():
             setattr(instance, key, value)
         return instance
-    else:
-        return None

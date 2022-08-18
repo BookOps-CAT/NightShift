@@ -5,6 +5,7 @@ from contextlib import nullcontext as does_not_raise
 import pytest
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 
 
@@ -283,7 +284,7 @@ def test_insert_or_ignore_dup(test_session):
 
     rec2 = insert_or_ignore(test_session, Library, code="BPL")
     test_session.commit()
-    assert rec2 is None
+    assert rec2.nid == 1
 
 
 def test_insert_or_ignore_resubmitted_changed_record_exception(
@@ -963,7 +964,5 @@ def test_update_resource(test_session):
 
 
 def test_update_resource_instance_does_not_exist(test_session):
-    rec = update_resource(
-        test_session, sierraId=22222222, libraryId=1, status="expired"
-    )
-    assert rec is None
+    with pytest.raises(NoResultFound):
+        update_resource(test_session, sierraId=22222222, libraryId=1, status="expired")

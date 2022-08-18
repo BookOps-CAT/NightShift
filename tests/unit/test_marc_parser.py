@@ -5,26 +5,28 @@ from io import BytesIO
 import logging
 import pickle
 
+from bookops_marc import Bib
 from pymarc import Field, Record
 import pytest
 
 from nightshift.datastore import Resource
-from nightshift.marc.marc_parser import BibReader, worldcat_response_to_pymarc
+from nightshift.marc.marc_parser import BibReader, worldcat_response_to_bib
 
 
-def test_worldcat_response_to_pymarc():
+@pytest.mark.parametrize("library", ["BPL", "NYP"])
+def test_worldcat_response_to_bib(library):
     data = b'<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<entry xmlns="http://www.w3.org/2005/Atom">\n  <content type="application/xml">\n    <response xmlns="http://worldcat.org/rb" mimeType="application/vnd.oclc.marc21+xml">\n      <record xmlns="http://www.loc.gov/MARC21/slim">\n        <leader>00000cam a2200000Ia 4500</leader>\n        <controlfield tag="001">ocn850939580</controlfield>\n        <controlfield tag="003">OCoLC</controlfield>\n        <controlfield tag="005">20190426152409.0</controlfield>\n        <controlfield tag="008">120827s2012    nyua   a      000 f eng d</controlfield>\n        <datafield tag="040" ind1=" " ind2=" ">\n          <subfield code="a">OCPSB</subfield>\n          <subfield code="b">eng</subfield>\n          <subfield code="c">OCPSB</subfield>\n          <subfield code="d">OCPSB</subfield>\n          <subfield code="d">OCLCQ</subfield>\n          <subfield code="d">OCPSB</subfield>\n          <subfield code="d">OCLCQ</subfield>\n          <subfield code="d">NYP</subfield>\n    </datafield>\n        <datafield tag="035" ind1=" " ind2=" ">\n          <subfield code="a">(OCoLC)850939580</subfield>\n    </datafield>\n        <datafield tag="049" ind1=" " ind2=" ">\n          <subfield code="a">NYPP</subfield>\n    </datafield>\n        <datafield tag="100" ind1="0" ind2=" ">\n          <subfield code="a">OCLC RecordBuilder.</subfield>\n    </datafield>\n        <datafield tag="245" ind1="1" ind2="0">\n          <subfield code="a">Record Builder Added This Test Record On 06/26/2013 13:06:26.</subfield>\n    </datafield>\n        <datafield tag="336" ind1=" " ind2=" ">\n          <subfield code="a">text</subfield>\n          <subfield code="b">txt</subfield>\n          <subfield code="2">rdacontent</subfield>\n    </datafield>\n        <datafield tag="337" ind1=" " ind2=" ">\n          <subfield code="a">unmediated</subfield>\n          <subfield code="b">n</subfield>\n          <subfield code="2">rdamedia</subfield>\n    </datafield>\n        <datafield tag="500" ind1=" " ind2=" ">\n          <subfield code="a">TEST RECORD -- DO NOT USE.</subfield>\n    </datafield>\n        <datafield tag="500" ind1=" " ind2=" ">\n          <subfield code="a">Added Field by MarcEdit.</subfield>\n    </datafield>\n  </record>\n    </response>\n  </content>\n  <id>http://worldcat.org/oclc/850939580</id>\n  <link href="http://worldcat.org/oclc/850939580"/>\n</entry>'
-    record = worldcat_response_to_pymarc(data)
-    assert isinstance(record, Record)
+    record = worldcat_response_to_bib(data, library)
+    assert isinstance(record, Bib)
     assert record["001"].data == "ocn850939580"
 
 
 def test_wordcat_response_to_pymarc_invalid_data_type(caplog):
     with pytest.raises(TypeError):
         with caplog.at_level(logging.ERROR):
-            worldcat_response_to_pymarc(None)
+            worldcat_response_to_bib(None, "NYP")
     assert (
-        "Invalid MARC data format: NoneType. Not able to convert to pymarc object."
+        "Invalid MARC data format: NoneType. Not able to convert to bookops-marc Bib object."
         in caplog.text
     )
 

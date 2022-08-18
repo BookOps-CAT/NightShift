@@ -87,7 +87,8 @@ class TestDriveMocked:
     def test_list_src_directory_on_closed_sftp_client(self, caplog, mock_drive):
         mock_drive.sftp = None
         with caplog.at_level(logging.ERROR):
-            mock_drive.list_src_directory()
+            with pytest.raises(DriveError):
+                mock_drive.list_src_directory()
 
         assert "Attempted an operation on a closed SFTP session." in caplog.text
 

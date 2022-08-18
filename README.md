@@ -14,7 +14,7 @@ More info:
 [Sierra Scheduler configuration](https://github.com/BookOps-CAT/NightShift/blob/main/docs/sierra.md) | [WorldCat record matching](https://github.com/BookOps-CAT/NightShift/blob/main/docs/matching.md) | [Record manipulation](https://github.com/BookOps-CAT/NightShift/blob/main/docs/manipulating.md) | [Sierra loading instructions](https://github.com/BookOps-CAT/NightShift/blob/main/docs/loading.md) 
 
 ## Version
-> 0.1.0
+> 0.2.0
 
 ## Local Installation & Usage
 
@@ -61,3 +61,9 @@ If a good match in WorldCat has been found, the bot manipulates the downloaded f
 If for any reason the execution of the routine is interrupted (API error, etc.), the process can be restarted using `run [local, prod]` command again. The bot will pick up exactly where it left.
 
 ## Changelog
+[0.2.0] - 2022-08-16
+### Changed
++ cleanup of subject headings outsourced to `bookops-marc`
++ [GMGPC terms](https://www.loc.gov/rr/print/tgm2/) in subject headings are no longer accepted
+
+[0.2.0]: https://github.com/BookOps-CAT/NightShift/compare/0.1.0...0.2.0

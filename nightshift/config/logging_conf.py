@@ -13,8 +13,15 @@ def get_handlers() -> list:
 
     Returns:
         handlers
+
+    Raises:
+        EnvironmentError
     """
-    return os.getenv("LOG_HANDLERS").split(",")
+    handlers = os.getenv("LOG_HANDLERS")
+    if not handlers:
+        raise EnvironmentError("Missing logger handlers in environment variables.")
+    else:
+        return handlers.split(",")
 
 
 def get_token() -> str:
@@ -24,7 +31,11 @@ def get_token() -> str:
     Returns:
         token
     """
-    return os.getenv("LOGGLY_TOKEN")
+    token = os.getenv("LOGGLY_TOKEN")
+    if not token:
+        raise EnvironmentError("Missing loggly token in environment variables.")
+    else:
+        return token
 
 
 def log_conf() -> dict:

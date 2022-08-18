@@ -2,6 +2,8 @@
 Tests logging_config.py module
 """
 
+import pytest
+
 from nightshift.config.logging_conf import get_handlers, get_token, log_conf
 
 
@@ -9,8 +11,22 @@ def test_get_handlers(mock_log_env):
     assert get_handlers() == ["console", "file", "loggly"]
 
 
+def test_get_handlers_missing_env_variable():
+    with pytest.raises(EnvironmentError) as exc:
+        get_handlers()
+
+    assert "Missing logger handlers in environment variables." in str(exc.value)
+
+
 def test_get_token(mock_log_env):
     assert get_token() == "ns_token_here"
+
+
+def test_get_token_missing_env_variable():
+    with pytest.raises(EnvironmentError) as exc:
+        get_token()
+
+    assert "Missing loggly token in environment variables." in str(exc.value)
 
 
 def test_log_conf(mock_log_env):
