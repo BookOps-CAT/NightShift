@@ -269,7 +269,7 @@ def insert_or_ignore(session, model, **kwargs):
         session.add(instance)
         return instance
     else:
-        return None
+        return instance
 
 
 def library_by_id(session: Session) -> dict[int, str]:
