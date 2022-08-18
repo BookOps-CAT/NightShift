@@ -5,6 +5,7 @@ from typing import Optional
 
 from sqlalchemy import and_, create_engine, delete, func, inspect, update
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import NoResultFound
 
 # from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift import constants
@@ -556,7 +557,7 @@ def set_resources_to_expired(
     return rowcount
 
 
-def update_resource(session, sierraId, libraryId, **kwargs) -> Optional[Resource]:
+def update_resource(session, sierraId, libraryId, **kwargs) -> Resource:
     """
     Updates Resource record.
 
@@ -568,15 +569,19 @@ def update_resource(session, sierraId, libraryId, **kwargs) -> Optional[Resource
         kwargs:                 Resource table values to be updated as dictionary
     Returns:
         instance of updated record
+
+    Raises:
+        NoResultFound
     """
-    instance = (
-        session.query(Resource)
-        .filter_by(sierraId=sierraId, libraryId=libraryId)
-        .one_or_none()
-    )
-    if instance:
+    try:
+        instance = (
+            session.query(Resource)
+            .filter_by(sierraId=sierraId, libraryId=libraryId)
+            .one()
+        )
+    except NoResultFound:
+        raise
+    else:
         for key, value in kwargs.items():
             setattr(instance, key, value)
         return instance
-    else:
-        return None
