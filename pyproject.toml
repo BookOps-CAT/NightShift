@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "NightShift"
-version = "0.2.0"
+version = "0.3.0"
 description = "Copy cataloging bot"
 authors = ["Tomasz Kalata <klingaroo@gmail.com>"]
 license = "MIT"

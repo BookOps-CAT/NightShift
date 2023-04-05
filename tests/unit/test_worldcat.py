@@ -58,7 +58,7 @@ class TestWorldcatMocked:
             "scopes": "WorldCatMetadataAPI",
             "principal_id": "lib_principal_id",
             "principal_idns": "lib_principal_idns",
-            "agent": "NightShift/0.2.0",
+            "agent": "NightShift/0.3.0",
         }
 
     def test_get_access_token(self, mock_Worldcat):
@@ -68,11 +68,11 @@ class TestWorldcatMocked:
             "scopes": "WorldCatMetadataAPI",
             "principal_id": "lib_principal_id",
             "principal_idns": "lib_principal_idns",
-            "agent": "NightShift/0.2.0",
+            "agent": "NightShift/0.3.0",
         }
         token = mock_Worldcat._get_access_token(creds)
         assert isinstance(token, WorldcatAccessToken)
-        assert token.agent == "NightShift/0.2.0"
+        assert token.agent == "NightShift/0.3.0"
 
     def test_get_access_token_failure(
         self, caplog, mock_worldcat_creds, mock_failed_post_token_response
