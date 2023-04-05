@@ -14,7 +14,7 @@ More info:
 [Sierra Scheduler configuration](https://github.com/BookOps-CAT/NightShift/blob/main/docs/sierra.md) | [WorldCat record matching](https://github.com/BookOps-CAT/NightShift/blob/main/docs/matching.md) | [Record manipulation](https://github.com/BookOps-CAT/NightShift/blob/main/docs/manipulating.md) | [Sierra loading instructions](https://github.com/BookOps-CAT/NightShift/blob/main/docs/loading.md) 
 
 ## Version
-> 0.2.0
+> 0.3.0
 
 ## Local Installation & Usage
 
@@ -61,9 +61,46 @@ If a good match in WorldCat has been found, the bot manipulates the downloaded f
 If for any reason the execution of the routine is interrupted (API error, etc.), the process can be restarted using `run [local, prod]` command again. The bot will pick up exactly where it left.
 
 ## Changelog
+[0.3.0] - 2023-04-05
+### Security
++ Main dependency update:
+   + bcrypt 4.0.1
+   + certifi 2022.12.7
+   + charset-normalizer 3.1.0
+   + cryptography 49.0.1
+   + greenlet 2.0.2
+   + idna 3.4
+   + paramiko 2.12.0
+   + psycopg2 2.9.6
+   + pymarc 4.2.2
+   + requests 2.28.2
+   + sqlalchemy 1.4.47
+   + urlib3 1.26.15
++ Dev dependency update:
+   + attrs 22.2.0
+   + black 22.12.0
+   + click 8.1.3
+   + colorama 0.4.6
+   + coverage 6.5.0
+   + exceptiongroup 1.1.1
+   + iniconfig 2.0.0
+   + mypy extensions 1.0.0
+   + packaging 23.0
+   + pathspec 0.11.1
+   + platformdirs 3.2.0
+   + pytest-mock 3.10.0
+   + pytest 7.2.2
+   + tomli 2.0.1
+   + types-paramiko 2.12.0.3
+   + types-requests 2.28.11.17
+   + types-urllib3 1.26.25.10
+   + typing-extensions 4.5.0
+
+
 [0.2.0] - 2022-08-16
 ### Changed
 + cleanup of subject headings outsourced to `bookops-marc`
 + [GMGPC terms](https://www.loc.gov/rr/print/tgm2/) in subject headings are no longer accepted
 
 [0.2.0]: https://github.com/BookOps-CAT/NightShift/compare/0.1.0...0.2.0
+[0.3.0]: https://github.com/BookOps-CAT/NightShift/compare/0.2.0...0.3.0
