@@ -14,7 +14,7 @@ More info:
 [Sierra Scheduler configuration](https://github.com/BookOps-CAT/NightShift/blob/main/docs/sierra.md) | [WorldCat record matching](https://github.com/BookOps-CAT/NightShift/blob/main/docs/matching.md) | [Record manipulation](https://github.com/BookOps-CAT/NightShift/blob/main/docs/manipulating.md) | [Sierra loading instructions](https://github.com/BookOps-CAT/NightShift/blob/main/docs/loading.md) 
 
 ## Version
-> 0.3.0
+> 0.4.0
 
 ## Local Installation & Usage
 
@@ -61,6 +61,10 @@ If a good match in WorldCat has been found, the bot manipulates the downloaded f
 If for any reason the execution of the routine is interrupted (API error, etc.), the process can be restarted using `run [local, prod]` command again. The bot will pick up exactly where it left.
 
 ## Changelog
+[0.4.0] - 2023-10-04
+### Changed
++ "Electronic books" and "Electronic audiobooks" local terms no longer added
+
 [0.3.0] - 2023-04-05
 ### Security
 + Main dependency update:
@@ -104,3 +108,4 @@ If for any reason the execution of the routine is interrupted (API error, etc.),
 
 [0.2.0]: https://github.com/BookOps-CAT/NightShift/compare/0.1.0...0.2.0
 [0.3.0]: https://github.com/BookOps-CAT/NightShift/compare/0.2.0...0.3.0
+[0.4.0]: https://github.com/BookOps-CAT/NightShift/compare/0.3.0...0.4.0
