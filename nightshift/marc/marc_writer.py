@@ -254,32 +254,13 @@ class BibEnhancer:
     def _add_genre_tags(self) -> None:
         """
         Adds genre tags to e-resources.
-
-        Occasionally genre terms may be recorded in 650 tag in Worldcat records
-        and it is safer to remove all and add 655 from scratch.
         """
         try:
             resource_cat = self._res_cat[self.resource.resourceCategoryId].name
         except KeyError:
             resource_cat = None
 
-        if resource_cat == "ebook":
-            found = False
-            for field in self.bib.subjects():
-                if "electronic books." in field.value().lower():
-                    found = True
-                    break
-            if not found:
-                self.bib.add_field(
-                    Field(
-                        tag="655",
-                        indicators=[" ", "0"],
-                        subfields=["a", "Electronic books."],
-                    )
-                )
-                logger.debug("Added 'Electronic books' genre to 655 tag.")
-
-        elif resource_cat == "eaudio":
+        if resource_cat == "eaudio":
 
             # 'Audiobooks' term
             found = False
@@ -296,22 +277,6 @@ class BibEnhancer:
                     )
                 )
                 logger.debug("Added 'Audiobooks' genre to 655 tag.")
-
-            # 'Electronic audiobooks' term
-            found = False
-            for field in self.bib.subjects():
-                if "electronic audiobooks." in field.value().lower():
-                    found = True
-                    break
-            if not found:
-                self.bib.add_field(
-                    Field(
-                        tag="655",
-                        indicators=[" ", "7"],
-                        subfields=["a", "Electronic audiobooks.", "2", "local"],
-                    )
-                )
-                logger.debug("Added 'Electronic audiobooks' genre to 655 tags.")
 
         elif resource_cat == "evideo":
             found = False

@@ -132,7 +132,7 @@ class TestBibEnhancer:
                 None,
                 [],
                 [],
-                ["Added 'Electronic books' genre to 655 tag."],
+                [],
                 id="ebook: No previous tags",
             ),
             pytest.param(
@@ -142,7 +142,6 @@ class TestBibEnhancer:
                 [],
                 [
                     "Added 'Audiobooks' genre to 655 tag.",
-                    "Added 'Electronic audiobooks' genre to 655 tags.",
                 ],
                 id="eaudio: No previous tags",
             ),
@@ -188,13 +187,11 @@ class TestBibEnhancer:
             assert log_msg in caplog.text
 
         if res_cat_id == 1:
-            assert len(be.bib.get_fields("655")) == 1
-            assert str(be.bib["655"]) == "=655  \\0$aElectronic books."
+            assert len(be.bib.get_fields("655")) == 0
         elif res_cat_id == 2:
             tags = be.bib.get_fields("655")
-            assert len(tags) == 2
+            assert len(tags) == 1
             assert str(tags[0]) == "=655  \\7$aAudiobooks.$2lcgft"
-            assert str(tags[1]) == "=655  \\7$aElectronic audiobooks.$2local"
         elif res_cat_id == 3:
             assert len(be.bib.get_fields("655")) == 1
             assert str(be.bib["655"]) == "=655  \\7$aInternet videos.$2lcgft"
@@ -267,7 +264,9 @@ class TestBibEnhancer:
 
         be._add_genre_tags()
 
-        if res_cat_id == 1:
+        if (
+            res_cat_id == 1
+        ):  # remove, OCLC no longer allows (Sept. 2022) use of 'electronic books' genre terms - so this should technically not occur any more
             assert len(be.bib.get_fields("655")) == 1
             assert "electronic books." in str(be.bib["655"]).lower()
         elif res_cat_id == 2:
@@ -652,6 +651,32 @@ class TestBibEnhancer:
         be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         assert be._remove_oclc_prefix(arg) == "12345"
 
+    def test_remove_unsupported_local_genre_tag_electronic_books(
+        self, stub_resource, stub_res_cat_by_id
+    ):
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
+
+        # prep - remove any existing tags for tests
+        for f in be.bib.subjects():
+            be.bib.remove_field(f)
+
+        assert len(be.bib.subjects()) == 0
+
+        be.bib.add_field(
+            Field(
+                tag="655", indicators=[" ", "4"], subfields=["a", "Electronic books."]
+            )
+        )
+        # must add additional 650 to pass minimium requirments
+        be.bib.add_field(
+            Field(tag="650", indicators=[" ", "0"], subfields=["a", "Foo."])
+        )
+
+        assert len(be.bib.subjects()) == 2
+        be.manipulate()
+        assert len(be.bib.subjects()) == 1
+        assert str(be.bib.subjects()[0]) == "=650  \\0$aFoo."
+
     @pytest.mark.parametrize(
         "tag",
         [
@@ -723,9 +748,8 @@ class TestBibEnhancer:
         be.bib.add_field(tag)
 
         be.manipulate()
-        assert len(be.bib.subjects()) == 2
+        assert len(be.bib.subjects()) == 1
         assert str(be.bib.subjects()[0]) == str(tag)
-        assert str(be.bib.subjects()[1]) == "=655  \\0$aElectronic books."
 
     @pytest.mark.parametrize(
         "tag",
@@ -789,9 +813,8 @@ class TestBibEnhancer:
         )
 
         be.manipulate()
-        assert len(be.bib.subjects()) == 2
+        assert len(be.bib.subjects()) == 1
         assert str(be.bib.subjects()[0]) == "=650  \\0$aSpam."
-        assert str(be.bib.subjects()[1]) == "=655  \\0$aElectronic books."
 
     def test_save2file(self, caplog, stub_resource, stub_res_cat_by_id):
         be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
