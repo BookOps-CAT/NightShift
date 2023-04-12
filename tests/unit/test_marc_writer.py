@@ -141,7 +141,7 @@ class TestBibEnhancer:
                 [],
                 [],
                 [
-                    "Added 'Audiobooks' genre to 655 tag.",
+                    "Added 'Audiobooks' LCGFT genre to 655 tag.",
                 ],
                 id="eaudio: No previous tags",
             ),
@@ -150,7 +150,7 @@ class TestBibEnhancer:
                 None,
                 [],
                 [],
-                ["Added 'Internet videos' genre to 655 tag."],
+                ["Added 'Internet videos' LCGFT genre to 655 tag."],
                 id="evideo: No previous tags",
             ),
             pytest.param(
@@ -163,7 +163,7 @@ class TestBibEnhancer:
             ),
         ],
     )
-    def test_add_genre_tags_when_missing(
+    def test_clean_up_genre_tags_when_missing(
         self,
         caplog,
         stub_resource,
@@ -181,7 +181,7 @@ class TestBibEnhancer:
             be.bib.add_field(Field(tag=tag, indicators=indicators, subfields=subfields))
 
         with caplog.at_level(logging.DEBUG):
-            be._add_genre_tags()
+            be._clean_up_genre_tags()
 
         for log_msg in log_msgs:
             assert log_msg in caplog.text
@@ -217,6 +217,13 @@ class TestBibEnhancer:
             ),
             pytest.param(
                 1,
+                "650",
+                [" ", "0"],
+                ["a", "Electronic books."],
+                id="ebook: Electronic books as invalid LCSH",
+            ),
+            pytest.param(
+                1,
                 "655",
                 [" ", "0"],
                 ["a", "Children's electronic books."],
@@ -244,6 +251,13 @@ class TestBibEnhancer:
                 id="eaudio: Electronic audiobooks - local",
             ),
             pytest.param(
+                2,
+                "650",
+                [" ", "0"],
+                ["a", "Electronic audiobooks."],
+                id="eaudio: Electronic audiobooks as invalid LCSH",
+            ),
+            pytest.param(
                 3,
                 "655",
                 [" ", "7"],
@@ -252,7 +266,7 @@ class TestBibEnhancer:
             ),
         ],
     )
-    def test_add_genre_tags_when_present(
+    def test_clean_up_genre_tags_when_present(
         self, stub_resource, stub_res_cat_by_id, res_cat_id, tag, indicators, subfields
     ):
         stub_resource.resourceCategoryId = res_cat_id
@@ -262,19 +276,17 @@ class TestBibEnhancer:
         be.bib.remove_fields("650", "655")
         be.bib.add_field(Field(tag=tag, indicators=indicators, subfields=subfields))
 
-        be._add_genre_tags()
+        be._clean_up_genre_tags()
 
         if (
             res_cat_id == 1
         ):  # remove, OCLC no longer allows (Sept. 2022) use of 'electronic books' genre terms - so this should technically not occur any more
-            assert len(be.bib.get_fields("655")) == 1
-            assert "electronic books." in str(be.bib["655"]).lower()
+            assert len(be.bib.subjects()) == 0
         elif res_cat_id == 2:
-            tags = be.bib.get_fields("655")
-            assert len(tags) >= 1
-            assert "audiobooks." in str(be.bib["655"]).lower()
+            assert len(be.bib.subjects()) == 1
+            assert "audiobooks. lcgft" in be.bib["655"].value().lower()
         elif res_cat_id == 3:
-            assert len(be.bib.get_fields("655")) == 1
+            assert len(be.bib.subjects()) == 1
             assert str(be.bib["655"]) == "=655  \\7$aInternet videos.$2lcgft"
 
     def test_add_local_tags(self, caplog, stub_resource, stub_res_cat_by_id):

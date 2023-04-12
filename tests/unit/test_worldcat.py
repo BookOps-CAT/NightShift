@@ -58,7 +58,7 @@ class TestWorldcatMocked:
             "scopes": "WorldCatMetadataAPI",
             "principal_id": "lib_principal_id",
             "principal_idns": "lib_principal_idns",
-            "agent": "NightShift/0.4.0",
+            "agent": "NightShift/0.5.0",
         }
 
     def test_get_access_token(self, mock_Worldcat):

@@ -104,8 +104,8 @@ class BibEnhancer:
                 "Meets minimum requriements."
             )
 
-            # add genre tags
-            self._add_genre_tags()
+            # genre tags
+            self._clean_up_genre_tags()
 
             # add tags from the local bib
             self._add_local_tags()
@@ -251,7 +251,7 @@ class BibEnhancer:
             f"b{self.resource.sierraId}a."
         )
 
-    def _add_genre_tags(self) -> None:
+    def _clean_up_genre_tags(self) -> None:
         """
         Adds genre tags to e-resources.
         """
@@ -260,9 +260,20 @@ class BibEnhancer:
         except KeyError:
             resource_cat = None
 
-        if resource_cat == "eaudio":
+        if resource_cat == "ebook":
+            for field in self.bib.subjects():
+                if "electronic books" in field.value().lower():
+                    self.bib.remove_field(field)
+
+        elif resource_cat == "eaudio":
 
             # 'Audiobooks' term
+            # remove electronic audiobooks
+            for field in self.bib.subjects():
+                if "electronic audiobooks" in field.value().lower():
+                    self.bib.remove_field(field)
+
+            # but keep lcgft audiobooks
             found = False
             for field in self.bib.subjects():
                 if "audiobooks." in field.value().lower():
@@ -276,7 +287,7 @@ class BibEnhancer:
                         subfields=["a", "Audiobooks.", "2", "lcgft"],
                     )
                 )
-                logger.debug("Added 'Audiobooks' genre to 655 tag.")
+                logger.debug("Added 'Audiobooks' LCGFT genre to 655 tag.")
 
         elif resource_cat == "evideo":
             found = False
@@ -292,7 +303,7 @@ class BibEnhancer:
                         subfields=["a", "Internet videos.", "2", "lcgft"],
                     )
                 )
-                logger.debug("Added 'Internet videos' genre to 655 tag.")
+                logger.debug("Added 'Internet videos' LCGFT genre to 655 tag.")
 
     def _add_local_tags(self) -> None:
         """
