@@ -433,7 +433,7 @@ def test_manipulate_and_serialize_bibs_default_outfile(
     assert bib["091"].value() == "eNYPL Book"
     assert bib["945"].value() == ".b11111111a"
     assert bib["949"].value() == "*b2=z;bn=ia;"
-    assert bib["901"].value() == "NightShift/0.5.0"
+    assert bib["901"].value() == "NightShift/0.6.0"
 
     if os.path.exists("temp.mrc"):
         try:
@@ -472,7 +472,7 @@ def test_manipulate_and_serialize_bibs_custom_outfile(
     assert bib["091"].value() == "eNYPL Book"
     assert bib["945"].value() == ".b11111111a"
     assert bib["949"].value() == "*b2=z;bn=ia;"
-    assert bib["901"].value() == "NightShift/0.5.0"
+    assert bib["901"].value() == "NightShift/0.6.0"
 
 
 def test_manipulate_and_serialize_bibs_failed(

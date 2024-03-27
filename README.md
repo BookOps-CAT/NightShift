@@ -14,7 +14,7 @@ More info:
 [Sierra Scheduler configuration](https://github.com/BookOps-CAT/NightShift/blob/main/docs/sierra.md) | [WorldCat record matching](https://github.com/BookOps-CAT/NightShift/blob/main/docs/matching.md) | [Record manipulation](https://github.com/BookOps-CAT/NightShift/blob/main/docs/manipulating.md) | [Sierra loading instructions](https://github.com/BookOps-CAT/NightShift/blob/main/docs/loading.md) 
 
 ## Version
-> 0.5.0
+> 0.6.0
 
 ## Local Installation & Usage
 
