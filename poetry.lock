@@ -106,21 +106,21 @@ resolved_reference = "8fa8ddef6338090d2a71e1779f4dae8264cdcc90"
 
 [[package]]
 name = "bookops-marc"
-version = "0.8.1"
+version = "0.10.0"
 description = "A sweetened `pymarc.Record` module for extraction of data from local Sierra records."
 optional = false
-python-versions = "^3.7"
+python-versions = "^3.8"
 files = []
 develop = false
 
 [package.dependencies]
-pymarc = "^4.1.1"
+pymarc = "^5.1.0"
 
 [package.source]
 type = "git"
 url = "https://github.com/BookOps-CAT/bookops-marc.git"
-reference = "0.8.1"
-resolved_reference = "dfe5bcbb310a343a44b340ddb0b4d6e18d31504f"
+reference = "0.10.0"
+resolved_reference = "cd89f82f2dd093907e04871b1ba40b3f0407a9f4"
 
 [[package]]
 name = "bookops-nypl-platform"
@@ -759,13 +759,13 @@ files = [
 
 [[package]]
 name = "pymarc"
-version = "4.2.2"
+version = "5.1.2"
 description = "Read, write and modify MARC bibliographic data"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "pymarc-4.2.2-py3-none-any.whl", hash = "sha256:569ba7f74d3fbbbee2158a3e8d9fdbd59466a1a8fb096bf60c26c8f986183a83"},
-    {file = "pymarc-4.2.2.tar.gz", hash = "sha256:a4a8a952e38f0e4714c58354b510abf09cbf3a45b0b991765bef0ce3f30b01dd"},
+    {file = "pymarc-5.1.2-py3-none-any.whl", hash = "sha256:719340150adb600e0a3603e8504bc5b3d2f3e134dd73891e4d927b6f6731bb7d"},
+    {file = "pymarc-5.1.2.tar.gz", hash = "sha256:81ce6bfe9b47170f03d8a99209e4211778ade015a67b1eeb6b30862d4e24ae58"},
 ]
 
 [[package]]
@@ -1123,4 +1123,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "c3c164237abcf7ee599a4180a8801e6dde2343a68845235323101c5568d9b621"
+content-hash = "b8cb4eb63b2bb37b9c6d135ea8e1e6a933810fdc1ac29e3fa8a84c98fb1ae180"

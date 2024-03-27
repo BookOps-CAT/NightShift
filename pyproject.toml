@@ -9,7 +9,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pymarc = "^4.1.1"
+pymarc = "^5.1.2"
 SQLAlchemy = "^1.4.40"
 PyYAML = "^6.0.1"
 psycopg2 = "^2.9.3"
@@ -18,7 +18,7 @@ loggly-python-handler = "^1.0.1"
 paramiko = "^3.4.0"
 bookops-bpl-solr = {git = "https://github.com/BookOps-CAT/bookops-bpl-solr", rev = "v0.4.0"}
 bookops-nypl-platform = {git = "https://github.com/BookOps-CAT/bookops-nypl-platform", rev = "v0.4.0"}
-bookops-marc = {git = "https://github.com/BookOps-CAT/bookops-marc.git", rev = "0.8.1"}
+bookops-marc = {git = "https://github.com/BookOps-CAT/bookops-marc.git", rev = "0.10.0"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^8.1.1"
