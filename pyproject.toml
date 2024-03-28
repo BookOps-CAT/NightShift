@@ -20,7 +20,7 @@ bookops-bpl-solr = {git = "https://github.com/BookOps-CAT/bookops-bpl-solr", rev
 bookops-nypl-platform = {git = "https://github.com/BookOps-CAT/bookops-nypl-platform", rev = "v0.4.0"}
 bookops-marc = {git = "https://github.com/BookOps-CAT/bookops-marc.git", rev = "0.10.0"}
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.gropu.dev.dependencies]
 pytest = "^8.1.1"
 black = "^24.3.0"
 pytest-cov = "^5.0.0"
@@ -34,6 +34,17 @@ coverage = {extras = ["toml"], version = "^6.3.1"}
 [tool.black]
 line-length = 88
 target-version = ['py39']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "local: locally run test to be excluded from CI",
+    "firewalled: tests that can only run inside firewall network, skipping CI"
+]
+
+[tool.coverage.run]
+relative_files = true
+source = ["."]
 
 [tool.mypy]
 python_version = 3.9
