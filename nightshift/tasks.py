@@ -3,7 +3,7 @@
 """
 This module provides the manager methods to perform particular tasks
 """
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import os
 from typing import Optional
@@ -307,7 +307,7 @@ class Tasks:
         # make sure to start from scratch
         try:
             os.remove(out_fh)
-        except (FileNotFoundError):
+        except FileNotFoundError:
             pass
         except OSError as exc:
             logger.error(
@@ -418,7 +418,7 @@ class Tasks:
                     resource.libraryId,
                     status="bot_enhanced",
                     outputId=out_file_record.nid,
-                    enhanceTimestamp=datetime.utcnow(),
+                    enhanceTimestamp=datetime.now(timezone.utc),
                 )
 
                 add_event(self.db_session, resource, status="bot_enhanced")

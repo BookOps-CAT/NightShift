@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from sqlalchemy import create_engine
@@ -62,7 +62,7 @@ def test_session_scope_exception_rollback(test_connection, test_session):
 
 
 def test_Event_tbl_repr():
-    stamp = datetime.utcnow()
+    stamp = datetime.now(timezone.utc)
     today = stamp.date()
     assert (
         str(
@@ -86,7 +86,7 @@ def test_Library_tbl_repr():
 
 
 def test_OutputFile_tbl_repr():
-    stamp = datetime.utcnow()
+    stamp = datetime.now(timezone.utc)
     assert (
         str(OutputFile(nid=1, libraryId=2, handle="foo.mrc", timestamp=stamp))
         == f"<OutputFile(nid='1', libraryId='2', handle='foo.mrc', timestamp='{stamp}')>"
@@ -94,7 +94,7 @@ def test_OutputFile_tbl_repr():
 
 
 def test_Resource_tbl_repr():
-    stamp = datetime.utcnow()
+    stamp = datetime.now(timezone.utc)
     bibDate = stamp.date()
     assert (
         str(

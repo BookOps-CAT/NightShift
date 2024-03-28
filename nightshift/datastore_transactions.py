@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import and_, create_engine, delete, func, inspect, update
@@ -156,7 +156,7 @@ def add_event(session: Session, resource: Resource, status: str) -> Event:
         bibDate=resource.bibDate,
         resourceCategoryId=resource.resourceCategoryId,
         status=status,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
     )
 
     session.add(instance)
@@ -241,7 +241,7 @@ def delete_resources(session: Session, resourceCategoryId: int, age: int) -> int
         session.query(Resource)
         .filter(
             Resource.resourceCategoryId == resourceCategoryId,
-            Resource.bibDate < datetime.utcnow() - timedelta(days=age),
+            Resource.bibDate < datetime.now(timezone.utc) - timedelta(days=age),
         )
         .delete()
     )
@@ -354,7 +354,7 @@ def retrieve_expired_resources(
             Resource.resourceCategoryId == resourceCategoryId,
             Resource.status == "open",
             Resource.bibDate
-            < datetime.utcnow().date() - timedelta(days=expiration_age),
+            < datetime.now(timezone.utc).date() - timedelta(days=expiration_age),
         )
         .all()
     )
@@ -411,8 +411,8 @@ def retrieve_open_older_resources(
             Resource.resourceCategoryId == resourceCategoryId,
             Resource.status == "open",
             Resource.oclcMatchNumber == None,
-            Resource.bibDate > datetime.utcnow() - timedelta(days=maxAge),
-            Resource.bibDate < datetime.utcnow() - timedelta(days=minAge),
+            Resource.bibDate > datetime.now(timezone.utc) - timedelta(days=maxAge),
+            Resource.bibDate < datetime.now(timezone.utc) - timedelta(days=minAge),
         )
         .group_by(Resource.nid)
         .subquery()
@@ -550,7 +550,7 @@ def set_resources_to_expired(
         .filter(
             Resource.resourceCategoryId == resourceCategoryId,
             Resource.status == "open",
-            Resource.bibDate < datetime.utcnow().date() - timedelta(days=age),
+            Resource.bibDate < datetime.now(timezone.utc).date() - timedelta(days=age),
         )
         .update({"status": "expired"})
     )

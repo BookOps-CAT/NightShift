@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 import logging
 import os
 
@@ -215,7 +215,7 @@ def test_get_worldcat_brief_bib_matches_success(
             libraryId=1,
             resourceCategoryId=1,
             sourceId=1,
-            bibDate=datetime.utcnow().date(),
+            bibDate=datetime.now(timezone.utc).date(),
             title="Pride and prejudice.",
             distributorNumber="123",
             status="open",
@@ -263,7 +263,7 @@ def test_get_worldcat_brief_bib_matches_failed(
             libraryId=library_id,
             resourceCategoryId=1,
             sourceId=1,
-            bibDate=datetime.utcnow().date(),
+            bibDate=datetime.now(timezone.utc).date(),
             title="Pride and prejudice.",
             distributorNumber="123",
             status="open",
@@ -309,7 +309,7 @@ def test_get_worldcat_full_bibs(
             libraryId=1,
             resourceCategoryId=1,
             sourceId=1,
-            bibDate=datetime.utcnow().date(),
+            bibDate=datetime.now(timezone.utc).date(),
             title="Pride and prejudice.",
             distributorNumber="123",
             status="open",
