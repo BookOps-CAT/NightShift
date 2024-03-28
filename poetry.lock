@@ -142,17 +142,17 @@ resolved_reference = "711229b9f01760e52f3d7faad05965ab5b83ad53"
 
 [[package]]
 name = "bookops-worldcat"
-version = "0.5.0"
+version = "1.0.0"
 description = "OCLC WorldCat Metadata APIs wrapper"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = "<4.0,>=3.8"
 files = [
-    {file = "bookops-worldcat-0.5.0.tar.gz", hash = "sha256:3d9a5a55395f3ae937d00677f812295bd2ab5c3791b2209bf02ee91320cd492d"},
-    {file = "bookops_worldcat-0.5.0-py3-none-any.whl", hash = "sha256:4170ade047709774eb3dc06e5999ee2436ff05b663bf3a78c3b7ea975d08562a"},
+    {file = "bookops_worldcat-1.0.0-py3-none-any.whl", hash = "sha256:b7c3265873e2fdb64a1d8489b3a52e63420271735c6504ec8e26dde0ef2e83c9"},
+    {file = "bookops_worldcat-1.0.0.tar.gz", hash = "sha256:201179d6f09c33dad58113c3c7a3e192d6c88de20ecd121c47c974270feb5b96"},
 ]
 
 [package.dependencies]
-requests = ">=2.27,<3.0"
+requests = ">=2.31,<3.0"
 
 [[package]]
 name = "certifi"
@@ -1123,4 +1123,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "fbf2794c672d5b441e8b53bc65a5c6b5d095af1def6650ef42768ef92e9f76f9"
+content-hash = "3f022557549335a6298381e41c041bb874f8a8c64b1049f8653504b297bb5a5d"

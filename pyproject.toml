@@ -13,7 +13,7 @@ pymarc = "^5.1.2"
 SQLAlchemy = "^1.4.40"
 PyYAML = "^6.0.1"
 psycopg2 = "^2.9.9"
-bookops-worldcat = "^0.5.0"
+bookops-worldcat = "^1.0.0"
 loggly-python-handler = "^1.0.1"
 paramiko = "^3.4.0"
 bookops-bpl-solr = {git = "https://github.com/BookOps-CAT/bookops-bpl-solr", rev = "v0.4.0"}

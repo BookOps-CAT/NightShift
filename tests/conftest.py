@@ -65,12 +65,8 @@ def local_test_config():
     POSTGRES_DB: postgred_db_name
     WCNYP_KEY: nypl_worldcat_key
     WCNYP_SECRET: nypl_worldcat_secret
-    WCNYP_PRINCIPALID: nypl_principal_id
-    WCNYP_PRINCIPALIDNS: nypl_principal_idns
     WCBPL_KEY: bpl_worldcat_key
     WCBPL_SECRET: bpl_worlcat_secret
-    WCBPL_PRINCIPALID: bpl_worlcat_principal_id
-    WCBPL_PRINCIPALIDNS: bpl_worlcat_principal_idns
     LOGGLY_TOKEN: loggly_token
     LOG_HANDLERS: "loggly,file,console"
     SFTP_HOST: sftp_host
@@ -369,8 +365,6 @@ def mock_worldcat_creds(monkeypatch):
         monkeypatch.setenv(f"WC{lib}_KEY", "lib_key")
         monkeypatch.setenv(f"WC{lib}_SECRET", "lib_secret")
         monkeypatch.setenv(f"WC{lib}_SCOPE", "WorldCatMetadataAPI")
-        monkeypatch.setenv(f"WC{lib}_PRINCIPALID", "lib_principal_id")
-        monkeypatch.setenv(f"WC{lib}_PRINCIPALIDNS", "lib_principal_idns")
 
 
 @pytest.fixture
@@ -416,8 +410,6 @@ def mock_token(mock_worldcat_creds, mock_successful_post_token_response):
         key=os.getenv("WCNYP_KEY"),
         secret=os.getenv("WCNYP_SECRET"),
         scopes="WorldCatMetadataAPI",
-        principal_id=os.getenv("WCNYP_PRINCIPALID"),
-        principal_idns=os.getenv("WCNYP_PRINCIPALIDNS"),
     )
     return WorldcatAccessToken(**mock_credentials)
 
