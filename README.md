@@ -14,7 +14,7 @@ More info:
 [Sierra Scheduler configuration](https://github.com/BookOps-CAT/NightShift/blob/main/docs/sierra.md) | [WorldCat record matching](https://github.com/BookOps-CAT/NightShift/blob/main/docs/matching.md) | [Record manipulation](https://github.com/BookOps-CAT/NightShift/blob/main/docs/manipulating.md) | [Sierra loading instructions](https://github.com/BookOps-CAT/NightShift/blob/main/docs/loading.md) 
 
 ## Version
-> 0.5.0
+> 0.6.0
 
 ## Local Installation & Usage
 
@@ -61,6 +61,25 @@ If a good match in WorldCat has been found, the bot manipulates the downloaded f
 If for any reason the execution of the routine is interrupted (API error, etc.), the process can be restarted using `run [local, prod]` command again. The bot will pick up exactly where it left.
 
 ## Changelog
+[0.6.0] - 2024-03-28
+### Changed
++ updated dependencies:
+  + pymarc (5.1.2)
+  + psycopg2 (2.9.9)
+  + bookops-worldcat (1.0.0)
+  + paramiko (3.4.0)
+  + bookops-bpl-solr (0.4.0)
+  + bookops-nypl-platform (0.4.0)
+  + bookops-marc (0.10.0)
++ updated dev dependencies:
+  + pytest (8.1.1)
+  + black (24.3.0)
+  + pytest-cov (5.0.0)
+  + pytest-mock (3.14.0)
+  + mypy (1.9.0)
++ coverage & pytest configuration moved to `pyproject.toml`
++ `datetime.utcnow` changed to aware `datetime.now` in anticipation of deprecation of the former
++ refactored MARC fields manipulation to reflect a new way to construct subfields that uses pymarc's `Subfields`
 [0.5.0] - 2023-04-12
 ### Changed
 + "Electronic books" and "Electronic audiobooks" actively removed from Worldcat records
@@ -114,3 +133,4 @@ If for any reason the execution of the routine is interrupted (API error, etc.),
 [0.3.0]: https://github.com/BookOps-CAT/NightShift/compare/0.2.0...0.3.0
 [0.4.0]: https://github.com/BookOps-CAT/NightShift/compare/0.3.0...0.4.0
 [0.5.0]: https://github.com/BookOps-CAT/NightShift/compare/0.4.0...0.5.0
+[0.6.0]: https://github.com/BookOps-CAT/NightShift/compare/0.5.0...0.6.0

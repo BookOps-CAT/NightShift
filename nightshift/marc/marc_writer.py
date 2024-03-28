@@ -7,7 +7,7 @@ into MARC21.
 import logging
 import pickle
 
-from pymarc import Field
+from pymarc import Field, Subfield
 
 from .. import __title__, __version__
 from ..datastore import Resource
@@ -188,7 +188,9 @@ class BibEnhancer:
             value = None
 
         if tag and value:
-            call_number = Field(tag=tag, indicators=[" ", " "], subfields=["a", value])
+            call_number = Field(
+                tag=tag, indicators=[" ", " "], subfields=[Subfield("a", value)]
+            )
             self.bib.add_field(call_number)
             logger.debug(
                 f"Added {call_number.value()} to {self.library} "
@@ -241,8 +243,7 @@ class BibEnhancer:
             tag="949",
             indicators=[" ", " "],
             subfields=[
-                "a",
-                f"*{command_str};",
+                Subfield("a", f"*{command_str};"),
             ],
         )
         self.bib.add_field(command_tag)
@@ -261,7 +262,7 @@ class BibEnhancer:
             resource_cat = None
 
         if resource_cat == "ebook":
-            for field in self.bib.subjects():
+            for field in self.bib.subjects:
                 if "electronic books" in field.value().lower():
                     self.bib.remove_field(field)
 
@@ -269,13 +270,13 @@ class BibEnhancer:
 
             # 'Audiobooks' term
             # remove electronic audiobooks
-            for field in self.bib.subjects():
+            for field in self.bib.subjects:
                 if "electronic audiobooks" in field.value().lower():
                     self.bib.remove_field(field)
 
             # but keep lcgft audiobooks
             found = False
-            for field in self.bib.subjects():
+            for field in self.bib.subjects:
                 if "audiobooks." in field.value().lower():
                     found = True
                     break
@@ -284,14 +285,17 @@ class BibEnhancer:
                     Field(
                         tag="655",
                         indicators=[" ", "7"],
-                        subfields=["a", "Audiobooks.", "2", "lcgft"],
+                        subfields=[
+                            Subfield("a", "Audiobooks."),
+                            Subfield("2", "lcgft"),
+                        ],
                     )
                 )
                 logger.debug("Added 'Audiobooks' LCGFT genre to 655 tag.")
 
         elif resource_cat == "evideo":
             found = False
-            for field in self.bib.subjects():
+            for field in self.bib.subjects:
                 if "internet videos." in field.value().lower():
                     found = True
                     break
@@ -300,7 +304,10 @@ class BibEnhancer:
                     Field(
                         tag="655",
                         indicators=[" ", "7"],
-                        subfields=["a", "Internet videos.", "2", "lcgft"],
+                        subfields=[
+                            Subfield("a", "Internet videos."),
+                            Subfield("2", "lcgft"),
+                        ],
                     )
                 )
                 logger.debug("Added 'Internet videos' LCGFT genre to 655 tag.")
@@ -340,7 +347,7 @@ class BibEnhancer:
             Field(
                 tag=tag,
                 indicators=[" ", " "],
-                subfields=["a", f"{__title__}/{__version__}"],
+                subfields=[Subfield("a", f"{__title__}/{__version__}")],
             )
         )
         logger.debug(
@@ -360,7 +367,7 @@ class BibEnhancer:
             Field(
                 tag=overlay_tag,
                 indicators=[" ", " "],
-                subfields=["a", f".b{self.resource.sierraId}a"],
+                subfields=[Subfield("a", f".b{self.resource.sierraId}a")],
             )
         )
 
@@ -387,7 +394,7 @@ class BibEnhancer:
         Checks if Worldcat record meets minimum criteria
         """
         # check uppercase title (indicates poor quality)
-        if self.bib.title().isupper():
+        if self.bib.title.isupper():
             logger.debug("Worldcat record failed uppercase title test.")
             return False
 
@@ -405,15 +412,15 @@ class BibEnhancer:
         # "℗" (b"\xe2\x84\x97")
         try:
             diacritics_msg = "Worldcat record failed characters encoding test."
-            if b"\xc2\xa9" in bytes(self.bib.author(), "utf-8") or b"\xc2\xa9" in bytes(
-                self.bib.title(), "utf-8"
+            if b"\xc2\xa9" in bytes(self.bib.author, "utf-8") or b"\xc2\xa9" in bytes(
+                self.bib.title, "utf-8"
             ):
                 logger.debug(diacritics_msg)
                 return False
 
             if b"\xe2\x84\x97" in bytes(
-                self.bib.author(), "utf-8"
-            ) or b"\xe2\x84\x97" in bytes(self.bib.title(), "utf-8"):
+                self.bib.author, "utf-8"
+            ) or b"\xe2\x84\x97" in bytes(self.bib.title, "utf-8"):
                 logger.debug(diacritics_msg)
                 return False
 
@@ -422,7 +429,7 @@ class BibEnhancer:
             pass
 
         # has at least one valid subject tag
-        if not self.bib.subjects():
+        if not self.bib.subjects:
             logger.debug("Worldcat record failed subjects test.")
             return False
 

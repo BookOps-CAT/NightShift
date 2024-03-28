@@ -178,16 +178,16 @@ class BibReader:
         sierraId = bib.sierra_bib_id_normalized()
         resourceCategoryId = self._res_cat[resource_category].nid
         bibDate = bib.created_date()
-        author = bib.author()
-        title = bib.title()
-        pubDate = bib.pubyear()
+        author = bib.author
+        title = bib.title
+        pubDate = bib.pubyear
         congressNumber = bib.lccn()
         controlNumber = bib.control_number()
         distributorNumber = bib.overdrive_number()
         suppressed = bib.suppressed()
         otherNumber = bib.upc_number()
         srcFieldsToKeep = self._fields2keep(bib, resource_category)
-        standardNumber = bib.isbn()
+        standardNumber = bib.isbn
 
         resource = Resource(
             sierraId=sierraId,

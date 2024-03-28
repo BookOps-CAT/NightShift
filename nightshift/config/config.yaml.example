@@ -6,12 +6,8 @@ POSTGRES_PORT: postgres_port
 POSTGRES_DB: postgred_db_name
 WCNYP_KEY: nypl_worldcat_key
 WCNYP_SECRET: nypl_worldcat_secret
-WCNYP_PRINCIPALID: nypl_principal_id
-WCNYP_PRINCIPALIDNS: nypl_principal_idns
 WCBPL_KEY: bpl_worldcat_key
 WCBPL_SECRET: bpl_worlcat_secret
-WCBPL_PRINCIPALID: bpl_worlcat_principal_id
-WCBPL_PRINCIPALIDNS: bpl_worlcat_principal_idns
 LOGGLY_TOKEN: loggly_token
 LOG_HANDLERS: "loggly,file,console"
 SFTP_HOST: sftp_host

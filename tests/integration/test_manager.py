@@ -1,5 +1,5 @@
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -39,7 +39,7 @@ def test_process_resources_live(env_var, test_data_rich, test_session):
 
         temp_files = drive.sftp.listdir(path=drive.dst_dir)
 
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
         assert temp_files == [
             f"{today:%y%m%d}-NYP-ebook-01.mrc",
             f"{today:%y%m%d}-BPL-ebook-01.mrc",

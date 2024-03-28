@@ -6,7 +6,7 @@ import logging
 import pickle
 
 from bookops_marc import Bib
-from pymarc import Field, Record
+from pymarc import Field, Subfield
 import pytest
 
 from nightshift.datastore import Resource
@@ -64,7 +64,7 @@ def test_BibReader_invalid_resource_categories_arg(caplog):
 def test_BibReader_iterator(stub_res_cat_by_name):
     reader = BibReader("tests/nyp-ebook-sample.mrc", "NYP", 1, stub_res_cat_by_name)
     with does_not_raise():
-        for bib in reader:
+        for _ in reader:
             continue
     assert reader.marc_target.closed
 
@@ -114,15 +114,21 @@ def test_BibReader_pickle_obj(fake_BibReader):
 def test_BibReader_fields2keep_eresource(arg1, arg2, stub_marc, fake_BibReader):
     tags = [
         Field(tag="001", data="ODN12345"),
-        Field(tag="020", indicators=[" ", " "], subfields=["a", "978111111111x"]),
         Field(
-            tag="037", indicators=[" ", " "], subfields=["a", "12345", "b", "Ovedrive"]
+            tag="020", indicators=[" ", " "], subfields=[Subfield("a", "978111111111x")]
         ),
-        Field(tag="856", indicators=["4", "0"], subfields=["u", "example.com"]),
+        Field(
+            tag="037",
+            indicators=[" ", " "],
+            subfields=[Subfield("a", "12345"), Subfield("b", "Ovedrive")],
+        ),
+        Field(
+            tag="856", indicators=["4", "0"], subfields=[Subfield("u", "example.com")]
+        ),
         Field(
             tag="856",
             indicators=["4", " "],
-            subfields=["3", "Image", "u", "example.com"],
+            subfields=[Subfield("3", "Image"), Subfield("u", "example.com")],
         ),
     ]
     stub_marc.leader = f"00000n{arg1}m a2200385Ka 4500"
@@ -149,24 +155,32 @@ def test_BibReader_map_data_eresource(
     bib.leader = f"00000n{arg1}m a2200385Ka 4500"
     tags = [
         Field(tag="001", data="ODN12345"),
-        Field(tag="010", subfields=["a", "12345"]),
-        Field(tag="020", indicators=[" ", " "], subfields=["a", "978111111111x"]),
+        Field(tag="010", subfields=[Subfield("a", "12345")]),
+        Field(
+            tag="020", indicators=[" ", " "], subfields=[Subfield("a", "978111111111x")]
+        ),
         Field(
             tag="037",
             indicators=[" ", " "],
-            subfields=["a", "1234567", "b", "Ovedrive"],
+            subfields=[Subfield("a", "1234567"), Subfield("b", "Ovedrive")],
         ),
-        Field(tag="856", indicators=["4", "0"], subfields=["u", "example.com"]),
+        Field(
+            tag="856", indicators=["4", "0"], subfields=[Subfield("u", "example.com")]
+        ),
         Field(
             tag="856",
             indicators=["4", " "],
-            subfields=["3", "Image", "u", "example.com"],
+            subfields=[Subfield("3", "Image"), Subfield("u", "example.com")],
         ),
         Field(
             tag="907",
-            subfields=["a", ".b22222222x", "b", "07-01-21", "c", "07-01-2021 19:07"],
+            subfields=[
+                Subfield("a", ".b22222222x"),
+                Subfield("b", "07-01-21"),
+                Subfield("c", "07-01-2021 19:07"),
+            ],
         ),
-        Field(tag="998", indicators=[" ", " "], subfields=["e", "n"]),
+        Field(tag="998", indicators=[" ", " "], subfields=[Subfield("e", "n")]),
     ]
     for tag in tags:
         bib.add_field(tag)

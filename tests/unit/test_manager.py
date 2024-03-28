@@ -1,5 +1,5 @@
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 
 import pytest
@@ -63,7 +63,7 @@ class TestProcessResourcesMocked:
         resource.queries = [
             WorldcatQuery(
                 match=False,
-                timestamp=datetime.utcnow().date() - timedelta(days=31),
+                timestamp=datetime.now(timezone.utc).date() - timedelta(days=31),
             )
         ]
         resource.outputId = None
@@ -103,7 +103,7 @@ def test_perform_db_maintenance_set_expired(
             sourceId=1,
             resourceCategoryId=1,
             status="open",
-            bibDate=datetime.utcnow().date() - timedelta(days=age),
+            bibDate=datetime.now(timezone.utc).date() - timedelta(days=age),
             queries=[WorldcatQuery(match=False)],
         )
     )
@@ -124,7 +124,7 @@ def test_perform_db_maintenance_set_expired(
     else:
         assert event is not None
         assert event.status == "expired"
-        assert event.timestamp.date() == datetime.utcnow().date()
+        assert event.timestamp.date() == datetime.now(timezone.utc).date()
 
 
 @pytest.mark.parametrize(
@@ -151,7 +151,7 @@ def test_perform_db_maintenance_delete(
             sourceId=1,
             resourceCategoryId=1,
             status="open",
-            bibDate=datetime.utcnow().date() - timedelta(days=age),
+            bibDate=datetime.now(timezone.utc).date() - timedelta(days=age),
             queries=[WorldcatQuery(match=False)],
         )
     )

@@ -12,7 +12,7 @@ from ..conftest import (
 from bookops_worldcat import WorldcatAccessToken, MetadataSession
 from bookops_worldcat.errors import (
     WorldcatAuthorizationError,
-    WorldcatSessionError,
+    WorldcatRequestError,
 )
 
 from nightshift.datastore import Resource
@@ -56,9 +56,7 @@ class TestWorldcatMocked:
             "key": "lib_key",
             "secret": "lib_secret",
             "scopes": "WorldCatMetadataAPI",
-            "principal_id": "lib_principal_id",
-            "principal_idns": "lib_principal_idns",
-            "agent": "NightShift/0.5.0",
+            "agent": "NightShift/0.6.0",
         }
 
     def test_get_access_token(self, mock_Worldcat):
@@ -66,13 +64,11 @@ class TestWorldcatMocked:
             "key": "lib_key",
             "secret": "lib_secret",
             "scopes": "WorldCatMetadataAPI",
-            "principal_id": "lib_principal_id",
-            "principal_idns": "lib_principal_idns",
-            "agent": "NightShift/0.4.0",
+            "agent": "NightShift/0.6.0",
         }
         token = mock_Worldcat._get_access_token(creds)
         assert isinstance(token, WorldcatAccessToken)
-        assert token.agent == "NightShift/0.4.0"
+        assert token.agent == "NightShift/0.6.0"
 
     def test_get_access_token_failure(
         self, caplog, mock_worldcat_creds, mock_failed_post_token_response
@@ -134,10 +130,10 @@ class TestWorldcatMocked:
             oclcMatchNumber="123",
         )
         with caplog.at_level(logging.ERROR):
-            with pytest.raises(WorldcatSessionError):
+            with pytest.raises(WorldcatRequestError):
                 next(mock_Worldcat.get_full_bibs([resource]))
 
-        assert "WorldcatSessionError. Aborting." in caplog.text
+        assert "WorldcatRequestError. Aborting." in caplog.text
 
     @pytest.mark.parametrize(
         "resource_cat_id,rotten_apples,expectation",
@@ -282,10 +278,10 @@ class TestWorldcatMocked:
     ):
         resource = Resource(nid=1, resourceCategoryId=1, distributorNumber="123")
         with caplog.at_level(logging.ERROR):
-            with pytest.raises(WorldcatSessionError):
+            with pytest.raises(WorldcatRequestError):
                 next(mock_Worldcat.get_brief_bibs([resource]))
 
-        assert "WorldcatSessionError. Aborting." in caplog.text
+        assert "WorldcatRequestError. Aborting." in caplog.text
 
     def test_get_brief_bibs_no_payload_available(
         self, caplog, mock_Worldcat, mock_successful_session_get_request

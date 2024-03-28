@@ -4,7 +4,7 @@
 NightShift's database schema.
 """
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 
 from sqlalchemy import (
@@ -98,7 +98,7 @@ class Event(Base):
     __tablename__ = "event"
 
     nid = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow())
+    timestamp = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
     libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
     sierraId = Column(Integer, nullable=False)
     bibDate = Column(Date, nullable=False)
@@ -142,7 +142,7 @@ class OutputFile(Base):
     nid = Column(Integer, primary_key=True)
     libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
     handle = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow())
+    timestamp = Column(DateTime, default=datetime.now(timezone.utc))
 
     def __repr__(self):
         return (
@@ -291,7 +291,7 @@ class SourceFile(Base):
     nid = Column(Integer, primary_key=True)
     libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
     handle = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow())
+    timestamp = Column(DateTime, default=datetime.now(timezone.utc))
 
     def __repr__(self):
         return (
@@ -315,7 +315,7 @@ class WorldcatQuery(Base):
     )
     match = Column(Boolean, nullable=False)
     response = Column(JSONB)
-    timestamp = Column(DateTime, default=datetime.utcnow(), nullable=False)
+    timestamp = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
 
     def __repr__(self):
         return (

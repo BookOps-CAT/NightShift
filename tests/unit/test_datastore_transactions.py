@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from contextlib import nullcontext as does_not_raise
 
 import pytest
@@ -212,7 +212,7 @@ def test_delete_resources(test_session, test_data_rich):
             sourceId=1,
             resourceCategoryId=1,
             status="expired",
-            bibDate=datetime.utcnow() - timedelta(days=last_day + 91),
+            bibDate=datetime.now(timezone.utc) - timedelta(days=last_day + 91),
             queries=[WorldcatQuery(match=False)],
         )
     )
@@ -247,7 +247,7 @@ def test_delete_resources_too_early(test_session, test_data_rich):
             sourceId=1,
             resourceCategoryId=1,
             status="expired",
-            bibDate=datetime.utcnow() - timedelta(days=last_day + 89),
+            bibDate=datetime.now(timezone.utc) - timedelta(days=last_day + 89),
             queries=[WorldcatQuery(match=False)],
         )
     )
@@ -299,7 +299,7 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(
         libraryId=1,
         resourceCategoryId=1,
         sourceId=1,
-        bibDate=datetime.utcnow().date(),
+        bibDate=datetime.now(timezone.utc).date(),
         title="TEST TITLE 1",
     )
     test_session.commit()
@@ -310,7 +310,7 @@ def test_insert_or_ignore_resubmitted_changed_record_exception(
         libraryId=1,
         resourceCategoryId=1,
         sourceId=2,
-        bibDate=datetime.utcnow().date(),
+        bibDate=datetime.now(timezone.utc).date(),
         title="REV TEST TITLE 1",
     )
     with pytest.raises(IntegrityError):
@@ -412,7 +412,7 @@ def test_retrieve_expired_resources(test_session, test_data_rich):
             sourceId=1,
             resourceCategoryId=nid,
             status="open",
-            bibDate=datetime.utcnow() - timedelta(days=last_day + 1),
+            bibDate=datetime.now(timezone.utc) - timedelta(days=last_day + 1),
         )
     )
     test_session.commit()
@@ -438,7 +438,7 @@ def test_retrieve_expired_resources_too_early(test_session, test_data_rich):
             sourceId=1,
             resourceCategoryId=nid,
             status="open",
-            bibDate=datetime.utcnow() - timedelta(days=last_day - 1),
+            bibDate=datetime.now(timezone.utc) - timedelta(days=last_day - 1),
         )
     )
     test_session.commit()
@@ -466,7 +466,7 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
     full_bib,
     expectation,
 ):
-    bib_date = datetime.utcnow().date()
+    bib_date = datetime.now(timezone.utc).date()
     test_session.add(
         Resource(
             nid=1,
@@ -511,7 +511,7 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
 def test_retrieve_open_older_resources(
     test_session, test_data_core, min_age, max_age, query_age, expectation
 ):
-    bib_date = datetime.utcnow() - timedelta(days=80)
+    bib_date = datetime.now(timezone.utc) - timedelta(days=80)
 
     test_session.add(
         Resource(
@@ -548,7 +548,7 @@ def test_retrieve_open_older_resources_no_queries_performed(
             nid=1,
             sierraId=22222222,
             libraryId=1,
-            bibDate=datetime.utcnow() - timedelta(days=80),
+            bibDate=datetime.now(timezone.utc) - timedelta(days=80),
             resourceCategoryId=1,
             title="TEST TITLE",
             sourceId=1,
@@ -572,7 +572,7 @@ def test_retrieve_open_older_resources_no_queries_performed(
 def test_retrieve_open_older_resources_multiple_queries_performed(
     test_session, test_data_core, query_age, expectation
 ):
-    bib_date = datetime.utcnow() - timedelta(days=100)
+    bib_date = datetime.now(timezone.utc) - timedelta(days=100)
 
     test_session.add(
         Resource(
@@ -634,7 +634,7 @@ def test_retrieve_open_older_resources_invalid_resources(
     max_age,
     expectation,
 ):
-    bib_date = datetime.utcnow() - timedelta(days=max_age)
+    bib_date = datetime.now(timezone.utc) - timedelta(days=max_age)
 
     test_session.add(
         Resource(
@@ -678,7 +678,7 @@ def test_retrieve_new_resources(test_session, test_data_core):
             sierraId=11111111,
             libraryId=2,
             resourceCategoryId=2,
-            bibDate=datetime.utcnow().date(),
+            bibDate=datetime.now(timezone.utc).date(),
             title="TEST TITLE 5",
             sourceId=2,
             status="open",
@@ -692,7 +692,7 @@ def test_retrieve_new_resources(test_session, test_data_core):
             sierraId=22222222,
             libraryId=1,
             resourceCategoryId=1,
-            bibDate=datetime.utcnow().date(),
+            bibDate=datetime.now(timezone.utc).date(),
             title="TEST TITLE 1",
             sourceId=1,
             status="open",
@@ -704,7 +704,7 @@ def test_retrieve_new_resources(test_session, test_data_core):
             sierraId=22222223,
             libraryId=1,
             resourceCategoryId=2,
-            bibDate=datetime.utcnow().date(),
+            bibDate=datetime.now(timezone.utc).date(),
             title="TEST TITLE 2",
             sourceId=1,
             status="open",
@@ -716,7 +716,7 @@ def test_retrieve_new_resources(test_session, test_data_core):
             sierraId=22222224,
             libraryId=1,
             resourceCategoryId=1,
-            bibDate=datetime.utcnow().date(),
+            bibDate=datetime.now(timezone.utc).date(),
             title="TEST TITLE 3",
             sourceId=1,
             status="open",
@@ -728,7 +728,7 @@ def test_retrieve_new_resources(test_session, test_data_core):
             sierraId=22222225,
             libraryId=1,
             resourceCategoryId=1,
-            bibDate=datetime.utcnow().date(),
+            bibDate=datetime.now(timezone.utc).date(),
             title="TEST TITLE 4",
             sourceId=1,
             status="open",
@@ -749,7 +749,7 @@ def test_retrieve_new_resources(test_session, test_data_core):
 
 
 def test_retrieve_open_matched_resources_without_full_bib(test_session, test_data_core):
-    some_date = (datetime.utcnow().date(),)
+    some_date = (datetime.now(timezone.utc).date(),)
     # BPL resources
     test_session.add(
         Resource(
@@ -876,7 +876,7 @@ def test_set_resources_to_expired(test_session, test_data_rich, stub_resource):
             sourceId=1,
             resourceCategoryId=1,
             status="open",
-            bibDate=datetime.utcnow() - timedelta(days=last_day + 1),
+            bibDate=datetime.now(timezone.utc) - timedelta(days=last_day + 1),
         )
     )
     test_session.commit()
@@ -908,7 +908,7 @@ def test_set_resources_to_expired_too_early(
             sourceId=1,
             resourceCategoryId=1,
             status="open",
-            bibDate=datetime.utcnow() - timedelta(days=last_day - 1),
+            bibDate=datetime.now(timezone.utc) - timedelta(days=last_day - 1),
         )
     )
     test_session.commit()
@@ -949,7 +949,7 @@ def test_update_resource(test_session):
         sierraId=sierraId,
         libraryId=lib_rec.nid,
         resourceCategoryId=cat_rec.nid,
-        bibDate=datetime.utcnow().date(),
+        bibDate=datetime.now(timezone.utc).date(),
         title="TEST TITLE",
         sourceId=src_rec.nid,
         status="open",

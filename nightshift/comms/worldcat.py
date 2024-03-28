@@ -11,7 +11,7 @@ from typing import Any
 from bookops_worldcat import WorldcatAccessToken, MetadataSession
 from bookops_worldcat.errors import (
     WorldcatAuthorizationError,
-    WorldcatSessionError,
+    WorldcatRequestError,
 )
 from requests import Response
 
@@ -147,8 +147,6 @@ class Worldcat:
             key=os.getenv(f"WC{self.library}_KEY"),
             secret=os.getenv(f"WC{self.library}_SECRET"),
             scopes="WorldCatMetadataAPI",
-            principal_id=os.getenv(f"WC{self.library}_PRINCIPALID"),
-            principal_idns=os.getenv(f"WC{self.library}_PRINCIPALIDNS"),
             agent=f"{__title__}/{__version__}",
         )
 
@@ -264,7 +262,7 @@ class Worldcat:
                     continue
 
                 for payload in payloads:
-                    response = self.session.search_brief_bibs(
+                    response = self.session.brief_bibs_search(
                         **payload,
                         inCatalogLanguage="eng",
                         orderBy="mostWidelyHeld",
@@ -290,8 +288,8 @@ class Worldcat:
 
                 yield (resource, brief_bib_response)
 
-        except WorldcatSessionError:
-            logger.error(f"WorldcatSessionError. Aborting.")
+        except WorldcatRequestError:
+            logger.error(f"WorldcatRequestError. Aborting.")
             raise
 
     def get_full_bibs(
@@ -302,14 +300,12 @@ class Worldcat:
         """
         try:
             for resource in resources:
-                response = self.session.get_full_bib(
-                    oclcNumber=resource.oclcMatchNumber
-                )
+                response = self.session.bib_get(oclcNumber=resource.oclcMatchNumber)
                 logger.debug(
                     f"Full bib Worldcat request for {self.library} Sierra bib # "
                     f"b{resource.sierraId}a: {response.url}."
                 )
                 yield (resource, response.content)
-        except WorldcatSessionError:
-            logger.error("WorldcatSessionError. Aborting.")
+        except WorldcatRequestError:
+            logger.error("WorldcatRequestError. Aborting.")
             raise
