@@ -4,7 +4,7 @@ from io import BytesIO
 import os
 
 from bookops_marc import Bib
-from pymarc import Field
+from pymarc import Field, Subfield
 import pytest
 from sqlalchemy.exc import IntegrityError
 
@@ -124,28 +124,36 @@ def stub_marc():
         Field(
             tag="100",
             indicators=["1", " "],
-            subfields=["a", "Adams, John,", "e", "author."],
+            subfields=[Subfield("a", "Adams, John,"), Subfield("e", "author.")],
         )
     )
     bib.add_field(
         Field(
             tag="245",
             indicators=["1", "4"],
-            subfields=["a", "The foo /", "c", "by John Adams."],
+            subfields=[Subfield("a", "The foo /"), Subfield("c", "by John Adams.")],
         )
     )
     bib.add_field(
         Field(
             tag="264",
             indicators=[" ", "1"],
-            subfields=["a", "Bar :", "b", "New York,", "c", "2021"],
+            subfields=[
+                Subfield("a", "Bar :"),
+                Subfield("b", "New York,"),
+                Subfield("c", "2021"),
+            ],
         )
     )
     bib.add_field(
         Field(
             tag="907",
             indicators=[" ", " "],
-            subfields=["a", ".b22222222x", "b", "07-01-21", "c", "07-01-2021 19:07"],
+            subfields=[
+                Subfield("a", ".b22222222x"),
+                Subfield("b", "07-01-21"),
+                Subfield("c", "07-01-2021 19:07"),
+            ],
         )
     )
 

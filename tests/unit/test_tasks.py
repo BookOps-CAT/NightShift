@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 import logging
 import os
 
@@ -215,7 +215,7 @@ def test_get_worldcat_brief_bib_matches_success(
             libraryId=1,
             resourceCategoryId=1,
             sourceId=1,
-            bibDate=datetime.utcnow().date(),
+            bibDate=datetime.now(timezone.utc).date(),
             title="Pride and prejudice.",
             distributorNumber="123",
             status="open",
@@ -263,7 +263,7 @@ def test_get_worldcat_brief_bib_matches_failed(
             libraryId=library_id,
             resourceCategoryId=1,
             sourceId=1,
-            bibDate=datetime.utcnow().date(),
+            bibDate=datetime.now(timezone.utc).date(),
             title="Pride and prejudice.",
             distributorNumber="123",
             status="open",
@@ -309,7 +309,7 @@ def test_get_worldcat_full_bibs(
             libraryId=1,
             resourceCategoryId=1,
             sourceId=1,
-            bibDate=datetime.utcnow().date(),
+            bibDate=datetime.now(timezone.utc).date(),
             title="Pride and prejudice.",
             distributorNumber="123",
             status="open",
@@ -433,7 +433,7 @@ def test_manipulate_and_serialize_bibs_default_outfile(
     assert bib["091"].value() == "eNYPL Book"
     assert bib["945"].value() == ".b11111111a"
     assert bib["949"].value() == "*b2=z;bn=ia;"
-    assert bib["901"].value() == "NightShift/0.5.0"
+    assert bib["901"].value() == "NightShift/0.6.0"
 
     if os.path.exists("temp.mrc"):
         try:
@@ -472,7 +472,7 @@ def test_manipulate_and_serialize_bibs_custom_outfile(
     assert bib["091"].value() == "eNYPL Book"
     assert bib["945"].value() == ".b11111111a"
     assert bib["949"].value() == "*b2=z;bn=ia;"
-    assert bib["901"].value() == "NightShift/0.5.0"
+    assert bib["901"].value() == "NightShift/0.6.0"
 
 
 def test_manipulate_and_serialize_bibs_failed(
