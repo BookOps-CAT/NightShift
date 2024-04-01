@@ -7,16 +7,16 @@ Use following patterns to record data:
     queryDays: 
         record as string;
 
-        all numbers indicate days since bib was created, example: '15' means 15 days after
-        bib created date
+        all numbers indicate days since bib was created, example: '15' means 15 days
+        after bib created date
 
-        to indicate an individual period record the starting and ending age in days separated
-        by hyphen, example: '15-30' which means query should happen between 15th and 30th day
-        since bib was created
+        to indicate an individual period record the starting and ending age in days
+        separated by hyphen, example: '15-30' which means query should happen between
+        15th and 30th day since bib was created
 
         separate individual periods with a comma, example: '15-30,30-60'
 
-        multiple time periods will trigger as many query attemps, one in each period
+        multiple time periods will trigger as many query attempts, one in each period
         
 """
 

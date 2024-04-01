@@ -42,7 +42,7 @@ STATUS = ENUM(
 
 def conf_db():
     """
-    Retrieves db configuation from env variables
+    Retrieves db configuration from env variables
 
     Returns:
         db settings as dictionary

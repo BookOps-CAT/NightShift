@@ -128,7 +128,7 @@ class SearchResponse:
                     return "staff_deleted"
             except KeyError:
                 pass
-            # if bib orignated from Worldcat asssume full bib
+            # if bib originated from Worldcat assume full bib
             if "ss_marc_tag_003" in data and data["ss_marc_tag_003"] == "OCoLC":
                 return "staff_enhanced"
 
@@ -201,7 +201,7 @@ class NypPlatform(PlatformSession):
     def __init__(self) -> None:
         """
         Authenticates and opens a session with NYPL Platform.
-        Relies on credentials stored in evironmental variables.
+        Relies on credentials stored in environment variables.
         """
         client_id, client_secret, oauth_server, target = self._get_credentials()
         token = self._get_token(client_id, client_secret, oauth_server)
@@ -236,7 +236,7 @@ class NypPlatform(PlatformSession):
         Obtains an access token for NYPL Platform
 
         Args:
-            client_id:                      NYPL Platfrom client id
+            client_id:                      NYPL Platform client id
             client_secret:                  NYPL Platform client secret
             oauth_server:                   NYPL Platform authorization server
 

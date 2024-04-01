@@ -20,7 +20,7 @@ def config_local_env_variables(
 ) -> None:
     """
     Sets up environment variables to run NighShift locally.
-    Requires a valid config.yaml file in the nighshift/config directory
+    Requires a valid config.yaml file in the nightshift/config directory
 
     Args:
         config_file:            path to config file that includes environmental

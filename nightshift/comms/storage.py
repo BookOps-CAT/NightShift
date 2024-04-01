@@ -143,7 +143,7 @@ class Drive:
         Appends stream to a file in SFTP/Drive load directory
 
         Args:
-            local_file_path:            path to a local file to be transfered to SFTP
+            local_file_path:            path to a local file to be transferred to SFTP
             remote_file_name_base:      file name base for the file on SFTP
 
         Returns:

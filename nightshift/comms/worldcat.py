@@ -82,7 +82,7 @@ class Worldcat:
         self, access_token: WorldcatAccessToken
     ) -> MetadataSession:
         """
-        Opens a session with MetatadaAPI service
+        Opens a session with MetadataAPI service
 
         Args:
             access_token:               `WorldcatAccessToken` instance
@@ -234,7 +234,7 @@ class Worldcat:
         self, resources: list[Resource], rotten_apples: dict[int, list[str]] = {}
     ) -> Iterator[tuple[Resource, BriefBibResponse]]:
         """
-        Performes WorldCat queries for each resource in the passed library batch.
+        Performs WorldCat queries for each resource in the passed library batch.
         Resources must belong to the same library.
 
         Args:

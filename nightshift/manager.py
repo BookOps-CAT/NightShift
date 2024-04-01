@@ -1,10 +1,10 @@
 """
-This module incldues top level processes to be performed by the app
+This module includes top level processes to be performed by the app
 """
+
 import logging
 
 
-from nightshift.constants import RESOURCE_CATEGORIES
 from nightshift.datastore import session_scope
 from nightshift.datastore_transactions import (
     add_event,
@@ -50,7 +50,7 @@ def process_resources() -> None:
     5. Downloads full bibliographic records for resources that were successfully matched
     6. Manipulates, serializes to MARC21 and outputs to SFTP resources with full bibs
         from WorldCat
-    7. Updates status of resources that were succesfully ouput to SFTP completing the
+    7. Updates status of resources that were successfully output to SFTP completing the
         process.
 
     """
@@ -115,7 +115,7 @@ def process_resources() -> None:
                     if resources:
                         tasks.get_worldcat_brief_bib_matches(resources)
                         logger.info(
-                            f"Obtainig WorldCat matches for {len(resources)} "
+                            f"Obtaining WorldCat matches for {len(resources)} "
                             f"{library} {res_category} older resources completed."
                         )
 
@@ -141,7 +141,7 @@ def process_resources() -> None:
                     tasks.enhance_and_output_bibs(res_category, resources)
 
                     logger.info(
-                        f"Enhancement and serializaiton of {library} {res_category} "
+                        f"Enhancement and serialization of {library} {res_category} "
                         "complete."
                     )
 

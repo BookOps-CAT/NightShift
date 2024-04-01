@@ -106,7 +106,7 @@ def init_db() -> None:
                 "source_file",
                 "worldcat_query",
             ]
-        ), "Database is missing requried tables."
+        ), "Database is missing required tables."
 
         # check both libraries were added
         libraries = session.query(Library).all()
@@ -170,7 +170,7 @@ def add_output_file(session: Session, libraryId: int, file_handle: str) -> Outpu
 
     Args:
         session:                `sqlalchemy.Session` instance
-        libaryId:               datastore Library record nid
+        libraryId:              datastore Library record nid
         file_handle:            handle of the out file
 
     Returns:
@@ -337,7 +337,7 @@ def retrieve_expired_resources(
 ) -> list[Resource]:
     """
     Retrieves resources for a particular category specified by resourceCategoryId that
-    expired accoring to the schedule from the `constants.RESOURCE_CATEGORIES`
+    expired according to the schedule from the `constants.RESOURCE_CATEGORIES`
     query_days.
 
     Args:
@@ -389,7 +389,7 @@ def retrieve_open_older_resources(
 ) -> list[Resource]:
     """
     Queries resources with open status that has not been queried in WorldCat
-    betweeen minAge and maxAge.
+    between minAge and maxAge.
 
     Args:
         session:                `sqlalchemy.Session` instance

@@ -34,8 +34,8 @@ logger = logging.getLogger("nightshift")
 
 class Tasks:
     """
-    Handles various operations related to ingetings new files, searching Worldcat,
-    manipulating results and outputing the results to SFTP.
+    Handles various operations related to ingesting new files, searching Worldcat,
+    manipulating results and outputting the results to SFTP.
     """
 
     def __init__(
@@ -81,7 +81,7 @@ class Tasks:
 
     def _create_rotten_apples_idx(self) -> dict[int, list[str]]:
         """
-        Creates a dictionary of forbiddent organization codes which records
+        Creates a dictionary of forbidden organization codes which records
         should be excluded from retrieved from Worldcat results
         """
         rotten_apples = retrieve_rotten_apples(self.db_session)
@@ -91,7 +91,7 @@ class Tasks:
         """
         Checks and updates status & suppression of records using
         NYPL Platform & BPL Solr.
-        This method updates resources in the databse.
+        This method updates resources in the database.
 
         Args:
             resources:                      list of `nightshift.datastore.Resource`
@@ -155,7 +155,7 @@ class Tasks:
         in the database.
 
         Args:
-            resources:                      list of `nigthtshift.datastore.Resource`
+            resources:                      list of `nightshift.datastore.Resource`
                                             instances
         """
         logger.info(
@@ -217,7 +217,7 @@ class Tasks:
                 )
 
                 # commit each full bib response in case something
-                # breaks during this lenthy process;
+                # breaks during this lengthy process;
                 # this should save time if process need to be restarted
                 self.db_session.commit()
 
@@ -263,7 +263,7 @@ class Tasks:
         record handles with handles retrieved from the drive.
 
         Args:
-            drive:                      `nightshfit.comms.storage.Drive` client instance
+            drive:                      `nightshift.comms.storage.Drive` client instance
 
         Returns:
             list of remote unprocessed file handles
@@ -289,11 +289,11 @@ class Tasks:
         out_fh: str = "temp.mrc",
     ) -> tuple[Optional[str], list[Resource]]:
         """
-        Merges Sierra brief bibs data with WroldCat full bib,
+        Merges Sierra brief bibs data with WorldCat full bib,
         and serializes them into MARC21 format
 
         Args:
-            resource_category:              name of resource cateogry ('ebook', etc.)
+            resource_category:              name of resource category ('ebook', etc.)
             resources:                      list of `nightshift.datastore.Resource`
                                             instances
             out_fh:                         path of the file where records are saved
@@ -363,7 +363,7 @@ class Tasks:
 
         Args:
             resource_category:             name of resource category being processed
-            src_file:                      temporary local file to be transfered
+            src_file:                      temporary local file to be transferred
 
         Returns:
             SFTP file handle

@@ -3,7 +3,7 @@
 """
 This module reads and parses MARC Sierra records (bibliographic and order data)
 to be inserted into the DB.
-In case of e-resouces only bib informatin is considered.
+In case of e-resources only bib information is considered.
 Source MARC files for e-resources will have a mix of various formats (ebooks, eaudio,
 evideo)
 """
@@ -69,7 +69,7 @@ class BibReader:
             marc_target:                    MARC file or file-like object
             library:                        'NYP' or 'BPL'
             libraryId:                     `datastore.Library.nid`
-            resource_categories:            a dicitonary of resource categories and
+            resource_categories:            a dictionary of resource categories and
                                             data associated them as namedtuple
             hide_utf8_warnings:             hides character encoding warnings
 
@@ -116,7 +116,7 @@ class BibReader:
 
     def _determine_resource_category(self, bib: Bib) -> Optional[str]:
         """
-        Determies resource category based on bib and order information.
+        Determines resource category based on bib and order information.
 
         Args:
             bib:                            `bookops_marc.Bib` instance
@@ -146,7 +146,7 @@ class BibReader:
             # determine particular resource category for print material here
             # based it on order information from the 960/961 tags
             logger.warning(
-                f"Unsuppported bib type. Unable to ingest {self.library} bib # "
+                f"Unsupported bib type. Unable to ingest {self.library} bib # "
                 f"{bib.sierra_bib_id()}."
             )
             return None

@@ -79,7 +79,7 @@ class BibEnhancer:
         specs.
 
         Full manipulation happens only if records meets minimum requirements and
-        a call number can be cosntructed.
+        a call number can be constructed.
         """
 
         # delete unwanted MARC tags
@@ -101,7 +101,7 @@ class BibEnhancer:
         else:
             logger.info(
                 f"Worldcat record # {self.resource.oclcMatchNumber} is acceptable. "
-                "Meets minimum requriements."
+                "Meets minimum requirements."
             )
 
             # genre tags
@@ -382,7 +382,7 @@ class BibEnhancer:
     def _is_acceptable(self) -> bool:
         """
         Checks if full Worldcat record meet minimum criteria and
-        a valid call number can be construced.
+        a valid call number can be constructed.
         """
         if self._meets_minimum_criteria() and self._add_call_number():
             return True
