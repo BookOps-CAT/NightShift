@@ -39,7 +39,8 @@ def worldcat_response_to_bib(response: bytes, library: str) -> Bib:
     logger.debug("Converting Worldcat response to bookops-marc Bib object.")
     if not isinstance(response, bytes):
         logger.error(
-            f"Invalid MARC data format: {type(response).__name__}. Not able to convert to bookops-marc Bib object."
+            f"Invalid MARC data format: {type(response).__name__}. "
+            "Not able to convert to bookops-marc Bib object."
         )
         raise TypeError("Invalid MARC data format. Must be bytes.")
     else:
@@ -74,7 +75,7 @@ class BibReader:
             hide_utf8_warnings:             hides character encoding warnings
 
         """
-        logger.info(f"Initating BibReader.")
+        logger.info("Initiating BibReader.")
 
         if isinstance(marc_target, BytesIO):
             self.marc_target = marc_target
@@ -82,7 +83,8 @@ class BibReader:
             self.marc_target = open(marc_target, "rb")
         else:
             logger.error(
-                f"Invalid 'marc_target' argument: '{marc_target}' ({type(marc_target).__name__}))"
+                f"Invalid 'marc_target' argument: '{marc_target}' "
+                f"({type(marc_target).__name__}))"
             )
             raise TypeError("Invalid 'marc_target' argument. Must be file-like object.")
 
