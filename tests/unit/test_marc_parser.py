@@ -99,9 +99,7 @@ def test_BibReader_unsupported_resource_type_log_warning(
         fake_BibReader.library = "NYP"
         fake_BibReader._determine_resource_category(stub_marc)
 
-    assert (
-        "Unsuppported bib type. Unable to ingest NYP bib # b22222222x." in caplog.text
-    )
+    assert "Unsupported bib type. Unable to ingest NYP bib # b22222222x." in caplog.text
 
 
 def test_BibReader_pickle_obj(fake_BibReader):
