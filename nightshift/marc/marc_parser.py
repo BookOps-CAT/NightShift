@@ -14,7 +14,7 @@ from typing import Any, BinaryIO, Iterator, Optional, Union
 
 from bookops_marc import SierraBibReader, Bib
 from bookops_marc.bib import pymarc_record_to_local_bib
-from pymarc import parse_xml_to_array, Record
+from pymarc import parse_xml_to_array
 
 
 from ..datastore import Resource
