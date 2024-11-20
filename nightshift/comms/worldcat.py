@@ -224,7 +224,7 @@ class Worldcat:
                         catalogSource="DLC",
                     )
                 )
-        logging.debug(
+        logger.debug(
             f"Query payload for {self.library} Sierra bib # b{resource.sierraId}a: "
             f"{payloads}."
         )
