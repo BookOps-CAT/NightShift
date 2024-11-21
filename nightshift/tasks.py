@@ -108,7 +108,7 @@ class Tasks:
             )
             raise ValueError("Invalid library argument. Must be 'NYP' or 'BPL'")
 
-        logging.info(
+        logger.info(
             f"Checking {self.library} Sierra status for {len(resources)} resources."
         )
 
@@ -237,12 +237,12 @@ class Tasks:
 
             # find files that have not been processed
             unproc_files = self.isolate_unprocessed_files(drive)
-            logging.info(f"Found following unprocessed files: {unproc_files}.")
+            logger.info(f"Found following unprocessed files: {unproc_files}.")
 
             # add records data to the db
             for handle in unproc_files:
                 file_record = add_source_file(self.db_session, self.libraryId, handle)
-                logging.debug(f"Added SourceFile record for '{handle}': {file_record}")
+                logger.debug(f"Added SourceFile record for '{handle}': {file_record}")
                 marc_target = drive.fetch_file(handle)
                 marc_reader = BibReader(
                     marc_target, self.library, self.libraryId, self._res_cat
@@ -255,7 +255,7 @@ class Tasks:
                     add_resource(self.db_session, resource)
 
                 self.db_session.commit()
-                logging.info(f"Ingested {n} records from the file '{handle}'.")
+                logger.info(f"Ingested {n} records from the file '{handle}'.")
 
     def isolate_unprocessed_files(self, drive: Drive) -> list[str]:
         """
@@ -274,7 +274,7 @@ class Tasks:
         library_remote_files = [
             file for file in remote_files if self.library in file and "-pout" in file
         ]
-        logging.debug(
+        logger.debug(
             f"Found following remote files for {self.library}: {library_remote_files}."
         )
 
@@ -403,7 +403,7 @@ class Tasks:
         """
         if out_file_handle is not None:
 
-            logging.info(
+            logger.info(
                 f"Updating {len(resources)} resources status to 'bot_enhanced'."
             )
 
@@ -425,7 +425,7 @@ class Tasks:
 
             self.db_session.commit()
         else:
-            logging.info(
+            logger.info(
                 "Skipping resources enhancement status update. "
                 "No SFTP output file this time."
             )

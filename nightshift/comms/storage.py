@@ -179,12 +179,12 @@ class Drive:
         """
         if self.sftp:
             self.sftp.close()
-            logging.debug("SFTP client session closed.")
+            logger.debug("SFTP client session closed.")
         if (
             self.transport
         ):  # necessary since paramiko keeps open threads hanging occasionally
             self.transport.close()
-            logging.debug("Secure channels closed.")
+            logger.debug("Secure channels closed.")
 
     def _construct_dst_handle(self, base_name: str, n: int) -> str:
         """
@@ -252,7 +252,7 @@ class Drive:
         Returns:
             `paramiko.sftp_client.SFTPClient` instance
         """
-        logging.debug(f"Opening a secure channel to {sock}.")
+        logger.debug(f"Opening a secure channel to {sock}.")
         try:
             self.transport = Transport(sock)
             self.transport.connect(None, user, password)
@@ -263,7 +263,7 @@ class Drive:
             )
             raise DriveError
         else:
-            logging.debug("Successfully connected to the SFTP.")
+            logger.debug("Successfully connected to the SFTP.")
             return sftp
 
     def _sock(self, host: str, port: Optional[str] = None) -> str:
