@@ -14,7 +14,7 @@ More info:
 [Sierra Scheduler configuration](https://github.com/BookOps-CAT/NightShift/blob/main/docs/sierra.md) | [WorldCat record matching](https://github.com/BookOps-CAT/NightShift/blob/main/docs/matching.md) | [Record manipulation](https://github.com/BookOps-CAT/NightShift/blob/main/docs/manipulating.md) | [Sierra loading instructions](https://github.com/BookOps-CAT/NightShift/blob/main/docs/loading.md) 
 
 ## Version
-> 0.6.0
+> 0.6.2
 
 ## Local Installation & Usage
 
@@ -61,6 +61,12 @@ If a good match in WorldCat has been found, the bot manipulates the downloaded f
 If for any reason the execution of the routine is interrupted (API error, etc.), the process can be restarted using `run [local, prod]` command again. The bot will pick up exactly where it left.
 
 ## Changelog
+[0.6.2] - 2026-03-16
+### Changed
++ reformatted pyproject.toml per PEP 621
+[0.6.1] - 2024-08-26
+### Fixed
+ + Unsupported-resource-type-warning-fix
 [0.6.0] - 2024-03-28
 ### Changed
 + updated dependencies:
@@ -134,3 +140,5 @@ If for any reason the execution of the routine is interrupted (API error, etc.),
 [0.4.0]: https://github.com/BookOps-CAT/NightShift/compare/0.3.0...0.4.0
 [0.5.0]: https://github.com/BookOps-CAT/NightShift/compare/0.4.0...0.5.0
 [0.6.0]: https://github.com/BookOps-CAT/NightShift/compare/0.5.0...0.6.0
+[0.6.1]: https://github.com/BookOps-CAT/NightShift/compare/0.6.0...0.6.1
+[0.6.2]: https://github.com/BookOps-CAT/NightShift/compare/0.6.1...0.6.2

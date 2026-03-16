@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
-from contextlib import nullcontext as does_not_raise
-from datetime import datetime, date, timezone
 import logging
 import os
+from contextlib import nullcontext as does_not_raise
+from datetime import date, datetime, timezone
 
-from pymarc import MARCReader
 import pytest
+from pymarc import MARCReader
 
-from nightshift.constants import ROTTEN_APPLES
-from nightshift.datastore import Event, Resource, OutputFile, SourceFile
-from nightshift.datastore_transactions import ResCatByName, ResCatById
+from nightshift.datastore import Event, OutputFile, Resource, SourceFile
+from nightshift.datastore_transactions import ResCatById, ResCatByName
 from nightshift.ns_exceptions import DriveError
 from nightshift.tasks import Tasks
 
@@ -419,9 +418,7 @@ def test_manipulate_and_serialize_bibs_default_outfile(
         file, resources = tasks.manipulate_and_serialize_bibs("ebook", resources)
 
     assert "NYP b11111111a has been output to 'temp.mrc'." in caplog.text
-    assert (
-        f"Enhanced and serialized 1 and skipped 0 NYP ebook record(s)." in caplog.text
-    )
+    assert "Enhanced and serialized 1 and skipped 0 NYP ebook record(s)." in caplog.text
 
     assert file == "temp.mrc"
     assert len(resources) == 1
@@ -433,7 +430,7 @@ def test_manipulate_and_serialize_bibs_default_outfile(
     assert bib["091"].value() == "eNYPL Book"
     assert bib["945"].value() == ".b11111111a"
     assert bib["949"].value() == "*b2=z;bn=ia;"
-    assert bib["901"].value() == "NightShift/0.6.0"
+    assert bib["901"].value() == "NightShift/0.6.2"
 
     if os.path.exists("temp.mrc"):
         try:
@@ -458,9 +455,7 @@ def test_manipulate_and_serialize_bibs_custom_outfile(
         )
 
     assert f"NYP b11111111a has been output to '{outfile}'." in caplog.text
-    assert (
-        f"Enhanced and serialized 1 and skipped 0 NYP ebook record(s)." in caplog.text
-    )
+    assert "Enhanced and serialized 1 and skipped 0 NYP ebook record(s)." in caplog.text
 
     assert file == outfile
     assert len(resources) == 1
@@ -472,7 +467,7 @@ def test_manipulate_and_serialize_bibs_custom_outfile(
     assert bib["091"].value() == "eNYPL Book"
     assert bib["945"].value() == ".b11111111a"
     assert bib["949"].value() == "*b2=z;bn=ia;"
-    assert bib["901"].value() == "NightShift/0.6.0"
+    assert bib["901"].value() == "NightShift/0.6.2"
 
 
 def test_manipulate_and_serialize_bibs_failed(

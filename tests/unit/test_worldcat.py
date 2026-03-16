@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
-from contextlib import nullcontext as does_not_raise
 import logging
+from contextlib import nullcontext as does_not_raise
 
 import pytest
-
-from ..conftest import (
-    MockSuccessfulHTTP200SessionResponseNoMatches,
-    MockSuccessfulHTTP200SessionResponse,
-)
-
-from bookops_worldcat import WorldcatAccessToken, MetadataSession
+from bookops_worldcat import MetadataSession, WorldcatAccessToken
 from bookops_worldcat.errors import (
     WorldcatAuthorizationError,
     WorldcatRequestError,
 )
 
+from nightshift.comms.worldcat import BriefBibResponse, Worldcat
 from nightshift.datastore import Resource
-from nightshift.comms.worldcat import Worldcat, BriefBibResponse
+
+from ..conftest import (
+    MockSuccessfulHTTP200SessionResponse,
+    MockSuccessfulHTTP200SessionResponseNoMatches,
+)
 
 
 class TestBriefBibResponse:
@@ -56,7 +55,7 @@ class TestWorldcatMocked:
             "key": "lib_key",
             "secret": "lib_secret",
             "scopes": "WorldCatMetadataAPI",
-            "agent": "NightShift/0.6.0",
+            "agent": "NightShift/0.6.2",
         }
 
     def test_get_access_token(self, mock_Worldcat):
@@ -64,11 +63,11 @@ class TestWorldcatMocked:
             "key": "lib_key",
             "secret": "lib_secret",
             "scopes": "WorldCatMetadataAPI",
-            "agent": "NightShift/0.6.0",
+            "agent": "NightShift/0.6.2",
         }
         token = mock_Worldcat._get_access_token(creds)
         assert isinstance(token, WorldcatAccessToken)
-        assert token.agent == "NightShift/0.6.0"
+        assert token.agent == "NightShift/0.6.2"
 
     def test_get_access_token_failure(
         self, caplog, mock_worldcat_creds, mock_failed_post_token_response
