@@ -3,14 +3,14 @@
 """
 NightShift's database schema.
 """
+
+import os
 from contextlib import contextmanager
 from datetime import datetime, timezone
-import os
 
 from sqlalchemy import (
     Boolean,
     Column,
-    create_engine,
     Date,
     DateTime,
     ForeignKey,
@@ -18,13 +18,14 @@ from sqlalchemy import (
     PickleType,
     String,
     UniqueConstraint,
+    create_engine,
 )
-from sqlalchemy.dialects.postgresql import ENUM, JSONB, BYTEA
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.dialects.postgresql import BYTEA, ENUM, JSONB
+from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
 
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
 STATUS = ENUM(
@@ -105,7 +106,7 @@ class Event(Base):
     resourceCategoryId = Column(
         Integer, ForeignKey("resource_category.nid"), nullable=False
     )
-    status = Column(STATUS)
+    status: Column[ENUM] = Column(STATUS)
 
     def __repr__(self):
         return (
@@ -185,7 +186,7 @@ class Resource(Base):
     oclcMatchNumber = Column(String)
     fullBib = Column(BYTEA)
     outputId = Column(Integer, ForeignKey("output_file.nid"))
-    status = Column(STATUS)
+    status: Column[ENUM] = Column(STATUS)
     enhanceTimestamp = Column(DateTime)
 
     queries = relationship("WorldcatQuery", cascade="all, delete-orphan")

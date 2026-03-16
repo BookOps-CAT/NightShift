@@ -191,8 +191,10 @@ class Worldcat:
         elif resource.resourceCategoryId == 3:
             # evideo
             if resource.distributorNumber:
-                query = f"sn={resource.distributorNumber} NOT lv:3 NOT "
-                f"lv:M{forbidden_sources}"
+                query = (
+                    f"sn={resource.distributorNumber} NOT lv:3 NOT "
+                    f"lv:M{forbidden_sources}"
+                )
                 payloads.append(
                     dict(q=query, itemType="video", itemSubType="video-digital")
                 )
