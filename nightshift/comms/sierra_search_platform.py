@@ -5,14 +5,15 @@ This module handles communication with NYPL Platform and BPL Solr.
 It is used to check status of records in Sierra between WorldCat queries
 so fully cataloged or deleted bibs are dropped from the process.
 """
+
 import logging
 import os
 from typing import Optional
 
-from bookops_nypl_platform import PlatformToken, PlatformSession
-from bookops_nypl_platform.errors import BookopsPlatformError
 from bookops_bpl_solr import SolrSession
 from bookops_bpl_solr.session import BookopsSolrError
+from bookops_nypl_platform import PlatformSession, PlatformToken
+from bookops_nypl_platform.errors import BookopsPlatformError
 from requests import Response
 
 from .. import __title__, __version__
@@ -62,11 +63,13 @@ class SearchResponse:
 
         if response.status_code == 404:
             logger.warning(
-                f"{self.library} Sierra b{self.sierraId}a not found (404 HTTP code). Request: {response.url}"
+                f"{self.library} Sierra b{self.sierraId}a not found (404 HTTP code). "
+                f"Request: {response.url}"
             )
         elif response.status_code >= 400:
             logger.error(
-                f"{self.library} search platform returned HTTP error code {response.status_code} for request {response.url}"
+                f"{self.library} search platform returned HTTP error code "
+                f"{response.status_code} for request {response.url}"
             )
             raise SierraSearchPlatformError
 
@@ -210,9 +213,7 @@ class NypPlatform(PlatformSession):
         super().__init__(authorization=token, agent=agent, target=target)
         logger.info("NYPL Platform session initiated.")
 
-    def _get_credentials(
-        self,
-    ) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    def _get_credentials(self) -> tuple[str, str, str, str]:
         """
         Retrieves NYPL Platform credentials from environmental variables.
 
@@ -220,17 +221,14 @@ class NypPlatform(PlatformSession):
                 (client_id, secret_id, oauth_server, platform_env)
         """
         return (
-            os.getenv("NYPL_PLATFORM_CLIENT"),
-            os.getenv("NYPL_PLATFORM_SECRET"),
-            os.getenv("NYPL_PLATFORM_OAUTH"),
-            os.getenv("NYPL_PLATFORM_ENV"),
+            os.environ["NYPL_PLATFORM_CLIENT"],
+            os.environ["NYPL_PLATFORM_SECRET"],
+            os.environ["NYPL_PLATFORM_OAUTH"],
+            os.environ["NYPL_PLATFORM_ENV"],
         )
 
     def _get_token(
-        self,
-        client_id: Optional[str],
-        client_secret: Optional[str],
-        oauth_server: Optional[str],
+        self, client_id: str, client_secret: str, oauth_server: str
     ) -> PlatformToken:
         """
         Obtains an access token for NYPL Platform
@@ -268,7 +266,6 @@ class NypPlatform(PlatformSession):
             `ns_exceptions.SierraSearchPlatformError`
         """
         try:
-
             response = self.get_bib(sierraId)
             logger.debug(
                 f"NYPL Platform request ({response.status_code}): {response.url}."
@@ -292,20 +289,16 @@ class BplSolr(SolrSession):
         client_key, endpoint = self._get_credentials()
         agent = f"{__title__}/{__version__}"
 
-        super().__init__(
-            authorization=client_key,
-            endpoint=endpoint,
-            agent=agent,
-        )
+        super().__init__(authorization=client_key, endpoint=endpoint, agent=agent)
 
-    def _get_credentials(self) -> tuple[Optional[str], Optional[str]]:
+    def _get_credentials(self) -> tuple[str, str]:
         """
         Obtains credentials from environmental variables.
 
         Returns:
             (client_key, endpoint)
         """
-        return (os.getenv("BPL_SOLR_CLIENT_KEY"), os.getenv("BPL_SOLR_ENDPOINT"))
+        return (os.environ["BPL_SOLR_CLIENT_KEY"], os.environ["BPL_SOLR_ENDPOINT"])
 
     def get_sierra_bib(self, sierraId: int) -> SearchResponse:
         """

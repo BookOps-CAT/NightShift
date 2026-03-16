@@ -52,12 +52,19 @@ warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
 
+[tool.ruff.lint]
+select = ["F", "E", "ANN"]
+ignore = ["ANN401"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501", "ANN"]
+
+[tool.ruff.format]
+skip-magic-trailing-comma = true
+
 [[tool.mypy.overrides]]
-module = [
-    "nightshift.datastore",
-    "nightshift.datastore_transactions"
-]
-ignore_errors = true
+module = ["tests.*"]
+disallow_untyped_defs = false
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

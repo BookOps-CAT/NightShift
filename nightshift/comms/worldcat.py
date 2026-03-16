@@ -3,21 +3,18 @@
 """
 This module handles WorldCat Metadata API requests.
 """
-from collections.abc import Iterator
-import os
+
 import logging
+import os
+from collections.abc import Iterator
 from typing import Any
 
-from bookops_worldcat import WorldcatAccessToken, MetadataSession
-from bookops_worldcat.errors import (
-    WorldcatAuthorizationError,
-    WorldcatRequestError,
-)
+from bookops_worldcat import MetadataSession, WorldcatAccessToken
+from bookops_worldcat.errors import WorldcatAuthorizationError, WorldcatRequestError
 from requests import Response
 
 from nightshift import __title__, __version__
 from nightshift.datastore import Resource
-
 
 logger = logging.getLogger("nightshift")
 
@@ -168,7 +165,7 @@ class Worldcat:
         payloads = []
 
         forbidden_sources = self._format_rotten_apples(
-            resource.resourceCategoryId, rotten_apples
+            int(resource.resourceCategoryId), rotten_apples
         )
 
         if resource.resourceCategoryId == 1:
@@ -187,22 +184,17 @@ class Worldcat:
         elif resource.resourceCategoryId == 2:
             # eaudio
             if resource.distributorNumber:
+                query = f"sn={resource.distributorNumber} NOT lv:3{forbidden_sources}"
                 payloads.append(
-                    dict(
-                        q=f"sn={resource.distributorNumber} NOT lv:3{forbidden_sources}",
-                        itemType="audiobook",
-                        itemSubType="audiobook-digital",
-                    )
+                    dict(q=query, itemType="audiobook", itemSubType="audiobook-digital")
                 )
         elif resource.resourceCategoryId == 3:
             # evideo
             if resource.distributorNumber:
+                query = f"sn={resource.distributorNumber} NOT lv:3 NOT "
+                f"lv:M{forbidden_sources}"
                 payloads.append(
-                    dict(
-                        q=f"sn={resource.distributorNumber} NOT lv:3 NOT lv:M{forbidden_sources}",
-                        itemType="video",
-                        itemSubType="video-digital",
-                    )
+                    dict(q=query, itemType="video", itemSubType="video-digital")
                 )
         elif resource.resourceCategoryId in range(4, 12):
             # print monograph materials
@@ -251,7 +243,6 @@ class Worldcat:
         """
         try:
             for resource in resources:
-
                 payloads = self._prep_resource_queries_payloads(resource, rotten_apples)
                 if not payloads:
                     logger.warning(
@@ -289,7 +280,7 @@ class Worldcat:
                 yield (resource, brief_bib_response)
 
         except WorldcatRequestError:
-            logger.error(f"WorldcatRequestError. Aborting.")
+            logger.error("WorldcatRequestError. Aborting.")
             raise
 
     def get_full_bibs(
@@ -300,7 +291,9 @@ class Worldcat:
         """
         try:
             for resource in resources:
-                response = self.session.bib_get(oclcNumber=resource.oclcMatchNumber)
+                response = self.session.bib_get(
+                    oclcNumber=str(resource.oclcMatchNumber)
+                )
                 logger.debug(
                     f"Full bib Worldcat request for {self.library} Sierra bib # "
                     f"b{resource.sierraId}a: {response.url}."
