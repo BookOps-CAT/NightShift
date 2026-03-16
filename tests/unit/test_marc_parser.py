@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
+import logging
+import pickle
 from contextlib import nullcontext as does_not_raise
 from datetime import date
 from io import BytesIO
-import logging
-import pickle
 
+import pytest
 from bookops_marc import Bib
 from pymarc import Field, Subfield
-import pytest
 
 from nightshift.datastore import Resource
 from nightshift.marc.marc_parser import BibReader, worldcat_response_to_bib
@@ -160,7 +160,7 @@ def test_BibReader_map_data_eresource(
         Field(
             tag="037",
             indicators=[" ", " "],
-            subfields=[Subfield("a", "1234567"), Subfield("b", "Ovedrive")],
+            subfields=[Subfield("a", "1234567"), Subfield("b", "OverDrive, Inc.")],
         ),
         Field(
             tag="856", indicators=["4", "0"], subfields=[Subfield("u", "example.com")]
