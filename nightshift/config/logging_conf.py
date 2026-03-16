@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
-
 """
 Configures app logging
 """
+
 import os
 
 
@@ -54,10 +53,10 @@ def log_conf() -> dict:
         "disable_existing_loggers": False,
         "formatters": {
             "brief": {
-                "format": "%(name)s-%(asctime)s-%(filename)s-%(lineno)s-%(levelname)s-%(message)s"
+                "format": "%(name)s-%(asctime)s-%(filename)s-%(lineno)s-%(levelname)s-%(message)s"  # noqa: E501
             },
             "json": {
-                "format": '{"app":"%(name)s", "asciTime":"%(asctime)s", "fileName":"%(filename)s", "lineNo":"%(lineno)d", "levelName":"%(levelname)s", "message":"%(message)s"}'
+                "format": '{"app":"%(name)s", "asciTime":"%(asctime)s", "fileName":"%(filename)s", "lineNo":"%(lineno)d", "levelName":"%(levelname)s", "message":"%(message)s"}'  # noqa: E501
             },
         },
         "handlers": {
@@ -83,11 +82,7 @@ def log_conf() -> dict:
             },
         },
         "loggers": {
-            "nightshift": {
-                "handlers": handlers,
-                "level": "DEBUG",
-                "propagate": True,
-            }
+            "nightshift": {"handlers": handlers, "level": "DEBUG", "propagate": True}
         },
     }
     return logging_config
