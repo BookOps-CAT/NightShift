@@ -1,15 +1,15 @@
 """
 Launches NightShift application
 """
+
 import argparse
 import logging
 import logging.config
-import loggly.handlers
 import os
 import sys
 
-from sqlalchemy.exc import IntegrityError
 import yaml
+from sqlalchemy.exc import IntegrityError
 
 from nightshift import datastore_transactions, manager
 from nightshift.config.logging_conf import log_conf
@@ -50,7 +50,7 @@ def configure_database(env: str = "prod") -> None:
             f"Operation raised following error: {exc}"
         )
     except ValueError:
-        print(f"Environmental variables are not configured properly.")
+        print("Environmental variables are not configured properly.")
     except AssertionError as exc:
         print(f"Created database has invalid structure. Error: {exc}.")
 
@@ -99,7 +99,7 @@ def main(args: list) -> None:
 
     parser.add_argument(
         "action",
-        help="'init' sets up database ; 'run' launches processing records and db maintenance",
+        help="'init' sets up db ; 'run' begins record processing and db maintenance",
         type=str,
         choices=["init", "run"],
     )
