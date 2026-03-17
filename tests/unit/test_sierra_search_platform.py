@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
-from contextlib import nullcontext as does_not_raise
 import logging
+from contextlib import nullcontext as does_not_raise
 
-from bookops_nypl_platform import PlatformToken
 import pytest
+from bookops_nypl_platform import PlatformToken
 
 from nightshift import __title__, __version__
-from nightshift.ns_exceptions import SierraSearchPlatformError
 from nightshift.comms.sierra_search_platform import (
-    is_eresource_callno,
     BplSolr,
     NypPlatform,
     SearchResponse,
+    is_eresource_callno,
 )
+from nightshift.ns_exceptions import SierraSearchPlatformError
 
 from ..conftest import (
     MockPlatformSessionResponseNotFound,
     MockPlatformSessionResponseSuccess,
     MockSearchSessionHTTPError,
-    MockSolrSessionResponseSuccess,
     MockSolrSessionResponseNotFound,
+    MockSolrSessionResponseSuccess,
 )
 
 
@@ -70,7 +70,7 @@ class TestSearchResponse:
         with caplog.at_level(logging.WARN):
             sr = SearchResponse(11111111, "NYP", response)
         assert (
-            f"NYP Sierra b11111111a not found (404 HTTP code). Request: request_url_here"
+            "NYP Sierra b11111111a not found (404 HTTP code). Request: request_url_here"
             in caplog.text
         )
         assert sr._nyp_suppression() is False
@@ -79,11 +79,7 @@ class TestSearchResponse:
     def test_nyp_suppression_match_response(self, arg, expectation):
         response = MockPlatformSessionResponseSuccess()
         sr = SearchResponse(11111111, "NYP", response)
-        sr.json_response = {
-            "data": {
-                "suppressed": arg,
-            }
-        }
+        sr.json_response = {"data": {"suppressed": arg}}
         assert sr._nyp_suppression() == expectation
 
     def test_bpl_suppression_not_found(self):
@@ -95,15 +91,7 @@ class TestSearchResponse:
     def test_bpl_suppression_match_response(self, arg, expectation):
         response = MockSolrSessionResponseSuccess()
         sr = SearchResponse(11111111, "BPL", response)
-        sr.json_response = {
-            "response": {
-                "docs": [
-                    {
-                        "suppressed": arg,
-                    }
-                ],
-            }
-        }
+        sr.json_response = {"response": {"docs": [{"suppressed": arg}]}}
         assert sr._bpl_suppression() == expectation
 
     @pytest.mark.parametrize(
@@ -145,10 +133,8 @@ class TestSearchResponse:
                         "ind1": " ",
                         "ind2": " ",
                         "content": tag_content,
-                        "subfields": [
-                            {"tag": "a", "content": sub_content},
-                        ],
-                    },
+                        "subfields": [{"tag": "a", "content": sub_content}],
+                    }
                 ],
             }
         }
@@ -179,12 +165,7 @@ class TestSearchResponse:
                 "numFound": 1,
                 "start": 0,
                 "numFoundExact": True,
-                "docs": [
-                    {
-                        "bs_deleted_in_sierra": deleted,
-                        field: value,
-                    }
-                ],
+                "docs": [{"bs_deleted_in_sierra": deleted, field: value}],
             }
         }
         assert sr._determine_bpl_bib_status() == expectation
@@ -197,11 +178,7 @@ class TestSearchResponse:
                 "numFound": 1,
                 "start": 0,
                 "numFoundExact": True,
-                "docs": [
-                    {
-                        "call_number": "eBOOK",
-                    }
-                ],
+                "docs": [{"call_number": "eBOOK"}],
             }
         }
         assert sr._determine_bpl_bib_status() == "open"
