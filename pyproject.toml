@@ -47,12 +47,6 @@ omit = [
     "*/tests/*",
 ]
 
-[tool.mypy]
-python_version = 3.9
-warn_return_any = true
-warn_unused_configs = true
-ignore_missing_imports = true
-
 [tool.ruff.lint]
 select = ["F", "E", "ANN"]
 ignore = ["ANN401"]
