@@ -165,7 +165,7 @@ class Worldcat:
         payloads = []
 
         forbidden_sources = self._format_rotten_apples(
-            int(resource.resourceCategoryId), rotten_apples
+            resource.resourceCategoryId, rotten_apples
         )
 
         if resource.resourceCategoryId == 1:

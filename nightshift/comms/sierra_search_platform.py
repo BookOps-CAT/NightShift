@@ -107,7 +107,6 @@ class SearchResponse:
         elif self.response.status_code == 404:
             # on a rare occasion NYPL bibs may not get ingested into Platform
             bib_status = "staff_deleted"
-
         logger.debug(
             f"{self.library} Sierra bib # {self.sierraId} status: {bib_status}"
         )
