@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """
 Use following patterns to record data:
     src_tags2delete & dst_tags2delete: string of MARC tags separated by comma, example:
         "020,037,856"
 
-    queryDays: 
+    queryDays:
         record as string;
 
         all numbers indicate days since bib was created, example: '15' means 15 days
@@ -17,9 +16,8 @@ Use following patterns to record data:
         separate individual periods with a comma, example: '15-30,30-60'
 
         multiple time periods will trigger as many query attempts, one in each period
-        
-"""
 
+"""
 
 LIBRARIES = {"NYP": {"nid": 1}, "BPL": {"nid": 2}}
 
