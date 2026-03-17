@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
 from collections import namedtuple
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from sqlalchemy import and_, create_engine, delete, func, inspect, update
+from sqlalchemy import and_, create_engine, func, inspect
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 
-# from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift import constants
 from nightshift.datastore import (
     DataAccessLayer,
@@ -76,7 +74,7 @@ def init_db() -> None:
                 srcTags2Keep=v["srcTags2Keep"],
                 dstTags2Delete=v["dstTags2Delete"],
                 queryDays=v["queryDays"],
-            ),
+            )
         )
 
     for code, resource_cat_ids in constants.ROTTEN_APPLES.items():
@@ -120,12 +118,12 @@ def init_db() -> None:
         names = [row.name for row in categories]
         assert len(categories) == 11, "Invalid number of 'ResourceCategory' records."
         assert "ebook" in names, "Missing 'ebook' category in 'ResourceCategory' table."
-        assert (
-            "eaudio" in names
-        ), "Missing 'eaudio' category in 'ResourceCategory' table."
-        assert (
-            "evideo" in names
-        ), "Missing 'evideo' category in 'ResourceCategory' table."
+        assert "eaudio" in names, (
+            "Missing 'eaudio' category in 'ResourceCategory' table."
+        )
+        assert "evideo" in names, (
+            "Missing 'evideo' category in 'ResourceCategory' table."
+        )
     except AssertionError:
         raise
     finally:
@@ -284,7 +282,7 @@ def library_by_id(session: Session) -> dict[int, str]:
     return {i.nid: i.code for i in instances}
 
 
-def parse_query_days(query_days: str) -> list[tuple[int, int]]:
+def parse_query_days(query_days: str) -> list[tuple[int, ...]]:
     """
     Parses query days stored as strings in the datastore
     into proper format.
@@ -422,9 +420,7 @@ def retrieve_open_older_resources(
     resources = (
         session.query(Resource)
         .join(subq, and_(Resource.nid == subq.c.nid))
-        .filter(
-            subq.c.last_query < Resource.bibDate + timedelta(days=minAge),
-        )
+        .filter(subq.c.last_query < Resource.bibDate + timedelta(days=minAge))
         .all()
     )
     return resources
@@ -517,7 +513,7 @@ def retrieve_rotten_apples(session: Session) -> dict[int, list[str]]:
         .all()
     )
 
-    rotten_apples = dict()
+    rotten_apples: dict[int, list[str]] = {}
 
     for r in results:
         if r.resourceCategoryId in rotten_apples:
