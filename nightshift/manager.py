@@ -4,24 +4,20 @@ This module includes top level processes to be performed by the app
 
 import logging
 
-
 from nightshift.datastore import session_scope
 from nightshift.datastore_transactions import (
     add_event,
     delete_resources,
     library_by_id,
     resource_category_by_name,
-    retrieve_new_resources,
     retrieve_expired_resources,
+    retrieve_new_resources,
     retrieve_open_matched_resources_with_full_bib_obtained,
     retrieve_open_matched_resources_without_full_bib,
     retrieve_open_older_resources,
     set_resources_to_expired,
 )
-
-
 from nightshift.tasks import Tasks
-
 
 logger = logging.getLogger("nightshift")
 
@@ -55,12 +51,10 @@ def process_resources() -> None:
 
     """
     with session_scope() as db_session:
-
         lib_idx = library_by_id(db_session)
         res_cat = resource_category_by_name(db_session)
 
         for lib_nid, library in lib_idx.items():
-
             logger.info(f"Processing {library} resources.")
 
             # initiate Task client for the library
@@ -85,11 +79,7 @@ def process_resources() -> None:
             for res_category, res_cat_data in res_cat.items():
                 for age_min, age_max in res_cat_data.queryDays:
                     resources = retrieve_open_older_resources(
-                        db_session,
-                        lib_nid,
-                        res_cat_data.nid,
-                        age_min,
-                        age_max,
+                        db_session, lib_nid, res_cat_data.nid, age_min, age_max
                     )
                     # query Sierra platform to update their status if changed
                     if resources:
@@ -104,11 +94,7 @@ def process_resources() -> None:
             for res_category, res_cat_data in res_cat.items():
                 for age_min, age_max in res_cat_data.queryDays:
                     resources = retrieve_open_older_resources(
-                        db_session,
-                        lib_nid,
-                        res_cat_data.nid,
-                        age_min,
-                        age_max,
+                        db_session, lib_nid, res_cat_data.nid, age_min, age_max
                     )
 
                     # perform WorldCat searches for open older resources
@@ -151,11 +137,9 @@ def perform_db_maintenance() -> None:
     Marks resources as expired or deletes them if past certain age.
     """
     with session_scope() as db_session:
-
         res_cat = resource_category_by_name(db_session)
 
         for res_category, res_cat_data in res_cat.items():
-
             # set to expired
             expiration_age = res_cat_data.queryDays[-1][1]
 
