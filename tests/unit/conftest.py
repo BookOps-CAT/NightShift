@@ -1,19 +1,18 @@
-# -*- coding: utf-8 -*-
+import os
 from datetime import datetime
 from io import BytesIO
-import os
 
+import pytest
 from bookops_marc import Bib
 from pymarc import Field, Subfield
-import pytest
 from sqlalchemy.exc import IntegrityError
 
-from nightshift import bot, datastore_transactions, manager, constants
+from nightshift import bot, constants, datastore_transactions, manager
 from nightshift.comms.storage import Drive
+from nightshift.config import logging_conf
 from nightshift.datastore import OutputFile, WorldcatQuery
 from nightshift.marc.marc_parser import BibReader
 from nightshift.tasks import Tasks
-from nightshift.config import logging_conf
 
 
 class MockOSError:

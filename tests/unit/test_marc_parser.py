@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 import pickle
 from contextlib import nullcontext as does_not_raise

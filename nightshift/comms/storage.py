@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This module handles communication with network drive accessible via SFTP where Sierra
 dumps daily files for processing and where CAT staff can access produces MARC files.

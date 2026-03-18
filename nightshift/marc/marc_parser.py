@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This module reads and parses MARC Sierra records (bibliographic and order data)
 to be inserted into the DB.

@@ -1,18 +1,17 @@
-# -*- coding: utf-8 -*-
-
 """
 This module provides the manager methods to perform particular tasks
 """
-from datetime import datetime, timezone
+
 import logging
 import os
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm.session import Session
 
+from nightshift.comms.sierra_search_platform import BplSolr, NypPlatform
+from nightshift.comms.storage import Drive, get_credentials
 from nightshift.comms.worldcat import Worldcat
-from nightshift.comms.sierra_search_platform import NypPlatform, BplSolr
-from nightshift.comms.storage import get_credentials, Drive
 from nightshift.datastore import Resource, WorldcatQuery
 from nightshift.datastore_transactions import (
     ResCatById,
@@ -97,6 +96,7 @@ class Tasks:
             resources:                      list of `nightshift.datastore.Resource`
                                             instances to be checked
         """
+        sierra_platform: NypPlatform | BplSolr
         if self.library == "NYP":
             sierra_platform = NypPlatform()
         elif self.library == "BPL":
@@ -113,12 +113,16 @@ class Tasks:
         )
 
         for resource in resources:
-            response = sierra_platform.get_sierra_bib(resource.sierraId)
-            resource.suppressed = response.is_suppressed()
-            resource.status = response.get_status()
+            response = sierra_platform.get_sierra_bib(int(resource.sierraId))
+            suppressed = response.is_suppressed()
+            if suppressed is not None:
+                resource.suppressed = suppressed
+            status = response.get_status()
+            if status is not None:
+                resource.status = status
 
             if resource.status in ("staff_enhanced", "staff_deleted"):
-                add_event(self.db_session, resource, status=resource.status)
+                add_event(self.db_session, resource, status=str(resource.status))
 
             # persist changes
             self.db_session.commit()
@@ -234,7 +238,6 @@ class Tasks:
         """
         drive_creds = get_credentials()
         with Drive(*drive_creds) as drive:
-
             # find files that have not been processed
             unproc_files = self.isolate_unprocessed_files(drive)
             logger.info(f"Found following unprocessed files: {unproc_files}.")
@@ -388,9 +391,7 @@ class Tasks:
             return remote_file
 
     def update_status_to_upgraded(
-        self,
-        out_file_handle: Optional[str],
-        resources: list[Resource],
+        self, out_file_handle: Optional[str], resources: list[Resource]
     ) -> None:
         """
         Upgrades given resources status to "bot_enhanced" and records output file id.
@@ -402,7 +403,6 @@ class Tasks:
                                             instances
         """
         if out_file_handle is not None:
-
             logger.info(
                 f"Updating {len(resources)} resources status to 'bot_enhanced'."
             )

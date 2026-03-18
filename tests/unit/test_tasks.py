@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 import os
 from contextlib import nullcontext as does_not_raise
@@ -21,7 +20,7 @@ from ..conftest import (
 def test_create_resource_category_idx(test_session, stub_res_cat_by_name):
     tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
     tasks._res_cat = dict(
-        ebook=ResCatByName(9, "a", "b", ["999"], ["099", "199"], [(15, 30), (30, 60)]),
+        ebook=ResCatByName(9, "a", "b", ["999"], ["099", "199"], [(15, 30), (30, 60)])
     )
     res = tasks._create_resource_category_idx()
     assert isinstance(res, dict)
@@ -406,10 +405,7 @@ def test_isolate_unprocessed_bpl_files(
 
 
 def test_manipulate_and_serialize_bibs_default_outfile(
-    caplog,
-    stub_res_cat_by_name,
-    test_session,
-    test_data_rich,
+    caplog, stub_res_cat_by_name, test_session, test_data_rich
 ):
 
     resources = test_session.query(Resource).all()
@@ -440,11 +436,7 @@ def test_manipulate_and_serialize_bibs_default_outfile(
 
 
 def test_manipulate_and_serialize_bibs_custom_outfile(
-    caplog,
-    tmpdir,
-    test_session,
-    test_data_rich,
-    stub_res_cat_by_name,
+    caplog, tmpdir, test_session, test_data_rich, stub_res_cat_by_name
 ):
     outfile = tmpdir.join("custom_file.mrc")
     resources = test_session.query(Resource).all()

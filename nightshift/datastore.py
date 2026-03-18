@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 NightShift's database schema.
 """
@@ -183,8 +181,8 @@ class Resource(Base):
     standardNumber = Column(String)
     suppressed = Column(Boolean, nullable=False, default=False)
 
-    oclcMatchNumber = Column(String)
-    fullBib = Column(BYTEA)
+    oclcMatchNumber = Column(String, nullable=True)
+    fullBib = Column(BYTEA, nullable=True)
     outputId = Column(Integer, ForeignKey("output_file.nid"))
     status: Column[ENUM] = Column(STATUS)
     enhanceTimestamp = Column(DateTime)

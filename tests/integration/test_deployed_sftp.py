@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
+import logging
 from contextlib import nullcontext as does_not_raise
 from io import BytesIO
-import logging
 
 import pytest
 
-from nightshift.comms.storage import get_credentials, Drive
+from nightshift.comms.storage import Drive, get_credentials
 from nightshift.ns_exceptions import DriveError
 
 

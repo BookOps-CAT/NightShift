@@ -1,18 +1,16 @@
-# -*- coding: utf-8 -*-
 import datetime
 import os
 
 import paramiko
 import pytest
 import requests
+import yaml
+from bookops_worldcat import MetadataSession, WorldcatAccessToken
+from bookops_worldcat.errors import WorldcatRequestError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from bookops_worldcat import WorldcatAccessToken, MetadataSession
-from bookops_worldcat.errors import WorldcatRequestError
-import yaml
 
-
-from nightshift.comms.storage import get_credentials, Drive
+from nightshift.comms.storage import Drive, get_credentials
 from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES, ROTTEN_APPLES
 from nightshift.datastore import (
@@ -327,9 +325,7 @@ class MockSuccessfulHTTP200SessionResponse(requests.Response):
                     "specificFormat": "Digital",
                     "publisher": "Project Gutenberg",
                     "publicationPlace": "Champaign, Ill.",
-                    "isbns": [
-                        "9780585013367",
-                    ],
+                    "isbns": ["9780585013367"],
                     "mergedOclcNumbers": ["818363152"],
                     "catalogingInfo": {
                         "catalogingAgency": "DLC",
@@ -350,9 +346,7 @@ class MockSuccessfulHTTP200SessionResponseNoMatches(requests.Response):
         self._content = b"some content here"
 
     def json(self):
-        return {
-            "numberOfRecords": 0,
-        }
+        return {"numberOfRecords": 0}
 
 
 class MockSessionError:

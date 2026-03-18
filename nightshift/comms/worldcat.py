@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This module handles WorldCat Metadata API requests.
 """
