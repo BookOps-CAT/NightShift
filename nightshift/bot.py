@@ -115,7 +115,7 @@ def main(args: list) -> None:
     if pargs.action == "run":
         run(env=pargs.environment)
 
-    elif pargs.action == "init":
+    else:
         configure_database(env=pargs.environment)
 
 
