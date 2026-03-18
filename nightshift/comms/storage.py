@@ -175,9 +175,8 @@ class Drive:
         if self.sftp:
             self.sftp.close()
             logger.debug("SFTP client session closed.")
-        if (
-            self.transport
-        ):  # necessary since paramiko keeps open threads hanging occasionally
+        if self.transport:
+            # necessary since paramiko keeps open threads hanging occasionally
             self.transport.close()
             logger.debug("Secure channels closed.")
 
