@@ -302,8 +302,8 @@ class Tasks:
         Returns:
             tuple (output file, list of enhanced resources)
         """
-        enhanced_resources = []
-        skipped_resources = []
+        enhanced_resources: list[Resource] = []
+        skipped_resources: list[Resource] = []
 
         # make sure to start from scratch
         try:
