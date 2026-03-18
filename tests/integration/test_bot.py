@@ -6,7 +6,6 @@ import logging
 
 import pytest
 
-
 from nightshift.bot import run
 from nightshift.comms.storage import Drive, get_credentials
 

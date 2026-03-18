@@ -113,16 +113,14 @@ class Tasks:
         )
 
         for resource in resources:
-            response = sierra_platform.get_sierra_bib(int(resource.sierraId))
+            response = sierra_platform.get_sierra_bib(resource.sierraId)
             suppressed = response.is_suppressed()
             if suppressed is not None:
                 resource.suppressed = suppressed
-            status = response.get_status()
-            if status is not None:
-                resource.status = status
+            resource.status = response.get_status()
 
             if resource.status in ("staff_enhanced", "staff_deleted"):
-                add_event(self.db_session, resource, status=str(resource.status))
+                add_event(self.db_session, resource, status=resource.status)
 
             # persist changes
             self.db_session.commit()

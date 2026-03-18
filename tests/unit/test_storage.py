@@ -1,10 +1,10 @@
-from io import BytesIO
 import logging
-import pytest
+from io import BytesIO
 
 import paramiko
+import pytest
 
-from nightshift.comms.storage import get_credentials, Drive
+from nightshift.comms.storage import Drive, get_credentials
 from nightshift.ns_exceptions import DriveError
 
 
@@ -155,11 +155,7 @@ class TestDriveMocked:
         )
 
     @pytest.mark.parametrize(
-        "host,port,expectation",
-        [
-            ("foo", "22", "foo:22"),
-            ("foo", None, "foo"),
-        ],
+        "host,port,expectation", [("foo", "22", "foo:22"), ("foo", None, "foo")]
     )
     def test_sock(self, host, port, expectation, mock_drive):
         assert mock_drive._sock(host, port) == expectation

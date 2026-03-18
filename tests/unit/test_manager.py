@@ -1,13 +1,11 @@
+import logging
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timedelta, timezone
-import logging
 
 import pytest
 
-from nightshift.comms.storage import get_credentials, Drive
-from nightshift.constants import RESOURCE_CATEGORIES
 from nightshift.datastore import Event, Resource, WorldcatQuery
-from nightshift.manager import process_resources, perform_db_maintenance
+from nightshift.manager import perform_db_maintenance, process_resources
 
 
 class TestProcessResourcesMocked:

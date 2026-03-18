@@ -1,9 +1,10 @@
 """
 Tests bot.py module
 """
-from contextlib import nullcontext as does_not_raise
-import os
+
 import logging
+import os
+from contextlib import nullcontext as does_not_raise
 
 import pytest
 import yaml

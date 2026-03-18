@@ -60,22 +60,25 @@ def init_db() -> None:
     session = dal.Session()
 
     # recreate schema & prepopulate needed tables
-    for k, v in constants.LIBRARIES.items():
-        session.add(Library(nid=v["nid"], code=k))
+    libraries = [Library(nid=v["nid"], code=k) for k, v in constants.LIBRARIES.items()]
+    for library in libraries:
+        session.add(library)
 
-    for k, v in constants.RESOURCE_CATEGORIES.items():
-        session.add(
-            ResourceCategory(
-                nid=v["nid"],
-                name=k,
-                description=v["description"],
-                sierraBibFormatBpl=v["sierraBibFormatBpl"],
-                sierraBibFormatNyp=v["sierraBibFormatNyp"],
-                srcTags2Keep=v["srcTags2Keep"],
-                dstTags2Delete=v["dstTags2Delete"],
-                queryDays=v["queryDays"],
-            )
+    res_cats = [
+        ResourceCategory(
+            nid=v["nid"],
+            name=k,
+            description=v["description"],
+            sierraBibFormatBpl=v["sierraBibFormatBpl"],
+            sierraBibFormatNyp=v["sierraBibFormatNyp"],
+            srcTags2Keep=v["srcTags2Keep"],
+            dstTags2Delete=v["dstTags2Delete"],
+            queryDays=v["queryDays"],
         )
+        for k, v in constants.RESOURCE_CATEGORIES.items()
+    ]
+    for res_cat in res_cats:
+        session.add(res_cat)
 
     for code, resource_cat_ids in constants.ROTTEN_APPLES.items():
         ids = [
@@ -408,7 +411,7 @@ def retrieve_open_older_resources(
             Resource.libraryId == libraryId,
             Resource.resourceCategoryId == resourceCategoryId,
             Resource.status == "open",
-            Resource.oclcMatchNumber == None,
+            Resource.oclcMatchNumber.is_(None),
             Resource.bibDate > datetime.now(timezone.utc) - timedelta(days=maxAge),
             Resource.bibDate < datetime.now(timezone.utc) - timedelta(days=minAge),
         )
@@ -446,8 +449,8 @@ def retrieve_open_matched_resources_without_full_bib(
         .filter(
             Resource.libraryId == libraryId,
             Resource.status == "open",
-            Resource.oclcMatchNumber != None,
-            Resource.fullBib == None,
+            Resource.oclcMatchNumber.is_not(None),
+            Resource.fullBib.is_(None),
         )
         .order_by(Resource.resourceCategoryId, Resource.nid)
         .all()
