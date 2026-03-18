@@ -2,13 +2,13 @@
 NightShift's database schema.
 """
 
+import datetime
 import os
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from typing import Any, Optional
 
 from sqlalchemy import (
     Boolean,
-    Column,
     Date,
     DateTime,
     ForeignKey,
@@ -19,7 +19,13 @@ from sqlalchemy import (
     create_engine,
 )
 from sqlalchemy.dialects.postgresql import BYTEA, ENUM, JSONB
-from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+    relationship,
+    sessionmaker,
+)
 
 
 class Base(DeclarativeBase):
@@ -96,15 +102,19 @@ class Event(Base):
 
     __tablename__ = "event"
 
-    nid = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
-    libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
-    sierraId = Column(Integer, nullable=False)
-    bibDate = Column(Date, nullable=False)
-    resourceCategoryId = Column(
+    nid: Mapped[int] = mapped_column(Integer, primary_key=True)
+    timestamp: Mapped[datetime.datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.datetime.now(datetime.timezone.utc)
+    )
+    libraryId: Mapped[int] = mapped_column(
+        Integer, ForeignKey("library.nid"), nullable=False
+    )
+    sierraId: Mapped[int] = mapped_column(Integer, nullable=False)
+    bibDate: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    resourceCategoryId: Mapped[int] = mapped_column(
         Integer, ForeignKey("resource_category.nid"), nullable=False
     )
-    status: Column[ENUM] = Column(STATUS)
+    status: Mapped[str] = mapped_column(STATUS, nullable=False)
 
     def __repr__(self):
         return (
@@ -123,8 +133,8 @@ class Library(Base):
 
     __tablename__ = "library"
 
-    nid = Column(Integer, primary_key=True)
-    code = Column(String(3), unique=True)
+    nid: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(3), unique=True)
 
     def __repr__(self):
         return f"<Library(nid='{self.nid}', code='{self.code}')>"
@@ -138,10 +148,14 @@ class OutputFile(Base):
     __tablename__ = "output_file"
     __table_args__ = (UniqueConstraint("handle", "libraryId"),)
 
-    nid = Column(Integer, primary_key=True)
-    libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
-    handle = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.now(timezone.utc))
+    nid: Mapped[int] = mapped_column(Integer, primary_key=True)
+    libraryId: Mapped[int] = mapped_column(
+        Integer, ForeignKey("library.nid"), nullable=False
+    )
+    handle: Mapped[str] = mapped_column(String, nullable=False)
+    timestamp: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.now(datetime.timezone.utc)
+    )
 
     def __repr__(self):
         return (
@@ -160,32 +174,40 @@ class Resource(Base):
     __tablename__ = "resource"
     __table_args__ = (UniqueConstraint("sierraId", "libraryId"),)
 
-    nid = Column(Integer, primary_key=True)
-    sierraId = Column(Integer, nullable=False)
-    libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
-    resourceCategoryId = Column(
+    nid: Mapped[int] = mapped_column(Integer, primary_key=True)
+    sierraId: Mapped[int] = mapped_column(Integer, nullable=False)
+    libraryId: Mapped[int] = mapped_column(
+        Integer, ForeignKey("library.nid"), nullable=False
+    )
+    resourceCategoryId: Mapped[int] = mapped_column(
         Integer, ForeignKey("resource_category.nid"), nullable=False
     )
 
-    bibDate = Column(Date, nullable=False)
-    author = Column(String)
-    title = Column(String)
-    pubDate = Column(String)
+    bibDate: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    author: Mapped[Optional[str]] = mapped_column(String)
+    title: Mapped[Optional[str]] = mapped_column(String)
+    pubDate: Mapped[Optional[str]] = mapped_column(String)
 
-    congressNumber = Column(String)
-    controlNumber = Column(String)
-    distributorNumber = Column(String)
-    otherNumber = Column(String)
-    sourceId = Column(Integer, ForeignKey("source_file.nid"), nullable=False)
-    srcFieldsToKeep = Column(PickleType)
-    standardNumber = Column(String)
-    suppressed = Column(Boolean, nullable=False, default=False)
+    congressNumber: Mapped[Optional[str]] = mapped_column(String)
+    controlNumber: Mapped[Optional[str]] = mapped_column(String)
+    distributorNumber: Mapped[Optional[str]] = mapped_column(String)
+    otherNumber: Mapped[Optional[str]] = mapped_column(String)
+    sourceId: Mapped[int] = mapped_column(
+        Integer, ForeignKey("source_file.nid"), nullable=False
+    )
+    srcFieldsToKeep: Mapped[Optional[str]] = mapped_column(PickleType)
+    standardNumber: Mapped[Optional[str]] = mapped_column(String)
+    suppressed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    oclcMatchNumber = Column(String, nullable=True)
-    fullBib = Column(BYTEA, nullable=True)
-    outputId = Column(Integer, ForeignKey("output_file.nid"))
-    status: Column[ENUM] = Column(STATUS)
-    enhanceTimestamp = Column(DateTime)
+    oclcMatchNumber: Mapped[Optional[str]] = mapped_column(String)
+    fullBib: Mapped[Optional[bytes]] = mapped_column(BYTEA)
+    outputId: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("output_file.nid")
+    )
+    status: Mapped[Optional[str]] = mapped_column(STATUS)
+    enhanceTimestamp: Mapped[Optional[datetime.datetime]] = mapped_column(
+        DateTime, nullable=True
+    )
 
     queries = relationship("WorldcatQuery", cascade="all, delete-orphan")
 
@@ -218,14 +240,14 @@ class ResourceCategory(Base):
 
     __tablename__ = "resource_category"
 
-    nid = Column(Integer, primary_key=True)
-    name = Column(String, unique=True)
-    description = Column(String)
-    sierraBibFormatBpl = Column(String, nullable=False)
-    sierraBibFormatNyp = Column(String, nullable=False)
-    srcTags2Keep = Column(String)
-    dstTags2Delete = Column(String)
-    queryDays = Column(String, nullable=False)
+    nid: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, unique=True)
+    description: Mapped[Optional[str]] = mapped_column(String)
+    sierraBibFormatBpl: Mapped[str] = mapped_column(String, nullable=False)
+    sierraBibFormatNyp: Mapped[str] = mapped_column(String, nullable=False)
+    srcTags2Keep: Mapped[str] = mapped_column(String, nullable=False)
+    dstTags2Delete: Mapped[str] = mapped_column(String, nullable=False)
+    queryDays: Mapped[str] = mapped_column(String, nullable=False)
 
     def __repr__(self):
         return (
@@ -248,8 +270,8 @@ class RottenApple(Base):
 
     __tablename__ = "rotten_apple"
 
-    nid = Column(Integer, primary_key=True)
-    code = Column(String, nullable=False, unique=True)
+    nid: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String, nullable=False, unique=True)
 
     applicableResourceIds = relationship(
         "RottenAppleResource", cascade="all, delete-orphan"
@@ -267,8 +289,10 @@ class RottenAppleResource(Base):
 
     __tablename__ = "rotten_apple_resource"
 
-    rottenAppleId = Column(Integer, ForeignKey("rotten_apple.nid"), primary_key=True)
-    resourceCategoryId = Column(
+    rottenAppleId: Mapped[int] = mapped_column(
+        Integer, ForeignKey("rotten_apple.nid"), primary_key=True
+    )
+    resourceCategoryId: Mapped[int] = mapped_column(
         Integer, ForeignKey("resource_category.nid"), primary_key=True
     )
 
@@ -287,10 +311,14 @@ class SourceFile(Base):
     __tablename__ = "source_file"
     __table_args__ = (UniqueConstraint("handle", "libraryId"),)
 
-    nid = Column(Integer, primary_key=True)
-    libraryId = Column(Integer, ForeignKey("library.nid"), nullable=False)
-    handle = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.now(timezone.utc))
+    nid: Mapped[int] = mapped_column(Integer, primary_key=True)
+    libraryId: Mapped[int] = mapped_column(
+        Integer, ForeignKey("library.nid"), nullable=False
+    )
+    handle: Mapped[str] = mapped_column(String, nullable=False)
+    timestamp: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.now(datetime.timezone.utc)
+    )
 
     def __repr__(self):
         return (
@@ -308,13 +336,15 @@ class WorldcatQuery(Base):
 
     __tablename__ = "worldcat_query"
 
-    nid = Column(Integer, primary_key=True)
-    resourceId = Column(
+    nid: Mapped[int] = mapped_column(Integer, primary_key=True)
+    resourceId: Mapped[int] = mapped_column(
         Integer, ForeignKey("resource.nid", ondelete="CASCADE"), nullable=False
     )
-    match = Column(Boolean, nullable=False)
-    response = Column(JSONB)
-    timestamp = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
+    match: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    response: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB)
+    timestamp: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.now(datetime.timezone.utc), nullable=False
+    )
 
     def __repr__(self):
         return (

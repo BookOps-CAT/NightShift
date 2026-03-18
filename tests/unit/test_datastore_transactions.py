@@ -931,6 +931,8 @@ def test_update_resource(test_session):
         sierraBibFormatBpl="x",
         sierraBibFormatNyp="z",
         queryDays="1-5",
+        srcTags2Keep="020",
+        dstTags2Delete="020",
     )
     test_session.commit()
     src_rec = insert_or_ignore(
