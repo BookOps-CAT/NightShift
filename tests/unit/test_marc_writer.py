@@ -24,7 +24,6 @@ class TestBibEnhancer:
         assert result.library == "NYP"
         assert isinstance(result.resource, Resource)
         assert isinstance(result.bib, Record)
-        assert "Enhancing NYP Sierra bib # b11111111a." in caplog.text
 
     def test_missing_full_bib(self, stub_resource):
         stub_resource.fullBib = None
@@ -368,13 +367,13 @@ class TestBibEnhancer:
                 subfields=[Subfield("a", "foo")],
             )
         )
-        assert be._is_acceptable() is True
+        assert be.is_acceptable() is True
 
     def test_is_acceptable_no_minimum_met(self, stub_resource, stub_res_cat_by_id):
         be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
         be.bib.remove_fields("300")
 
-        assert be._is_acceptable() is False
+        assert be.is_acceptable() is False
 
     def test_is_acceptable_unable_to_create_call_number(
         self, stub_resource, stub_res_cat_by_id
@@ -382,7 +381,7 @@ class TestBibEnhancer:
         stub_resource.resourceCategoryId = 99
         be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
 
-        assert be._is_acceptable() is False
+        assert be.is_acceptable() is False
 
     def test_manipulate_failed(self, caplog, stub_resource, stub_res_cat_by_id):
         stub_resource.resourceCategoryId = 99
@@ -391,7 +390,7 @@ class TestBibEnhancer:
             be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
             be.manipulate()
 
-            assert be.bib is None
+            assert be.is_acceptable() is False
 
         assert (
             "Worldcat record # 850939580 is rejected. Does not meet minimum requirements."
@@ -895,15 +894,3 @@ class TestBibEnhancer:
                 be.save2file()
 
         assert "Unable to save record to a temp file. Error" in caplog.text
-
-    def test_save2file_when_unable_to_create_call_number(
-        self, caplog, tmpdir, stub_resource, stub_res_cat_by_id
-    ):
-        outfile = tmpdir.join("foo.mrc")
-        stub_resource.resourceCategoryId = 99
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        with caplog.at_level(logging.WARNING):
-            be.manipulate()
-            be.save2file(outfile)
-
-        assert "No pymarc object to serialize to MARC21" in caplog.text

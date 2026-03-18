@@ -20,7 +20,7 @@ from ..datastore_transactions import ResCatByName
 logger = logging.getLogger("nightshift")
 
 
-def worldcat_response_to_bib(response: bytes, library: str) -> Bib:
+def worldcat_response_to_bib(response: bytes | None, library: str) -> Bib:
     """
     Converts MetadataApi responses into `bookops_marc.Bib` objects.
 

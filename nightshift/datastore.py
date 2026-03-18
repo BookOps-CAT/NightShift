@@ -195,7 +195,7 @@ class Resource(Base):
     sourceId: Mapped[int] = mapped_column(
         Integer, ForeignKey("source_file.nid"), nullable=False
     )
-    srcFieldsToKeep: Mapped[Optional[str]] = mapped_column(PickleType)
+    srcFieldsToKeep: Mapped[Optional[bytes]] = mapped_column(PickleType)
     standardNumber: Mapped[Optional[str]] = mapped_column(String)
     suppressed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 

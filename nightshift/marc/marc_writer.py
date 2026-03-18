@@ -1,19 +1,17 @@
-# -*- coding: utf-8 -*-
-
 """
 This module provides methods for manipulation and serialization of Worldcat responses
 into MARC21.
 """
+
 import logging
 import pickle
 
-from pymarc import Field, Subfield
+from pymarc import Field, Indicators, Subfield
 
 from .. import __title__, __version__
 from ..datastore import Resource
 from ..datastore_transactions import ResCatById
 from .marc_parser import worldcat_response_to_bib
-
 
 logger = logging.getLogger("nightshift")
 
@@ -69,9 +67,17 @@ class BibEnhancer:
         self.library = library
         self._res_cat = resource_categories
 
-        logger.info(f"Enhancing {self.library} Sierra bib # b{resource.sierraId}a.")
-
         self.bib = worldcat_response_to_bib(resource.fullBib, self.library)
+
+    def is_acceptable(self) -> bool:
+        """
+        Checks if full Worldcat record meet minimum criteria and
+        a valid call number can be constructed.
+        """
+        if self._meets_minimum_criteria() and self._add_call_number():
+            return True
+        else:
+            return False
 
     def manipulate(self) -> None:
         """
@@ -81,7 +87,6 @@ class BibEnhancer:
         Full manipulation happens only if records meets minimum requirements and
         a call number can be constructed.
         """
-
         # delete unwanted MARC tags
         self._purge_tags()
 
@@ -92,12 +97,12 @@ class BibEnhancer:
         self._remove_eresource_vendors()
 
         # if does not meet criteria delete Worldcat bib
-        if not self._is_acceptable():
+        if not self.is_acceptable():
             logger.info(
                 f"Worldcat record # {self.resource.oclcMatchNumber} is rejected. "
                 "Does not meet minimum requirements."
             )
-            self.bib = None
+            return None
         else:
             logger.info(
                 f"Worldcat record # {self.resource.oclcMatchNumber} is acceptable. "
@@ -133,19 +138,15 @@ class BibEnhancer:
         Raises:
             OSError
         """
-        if self.bib is not None:
-            try:
-                with open(file_path, "ab") as out:
-                    out.write(self.bib.as_marc())
-                    logger.debug(
-                        f"Saving to file {self.library} record "
-                        f"b{self.resource.sierraId}a."
-                    )
-            except OSError as exc:
-                logger.error(f"Unable to save record to a temp file. Error {exc}.")
-                raise
-        else:
-            logger.warning("No pymarc object to serialize to MARC21.")
+        try:
+            with open(file_path, "ab") as out:
+                out.write(self.bib.as_marc())
+                logger.debug(
+                    f"Saving to file {self.library} record b{self.resource.sierraId}a."
+                )
+        except OSError as exc:
+            logger.error(f"Unable to save record to a temp file. Error {exc}.")
+            raise
 
     def _add_call_number(self) -> bool:
         """
@@ -189,7 +190,9 @@ class BibEnhancer:
 
         if tag and value:
             call_number = Field(
-                tag=tag, indicators=[" ", " "], subfields=[Subfield("a", value)]
+                tag=tag,
+                indicators=Indicators(" ", " "),
+                subfields=[Subfield("a", value)],
             )
             self.bib.add_field(call_number)
             logger.debug(
@@ -241,10 +244,8 @@ class BibEnhancer:
         # add command to bib
         command_tag = Field(
             tag="949",
-            indicators=[" ", " "],
-            subfields=[
-                Subfield("a", f"*{command_str};"),
-            ],
+            indicators=Indicators(" ", " "),
+            subfields=[Subfield("a", f"*{command_str};")],
         )
         self.bib.add_field(command_tag)
         logger.debug(
@@ -267,7 +268,6 @@ class BibEnhancer:
                     self.bib.remove_field(field)
 
         elif resource_cat == "eaudio":
-
             # 'Audiobooks' term
             # remove electronic audiobooks
             for field in self.bib.subjects:
@@ -284,7 +284,7 @@ class BibEnhancer:
                 self.bib.add_field(
                     Field(
                         tag="655",
-                        indicators=[" ", "7"],
+                        indicators=Indicators(" ", "7"),
                         subfields=[
                             Subfield("a", "Audiobooks."),
                             Subfield("2", "lcgft"),
@@ -303,7 +303,7 @@ class BibEnhancer:
                 self.bib.add_field(
                     Field(
                         tag="655",
-                        indicators=[" ", "7"],
+                        indicators=Indicators(" ", "7"),
                         subfields=[
                             Subfield("a", "Internet videos."),
                             Subfield("2", "lcgft"),
@@ -346,7 +346,7 @@ class BibEnhancer:
         self.bib.add_field(
             Field(
                 tag=tag,
-                indicators=[" ", " "],
+                indicators=Indicators(" ", " "),
                 subfields=[Subfield("a", f"{__title__}/{__version__}")],
             )
         )
@@ -366,7 +366,7 @@ class BibEnhancer:
         self.bib.add_field(
             Field(
                 tag=overlay_tag,
-                indicators=[" ", " "],
+                indicators=Indicators(" ", " "),
                 subfields=[Subfield("a", f".b{self.resource.sierraId}a")],
             )
         )
@@ -375,26 +375,16 @@ class BibEnhancer:
         """
         Removes OCLC control number prefix from the 001 tag
         """
-        controlNo = self.bib["001"].data
+        controlNo = self.bib["001"].value()
         controlNo_without_prefix = self._remove_oclc_prefix(controlNo)
         self.bib["001"].data = controlNo_without_prefix
-
-    def _is_acceptable(self) -> bool:
-        """
-        Checks if full Worldcat record meet minimum criteria and
-        a valid call number can be constructed.
-        """
-        if self._meets_minimum_criteria() and self._add_call_number():
-            return True
-        else:
-            return False
 
     def _meets_minimum_criteria(self) -> bool:
         """
         Checks if Worldcat record meets minimum criteria
         """
         # check uppercase title (indicates poor quality)
-        if self.bib.title.isupper():
+        if self.bib.title and self.bib.title.isupper():
             logger.debug("Worldcat record failed uppercase title test.")
             return False
 
@@ -410,23 +400,27 @@ class BibEnhancer:
 
         # messed up diacritics indicated by presence of "©" (b"\xc2\xa9") or
         # "℗" (b"\xe2\x84\x97")
-        try:
-            diacritics_msg = "Worldcat record failed characters encoding test."
-            if b"\xc2\xa9" in bytes(self.bib.author, "utf-8") or b"\xc2\xa9" in bytes(
-                self.bib.title, "utf-8"
-            ):
-                logger.debug(diacritics_msg)
-                return False
+        if (
+            self.bib.author
+            and self.bib.title
+            and (
+                b"\xc2\xa9" in bytes(self.bib.author, "utf-8")
+                or b"\xc2\xa9" in bytes(self.bib.title, "utf-8")
+            )
+        ):
+            logger.debug("Worldcat record failed characters encoding test.")
+            return False
 
-            if b"\xe2\x84\x97" in bytes(
-                self.bib.author, "utf-8"
-            ) or b"\xe2\x84\x97" in bytes(self.bib.title, "utf-8"):
-                logger.debug(diacritics_msg)
-                return False
-
-        except TypeError:
-            # hanldes records without the author
-            pass
+        elif (
+            self.bib.author
+            and self.bib.title
+            and (
+                b"\xe2\x84\x97" in bytes(self.bib.author, "utf-8")
+                or b"\xe2\x84\x97" in bytes(self.bib.title, "utf-8")
+            )
+        ):
+            logger.debug("Worldcat record failed characters encoding test.")
+            return False
 
         # has at least one valid subject tag
         if not self.bib.subjects:
@@ -442,12 +436,12 @@ class BibEnhancer:
         from the WorldCat bib.
         """
         try:
-            for tag in self._res_cat[self.resource.resourceCategoryId].dstTags2Delete:
+            delete_tags = self._res_cat[self.resource.resourceCategoryId].dstTags2Delete
+            for tag in delete_tags:
                 if tag in self.bib:
                     self.bib.remove_fields(tag)
             logger.debug(
-                f"Removed {self._res_cat[self.resource.resourceCategoryId].dstTags2Delete} from "
-                f"{self.library} b{self.resource.sierraId}a."
+                f"Removed {delete_tags} from {self.library} b{self.resource.sierraId}a."
             )
         except KeyError:
             logger.warning("Encountered unsupported resource category.")

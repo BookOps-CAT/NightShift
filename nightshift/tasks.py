@@ -318,9 +318,10 @@ class Tasks:
             raise
 
         for resource in resources:
+            logger.info(f"Enhancing {self.library} Sierra bib # b{resource.sierraId}a.")
             be = BibEnhancer(resource, self.library, self._res_cat_idx)
             be.manipulate()
-            if be.bib is not None:
+            if be.is_acceptable():
                 be.save2file(out_fh)
                 logger.debug(
                     f"{self.library} b{resource.sierraId}a has been output "
