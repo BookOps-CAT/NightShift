@@ -153,9 +153,3 @@ class TestDriveMocked:
         assert (
             "Unable to establish a secure channel and open SFTP session." in caplog.text
         )
-
-    @pytest.mark.parametrize(
-        "host,port,expectation", [("foo", "22", "foo:22"), ("foo", None, "foo")]
-    )
-    def test_sock(self, host, port, expectation, mock_drive):
-        assert mock_drive._sock(host, port) == expectation

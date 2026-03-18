@@ -54,8 +54,7 @@ class Drive:
             password:                   SFTP user password
             home_directory:             NighShift directory on the drive
         """
-        sock = self._sock(host, port)
-        self.sftp = self._sftp(sock, user, password)
+        self.sftp = self._sftp(host=host, port=port, user=user, password=password)
         self.src_dir = src_dir
         self.dst_dir = dst_dir
 
@@ -234,7 +233,9 @@ class Drive:
         """
         return f"{self.src_dir}/{src_fh}"
 
-    def _sftp(self, sock: str, user: str, password: str) -> Optional[SFTPClient]:
+    def _sftp(
+        self, host: str, user: str, password: str, port: Optional[str] = None
+    ) -> Optional[SFTPClient]:
         """
         Establishes a secure channel to SFTP server and returns a client/session for
         communication.
@@ -248,6 +249,7 @@ class Drive:
         Returns:
             `paramiko.sftp_client.SFTPClient` instance
         """
+        sock = f"{host}:{port}" if port else host
         logger.debug(f"Opening a secure channel to {sock}.")
         try:
             self.transport = Transport(sock)
@@ -261,9 +263,3 @@ class Drive:
         else:
             logger.debug("Successfully connected to the SFTP.")
             return sftp
-
-    def _sock(self, host: str, port: Optional[str] = None) -> str:
-        if port:
-            return f"{host}:{port}"
-        else:
-            return host
