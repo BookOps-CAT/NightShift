@@ -391,9 +391,28 @@ class TestBibEnhancer:
             in caplog.text
         )
 
-    def test_manipulate_success(self, caplog, stub_resource, stub_res_cat_by_id):
+    @pytest.mark.parametrize(
+        "library,library_id,call_tag,call_no,initials_tag,bib_id_tag,command",
+        [
+            ("BPL", 2, "099", "eBOOK", "947", "907", "$a*b2=x;bn=elres;"),
+            ("NYP", 1, "091", "eNYPL Book", "901", "945", "$a*b2=z;bn=ia;"),
+        ],
+    )
+    def test_manipulate_success(
+        self,
+        library,
+        library_id,
+        call_tag,
+        call_no,
+        initials_tag,
+        bib_id_tag,
+        command,
+        caplog,
+        stub_resource,
+        stub_res_cat_by_id,
+    ):
         stub_resource.resourceCategoryId = 1
-        stub_resource.libraryId = 1
+        stub_resource.libraryId = library_id
         fields = [
             Field(
                 tag="020",
@@ -414,7 +433,7 @@ class TestBibEnhancer:
         pickled_fields = pickle.dumps(fields)
         stub_resource.srcFieldsToKeep = pickled_fields
 
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
+        be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
         be.bib.remove_fields("245", "300")
         be.bib.add_field(
             Field(
@@ -436,19 +455,25 @@ class TestBibEnhancer:
 
                 assert be.bib is not None
 
-        assert "Worldcat record # 850939580 is acceptable. Meets minimum requirements."
+        assert (
+            "Worldcat record # 850939580 is acceptable. Meets minimum requirements."
+            in caplog.text
+        )
 
         assert str(be.bib["020"]) == "=020  \\\\$a978123456789x"
         assert str(be.bib["037"]) == "=037  \\\\$a123$bOverdrive Inc."
         assert str(be.bib["856"]) == "=856  04$uurl_here$2opac msg"
-        assert str(be.bib["091"]) == "=091  \\\\$aeNYPL Book"
-        assert str(be.bib["901"]) == f"=901  \\\\$a{__title__}/{__version__}"
-        assert str(be.bib["945"]) == "=945  \\\\$a.b11111111a"
-        assert str(be.bib["949"]) == "=949  \\\\$a*b2=z;bn=ia;"
+        assert str(be.bib[call_tag]) == f"={call_tag}  \\\\$a{call_no}"
+        assert (
+            str(be.bib[initials_tag])
+            == f"={initials_tag}  \\\\$a{__title__}/{__version__}"
+        )
+        assert str(be.bib[bib_id_tag]) == f"={bib_id_tag}  \\\\$a.b11111111a"
+        assert str(be.bib["949"]) == f"=949  \\\\{command}"
 
         # check if fields have been duplicated by accident
         assert len(be.bib.get_fields("001")) == 1
-        assert len(be.bib.get_fields("091")) == 1
+        assert len(be.bib.get_fields(call_tag)) == 1
         assert len(be.bib.get_fields("037")) == 1
 
     def test_meets_minimum_criteria_success(
