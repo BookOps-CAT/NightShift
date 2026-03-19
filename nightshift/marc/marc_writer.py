@@ -43,6 +43,31 @@ class BibEnhancer:
     into MARC 21 and saves it to a temporary file.
     """
 
+    DATA: dict[str, dict[str, str]] = {
+        "BPL": {
+            "default_loc": "bn=elres",
+            "initials_tag": "947",
+            "sierra_id_tag": "907",
+            "call_tag": "099",
+            "bib_format_attr": "sierraBibFormatBpl",
+        },
+        "NYP": {
+            "default_loc": "bn=ia",
+            "initials_tag": "901",
+            "sierra_id_tag": "945",
+            "call_tag": "091",
+            "bib_format_attr": "sierraBibFormatNyp",
+        },
+    }
+    RES_CAT_CALL_NOS: dict[str, dict[str, str]] = {
+        "BPL": {"ebook": "eBOOK", "eaudio": "eAUDIO", "evideo": "eVIDEO"},
+        "NYP": {
+            "ebook": "eNYPL Book",
+            "eaudio": "eNYPL Audio",
+            "evideo": "eNYPL Video",
+        },
+    }
+
     def __init__(
         self,
         resource: Resource,
@@ -65,7 +90,9 @@ class BibEnhancer:
         """
         self.resource = resource
         self.library = library
-        self._res_cat = resource_categories
+        self.res_cat = resource_categories.get(self.resource.resourceCategoryId)
+        self.res_cat_call_nos: dict[str, str] = self.RES_CAT_CALL_NOS[self.library]
+        self.tags: dict[str, str] = self.DATA[self.library]
 
         self.bib = worldcat_response_to_bib(resource.fullBib, self.library)
 
@@ -158,35 +185,10 @@ class BibEnhancer:
         Returns:
             bool
         """
-        try:
-            resource_cat = self._res_cat[self.resource.resourceCategoryId].name
-        except KeyError:
-            resource_cat = None
+        resource_cat = getattr(self.res_cat, "name", None)
 
-        if self.library == "NYP":
-            tag = "091"
-            if resource_cat == "ebook":
-                value = "eNYPL Book"
-            elif resource_cat == "eaudio":
-                value = "eNYPL Audio"
-            elif resource_cat == "evideo":
-                value = "eNYPL Video"
-            else:
-                value = None
-
-        elif self.library == "BPL":
-            tag = "099"
-            if resource_cat == "ebook":
-                value = "eBOOK"
-            elif resource_cat == "eaudio":
-                value = "eAUDIO"
-            elif resource_cat == "evideo":
-                value = "eVIDEO"
-            else:
-                value = None
-        else:
-            tag = None
-            value = None
+        tag = self.tags.get("call_tag")
+        value = self.res_cat_call_nos.get(resource_cat) if resource_cat else None
 
         if tag and value:
             call_number = Field(
@@ -195,10 +197,7 @@ class BibEnhancer:
                 subfields=[Subfield("a", value)],
             )
             self.bib.add_field(call_number)
-            logger.debug(
-                f"Added {call_number.value()} to {self.library} "
-                f"b{self.resource.sierraId}a."
-            )
+            logger.debug(f"Added {value} to {self.library} b{self.resource.sierraId}a.")
             return True
         else:
             logger.warning(
@@ -218,14 +217,7 @@ class BibEnhancer:
         commands = []
 
         # Sierra bib format
-        if self.library == "NYP":
-            sierra_format_code = self._res_cat[
-                self.resource.resourceCategoryId
-            ].sierraBibFormatNyp
-        elif self.library == "BPL":
-            sierra_format_code = self._res_cat[
-                self.resource.resourceCategoryId
-            ].sierraBibFormatBpl
+        sierra_format_code = getattr(self.res_cat, self.tags["bib_format_attr"])
 
         commands.append(f"b2={sierra_format_code}")
 
@@ -234,10 +226,7 @@ class BibEnhancer:
             commands.append("b3=n")
 
         # set default location
-        if self.library == "NYP":
-            commands.append("bn=ia")
-        elif self.library == "BPL":
-            commands.append("bn=elres")
+        commands.append(self.tags["default_loc"])
 
         command_str = ";".join(commands)
 
@@ -257,10 +246,7 @@ class BibEnhancer:
         """
         Adds genre tags to e-resources.
         """
-        try:
-            resource_cat = self._res_cat[self.resource.resourceCategoryId].name
-        except KeyError:
-            resource_cat = None
+        resource_cat = getattr(self.res_cat, "name", None)
 
         if resource_cat == "ebook":
             for field in self.bib.subjects:
@@ -336,12 +322,7 @@ class BibEnhancer:
         """
         Marks records as produced by the NightShift bot.
         """
-        if self.library == "NYP":
-            tag = "901"
-        elif self.library == "BPL":
-            tag = "947"
-        else:
-            return
+        tag = self.tags["initials_tag"]
 
         self.bib.add_field(
             Field(
@@ -359,13 +340,9 @@ class BibEnhancer:
         Adds 907 (BPL) or 945 (NYP) tag to manipulated MARC record for
         matching/overlaying purposes.
         """
-        if self.library == "NYP":
-            overlay_tag = "945"
-        elif self.library == "BPL":
-            overlay_tag = "907"
         self.bib.add_field(
             Field(
-                tag=overlay_tag,
+                tag=self.tags["sierra_id_tag"],
                 indicators=Indicators(" ", " "),
                 subfields=[Subfield("a", f".b{self.resource.sierraId}a")],
             )
@@ -435,15 +412,15 @@ class BibEnhancer:
         Removes MARC tags indicated in `constants.RESOURCE_CATEGORIES`
         from the WorldCat bib.
         """
-        try:
-            delete_tags = self._res_cat[self.resource.resourceCategoryId].dstTags2Delete
+        if self.res_cat:
+            delete_tags = self.res_cat.dstTags2Delete
             for tag in delete_tags:
                 if tag in self.bib:
                     self.bib.remove_fields(tag)
             logger.debug(
                 f"Removed {delete_tags} from {self.library} b{self.resource.sierraId}a."
             )
-        except KeyError:
+        else:
             logger.warning("Encountered unsupported resource category.")
 
     def _remove_eresource_vendors(self) -> None:

@@ -64,7 +64,7 @@ class TestBibEnhancer:
         bib = be.bib
         assert str(bib[tag]) == f"={tag}  \\\\$a{expectation}"
 
-    @pytest.mark.parametrize("library,resourceId", [("QPL", 1), ("NYP", 4), ("BPL", 4)])
+    @pytest.mark.parametrize("library,resourceId", [("NYP", 4), ("BPL", 4)])
     def test_add_call_number_unsupported_resources(
         self, caplog, stub_resource, stub_res_cat_by_id, library, resourceId
     ):
@@ -324,12 +324,6 @@ class TestBibEnhancer:
 
         assert f"Added initials tag {tag} to {library} b11111111a." in caplog.text
         assert str(be.bib[tag]) == f"={tag}  \\\\$a{__title__}/{__version__}"
-
-    def test_add_initials_tag_invalid_library(self, stub_resource, stub_res_cat_by_id):
-        be = BibEnhancer(stub_resource, "foo", stub_res_cat_by_id)
-        bib_before = str(be.bib)
-        be._add_initials_tag()
-        assert str(be.bib) == bib_before
 
     @pytest.mark.parametrize(
         "library,tag,field_str",
