@@ -201,6 +201,18 @@ class TestWorldcatMocked:
         assert payloads == expectation
         assert f"Query payload for NYP Sierra bib # b22222222a: {expectation}."
 
+    @pytest.mark.parametrize("resource_cat_id", [1, 2, 3, 5])
+    def test_prep_resource_queries_no_payloads(
+        self, caplog, resource_cat_id, mock_Worldcat
+    ):
+        resource = Resource(
+            resourceCategoryId=resource_cat_id, sierraId=22222222, otherNumber=111
+        )
+        with caplog.at_level(logging.DEBUG):
+            payloads = mock_Worldcat._prep_resource_queries_payloads(resource, {})
+        assert payloads == []
+        assert "Query payload for NYP Sierra bib # b22222222a: []."
+
     def test_get_brief_bibs(
         self, caplog, mock_Worldcat, mock_successful_session_get_request
     ):
