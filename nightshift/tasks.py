@@ -57,7 +57,6 @@ class Tasks:
         self.libraryId = libraryId
         self._res_cat = resource_categories
         self._res_cat_idx = self._create_resource_category_idx()
-        self.rotten_apples: dict[int, list[str]] = dict()
 
     def _create_resource_category_idx(self) -> dict[int, ResCatById]:
         """
@@ -77,14 +76,6 @@ class Tasks:
                 data.queryDays,
             )
         return res_cat_idx
-
-    def _create_rotten_apples_idx(self) -> dict[int, list[str]]:
-        """
-        Creates a dictionary of forbidden organization codes which records
-        should be excluded from retrieved from Worldcat results
-        """
-        rotten_apples = retrieve_rotten_apples(self.db_session)
-        return rotten_apples
 
     def check_resources_sierra_state(self, resources: list[Resource]) -> None:
         """
@@ -164,13 +155,10 @@ class Tasks:
             f"Searching Worldcat for brief records for {len(resources)} resources."
         )
 
-        if not self.rotten_apples:
-            self.rotten_apples = self._create_rotten_apples_idx()
+        rotten_apples = retrieve_rotten_apples(self.db_session)
 
         with Worldcat(self.library) as worldcat:
-            results = worldcat.get_brief_bibs(
-                resources, rotten_apples=self.rotten_apples
-            )
+            results = worldcat.get_brief_bibs(resources, rotten_apples=rotten_apples)
             for resource, response in results:
                 if response.is_match:
                     instance = update_resource(

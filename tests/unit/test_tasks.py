@@ -34,12 +34,6 @@ def test_create_resource_category_idx(test_session, stub_res_cat_by_name):
     assert res[9].queryDays == [(15, 30), (30, 60)]
 
 
-def test_create_rotten_apples_idx(test_session, test_data_core, stub_res_cat_by_name):
-    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-    res = tasks._create_rotten_apples_idx()
-    assert res == {1: ["UKAHL", "UAH"], 2: ["UKAHL"], 3: ["UKAHL"]}
-
-
 def test_check_resources_sierra_state_nyp_platform(
     test_session,
     test_data_rich,
