@@ -117,7 +117,9 @@ def test_ingest_new_files(caplog, env_var, test_data_rich, stub_res_cat_by_name)
             "Found following unprocessed files: ['NYPeres210701-pout.mrc', 'NYP-eres-pout.20220811020001']."
             in caplog.text
         )
-        assert "Ingested 2 records from the file 'NYPeres210701-pout.mrc'."
+        assert (
+            "Ingested 2 records from the file 'NYPeres210701-pout.mrc'." in caplog.text
+        )
 
         sf_rec = (
             db_session.query(SourceFile)
