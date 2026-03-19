@@ -576,7 +576,7 @@ class MockPlatformSessionResponseDeletedRecord:
         }
 
 
-class MockPlatformSessionResponseNotFound:
+class MockSessionResponseNotFound:
     """Simulates NYPL Platform failed query response"""
 
     def __init__(self):
@@ -662,7 +662,7 @@ def mock_successful_platform_session_response_deleted_record(monkeypatch):
 @pytest.fixture
 def mock_failed_platform_session_response(monkeypatch):
     def mock_api_response(*args, **kwargs):
-        return MockPlatformSessionResponseNotFound()
+        return MockSessionResponseNotFound()
 
     monkeypatch.setattr(requests.Session, "get", mock_api_response)
 

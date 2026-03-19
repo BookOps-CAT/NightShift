@@ -19,29 +19,6 @@ from ..ns_exceptions import SierraSearchPlatformError
 logger = logging.getLogger("nightshift")
 
 
-def is_eresource_callno(callno: str) -> bool:
-    """
-    Checks if call number is for electronic resource
-
-    Args:
-        callno:                         call number string
-
-    Returns:
-        bool
-    """
-    try:
-        norm_callno = callno.lower()
-    except AttributeError:
-        return False
-
-    if norm_callno.startswith("enypl"):  # NYPL pattern
-        return True
-    elif norm_callno in ("ebook", "eaudio", "evideo"):  # BPL pattern
-        return True
-    else:
-        return False
-
-
 class SearchResponse:
     def __init__(self, sierraId: int, library: str, response: Response) -> None:
         """
@@ -72,6 +49,27 @@ class SearchResponse:
 
         self.response = response
         self.json_response = response.json()
+
+    def is_eresource_callno(self, callno: str) -> bool:
+        """
+        Checks if call number is for electronic resource
+
+        Args:
+            callno:                         call number string
+
+        Returns:
+            bool
+        """
+        if not isinstance(callno, str):
+            return False
+        norm_callno = callno.lower()
+
+        if norm_callno.startswith("enypl"):  # NYPL pattern
+            return True
+        elif norm_callno in ["ebook", "eaudio", "evideo"]:  # BPL pattern
+            return True
+        else:
+            return False
 
     def is_suppressed(self) -> bool:
         """
@@ -124,7 +122,7 @@ class SearchResponse:
 
         # print material with call number tag - assume full bib
         # exclude electronic resources
-        if "call_number" in data and not is_eresource_callno(data["call_number"]):
+        if "call_number" in data and not self.is_eresource_callno(data["call_number"]):
             return "staff_enhanced"
 
         # assume at this point it must be a brief bib
@@ -153,7 +151,8 @@ class SearchResponse:
         # brief bibs lack call numbers
         for field in data["varFields"]:
             if field["marcTag"] == "091":  # filter out electronic resources
-                if not is_eresource_callno(field["subfields"][0]["content"]):
+                call_no = field["subfields"][0]["content"]
+                if not self.is_eresource_callno(call_no):
                     return "staff_enhanced"
 
         # assume response failing previous clauses is a brief bib

@@ -5,40 +5,16 @@ import pytest
 from bookops_nypl_platform import PlatformToken
 
 from nightshift import __title__, __version__
-from nightshift.comms.sierra_search_platform import (
-    BplSolr,
-    NypPlatform,
-    SearchResponse,
-    is_eresource_callno,
-)
+from nightshift.comms.sierra_search_platform import BplSolr, NypPlatform, SearchResponse
 from nightshift.ns_exceptions import SierraSearchPlatformError
 
 from ..conftest import (
-    MockPlatformSessionResponseNotFound,
     MockPlatformSessionResponseSuccess,
     MockSearchSessionHTTPError,
+    MockSessionResponseNotFound,
     MockSolrSessionResponseNotFound,
     MockSolrSessionResponseSuccess,
 )
-
-
-@pytest.mark.parametrize(
-    "arg,expectation",
-    [
-        ("", False),
-        (None, False),
-        (123, False),
-        ("B ADAMS C", False),
-        ("eNYPL Book", True),
-        ("eNYPL Audio", True),
-        ("eNYPL Video", True),
-        ("eBOOK", True),
-        ("eAUDIO", True),
-        ("eVIDEO", True),
-    ],
-)
-def test_is_eresource_callno(arg, expectation):
-    assert is_eresource_callno(arg) == expectation
 
 
 class TestSearchResponse:
@@ -64,7 +40,7 @@ class TestSearchResponse:
         )
 
     def test_nyp_suppression_not_found_response(self, caplog):
-        # response = MockPlatformSessionResponseNotFound()
+        # response = MockSessionResponseNotFound()
         response = MockSearchSessionHTTPError(404)
         with caplog.at_level(logging.WARN):
             sr = SearchResponse(11111111, "NYP", response)
@@ -193,14 +169,41 @@ class TestSearchResponse:
         sr = SearchResponse(11111111, library, response)
         with caplog.at_level(logging.DEBUG):
             assert sr.get_status() == expectation
-        assert f"{library} Sierra bib # 11111111 status: {expectation}"
+        assert f"{library} Sierra bib # 11111111 status: {expectation}" in caplog.text
 
-    def test_get_status_404_http_response(self, caplog):
-        response = MockPlatformSessionResponseNotFound()
-        sr = SearchResponse(11111111, "NYP", response)
-        with caplog.at_level(logging.WARN):
+    @pytest.mark.parametrize("library", ["NYP", "BPL"])
+    def test_get_status_404_http_response(self, library, caplog):
+        response = MockSessionResponseNotFound()
+        sr = SearchResponse(11111111, library, response)
+        with caplog.at_level(logging.DEBUG):
             assert sr.get_status() == "staff_deleted"
-        assert "NYP Sierra bib # 11111111 not found on Platform."
+        assert f"{library} Sierra bib # 11111111 status: staff_deleted" in caplog.text
+
+    @pytest.mark.parametrize(
+        "arg,expectation",
+        [
+            ("", False),
+            (None, False),
+            (123, False),
+            ("B ADAMS C", False),
+            ("eNYPL Book", True),
+            ("eNYPL Audio", True),
+            ("eNYPL Video", True),
+            ("eBOOK", True),
+            ("eAUDIO", True),
+            ("eVIDEO", True),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "library,response",
+        [
+            ("NYP", MockPlatformSessionResponseSuccess()),
+            ("BPL", MockSolrSessionResponseSuccess()),
+        ],
+    )
+    def test_is_eresource_callno(self, arg, expectation, library, response):
+        response = SearchResponse(12345, library, response)
+        assert response.is_eresource_callno(arg) == expectation
 
 
 class TestNypPlatformMocked:
