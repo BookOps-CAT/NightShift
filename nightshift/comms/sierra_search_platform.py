@@ -6,7 +6,6 @@ so fully cataloged or deleted bibs are dropped from the process.
 
 import logging
 import os
-from typing import Optional
 
 from bookops_bpl_solr import SolrSession
 from bookops_bpl_solr.session import BookopsSolrError
@@ -74,7 +73,7 @@ class SearchResponse:
         self.response = response
         self.json_response = response.json()
 
-    def is_suppressed(self) -> Optional[bool]:
+    def is_suppressed(self) -> bool:
         """
         Checks if Sierra bib is suppressed.
 
@@ -83,28 +82,20 @@ class SearchResponse:
         """
         if self.library == "NYP":
             return self._nyp_suppression()
-        elif self.library == "BPL":
-            return self._bpl_suppression()
         else:
-            return None
+            return self._bpl_suppression()
 
-    def get_status(self) -> Optional[str]:
+    def get_status(self) -> str:
         """
         Determines status of record in Sierra
 
         Returns:
             'brief-bib', 'full-bib', or 'deleted' status
         """
-        bib_status = None
-
-        if self.response.status_code == 200:
-            if self.library == "NYP":
-                bib_status = self._determine_nyp_bib_status()
-            elif self.library == "BPL":
-                bib_status = self._determine_bpl_bib_status()
-        elif self.response.status_code == 404:
-            # on a rare occasion NYPL bibs may not get ingested into Platform
-            bib_status = "staff_deleted"
+        if self.library == "NYP":
+            bib_status = self._determine_nyp_bib_status()
+        else:
+            bib_status = self._determine_bpl_bib_status()
         logger.debug(
             f"{self.library} Sierra bib # {self.sierraId} status: {bib_status}"
         )
@@ -117,25 +108,24 @@ class SearchResponse:
         Returns:
             'brief-bib', 'full-bib', 'deleted' status
         """
-        try:
-            data = self.json_response["response"]["docs"][0]
-        except IndexError:
+        if self.response.status_code == 404:
+            return "staff_deleted"
+        docs = self.json_response["response"].get("docs", [])
+        if len(docs) < 1:
             # no results, treat as deleted
             return "staff_deleted"
-        else:
-            try:
-                if data["bs_deleted_in_sierra"]:
-                    return "staff_deleted"
-            except KeyError:
-                pass
-            # if bib originated from Worldcat assume full bib
-            if "ss_marc_tag_003" in data and data["ss_marc_tag_003"] == "OCoLC":
-                return "staff_enhanced"
 
-            # print material with call number tag - assume full bib
-            # exclude electronic resources
-            if "call_number" in data and not is_eresource_callno(data["call_number"]):
-                return "staff_enhanced"
+        data = docs[0]
+        if data.get("bs_deleted_in_sierra"):
+            return "staff_deleted"
+        # if bib originated from Worldcat assume full bib
+        if "ss_marc_tag_003" in data and data["ss_marc_tag_003"] == "OCoLC":
+            return "staff_enhanced"
+
+        # print material with call number tag - assume full bib
+        # exclude electronic resources
+        if "call_number" in data and not is_eresource_callno(data["call_number"]):
+            return "staff_enhanced"
 
         # assume at this point it must be a brief bib
         return "open"
@@ -147,26 +137,27 @@ class SearchResponse:
         Returns:
             'bief-bib', 'full-bib' or 'deleted' status
         """
+        if self.response.status_code == 404:
+            return "staff_deleted"
         data = self.json_response["data"]
         if data["deleted"]:
             return "staff_deleted"
-        else:
-            # check first if Sierra bib came from the Worldcat;
-            # and catch here upgraded/enhanced electronic resources
-            for field in data["varFields"]:
-                if field["marcTag"] == "003" and field["content"] == "OCoLC":
+        # check first if Sierra bib came from the Worldcat;
+        # and catch here upgraded/enhanced electronic resources
+        for field in data["varFields"]:
+            if field["marcTag"] == "003" and field["content"] == "OCoLC":
+                return "staff_enhanced"
+
+        # print material full bibs may come from other sources than
+        # Worldcat (no or diff content of the '003' tag);
+        # brief bibs lack call numbers
+        for field in data["varFields"]:
+            if field["marcTag"] == "091":  # filter out electronic resources
+                if not is_eresource_callno(field["subfields"][0]["content"]):
                     return "staff_enhanced"
 
-            # print material full bibs may come from other sources than
-            # Worldcat (no or diff content of the '003' tag);
-            # brief bibs lack call numbers
-            for field in data["varFields"]:
-                if field["marcTag"] == "091":  # filter out electronic resources
-                    if not is_eresource_callno(field["subfields"][0]["content"]):
-                        return "staff_enhanced"
-
-            # assume response failing previous clauses is a brief bib
-            return "open"
+        # assume response failing previous clauses is a brief bib
+        return "open"
 
     def _bpl_suppression(self) -> bool:
         """

@@ -105,9 +105,7 @@ class Tasks:
 
         for resource in resources:
             response = sierra_platform.get_sierra_bib(resource.sierraId)
-            suppressed = response.is_suppressed()
-            if suppressed is not None:
-                resource.suppressed = suppressed
+            resource.suppressed = response.is_suppressed()
             resource.status = response.get_status()
 
             if resource.status in ("staff_enhanced", "staff_deleted"):
