@@ -175,10 +175,9 @@ class Drive:
         if self.sftp:
             self.sftp.close()
             logger.debug("SFTP client session closed.")
-        if self.transport:
-            # necessary since paramiko keeps open threads hanging occasionally
-            self.transport.close()
-            logger.debug("Secure channels closed.")
+        # necessary since paramiko keeps open threads hanging occasionally
+        self.transport.close()
+        logger.debug("Secure channels closed.")
 
     def _construct_dst_handle(self, base_name: str, n: int) -> str:
         """
