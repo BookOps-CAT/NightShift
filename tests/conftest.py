@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 
 import paramiko
@@ -103,6 +104,15 @@ def env_var(monkeypatch):
         monkeypatch.setenv(k, v)
 
 
+@pytest.fixture(autouse=True)
+def test_logging(caplog):
+    caplog.set_level("DEBUG")
+    logger = logging.getLogger("nightshift")
+    for handler in logger.handlers:
+        if not isinstance(handler, logging.StreamHandler):
+            logger.removeHandler(handler)
+
+
 @pytest.fixture
 def stub_resource():
     return Resource(
@@ -123,7 +133,7 @@ def stub_resource():
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def stub_res_cat_by_name():
     data = dict()
     for k, v in RESOURCE_CATEGORIES.items():
@@ -138,7 +148,7 @@ def stub_res_cat_by_name():
     return data
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def stub_res_cat_by_id():
     data = dict()
     for k, v in RESOURCE_CATEGORIES.items():
@@ -153,7 +163,7 @@ def stub_res_cat_by_id():
     return data
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_db_env(monkeypatch):
     if os.getenv("GITHUB_ACTIONS"):
         data = dict(
@@ -174,7 +184,7 @@ def mock_db_env(monkeypatch):
     monkeypatch.setenv("POSTGRES_DB", data["POSTGRES_DB"])
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def test_connection(mock_db_env):
     # create db engine differently on local machine or Github Actions
     conn = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"

@@ -404,7 +404,6 @@ class BibEnhancer:
             logger.debug("Worldcat record failed subjects test.")
             return False
 
-        logger.debug("Worldcat record meets minimum criteria.")
         return True
 
     def _purge_tags(self) -> None:

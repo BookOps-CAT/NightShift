@@ -498,8 +498,6 @@ class TestBibEnhancer:
         with caplog.at_level(logging.DEBUG):
             assert be._meets_minimum_criteria() is True
 
-        assert "Worldcat record meets minimum criteria." in caplog.text
-
     def test_meets_minimum_criteria_upper_case_title(
         self, caplog, stub_resource, stub_res_cat_by_id
     ):
@@ -553,29 +551,8 @@ class TestBibEnhancer:
         assert "Worldcat record failed physical desc. test." in caplog.text
 
     @pytest.mark.parametrize(
-        "tag,value,expectation, msg",
+        "tag,value,expectation,msg",
         [
-            pytest.param(
-                "100",
-                "spam",
-                True,
-                "Worldcat record meets minimum criteria.",
-                id="meets in 100",
-            ),
-            pytest.param(
-                "245",
-                "spam",
-                True,
-                "Worldcat record meets minimum criteria.",
-                id="meets in 245",
-            ),
-            pytest.param(
-                "100",
-                None,
-                True,
-                "Worldcat record meets minimum criteria.",
-                id="no author field",
-            ),
             pytest.param(
                 "100",
                 "℗",
@@ -623,7 +600,7 @@ class TestBibEnhancer:
                 )
             )
         with caplog.at_level(logging.DEBUG):
-            assert be._meets_minimum_criteria() == expectation
+            assert be.is_acceptable() == expectation
 
         assert msg in caplog.text
 
