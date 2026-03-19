@@ -196,7 +196,7 @@ class Worldcat:
                 payloads.append(
                     dict(q=query, itemType="video", itemSubType="video-digital")
                 )
-        elif resource.resourceCategoryId in range(4, 12):
+        else:
             # print monograph materials
             if resource.standardNumber:
                 payloads.append(

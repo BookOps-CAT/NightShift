@@ -233,7 +233,7 @@ def test_data_rich(stub_resource, test_session, test_data_core):
     test_session.commit()
 
 
-# SFTP / newtowrked drive #############
+# SFTP / networked drive #############
 
 
 @pytest.fixture
