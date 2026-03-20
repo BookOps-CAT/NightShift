@@ -2,274 +2,454 @@
 Tests `marc.marc_writer.py` module
 """
 
+import copy
 import logging
 import os
 import pickle
-from contextlib import nullcontext as does_not_raise
 
 import pytest
 from pymarc import Field, Indicators, MARCReader, Record, Subfield
 
-from nightshift import __title__, __version__
-from nightshift.datastore import Resource
 from nightshift.marc.marc_writer import BibEnhancer
 
 
+@pytest.fixture
+def res_to_enhance(resourceId, library, suppressed, stub_resource):
+    resource = copy.copy(stub_resource)
+    if library == "NYP":
+        resource.libraryId = 1
+    else:
+        resource.libraryId = 2
+    resource.resourceCategoryId = resourceId
+    resource.suppressed = suppressed
+    return resource
+
+
 class TestBibEnhancer:
-    def test_init(self, caplog, stub_resource, stub_res_cat_by_id):
-        with does_not_raise():
-            with caplog.at_level(logging.INFO):
-                result = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-
-        assert result.library == "NYP"
-        assert isinstance(result.resource, Resource)
-        assert isinstance(result.bib, Record)
-
-    def test_missing_full_bib(self, stub_resource):
-        stub_resource.fullBib = None
-        with pytest.raises(TypeError):
-            BibEnhancer(stub_resource)
-
     @pytest.mark.parametrize(
-        "resourceId,libraryId,tag, expectation",
+        "resourceId,library,call_no,command,suppressed",
         [
-            (1, 1, "091", "eNYPL Book"),
-            (2, 1, "091", "eNYPL Audio"),
-            (3, 1, "091", "eNYPL Video"),
-            (1, 2, "099", "eBOOK"),
-            (2, 2, "099", "eAUDIO"),
-            (3, 2, "099", "eVIDEO"),
+            pytest.param(1, "NYP", "eNYPL Book", "*b2=z;bn=ia;", False, id="nyp-ebook"),
+            pytest.param(1, "BPL", "eBOOK", "*b2=x;bn=elres;", False, id="bpl-ebook"),
+            pytest.param(
+                1, "NYP", "eNYPL Book", "*b2=z;b3=n;bn=ia;", True, id="nyp-ebook-supp"
+            ),
+            pytest.param(
+                1, "BPL", "eBOOK", "*b2=x;b3=n;bn=elres;", True, id="bpl-ebook-supp"
+            ),
         ],
     )
-    def test_add_call_number_supported_resource_categories(
-        self,
-        caplog,
-        stub_resource,
-        stub_res_cat_by_id,
-        resourceId,
-        libraryId,
-        tag,
-        expectation,
+    def test_manipulate_res_cat_1(
+        self, caplog, res_to_enhance, stub_res_cat_by_id, library, call_no, command
     ):
-        stub_resource.resourceCategoryId = resourceId
-        stub_resource.libraryId = libraryId
-        if libraryId == 1:
-            library = "NYP"
-        elif libraryId == 2:
-            library = "BPL"
-        be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
-        with caplog.at_level(logging.DEBUG):
-            assert be._add_call_number() is True
-        assert f"Added {expectation} to {library} b11111111a." in caplog.text
-        bib = be.bib
-        assert str(bib[tag]) == f"={tag}  \\\\$a{expectation}"
-
-    @pytest.mark.parametrize("library,resourceId", [("NYP", 4), ("BPL", 4)])
-    def test_add_call_number_unsupported_resources(
-        self, caplog, stub_resource, stub_res_cat_by_id, library, resourceId
-    ):
-        stub_resource.resourceCategoryId = resourceId
-        be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
-
-        with caplog.at_level(logging.WARN):
-            assert be._add_call_number() is False
-
-        assert f"Unable to create call number for {library} b11111111a." in caplog.text
-
-    @pytest.mark.parametrize(
-        "resourceId,suppressed,libraryId,expectation",
-        [
-            pytest.param(1, False, 1, "*b2=z;bn=ia;", id="nyp-ebook"),
-            pytest.param(1, False, 2, "*b2=x;bn=elres;", id="bpl-ebook"),
-            pytest.param(1, True, 1, "*b2=z;b3=n;bn=ia;", id="nyp-ebook-supp"),
-            pytest.param(1, True, 2, "*b2=x;b3=n;bn=elres;", id="bpl-ebook-supp"),
-            pytest.param(2, False, 1, "*b2=n;bn=ia;", id="nyp-eaudio"),
-            pytest.param(2, False, 2, "*b2=z;bn=elres;", id="bpl-eaudio"),
-            pytest.param(3, True, 1, "*b2=3;b3=n;bn=ia;", id="nyp-evideo-supp"),
-            pytest.param(3, True, 2, "*b2=v;b3=n;bn=elres;", id="bpl-evideo-supp"),
-            pytest.param(4, False, 1, "*b2=a;bn=ia;", id="nyp-print"),
-            pytest.param(4, False, 2, "*b2=a;bn=elres;", id="bpl-print"),
-        ],
-    )
-    def test_add_command_tag(
-        self,
-        caplog,
-        stub_resource,
-        stub_res_cat_by_id,
-        resourceId,
-        suppressed,
-        libraryId,
-        expectation,
-    ):
-        stub_resource.resourceCategoryId = resourceId
-        stub_resource.suppressed = suppressed
-        stub_resource.libraryId = libraryId
-        if libraryId == 1:
-            library = "NYP"
-        elif libraryId == 2:
-            library = "BPL"
-
-        be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
-        with caplog.at_level(logging.DEBUG):
-            be._add_command_tag()
-
+        be = BibEnhancer(res_to_enhance, library, stub_res_cat_by_id)
+        assert be.bib["001"].value() == "ocn850939580"
+        be.manipulate()
+        call_tag = be.tags["call_tag"]
+        initials_tag = be.tags["initials_tag"]
+        log_msgs = [i.msg for i in caplog.records]
+        assert len(log_msgs) == 7
+        assert log_msgs[0] == "Converting Worldcat response to bookops-marc Bib object."
         assert (
-            f"Added 949 command tag: {expectation} to {library} b11111111a."
-            in caplog.text
+            log_msgs[1]
+            == f"Removed ['020', '029', '037', '090', '263', '856', '910', '938'] from {library} b11111111a."
+        )
+        assert log_msgs[2] == f"Added {call_no} to {library} b11111111a."
+        assert (
+            log_msgs[3]
+            == "Worldcat record # 850939580 is acceptable. Meets minimum requirements."
         )
 
-        bib = be.bib
-
-        assert str(bib["949"]) == f"=949  \\\\$a{expectation}"
-
-    @pytest.mark.parametrize(
-        "res_cat_id, tag, indicators, subfields, log_msgs",
-        [
-            pytest.param(1, None, [], [], [], id="ebook: No previous tags"),
-            pytest.param(
-                2,
-                None,
-                [],
-                [],
-                ["Added 'Audiobooks' LCGFT genre to 655 tag."],
-                id="eaudio: No previous tags",
-            ),
-            pytest.param(
-                3,
-                None,
-                [],
-                [],
-                ["Added 'Internet videos' LCGFT genre to 655 tag."],
-                id="evideo: No previous tags",
-            ),
-            pytest.param(99, None, [], [], [], id="illegal resource category"),
-        ],
-    )
-    def test_clean_up_genre_tags_when_missing(
-        self,
-        caplog,
-        stub_resource,
-        stub_res_cat_by_id,
-        res_cat_id,
-        tag,
-        indicators,
-        subfields,
-        log_msgs,
-    ):
-        stub_resource.resourceCategoryId = res_cat_id
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-
-        if tag:
-            be.bib.add_field(Field(tag=tag, indicators=indicators, subfields=subfields))
-
-        with caplog.at_level(logging.DEBUG):
-            be._clean_up_genre_tags()
-
-        for log_msg in log_msgs:
-            assert log_msg in caplog.text
-
-        if res_cat_id == 1:
-            assert len(be.bib.get_fields("655")) == 0
-        elif res_cat_id == 2:
-            tags = be.bib.get_fields("655")
-            assert len(tags) == 1
-            assert str(tags[0]) == "=655  \\7$aAudiobooks.$2lcgft"
-        elif res_cat_id == 3:
-            assert len(be.bib.get_fields("655")) == 1
-            assert str(be.bib["655"]) == "=655  \\7$aInternet videos.$2lcgft"
-        else:
-            assert len(be.bib.get_fields("655")) == 0
+        assert (
+            log_msgs[4] == f"No local tags to keep were found for {library} b11111111a."
+        )
+        assert (
+            log_msgs[5] == f"Added 949 command tag: {command} to {library} b11111111a."
+        )
+        assert (
+            log_msgs[6] == f"Added initials tag {initials_tag} to {library} b11111111a."
+        )
+        assert str(be.bib[call_tag]) == f"={call_tag}  \\\\$a{call_no}"
 
     @pytest.mark.parametrize(
-        "res_cat_id,tag,indicators,subfields",
+        "field,count",
         [
             pytest.param(
-                1,
-                "655",
-                [" ", "0"],
-                [Subfield("a", "Electronic books.")],
+                Field(
+                    tag="655",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "Electronic books.")],
+                ),
+                0,
                 id="ebook: Electronic books - lcsh",
             ),
             pytest.param(
-                1,
-                "655",
-                [" ", "7"],
-                [Subfield("a", "Electronic books."), Subfield("2", "lcgft")],
+                Field(
+                    tag="655",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[
+                        Subfield("a", "Electronic books."),
+                        Subfield("2", "lcgft"),
+                    ],
+                ),
+                0,
                 id="ebook: Electronic books - lcgft",
             ),
             pytest.param(
-                1,
-                "650",
-                [" ", "0"],
-                [Subfield("a", "Electronic books.")],
+                Field(
+                    tag="650",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "Electronic books.")],
+                ),
+                0,
                 id="ebook: Electronic books as invalid LCSH",
             ),
             pytest.param(
-                1,
-                "655",
-                [" ", "0"],
-                [Subfield("a", "Children's electronic books.")],
+                Field(
+                    tag="655",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "Children's electronic books.")],
+                ),
+                0,
                 id="ebook: Children's electronic books.",
             ),
             pytest.param(
+                Field(
+                    tag="650",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "Foo.")],
+                ),
+                1,
+                id="LCSH",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[Subfield("a", "Foo."), Subfield("2", "lcsh")],
+                ),
+                1,
+                id="LCSH subfield $2 7",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[Subfield("a", "Foo."), Subfield("2", "fast")],
+                ),
+                1,
+                id="FAST",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[Subfield("a", "Foo."), Subfield("2", "homoit")],
+                ),
+                1,
+                id="HOMOIT",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[Subfield("a", "Foo."), Subfield("2", "gsafd")],
+                ),
+                1,
+                id="GSAFD",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[Subfield("a", "Foo."), Subfield("2", "lcgft")],
+                ),
+                1,
+                id="LCGFT",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[Subfield("a", "Foo."), Subfield("2", "lctgm")],
+                ),
+                1,
+                id="LCTGM",
+            ),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "library,resourceId,suppressed", [("NYP", 1, False), ("BPL", 1, False)]
+    )
+    def test_manipulate_res_cat_1_genre_tags(
+        self, res_to_enhance, library, stub_res_cat_by_id, field, count
+    ):
+        be = BibEnhancer(res_to_enhance, library, stub_res_cat_by_id)
+        be.bib.remove_fields("650", "655")
+        be.bib.add_field(field)
+        assert len(be.bib.subjects) == 1
+        be.manipulate()
+        assert len(be.bib.subjects) == count
+
+    @pytest.mark.parametrize(
+        "resourceId,library,call_no,command,subj,suppressed",
+        [
+            pytest.param(
                 2,
-                "655",
-                [" ", "7"],
-                [Subfield("a", "Audiobooks."), Subfield("2", "lcgft")],
-                id="eaudio: Audiobooks - lcgft",
+                "NYP",
+                "eNYPL Audio",
+                "*b2=n;bn=ia;",
+                "Audiobooks",
+                False,
+                id="nyp-eaudio",
             ),
             pytest.param(
                 2,
-                "655",
-                [" ", "7"],
-                [Subfield("a", "Chidlren's Audiobooks."), Subfield("2", "lcgft")],
-                id="eaudio: Children's audiobooks - lcgft",
+                "BPL",
+                "eAUDIO",
+                "*b2=z;bn=elres;",
+                "Audiobooks",
+                False,
+                id="bpl-eaudio",
             ),
             pytest.param(
                 2,
-                "655",
-                [" ", "7"],
-                [Subfield("a", "Electronic audiobooks."), Subfield("2", "local")],
-                id="eaudio: Electronic audiobooks - local",
+                "NYP",
+                "eNYPL Audio",
+                "*b2=n;b3=n;bn=ia;",
+                "Audiobooks",
+                True,
+                id="nyp-eaudio-supp",
             ),
             pytest.param(
                 2,
-                "650",
-                [" ", "0"],
-                [Subfield("a", "Electronic audiobooks.")],
-                id="eaudio: Electronic audiobooks as invalid LCSH",
+                "BPL",
+                "eAUDIO",
+                "*b2=z;b3=n;bn=elres;",
+                "Audiobooks",
+                True,
+                id="bpl-eaudio0-supp",
             ),
             pytest.param(
                 3,
-                "655",
-                [" ", "7"],
-                [Subfield("a", "Internet videos."), Subfield("2", "lcgft")],
+                "NYP",
+                "eNYPL Video",
+                "*b2=3;bn=ia;",
+                "Internet videos",
+                False,
+                id="nyp-evideo",
+            ),
+            pytest.param(
+                3,
+                "BPL",
+                "eVIDEO",
+                "*b2=v;bn=elres;",
+                "Internet videos",
+                False,
+                id="bpl-video",
+            ),
+            pytest.param(
+                3,
+                "NYP",
+                "eNYPL Video",
+                "*b2=3;b3=n;bn=ia;",
+                "Internet videos",
+                True,
+                id="nyp-video-supp",
+            ),
+            pytest.param(
+                3,
+                "BPL",
+                "eVIDEO",
+                "*b2=v;b3=n;bn=elres;",
+                "Internet videos",
+                True,
+                id="bpl-video-supp",
+            ),
+        ],
+    )
+    def test_manipulate_res_cat_2_3(
+        self,
+        caplog,
+        res_to_enhance,
+        stub_res_cat_by_id,
+        library,
+        call_no,
+        command,
+        subj,
+    ):
+        be = BibEnhancer(res_to_enhance, library, stub_res_cat_by_id)
+        be.manipulate()
+        call_tag = be.tags["call_tag"]
+        initials_tag = be.tags["initials_tag"]
+        log_msgs = [i.msg for i in caplog.records]
+        assert len(log_msgs) == 8
+        assert log_msgs[0] == "Converting Worldcat response to bookops-marc Bib object."
+        assert (
+            log_msgs[1]
+            == f"Removed ['020', '029', '037', '090', '263', '856', '910', '938'] from {library} b11111111a."
+        )
+        assert log_msgs[2] == f"Added {call_no} to {library} b11111111a."
+        assert (
+            log_msgs[3]
+            == "Worldcat record # 850939580 is acceptable. Meets minimum requirements."
+        )
+        assert log_msgs[4] == f"Added '{subj}' LCGFT genre to 655 tag."
+        assert (
+            log_msgs[5] == f"No local tags to keep were found for {library} b11111111a."
+        )
+        assert (
+            log_msgs[6] == f"Added 949 command tag: {command} to {library} b11111111a."
+        )
+        assert (
+            log_msgs[7] == f"Added initials tag {initials_tag} to {library} b11111111a."
+        )
+        assert str(be.bib[call_tag]) == f"={call_tag}  \\\\$a{call_no}"
+
+    @pytest.mark.parametrize(
+        "field,suppressed,resourceId,subj",
+        [
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "Audiobooks."), Subfield("2", "lcgft")],
+                ),
+                False,
+                2,
+                "Audiobooks. lcgft",
+                id="eaudio: Audiobooks - lcgft",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[
+                        Subfield("a", "Children's Audiobooks."),
+                        Subfield("2", "lcgft"),
+                    ],
+                ),
+                False,
+                2,
+                "Children's Audiobooks. lcgft",
+                id="eaudio: Children's audiobooks - lcgft",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[
+                        Subfield("a", "Electronic audiobooks."),
+                        Subfield("2", "local"),
+                    ],
+                ),
+                False,
+                2,
+                "Audiobooks. lcgft",
+                id="eaudio: Electronic audiobooks - local",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "Electronic audiobooks.")],
+                ),
+                False,
+                2,
+                "Audiobooks. lcgft",
+                id="eaudio: Electronic audiobooks as invalid LCSH",
+            ),
+            pytest.param(
+                Field(
+                    tag="655",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[
+                        Subfield("a", "Internet videos."),
+                        Subfield("2", "lcgft"),
+                    ],
+                ),
+                False,
+                3,
+                "Internet videos. lcgft",
                 id="evideo: Internet videos - lcgft.",
             ),
         ],
     )
-    def test_clean_up_genre_tags_when_present(
-        self, stub_resource, stub_res_cat_by_id, res_cat_id, tag, indicators, subfields
+    @pytest.mark.parametrize("library", ["NYP", "BPL"])
+    def test_manipulate_res_cat_2_3_genre_tags(
+        self, res_to_enhance, library, stub_res_cat_by_id, field, subj
     ):
-        stub_resource.resourceCategoryId = res_cat_id
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-
-        # make sure no other subjects interfere
+        be = BibEnhancer(res_to_enhance, library, stub_res_cat_by_id)
+        assert len(be.bib.subjects) == 1
+        assert be.bib.subjects[0].value() == "Test."
         be.bib.remove_fields("650", "655")
-        be.bib.add_field(Field(tag=tag, indicators=indicators, subfields=subfields))
+        be.bib.add_field(field)
+        be.manipulate()
+        assert len(be.bib.subjects) == 1
+        assert be.bib.subjects[0].value() == subj
 
-        be._clean_up_genre_tags()
+    @pytest.mark.parametrize(
+        "resourceId,library",
+        [
+            pytest.param(4, "NYP", id="nyp-print-eng-adult-fic"),
+            pytest.param(4, "BPL", id="bpl-print-eng-adult-fic"),
+            pytest.param(5, "NYP", id="nyp-print-eng-adult-bio"),
+            pytest.param(5, "BPL", id="bpl-print-eng-adult-bio"),
+            pytest.param(6, "NYP", id="nyp-print-eng-adult-nonfic"),
+            pytest.param(6, "BPL", id="bpl-print-eng-adult-nonfic"),
+            pytest.param(7, "NYP", id="nyp-print-eng-adult-mystery"),
+            pytest.param(7, "BPL", id="bpl-print-eng-adult-mystery"),
+            pytest.param(8, "NYP", id="nyp-print-eng-adult-scifi"),
+            pytest.param(8, "BPL", id="bpl-print-eng-adult-scifi"),
+            pytest.param(9, "NYP", id="nyp-print-eng-juv-fic"),
+            pytest.param(9, "BPL", id="bpl-print-eng-juv-fic"),
+            pytest.param(10, "NYP", id="nyp-print-eng-juv-bio"),
+            pytest.param(10, "BPL", id="bpl-print-eng-juv-bio"),
+            pytest.param(11, "NYP", id="nyp-print-eng-juv-nonfic"),
+            pytest.param(11, "BPL", id="bpl-print-eng-juv-nonfic"),
+        ],
+    )
+    @pytest.mark.parametrize("suppressed", [False])
+    def test_manipulate_res_cat_4_11(
+        self, caplog, res_to_enhance, stub_res_cat_by_id, library
+    ):
+        be = BibEnhancer(res_to_enhance, library, stub_res_cat_by_id)
+        be.manipulate()
+        log_msgs = [i.msg for i in caplog.records]
+        assert len(log_msgs) == 4
+        assert log_msgs[0] == "Converting Worldcat response to bookops-marc Bib object."
+        assert (
+            log_msgs[1]
+            == f"Removed ['029', '090', '263', '936', '938'] from {library} b11111111a."
+        )
+        assert log_msgs[2] == f"Unable to create call number for {library} b11111111a."
+        assert (
+            log_msgs[3]
+            == "Worldcat record # 850939580 is rejected. Does not meet minimum requirements."
+        )
 
-        if (
-            res_cat_id == 1
-        ):  # remove, OCLC no longer allows (Sept. 2022) use of 'electronic books' genre terms - so this should technically not occur any more
-            assert len(be.bib.subjects) == 0
-        elif res_cat_id == 2:
-            assert len(be.bib.subjects) == 1
-            assert "audiobooks. lcgft" in be.bib["655"].value().lower()
-        elif res_cat_id == 3:
-            assert len(be.bib.subjects) == 1
-            assert str(be.bib["655"]) == "=655  \\7$aInternet videos.$2lcgft"
+    @pytest.mark.parametrize(
+        "resourceId,library",
+        [
+            pytest.param(99, "NYP", id="nyp-invalid-res-cat"),
+            pytest.param(99, "BPL", id="bpl-invalid-res-cat"),
+        ],
+    )
+    @pytest.mark.parametrize("suppressed", [False, True])
+    def test_manipulate_res_cat_invalid(
+        self, caplog, res_to_enhance, stub_res_cat_by_id, library
+    ):
+        be = BibEnhancer(res_to_enhance, library, stub_res_cat_by_id)
+        be.manipulate()
+        log_msgs = [i.msg for i in caplog.records]
+        assert len(log_msgs) == 4
+        assert log_msgs[0] == "Converting Worldcat response to bookops-marc Bib object."
+        assert log_msgs[1] == "Encountered unsupported resource category."
+        assert log_msgs[2] == f"Unable to create call number for {library} b11111111a."
+        assert (
+            log_msgs[3]
+            == "Worldcat record # 850939580 is rejected. Does not meet minimum requirements."
+        )
 
     def test_add_local_tags(self, caplog, stub_resource, stub_res_cat_by_id):
         fields = [
@@ -304,199 +484,6 @@ class TestBibEnhancer:
         assert str(bib["020"]) == "=020  \\\\$a978123456789x"
         assert str(bib["037"]) == "=037  \\\\$a123$bOverdrive Inc."
         assert str(bib["856"]) == "=856  04$uurl_here$2opac msg"
-
-    def test_add_local_tags_missing_tags(
-        self, caplog, stub_resource, stub_res_cat_by_id
-    ):
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        with caplog.at_level(logging.DEBUG):
-            be._add_local_tags()
-
-        assert "No local tags to keep were found for NYP b11111111a." in caplog.text
-
-    @pytest.mark.parametrize("library,tag", [("NYP", "901"), ("BPL", "947")])
-    def test_add_initials_tag(
-        self, caplog, stub_resource, stub_res_cat_by_id, library, tag
-    ):
-        be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
-        with caplog.at_level(logging.DEBUG):
-            be._add_initials_tag()
-
-        assert f"Added initials tag {tag} to {library} b11111111a." in caplog.text
-        assert str(be.bib[tag]) == f"={tag}  \\\\$a{__title__}/{__version__}"
-
-    @pytest.mark.parametrize(
-        "library,tag,field_str",
-        [
-            ("NYP", "945", "=945  \\\\$a.b11111111a"),
-            ("BPL", "907", "=907  \\\\$a.b11111111a"),
-        ],
-    )
-    def test_add_sierraId(
-        self, stub_resource, stub_res_cat_by_id, library, tag, field_str
-    ):
-        be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
-        be._add_sierraId()
-        assert str(be.bib[tag]) == field_str
-
-    def test_digits_only_in_tag_001(self, stub_resource, stub_res_cat_by_id):
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        be._digits_only_in_tag_001()
-        assert be.bib["001"].data == "850939580"
-
-    def test_is_acceptable_success(self, stub_resource, stub_res_cat_by_id):
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        be.bib.remove_fields("245")
-        be.bib.add_field(
-            Field(
-                tag="245",
-                indicators=Indicators("1", "0"),
-                subfields=[Subfield("a", "Foo /"), Subfield("c", "Spam.")],
-            )
-        )
-        be.bib.add_field(
-            Field(
-                tag="300",
-                indicators=Indicators(" ", " "),
-                subfields=[Subfield("a", "foo")],
-            )
-        )
-        assert be.is_acceptable() is True
-
-    def test_is_acceptable_no_minimum_met(self, stub_resource, stub_res_cat_by_id):
-        be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
-        be.bib.remove_fields("300")
-
-        assert be.is_acceptable() is False
-
-    def test_is_acceptable_unable_to_create_call_number(
-        self, stub_resource, stub_res_cat_by_id
-    ):
-        stub_resource.resourceCategoryId = 99
-        be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
-
-        assert be.is_acceptable() is False
-
-    def test_manipulate_failed(self, caplog, stub_resource, stub_res_cat_by_id):
-        stub_resource.resourceCategoryId = 99
-
-        with caplog.at_level(logging.INFO):
-            be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-            be.manipulate()
-
-            assert be.is_acceptable() is False
-
-        assert (
-            "Worldcat record # 850939580 is rejected. Does not meet minimum requirements."
-            in caplog.text
-        )
-
-    @pytest.mark.parametrize(
-        "library,library_id,call_tag,call_no,initials_tag,bib_id_tag,command",
-        [
-            ("BPL", 2, "099", "eBOOK", "947", "907", "$a*b2=x;bn=elres;"),
-            ("NYP", 1, "091", "eNYPL Book", "901", "945", "$a*b2=z;bn=ia;"),
-        ],
-    )
-    def test_manipulate_success(
-        self,
-        library,
-        library_id,
-        call_tag,
-        call_no,
-        initials_tag,
-        bib_id_tag,
-        command,
-        caplog,
-        stub_resource,
-        stub_res_cat_by_id,
-    ):
-        stub_resource.resourceCategoryId = 1
-        stub_resource.libraryId = library_id
-        fields = [
-            Field(
-                tag="020",
-                indicators=Indicators(" ", " "),
-                subfields=[Subfield("a", "978123456789x")],
-            ),
-            Field(
-                tag="037",
-                indicators=Indicators(" ", " "),
-                subfields=[Subfield("a", "123"), Subfield("b", "Overdrive Inc.")],
-            ),
-            Field(
-                tag="856",
-                indicators=Indicators("0", "4"),
-                subfields=[Subfield("u", "url_here"), Subfield("2", "opac msg")],
-            ),
-        ]
-        pickled_fields = pickle.dumps(fields)
-        stub_resource.srcFieldsToKeep = pickled_fields
-
-        be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
-        be.bib.remove_fields("245", "300")
-        be.bib.add_field(
-            Field(
-                tag="245",
-                indicators=Indicators("1", "0"),
-                subfields=[Subfield("a", "Foo /"), Subfield("c", "Spam.")],
-            )
-        )
-        be.bib.add_field(
-            Field(
-                tag="300",
-                indicators=Indicators(" ", " "),
-                subfields=[Subfield("a", "foo")],
-            )
-        )
-        with does_not_raise():
-            with caplog.at_level(logging.INFO):
-                be.manipulate()
-
-                assert be.bib is not None
-
-        assert (
-            "Worldcat record # 850939580 is acceptable. Meets minimum requirements."
-            in caplog.text
-        )
-
-        assert str(be.bib["020"]) == "=020  \\\\$a978123456789x"
-        assert str(be.bib["037"]) == "=037  \\\\$a123$bOverdrive Inc."
-        assert str(be.bib["856"]) == "=856  04$uurl_here$2opac msg"
-        assert str(be.bib[call_tag]) == f"={call_tag}  \\\\$a{call_no}"
-        assert (
-            str(be.bib[initials_tag])
-            == f"={initials_tag}  \\\\$a{__title__}/{__version__}"
-        )
-        assert str(be.bib[bib_id_tag]) == f"={bib_id_tag}  \\\\$a.b11111111a"
-        assert str(be.bib["949"]) == f"=949  \\\\{command}"
-
-        # check if fields have been duplicated by accident
-        assert len(be.bib.get_fields("001")) == 1
-        assert len(be.bib.get_fields(call_tag)) == 1
-        assert len(be.bib.get_fields("037")) == 1
-
-    def test_meets_minimum_criteria_success(
-        self, caplog, stub_resource, stub_res_cat_by_id
-    ):
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        be.bib.remove_fields("245", "300")
-        be.bib.add_field(
-            Field(
-                tag="245",
-                indicators=Indicators("1", "0"),
-                subfields=[Subfield("a", "Foo /"), Subfield("c", "spam")],
-            )
-        )
-        be.bib.add_field(
-            Field(
-                tag="300",
-                indicators=Indicators(" ", " "),
-                subfields=[Subfield("a", "foo")],
-            )
-        )
-        with caplog.at_level(logging.DEBUG):
-            assert be._meets_minimum_criteria() is True
 
     def test_meets_minimum_criteria_upper_case_title(
         self, caplog, stub_resource, stub_res_cat_by_id
@@ -614,49 +601,6 @@ class TestBibEnhancer:
 
         assert "Worldcat record failed subjects test." in caplog.text
 
-    def test_purge_tags(self, caplog, stub_resource, stub_res_cat_by_id):
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        fields = [
-            Field(
-                tag="020",
-                indicators=Indicators(" ", " "),
-                subfields=[Subfield("a", "978123456789x")],
-            ),
-            Field(
-                tag="037",
-                indicators=Indicators(" ", " "),
-                subfields=[Subfield("a", "123"), Subfield("b", "Overdrive Inc.")],
-            ),
-            Field(
-                tag="856",
-                indicators=Indicators("0", "4"),
-                subfields=[Subfield("u", "url_here"), Subfield("2", "opac msg")],
-            ),
-        ]
-        for field in fields:
-            be.bib.add_field(field)
-
-        # make sure added tags are present
-        for field in fields:
-            assert field.tag in be.bib
-
-        with caplog.at_level(logging.DEBUG):
-            be._purge_tags()
-
-        assert (
-            "Removed ['020', '029', '037', '090', '263', '856', '910', '938'] from NYP b11111111a."
-            in caplog.text
-        )
-
-        # test if they were removed
-        for field in fields:
-            assert field.tag not in be.bib
-
-    def test_purge_tags_non_existent(self, stub_resource, stub_res_cat_by_id):
-        be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
-        with does_not_raise():
-            be._purge_tags()
-
     @pytest.mark.parametrize(
         "vendor",
         ["Overdrive, Inc.", "3M Company", "Recorded Books, Inc", "CloudLibrary"],
@@ -673,121 +617,6 @@ class TestBibEnhancer:
         be._remove_eresource_vendors()
 
         assert len(be.bib.get_fields("710")) == 0
-
-    @pytest.mark.parametrize("arg", ["ocm12345", "ocn12345", "on12345", "12345"])
-    def test_remove_oclc_prefix(self, stub_resource, stub_res_cat_by_id, arg):
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        assert be._remove_oclc_prefix(arg) == "12345"
-
-    def test_remove_unsupported_local_genre_tag_electronic_books(
-        self, stub_resource, stub_res_cat_by_id
-    ):
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-
-        # prep - remove any existing tags for tests
-        for f in be.bib.subjects:
-            be.bib.remove_field(f)
-
-        assert len(be.bib.subjects) == 0
-
-        be.bib.add_field(
-            Field(
-                tag="655",
-                indicators=Indicators(" ", "4"),
-                subfields=[Subfield("a", "Electronic books.")],
-            )
-        )
-        # must add additional 650 to pass minimium requirments
-        be.bib.add_field(
-            Field(
-                tag="650",
-                indicators=Indicators(" ", "0"),
-                subfields=[Subfield("a", "Foo.")],
-            )
-        )
-
-        assert len(be.bib.subjects) == 2
-        be.manipulate()
-        assert len(be.bib.subjects) == 1
-        assert str(be.bib.subjects[0]) == "=650  \\0$aFoo."
-
-    @pytest.mark.parametrize(
-        "tag",
-        [
-            pytest.param(
-                Field(
-                    tag="650",
-                    indicators=Indicators(" ", "0"),
-                    subfields=[Subfield("a", "Foo.")],
-                ),
-                id="LCSH",
-            ),
-            pytest.param(
-                Field(
-                    tag="650",
-                    indicators=Indicators(" ", "7"),
-                    subfields=[Subfield("a", "Foo."), Subfield("2", "lcsh")],
-                ),
-                id="LCSH subfield $2 7",
-            ),
-            pytest.param(
-                Field(
-                    tag="655",
-                    indicators=Indicators(" ", "7"),
-                    subfields=[Subfield("a", "Foo."), Subfield("2", "fast")],
-                ),
-                id="FAST",
-            ),
-            pytest.param(
-                Field(
-                    tag="650",
-                    indicators=Indicators(" ", "7"),
-                    subfields=[Subfield("a", "Foo."), Subfield("2", "homoit")],
-                ),
-                id="HOMOIT",
-            ),
-            pytest.param(
-                Field(
-                    tag="655",
-                    indicators=Indicators(" ", "7"),
-                    subfields=[Subfield("a", "Foo."), Subfield("2", "gsafd")],
-                ),
-                id="GSAFD",
-            ),
-            pytest.param(
-                Field(
-                    tag="655",
-                    indicators=Indicators(" ", "7"),
-                    subfields=[Subfield("a", "Foo."), Subfield("2", "lcgft")],
-                ),
-                id="LCGFT",
-            ),
-            pytest.param(
-                Field(
-                    tag="655",
-                    indicators=Indicators(" ", "7"),
-                    subfields=[Subfield("a", "Foo."), Subfield("2", "lctgm")],
-                ),
-                id="LCTGM",
-            ),
-        ],
-    )
-    def test_remove_unsupported_subject_tags_good_terms(
-        self, stub_resource, stub_res_cat_by_id, tag
-    ):
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-
-        # prep - remove any existing tags for tests
-        for f in be.bib.subjects:
-            be.bib.remove_field(f)
-
-        assert len(be.bib.subjects) == 0
-
-        be.bib.add_field(tag)
-
-        be.manipulate()
-        assert len(be.bib.subjects) == 1
-        assert str(be.bib.subjects[0]) == str(tag)
 
     @pytest.mark.parametrize(
         "tag",

@@ -43,28 +43,26 @@ class BibEnhancer:
     into MARC 21 and saves it to a temporary file.
     """
 
-    DATA: dict[str, dict[str, str]] = {
+    DATA: dict[str, dict[str, dict[str, str]]] = {
         "BPL": {
-            "default_loc": "bn=elres",
-            "initials_tag": "947",
-            "sierra_id_tag": "907",
-            "call_tag": "099",
-            "bib_format_attr": "sierraBibFormatBpl",
+            "tags": {"initials_tag": "947", "sierra_id_tag": "907", "call_tag": "099"},
+            "values": {
+                "default_loc": "bn=elres",
+                "bib_format_attr": "sierraBibFormatBpl",
+                "ebook": "eBOOK",
+                "eaudio": "eAUDIO",
+                "evideo": "eVIDEO",
+            },
         },
         "NYP": {
-            "default_loc": "bn=ia",
-            "initials_tag": "901",
-            "sierra_id_tag": "945",
-            "call_tag": "091",
-            "bib_format_attr": "sierraBibFormatNyp",
-        },
-    }
-    RES_CAT_CALL_NOS: dict[str, dict[str, str]] = {
-        "BPL": {"ebook": "eBOOK", "eaudio": "eAUDIO", "evideo": "eVIDEO"},
-        "NYP": {
-            "ebook": "eNYPL Book",
-            "eaudio": "eNYPL Audio",
-            "evideo": "eNYPL Video",
+            "tags": {"initials_tag": "901", "sierra_id_tag": "945", "call_tag": "091"},
+            "values": {
+                "default_loc": "bn=ia",
+                "bib_format_attr": "sierraBibFormatNyp",
+                "ebook": "eNYPL Book",
+                "eaudio": "eNYPL Audio",
+                "evideo": "eNYPL Video",
+            },
         },
     }
 
@@ -91,8 +89,8 @@ class BibEnhancer:
         self.resource = resource
         self.library = library
         self.res_cat = resource_categories.get(self.resource.resourceCategoryId)
-        self.res_cat_call_nos: dict[str, str] = self.RES_CAT_CALL_NOS[self.library]
-        self.tags: dict[str, str] = self.DATA[self.library]
+        self.tags: dict[str, str] = self.DATA[self.library]["tags"]
+        self.values: dict[str, str] = self.DATA[self.library]["values"]
 
         self.bib = worldcat_response_to_bib(resource.fullBib, self.library)
 
@@ -188,7 +186,7 @@ class BibEnhancer:
         resource_cat = getattr(self.res_cat, "name", None)
 
         tag = self.tags.get("call_tag")
-        value = self.res_cat_call_nos.get(resource_cat) if resource_cat else None
+        value = self.values.get(resource_cat) if resource_cat else None
 
         if tag and value:
             call_number = Field(
@@ -217,7 +215,7 @@ class BibEnhancer:
         commands = []
 
         # Sierra bib format
-        sierra_format_code = getattr(self.res_cat, self.tags["bib_format_attr"])
+        sierra_format_code = getattr(self.res_cat, self.values["bib_format_attr"])
 
         commands.append(f"b2={sierra_format_code}")
 
@@ -226,7 +224,7 @@ class BibEnhancer:
             commands.append("b3=n")
 
         # set default location
-        commands.append(self.tags["default_loc"])
+        commands.append(self.values["default_loc"])
 
         command_str = ";".join(commands)
 
@@ -252,8 +250,8 @@ class BibEnhancer:
             for field in self.bib.subjects:
                 if "electronic books" in field.value().lower():
                     self.bib.remove_field(field)
-
-        elif resource_cat == "eaudio":
+                    return
+        if resource_cat == "eaudio":
             # 'Audiobooks' term
             # remove electronic audiobooks
             for field in self.bib.subjects:
@@ -278,8 +276,8 @@ class BibEnhancer:
                     )
                 )
                 logger.debug("Added 'Audiobooks' LCGFT genre to 655 tag.")
-
-        elif resource_cat == "evideo":
+            return
+        if resource_cat == "evideo":
             found = False
             for field in self.bib.subjects:
                 if "internet videos." in field.value().lower():
@@ -297,6 +295,7 @@ class BibEnhancer:
                     )
                 )
                 logger.debug("Added 'Internet videos' LCGFT genre to 655 tag.")
+            return
 
     def _add_local_tags(self) -> None:
         """
@@ -353,7 +352,7 @@ class BibEnhancer:
         Removes OCLC control number prefix from the 001 tag
         """
         controlNo = self.bib["001"].value()
-        controlNo_without_prefix = self._remove_oclc_prefix(controlNo)
+        controlNo_without_prefix = controlNo.strip("ocnm")
         self.bib["001"].data = controlNo_without_prefix
 
     def _meets_minimum_criteria(self) -> bool:
@@ -432,14 +431,3 @@ class BibEnhancer:
             for vendor in vendors:
                 if vendor in tag.value().lower():
                     self.bib.remove_field(tag)
-
-    def _remove_oclc_prefix(self, controlNo: str) -> str:
-        """
-        Returns control number that consist only of digits
-        """
-        if controlNo.startswith("ocm") or controlNo.startswith("ocn"):
-            return controlNo[3:]
-        elif controlNo.startswith("on"):
-            return controlNo[2:]
-        else:
-            return controlNo
