@@ -719,3 +719,144 @@ class TestBibEnhancer:
                 be.save2file()
 
         assert "Unable to save record to a temp file. Error" in caplog.text
+
+    @pytest.mark.parametrize(
+        "field,tag,count",
+        [
+            pytest.param(
+                Field(
+                    tag="710",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "Overdrive, Inc.")],
+                ),
+                "710",
+                0,
+                id="eres-vendor-overdrive",
+            ),
+            pytest.param(
+                Field(
+                    tag="710",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "3M Company")],
+                ),
+                "710",
+                0,
+                id="eres-vendor-3m",
+            ),
+            pytest.param(
+                Field(
+                    tag="710",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "Recorded Books, Inc")],
+                ),
+                "710",
+                0,
+                id="eres-vendor-recorded-books-inc",
+            ),
+            pytest.param(
+                Field(
+                    tag="710",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "CloudLibrary")],
+                ),
+                "710",
+                0,
+                id="eres-vendor-cloud library",
+            ),
+            pytest.param(
+                Field(
+                    tag="690",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "Foo.")],
+                ),
+                "690",
+                1,
+                id="local-subject",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[Subfield("a", "Foo."), Subfield("2", "gmgpc")],
+                ),
+                "650",
+                1,
+                id="gmgpc",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[Subfield("a", "Foo."), Subfield("2", "sears")],
+                ),
+                "650",
+                1,
+                id="other-thesaurus-sears",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=Indicators(" ", "4"),
+                    subfields=[Subfield("a", "Foo."), Subfield("2", "lcsh")],
+                ),
+                "650",
+                1,
+                id="ind2-4",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=Indicators(" ", "1"),
+                    subfields=[Subfield("a", "Foo.")],
+                ),
+                "650",
+                1,
+                id="childrens-lcsh",
+            ),
+            pytest.param(
+                Field(
+                    tag="650",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[Subfield("a", "Foo.")],
+                ),
+                "650",
+                1,
+                id="other-thesaurus-missing-$2",
+            ),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "library,resourceId,suppressed", [("NYP", 1, False), ("BPL", 1, False)]
+    )
+    def test_remove_unwanted_fields(
+        self, res_to_enhance, stub_res_cat_by_id, library, field, tag, caplog, count
+    ):
+        be = BibEnhancer(res_to_enhance, library, stub_res_cat_by_id)
+        be.bib.remove_fields("650", "655")
+        be.bib.add_field(field)
+        assert len(be.bib.subjects) == count
+        be.bib.add_field(
+            Field(
+                tag="600",
+                indicators=Indicators("0", "0"),
+                subfields=[Subfield("a", "Spam.")],
+            )
+        )
+        assert len(be.bib.subjects) == count + 1
+        be.manipulate()
+        log_msgs = [i.msg for i in caplog.records]
+        assert len(log_msgs) == 7
+        assert str(be.bib.subjects[0]) == "=600  00$aSpam."
+        assert log_msgs[0] == "Converting Worldcat response to bookops-marc Bib object."
+        assert (
+            log_msgs[1]
+            == f"Removed ['020', '029', '037', '090', '263', '856', '910', '938'] from {library} b11111111a."
+        )
+        assert (
+            log_msgs[3]
+            == "Worldcat record # 850939580 is acceptable. Meets minimum requirements."
+        )
+
+        assert (
+            log_msgs[4] == f"No local tags to keep were found for {library} b11111111a."
+        )
