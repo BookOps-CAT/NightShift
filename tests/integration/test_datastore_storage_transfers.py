@@ -52,7 +52,7 @@ def test_fetch_file_and_add_to_db(env_var, test_data_rich, stub_res_cat_by_name)
 
 @pytest.mark.firewalled
 def test_enhance_and_transfer_to_drive(
-    caplog, env_var, test_data_rich, stub_resource, stub_res_cat_by_name
+    caplog, env_var, test_data_rich, stub_res_cat_by_name
 ):
     new_resource = Resource(
         sierraId=22222222,

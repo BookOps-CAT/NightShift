@@ -101,19 +101,6 @@ def test_init_db_invalid_data(mock_db_env, test_connection, mock_init_libraries)
 
 def test_add_event(test_session, test_data_rich):
     resource = test_session.query(Resource).where(Resource.nid == 1).one()
-    event = add_event(test_session, resource, status="expired")
-    test_session.commit()
-
-    assert event.nid == 1
-    assert event.libraryId == resource.libraryId
-    assert event.sierraId == resource.sierraId
-    assert event.bibDate == resource.bibDate
-    assert event.resourceCategoryId == resource.resourceCategoryId
-    assert event.status == "expired"
-
-
-def test_add_event_always_insert(test_session, test_data_rich):
-    resource = test_session.query(Resource).where(Resource.nid == 1).one()
     add_event(test_session, resource, status="expired")
     add_event(test_session, resource, status="expired")
     test_session.commit()
@@ -121,6 +108,12 @@ def test_add_event_always_insert(test_session, test_data_rich):
     results = test_session.query(Event).all()
 
     assert len(results) == 2
+    assert results[0].nid == 1
+    assert results[0].libraryId == resource.libraryId
+    assert results[0].sierraId == resource.sierraId
+    assert results[0].bibDate == resource.bibDate
+    assert results[0].resourceCategoryId == resource.resourceCategoryId
+    assert results[0].status == "expired"
 
 
 def test_add_output_file(test_session, test_data_core):
@@ -265,22 +258,26 @@ def test_delete_resources_too_early(test_session, test_data_rich):
     assert len(result) == 2
 
 
-def test_insert_or_ignore_new(test_session):
-    rec = insert_or_ignore(test_session, Library, code="NYP")
+@pytest.mark.parametrize("library", ["NYP", "BPL"])
+def test_insert_or_ignore(test_session, library):
+    rec1 = insert_or_ignore(test_session, Library, code=library)
     test_session.commit()
-    assert isinstance(rec, Library)
-    assert rec.code == "NYP"
-    assert rec.nid == 1
-
-
-def test_insert_or_ignore_dup(test_session):
-    rec1 = insert_or_ignore(test_session, Library, code="BPL")
-    test_session.commit()
+    assert isinstance(rec1, Library)
+    assert rec1.code == library
     assert rec1.nid == 1
-
-    rec2 = insert_or_ignore(test_session, Library, code="BPL")
+    rec2 = insert_or_ignore(test_session, Library, code=library)
     test_session.commit()
     assert rec2.nid == 1
+
+
+# def test_insert_or_ignore_dup(test_session):
+#     rec1 = insert_or_ignore(test_session, Library, code="BPL")
+#     test_session.commit()
+#     assert rec1.nid == 1
+
+#     rec2 = insert_or_ignore(test_session, Library, code="BPL")
+#     test_session.commit()
+#     assert rec2.nid == 1
 
 
 def test_insert_or_ignore_resubmitted_changed_record_exception(
@@ -860,7 +857,7 @@ def test_retrieve_rotten_apples(test_session, test_data_core):
     assert orgs == {1: ["UKAHL", "UAH", "FOO"], 2: ["UKAHL"], 3: ["UKAHL"]}
 
 
-def test_set_resources_to_expired(test_session, test_data_rich, stub_resource):
+def test_set_resources_to_expired(test_session, test_data_rich):
     nid = RESOURCE_CATEGORIES["ebook"]["nid"]
     last_period = RESOURCE_CATEGORIES["ebook"]["queryDays"].split(",")[-1]
     last_day = int(last_period.split("-")[-1])
@@ -890,9 +887,7 @@ def test_set_resources_to_expired(test_session, test_data_rich, stub_resource):
     assert resource_set_to_expired.status == "expired"
 
 
-def test_set_resources_to_expired_too_early(
-    test_session, test_data_rich, stub_resource
-):
+def test_set_resources_to_expired_too_early(test_session, test_data_rich):
     nid = RESOURCE_CATEGORIES["ebook"]["nid"]
     last_period = RESOURCE_CATEGORIES["ebook"]["queryDays"].split(",")[-1]
     last_day = int(last_period.split("-")[-1])
