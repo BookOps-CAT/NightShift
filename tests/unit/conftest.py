@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from nightshift import bot, constants, datastore_transactions, manager
 from nightshift.comms.storage import Drive
 from nightshift.config import logging_conf
-from nightshift.datastore import OutputFile, WorldcatQuery
+from nightshift.datastore import WorldcatQuery
 from nightshift.marc.marc_parser import BibReader
 from nightshift.tasks import Tasks
 
@@ -63,15 +63,6 @@ def patch_config_local_env_variables(monkeypatch):
 
 
 # DB fixtures ############
-
-
-@pytest.fixture
-def test_data_rich(stub_resource, test_session, test_data_core):
-    test_session.add(OutputFile(libraryId=1, handle="spam.mrc"))
-    test_session.commit()
-
-    test_session.add(stub_resource)
-    test_session.commit()
 
 
 @pytest.fixture
