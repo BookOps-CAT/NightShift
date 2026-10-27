@@ -6,7 +6,7 @@ from io import BytesIO
 
 import pytest
 from bookops_marc import Bib
-from pymarc import Field, Subfield
+from pymarc import Field, Indicators, Subfield
 
 from nightshift.datastore import Resource
 from nightshift.marc.marc_parser import BibReader, worldcat_response_to_bib
@@ -112,19 +112,23 @@ def test_BibReader_fields2keep_eresource(arg1, arg2, stub_marc, fake_BibReader):
     tags = [
         Field(tag="001", data="ODN12345"),
         Field(
-            tag="020", indicators=[" ", " "], subfields=[Subfield("a", "978111111111x")]
+            tag="020",
+            indicators=Indicators(" ", " "),
+            subfields=[Subfield("a", "978111111111x")],
         ),
         Field(
             tag="037",
-            indicators=[" ", " "],
+            indicators=Indicators(" ", " "),
             subfields=[Subfield("a", "12345"), Subfield("b", "Ovedrive")],
         ),
         Field(
-            tag="856", indicators=["4", "0"], subfields=[Subfield("u", "example.com")]
+            tag="856",
+            indicators=Indicators("4", "0"),
+            subfields=[Subfield("u", "example.com")],
         ),
         Field(
             tag="856",
-            indicators=["4", " "],
+            indicators=Indicators("4", " "),
             subfields=[Subfield("3", "Image"), Subfield("u", "example.com")],
         ),
     ]
@@ -154,19 +158,23 @@ def test_BibReader_map_data_eresource(
         Field(tag="001", data="ODN12345"),
         Field(tag="010", subfields=[Subfield("a", "12345")]),
         Field(
-            tag="020", indicators=[" ", " "], subfields=[Subfield("a", "978111111111x")]
+            tag="020",
+            indicators=Indicators(" ", " "),
+            subfields=[Subfield("a", "978111111111x")],
         ),
         Field(
             tag="037",
-            indicators=[" ", " "],
-            subfields=[Subfield("a", "1234567"), Subfield("b", "Ovedrive")],
-        ),
-        Field(
-            tag="856", indicators=["4", "0"], subfields=[Subfield("u", "example.com")]
+            indicators=Indicators(" ", " "),
+            subfields=[Subfield("a", "1234567"), Subfield("b", "OverDrive, Inc.")],
         ),
         Field(
             tag="856",
-            indicators=["4", " "],
+            indicators=Indicators("4", "0"),
+            subfields=[Subfield("u", "example.com")],
+        ),
+        Field(
+            tag="856",
+            indicators=Indicators("4", " "),
             subfields=[Subfield("3", "Image"), Subfield("u", "example.com")],
         ),
         Field(
@@ -177,7 +185,9 @@ def test_BibReader_map_data_eresource(
                 Subfield("c", "07-01-2021 19:07"),
             ],
         ),
-        Field(tag="998", indicators=[" ", " "], subfields=[Subfield("e", "n")]),
+        Field(
+            tag="998", indicators=Indicators(" ", " "), subfields=[Subfield("e", "n")]
+        ),
     ]
     for tag in tags:
         bib.add_field(tag)

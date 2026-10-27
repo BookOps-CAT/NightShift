@@ -4,7 +4,7 @@ from io import BytesIO
 
 import pytest
 from bookops_marc import Bib
-from pymarc import Field, Subfield
+from pymarc import Field, Indicators, Subfield
 from sqlalchemy.exc import IntegrityError
 
 from nightshift import bot, constants, datastore_transactions, manager
@@ -122,21 +122,21 @@ def stub_marc():
     bib.add_field(
         Field(
             tag="100",
-            indicators=["1", " "],
+            indicators=Indicators("1", " "),
             subfields=[Subfield("a", "Adams, John,"), Subfield("e", "author.")],
         )
     )
     bib.add_field(
         Field(
             tag="245",
-            indicators=["1", "4"],
+            indicators=Indicators("1", "4"),
             subfields=[Subfield("a", "The foo /"), Subfield("c", "by John Adams.")],
         )
     )
     bib.add_field(
         Field(
             tag="264",
-            indicators=[" ", "1"],
+            indicators=Indicators(" ", "1"),
             subfields=[
                 Subfield("a", "Bar :"),
                 Subfield("b", "New York,"),
@@ -147,7 +147,7 @@ def stub_marc():
     bib.add_field(
         Field(
             tag="907",
-            indicators=[" ", " "],
+            indicators=Indicators(" ", " "),
             subfields=[
                 Subfield("a", ".b22222222x"),
                 Subfield("b", "07-01-21"),

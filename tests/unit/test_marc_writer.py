@@ -8,7 +8,7 @@ import pickle
 from contextlib import nullcontext as does_not_raise
 
 import pytest
-from pymarc import Field, MARCReader, Record, Subfield
+from pymarc import Field, Indicators, MARCReader, Record, Subfield
 
 from nightshift import __title__, __version__
 from nightshift.datastore import Resource
@@ -276,17 +276,17 @@ class TestBibEnhancer:
         fields = [
             Field(
                 tag="020",
-                indicators=[" ", " "],
+                indicators=Indicators(" ", " "),
                 subfields=[Subfield("a", "978123456789x")],
             ),
             Field(
                 tag="037",
-                indicators=[" ", " "],
+                indicators=Indicators(" ", " "),
                 subfields=[Subfield("a", "123"), Subfield("b", "Overdrive Inc.")],
             ),
             Field(
                 tag="856",
-                indicators=["0", "4"],
+                indicators=Indicators("0", "4"),
                 subfields=[Subfield("u", "url_here"), Subfield("2", "opac msg")],
             ),
         ]
@@ -357,20 +357,24 @@ class TestBibEnhancer:
         be.bib.add_field(
             Field(
                 tag="245",
-                indicators=["1", "0"],
+                indicators=Indicators("1", "0"),
                 subfields=[Subfield("a", "Foo /"), Subfield("c", "Spam.")],
             )
         )
         be.bib.add_field(
-            Field(tag="300", indicators=[" ", " "], subfields=[Subfield("a", "foo")])
+            Field(
+                tag="300",
+                indicators=Indicators(" ", " "),
+                subfields=[Subfield("a", "foo")],
+            )
         )
-        assert be._is_acceptable() is True
+        assert be.is_acceptable() is True
 
     def test_is_acceptable_no_minimum_met(self, stub_resource, stub_res_cat_by_id):
         be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
         be.bib.remove_fields("300")
 
-        assert be._is_acceptable() is False
+        assert be.is_acceptable() is False
 
     def test_is_acceptable_unable_to_create_call_number(
         self, stub_resource, stub_res_cat_by_id
@@ -378,7 +382,7 @@ class TestBibEnhancer:
         stub_resource.resourceCategoryId = 99
         be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
 
-        assert be._is_acceptable() is False
+        assert be.is_acceptable() is False
 
     def test_manipulate_failed(self, caplog, stub_resource, stub_res_cat_by_id):
         stub_resource.resourceCategoryId = 99
@@ -387,7 +391,7 @@ class TestBibEnhancer:
             be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
             be.manipulate()
 
-            assert be.bib is None
+            assert be.is_acceptable() is False
 
         assert (
             "Worldcat record # 850939580 is rejected. Does not meet minimum requirements."
@@ -400,17 +404,17 @@ class TestBibEnhancer:
         fields = [
             Field(
                 tag="020",
-                indicators=[" ", " "],
+                indicators=Indicators(" ", " "),
                 subfields=[Subfield("a", "978123456789x")],
             ),
             Field(
                 tag="037",
-                indicators=[" ", " "],
+                indicators=Indicators(" ", " "),
                 subfields=[Subfield("a", "123"), Subfield("b", "Overdrive Inc.")],
             ),
             Field(
                 tag="856",
-                indicators=["0", "4"],
+                indicators=Indicators("0", "4"),
                 subfields=[Subfield("u", "url_here"), Subfield("2", "opac msg")],
             ),
         ]
@@ -422,12 +426,16 @@ class TestBibEnhancer:
         be.bib.add_field(
             Field(
                 tag="245",
-                indicators=["1", "0"],
+                indicators=Indicators("1", "0"),
                 subfields=[Subfield("a", "Foo /"), Subfield("c", "Spam.")],
             )
         )
         be.bib.add_field(
-            Field(tag="300", indicators=[" ", " "], subfields=[Subfield("a", "foo")])
+            Field(
+                tag="300",
+                indicators=Indicators(" ", " "),
+                subfields=[Subfield("a", "foo")],
+            )
         )
         with does_not_raise():
             with caplog.at_level(logging.INFO):
@@ -458,12 +466,16 @@ class TestBibEnhancer:
         be.bib.add_field(
             Field(
                 tag="245",
-                indicators=["1", "0"],
+                indicators=Indicators("1", "0"),
                 subfields=[Subfield("a", "Foo /"), Subfield("c", "spam")],
             )
         )
         be.bib.add_field(
-            Field(tag="300", indicators=[" ", " "], subfields=[Subfield("a", "foo")])
+            Field(
+                tag="300",
+                indicators=Indicators(" ", " "),
+                subfields=[Subfield("a", "foo")],
+            )
         )
         with caplog.at_level(logging.DEBUG):
             assert be._meets_minimum_criteria() is True
@@ -478,7 +490,7 @@ class TestBibEnhancer:
         be.bib.add_field(
             Field(
                 tag="245",
-                indicators=["1", "0"],
+                indicators=Indicators("1", "0"),
                 subfields=[Subfield("a", "FOO /"), Subfield("c", "spam")],
             )
         )
@@ -493,7 +505,11 @@ class TestBibEnhancer:
         be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be.bib.remove_fields("245")
         be.bib.add_field(
-            Field(tag="245", indicators=["1", "0"], subfields=[Subfield("a", "Foo.")])
+            Field(
+                tag="245",
+                indicators=Indicators("1", "0"),
+                subfields=[Subfield("a", "Foo.")],
+            )
         )
         with caplog.at_level(logging.DEBUG):
             assert be._meets_minimum_criteria() is False
@@ -508,7 +524,7 @@ class TestBibEnhancer:
         be.bib.add_field(
             Field(
                 tag="245",
-                indicators=["1", "0"],
+                indicators=Indicators("1", "0"),
                 subfields=[Subfield("a", "Foo /"), Subfield("c", "Spam.")],
             )
         )
@@ -608,17 +624,17 @@ class TestBibEnhancer:
         fields = [
             Field(
                 tag="020",
-                indicators=[" ", " "],
+                indicators=Indicators(" ", " "),
                 subfields=[Subfield("a", "978123456789x")],
             ),
             Field(
                 tag="037",
-                indicators=[" ", " "],
+                indicators=Indicators(" ", " "),
                 subfields=[Subfield("a", "123"), Subfield("b", "Overdrive Inc.")],
             ),
             Field(
                 tag="856",
-                indicators=["0", "4"],
+                indicators=Indicators("0", "4"),
                 subfields=[Subfield("u", "url_here"), Subfield("2", "opac msg")],
             ),
         ]
@@ -653,16 +669,15 @@ class TestBibEnhancer:
     def test_remove_eresource_vendors(self, stub_resource, stub_res_cat_by_id, vendor):
         be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be.bib.add_field(
-            Field(tag="710", indicators=[" ", "0"], subfields=[Subfield("a", vendor)])
+            Field(
+                tag="710",
+                indicators=Indicators(" ", "0"),
+                subfields=[Subfield("a", vendor)],
+            )
         )
         be._remove_eresource_vendors()
 
         assert len(be.bib.get_fields("710")) == 0
-
-    @pytest.mark.parametrize("arg", ["ocm12345", "ocn12345", "on12345", "12345"])
-    def test_remove_oclc_prefix(self, stub_resource, stub_res_cat_by_id, arg):
-        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        assert be._remove_oclc_prefix(arg) == "12345"
 
     def test_remove_unsupported_local_genre_tag_electronic_books(
         self, stub_resource, stub_res_cat_by_id
@@ -678,13 +693,17 @@ class TestBibEnhancer:
         be.bib.add_field(
             Field(
                 tag="655",
-                indicators=[" ", "4"],
+                indicators=Indicators(" ", "4"),
                 subfields=[Subfield("a", "Electronic books.")],
             )
         )
         # must add additional 650 to pass minimium requirments
         be.bib.add_field(
-            Field(tag="650", indicators=[" ", "0"], subfields=[Subfield("a", "Foo.")])
+            Field(
+                tag="650",
+                indicators=Indicators(" ", "0"),
+                subfields=[Subfield("a", "Foo.")],
+            )
         )
 
         assert len(be.bib.subjects) == 2
@@ -697,14 +716,16 @@ class TestBibEnhancer:
         [
             pytest.param(
                 Field(
-                    tag="650", indicators=[" ", "0"], subfields=[Subfield("a", "Foo.")]
+                    tag="650",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "Foo.")],
                 ),
                 id="LCSH",
             ),
             pytest.param(
                 Field(
                     tag="650",
-                    indicators=[" ", "7"],
+                    indicators=Indicators(" ", "7"),
                     subfields=[Subfield("a", "Foo."), Subfield("2", "lcsh")],
                 ),
                 id="LCSH subfield $2 7",
@@ -712,7 +733,7 @@ class TestBibEnhancer:
             pytest.param(
                 Field(
                     tag="655",
-                    indicators=[" ", "7"],
+                    indicators=Indicators(" ", "7"),
                     subfields=[Subfield("a", "Foo."), Subfield("2", "fast")],
                 ),
                 id="FAST",
@@ -720,7 +741,7 @@ class TestBibEnhancer:
             pytest.param(
                 Field(
                     tag="650",
-                    indicators=[" ", "7"],
+                    indicators=Indicators(" ", "7"),
                     subfields=[Subfield("a", "Foo."), Subfield("2", "homoit")],
                 ),
                 id="HOMOIT",
@@ -728,7 +749,7 @@ class TestBibEnhancer:
             pytest.param(
                 Field(
                     tag="655",
-                    indicators=[" ", "7"],
+                    indicators=Indicators(" ", "7"),
                     subfields=[Subfield("a", "Foo."), Subfield("2", "gsafd")],
                 ),
                 id="GSAFD",
@@ -736,7 +757,7 @@ class TestBibEnhancer:
             pytest.param(
                 Field(
                     tag="655",
-                    indicators=[" ", "7"],
+                    indicators=Indicators(" ", "7"),
                     subfields=[Subfield("a", "Foo."), Subfield("2", "lcgft")],
                 ),
                 id="LCGFT",
@@ -744,7 +765,7 @@ class TestBibEnhancer:
             pytest.param(
                 Field(
                     tag="655",
-                    indicators=[" ", "7"],
+                    indicators=Indicators(" ", "7"),
                     subfields=[Subfield("a", "Foo."), Subfield("2", "lctgm")],
                 ),
                 id="LCTGM",
@@ -773,14 +794,16 @@ class TestBibEnhancer:
         [
             pytest.param(
                 Field(
-                    tag="690", indicators=[" ", "0"], subfields=[Subfield("a", "Foo.")]
+                    tag="690",
+                    indicators=Indicators(" ", "0"),
+                    subfields=[Subfield("a", "Foo.")],
                 ),
                 id="local SH",
             ),
             pytest.param(
                 Field(
                     tag="650",
-                    indicators=[" ", "7"],
+                    indicators=Indicators(" ", "7"),
                     subfields=[Subfield("a", "Foo."), Subfield("2", "gmgpc")],
                 ),
                 id="GMGPC",
@@ -788,7 +811,7 @@ class TestBibEnhancer:
             pytest.param(
                 Field(
                     tag="650",
-                    indicators=[" ", "7"],
+                    indicators=Indicators(" ", "7"),
                     subfields=[Subfield("a", "Foo."), Subfield("2", "sears")],
                 ),
                 id="Other dict: sears",
@@ -796,20 +819,24 @@ class TestBibEnhancer:
             pytest.param(
                 Field(
                     tag="650",
-                    indicators=[" ", "4"],
+                    indicators=Indicators(" ", "4"),
                     subfields=[Subfield("a", "Foo."), Subfield("2", "lcsh")],
                 ),
                 id="2nd ind = 4",
             ),
             pytest.param(
                 Field(
-                    tag="650", indicators=[" ", "1"], subfields=[Subfield("a", "Foo.")]
+                    tag="650",
+                    indicators=Indicators(" ", "1"),
+                    subfields=[Subfield("a", "Foo.")],
                 ),
                 id="Children's LCSH",
             ),
             pytest.param(
                 Field(
-                    tag="650", indicators=[" ", "7"], subfields=[Subfield("a", "Foo.")]
+                    tag="650",
+                    indicators=Indicators(" ", "7"),
+                    subfields=[Subfield("a", "Foo.")],
                 ),
                 id="Incomplete field for other dict",
             ),
@@ -828,7 +855,11 @@ class TestBibEnhancer:
 
         be.bib.add_field(tag)
         be.bib.add_field(
-            Field(tag="650", indicators=[" ", "0"], subfields=[Subfield("a", "Spam.")])
+            Field(
+                tag="650",
+                indicators=Indicators(" ", "0"),
+                subfields=[Subfield("a", "Spam.")],
+            )
         )
 
         be.manipulate()

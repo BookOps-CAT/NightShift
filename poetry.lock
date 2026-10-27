@@ -99,22 +99,22 @@ resolved_reference = "16f82e8d1b6726e8082669d548e7a1be418d1071"
 
 [[package]]
 name = "bookops-marc"
-version = "0.10.0"
+version = "0.12.2"
 description = "A sweetened `pymarc.Record` module for extraction of data from local Sierra records."
 optional = false
-python-versions = "^3.8"
+python-versions = ">=3.11"
 groups = ["main"]
 files = []
 develop = false
 
 [package.dependencies]
-pymarc = "^5.1.0"
+pymarc = ">=5.2.3"
 
 [package.source]
 type = "git"
-url = "https://github.com/BookOps-CAT/bookops-marc.git"
-reference = "0.10.0"
-resolved_reference = "cd89f82f2dd093907e04871b1ba40b3f0407a9f4"
+url = "https://github.com/BookOps-CAT/bookops-marc"
+reference = "HEAD"
+resolved_reference = "60b5deb2d9f196218c0eb7a0460569ce27a60417"
 
 [[package]]
 name = "bookops-nypl-platform"
@@ -1302,4 +1302,4 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "91e588aba36579559fbd5762ce06b14372cda2fec4850e022f8884ee00cc80ed"
+content-hash = "bb57b480d8485ed64c1bff9439ff27f26cf763327a197cd16daacd16149ee718"

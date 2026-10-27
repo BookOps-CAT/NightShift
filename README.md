@@ -64,6 +64,9 @@ If for any reason the execution of the routine is interrupted (API error, etc.),
 [0.6.2] - 2026-10-28
 ### Changed
 + reformatted pyproject.toml per PEP 621
++ updated marc record parsing and writing for new `bookops-marc` syntax
++ updated dependencies:
+   + `bookops-marc` 0.10.0 -> 0.12.2
 [0.6.1] - 2024-08-26
 ### Fixed
  + Unsupported-resource-type-warning-fix

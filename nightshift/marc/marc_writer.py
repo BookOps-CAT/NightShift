@@ -6,7 +6,8 @@ into MARC21.
 import logging
 import pickle
 
-from pymarc import Field, Subfield
+from bookops_marc.models import OclcNumber
+from pymarc import Field, Indicators, Subfield
 
 from .. import __title__, __version__
 from ..datastore import Resource
@@ -43,6 +44,29 @@ class BibEnhancer:
     into MARC 21 and saves it to a temporary file.
     """
 
+    DATA: dict[str, dict[str, dict[str, str]]] = {
+        "BPL": {
+            "tags": {"initials_tag": "947", "sierra_id_tag": "907", "call_tag": "099"},
+            "values": {
+                "default_loc": "bn=elres",
+                "bib_format_attr": "sierraBibFormatBpl",
+                "ebook": "eBOOK",
+                "eaudio": "eAUDIO",
+                "evideo": "eVIDEO",
+            },
+        },
+        "NYP": {
+            "tags": {"initials_tag": "901", "sierra_id_tag": "945", "call_tag": "091"},
+            "values": {
+                "default_loc": "bn=ia",
+                "bib_format_attr": "sierraBibFormatNyp",
+                "ebook": "eNYPL Book",
+                "eaudio": "eNYPL Audio",
+                "evideo": "eNYPL Video",
+            },
+        },
+    }
+
     def __init__(
         self,
         resource: Resource,
@@ -65,11 +89,34 @@ class BibEnhancer:
         """
         self.resource = resource
         self.library = library
-        self._res_cat = resource_categories
-
+        self.res_cat = resource_categories.get(self.resource.resourceCategoryId)
         logger.info(f"Enhancing {self.library} Sierra bib # b{resource.sierraId}a.")
 
         self.bib = worldcat_response_to_bib(resource.fullBib, self.library)
+
+    @property
+    def tags(self) -> dict[str, str]:
+        tags = {}
+        if self.library in self.DATA.keys():
+            tags.update(self.DATA[self.library]["tags"])
+        return tags
+
+    @property
+    def values(self) -> dict[str, str]:
+        values = {}
+        if self.library in self.DATA.keys():
+            values.update(self.DATA[self.library]["values"])
+        return values
+
+    def is_acceptable(self) -> bool:
+        """
+        Checks if full Worldcat record meet minimum criteria and
+        a valid call number can be constructed.
+        """
+        if self._meets_minimum_criteria() and self._add_call_number():
+            return True
+        else:
+            return False
 
     def manipulate(self) -> None:
         """
@@ -90,12 +137,12 @@ class BibEnhancer:
         self._remove_eresource_vendors()
 
         # if does not meet criteria delete Worldcat bib
-        if not self._is_acceptable():
+        if not self.is_acceptable():
             logger.info(
                 f"Worldcat record # {self.resource.oclcMatchNumber} is rejected. "
                 "Does not meet minimum requirements."
             )
-            self.bib = None
+            return None
         else:
             logger.info(
                 f"Worldcat record # {self.resource.oclcMatchNumber} is acceptable. "
@@ -131,7 +178,7 @@ class BibEnhancer:
         Raises:
             OSError
         """
-        if self.bib is not None:
+        if self.is_acceptable():
             try:
                 with open(file_path, "ab") as out:
                     out.write(self.bib.as_marc())
@@ -155,39 +202,16 @@ class BibEnhancer:
         Returns:
             bool
         """
-        try:
-            resource_cat = self._res_cat[self.resource.resourceCategoryId].name
-        except KeyError:
-            resource_cat = None
+        resource_cat = getattr(self.res_cat, "name", "")
 
-        if self.library == "NYP":
-            tag = "091"
-            if resource_cat == "ebook":
-                value = "eNYPL Book"
-            elif resource_cat == "eaudio":
-                value = "eNYPL Audio"
-            elif resource_cat == "evideo":
-                value = "eNYPL Video"
-            else:
-                value = None
-
-        elif self.library == "BPL":
-            tag = "099"
-            if resource_cat == "ebook":
-                value = "eBOOK"
-            elif resource_cat == "eaudio":
-                value = "eAUDIO"
-            elif resource_cat == "evideo":
-                value = "eVIDEO"
-            else:
-                value = None
-        else:
-            tag = None
-            value = None
+        tag = self.tags.get("call_tag")
+        value = self.values.get(resource_cat)
 
         if tag and value:
             call_number = Field(
-                tag=tag, indicators=[" ", " "], subfields=[Subfield("a", value)]
+                tag=tag,
+                indicators=Indicators(" ", " "),
+                subfields=[Subfield("a", value)],
             )
             self.bib.add_field(call_number)
             logger.debug(
@@ -213,33 +237,24 @@ class BibEnhancer:
         commands = []
 
         # Sierra bib format
-        if self.library == "NYP":
-            sierra_format_code = self._res_cat[
-                self.resource.resourceCategoryId
-            ].sierraBibFormatNyp
-        elif self.library == "BPL":
-            sierra_format_code = self._res_cat[
-                self.resource.resourceCategoryId
-            ].sierraBibFormatBpl
-
-        commands.append(f"b2={sierra_format_code}")
+        if "bib_format_attr" in self.values:
+            sierra_format_code = getattr(self.res_cat, self.values["bib_format_attr"])
+            commands.append(f"b2={sierra_format_code}")
 
         # Sierra suppression code
         if self.resource.suppressed:
             commands.append("b3=n")
 
         # set default location
-        if self.library == "NYP":
-            commands.append("bn=ia")
-        elif self.library == "BPL":
-            commands.append("bn=elres")
+        if "default_loc" in self.values:
+            commands.append(self.values["default_loc"])
 
         command_str = ";".join(commands)
 
         # add command to bib
         command_tag = Field(
             tag="949",
-            indicators=[" ", " "],
+            indicators=Indicators(" ", " "),
             subfields=[Subfield("a", f"*{command_str};")],
         )
         self.bib.add_field(command_tag)
@@ -252,10 +267,7 @@ class BibEnhancer:
         """
         Adds genre tags to e-resources.
         """
-        try:
-            resource_cat = self._res_cat[self.resource.resourceCategoryId].name
-        except KeyError:
-            resource_cat = None
+        resource_cat = getattr(self.res_cat, "name", None)
 
         if resource_cat == "ebook":
             for field in self.bib.subjects:
@@ -279,7 +291,7 @@ class BibEnhancer:
                 self.bib.add_field(
                     Field(
                         tag="655",
-                        indicators=[" ", "7"],
+                        indicators=Indicators(" ", "7"),
                         subfields=[
                             Subfield("a", "Audiobooks."),
                             Subfield("2", "lcgft"),
@@ -298,7 +310,7 @@ class BibEnhancer:
                 self.bib.add_field(
                     Field(
                         tag="655",
-                        indicators=[" ", "7"],
+                        indicators=Indicators(" ", "7"),
                         subfields=[
                             Subfield("a", "Internet videos."),
                             Subfield("2", "lcgft"),
@@ -331,65 +343,48 @@ class BibEnhancer:
         """
         Marks records as produced by the NightShift bot.
         """
-        if self.library == "NYP":
-            tag = "901"
-        elif self.library == "BPL":
-            tag = "947"
-        else:
-            return
+        if "initials_tag" in self.tags:
+            tag = self.tags["initials_tag"]
 
-        self.bib.add_field(
-            Field(
-                tag=tag,
-                indicators=[" ", " "],
-                subfields=[Subfield("a", f"{__title__}/{__version__}")],
+            self.bib.add_field(
+                Field(
+                    tag=tag,
+                    indicators=Indicators(" ", " "),
+                    subfields=[Subfield("a", f"{__title__}/{__version__}")],
+                )
             )
-        )
-        logger.debug(
-            f"Added initials tag {tag} to {self.library} b{self.resource.sierraId}a."
-        )
+            logger.debug(
+                f"Added initials tag {tag} to {self.library} "
+                f"b{self.resource.sierraId}a."
+            )
 
     def _add_sierraId(self) -> None:
         """
         Adds 907 (BPL) or 945 (NYP) tag to manipulated MARC record for
         matching/overlaying purposes.
         """
-        if self.library == "NYP":
-            overlay_tag = "945"
-        elif self.library == "BPL":
-            overlay_tag = "907"
-        self.bib.add_field(
-            Field(
-                tag=overlay_tag,
-                indicators=[" ", " "],
-                subfields=[Subfield("a", f".b{self.resource.sierraId}a")],
+        if "sierra_id_tag" in self.tags:
+            self.bib.add_field(
+                Field(
+                    tag=self.tags["sierra_id_tag"],
+                    indicators=Indicators(" ", " "),
+                    subfields=[Subfield("a", f".b{self.resource.sierraId}a")],
+                )
             )
-        )
 
     def _digits_only_in_tag_001(self) -> None:
         """
         Removes OCLC control number prefix from the 001 tag
         """
-        controlNo = self.bib["001"].data
-        controlNo_without_prefix = self._remove_oclc_prefix(controlNo)
-        self.bib["001"].data = controlNo_without_prefix
-
-    def _is_acceptable(self) -> bool:
-        """
-        Checks if full Worldcat record meet minimum criteria and
-        a valid call number can be constructed.
-        """
-        if self._meets_minimum_criteria() and self._add_call_number():
-            return True
-        else:
-            return False
+        controlNo = OclcNumber(self.bib["001"].value())
+        self.bib["001"].data = controlNo.without_prefix
 
     def _meets_minimum_criteria(self) -> bool:
         """
         Checks if Worldcat record meets minimum criteria
         """
         # check uppercase title (indicates poor quality)
-        if self.bib.title.isupper():
+        if self.bib.title and self.bib.title.isupper():
             logger.debug("Worldcat record failed uppercase title test.")
             return False
 
@@ -405,23 +400,27 @@ class BibEnhancer:
 
         # messed up diacritics indicated by presence of "©" (b"\xc2\xa9") or
         # "℗" (b"\xe2\x84\x97")
-        try:
-            diacritics_msg = "Worldcat record failed characters encoding test."
-            if b"\xc2\xa9" in bytes(self.bib.author, "utf-8") or b"\xc2\xa9" in bytes(
-                self.bib.title, "utf-8"
-            ):
-                logger.debug(diacritics_msg)
-                return False
+        if (
+            self.bib.author
+            and self.bib.title
+            and (
+                b"\xc2\xa9" in bytes(self.bib.author, "utf-8")
+                or b"\xc2\xa9" in bytes(self.bib.title, "utf-8")
+            )
+        ):
+            logger.debug("Worldcat record failed characters encoding test.")
+            return False
 
-            if b"\xe2\x84\x97" in bytes(
-                self.bib.author, "utf-8"
-            ) or b"\xe2\x84\x97" in bytes(self.bib.title, "utf-8"):
-                logger.debug(diacritics_msg)
-                return False
-
-        except TypeError:
-            # hanldes records without the author
-            pass
+        elif (
+            self.bib.author
+            and self.bib.title
+            and (
+                b"\xe2\x84\x97" in bytes(self.bib.author, "utf-8")
+                or b"\xe2\x84\x97" in bytes(self.bib.title, "utf-8")
+            )
+        ):
+            logger.debug("Worldcat record failed characters encoding test.")
+            return False
 
         # has at least one valid subject tag
         if not self.bib.subjects:
@@ -436,15 +435,15 @@ class BibEnhancer:
         Removes MARC tags indicated in `constants.RESOURCE_CATEGORIES`
         from the WorldCat bib.
         """
-        try:
-            for tag in self._res_cat[self.resource.resourceCategoryId].dstTags2Delete:
+        if self.res_cat:
+            delete_tags = self.res_cat.dstTags2Delete
+            for tag in delete_tags:
                 if tag in self.bib:
                     self.bib.remove_fields(tag)
             logger.debug(
-                f"Removed {self._res_cat[self.resource.resourceCategoryId].dstTags2Delete} from "
-                f"{self.library} b{self.resource.sierraId}a."
+                f"Removed {delete_tags} from {self.library} b{self.resource.sierraId}a."
             )
-        except KeyError:
+        else:
             logger.warning("Encountered unsupported resource category.")
 
     def _remove_eresource_vendors(self) -> None:
@@ -457,14 +456,3 @@ class BibEnhancer:
             for vendor in vendors:
                 if vendor in tag.value().lower():
                     self.bib.remove_field(tag)
-
-    def _remove_oclc_prefix(self, controlNo: str) -> str:
-        """
-        Returns control number that consist only of digits
-        """
-        if controlNo.startswith("ocm") or controlNo.startswith("ocn"):
-            return controlNo[3:]
-        elif controlNo.startswith("on"):
-            return controlNo[2:]
-        else:
-            return controlNo
