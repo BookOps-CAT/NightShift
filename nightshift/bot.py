@@ -99,7 +99,7 @@ def main(args: list) -> None:
 
     parser.add_argument(
         "action",
-        help="'init' sets up database ; 'run' launches processing records and db maintenance",
+        help="'init' sets up database ; 'run' launches processing records and db maintenance",  # noqa: E501
         type=str,
         choices=["init", "run"],
     )
