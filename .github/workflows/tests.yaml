@@ -21,30 +21,32 @@ jobs:
           --health-retries 5
         ports:
          - 5432:5432
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]    
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - name: Install uv and set python version
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
         with:
-          python-version: '3.9'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r dev-requirements.txt
-      - name: Run test suite
-        run: pytest -m "not firewalled and not local" --cov=nightshift/
+          python-version: ${{ matrix.python-version }}
+      - name: Run tests with python ${{ matrix.python-version }}
+        run: uv run --frozen pytest -m "not firewalled and not local" --cov=nightshift/
+       
       - name: Send report to Coveralls
-        uses: AndreMiras/coveralls-python-action@develop
+        uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           parallel: true
+          flag-name: ${{ matrix.python-version}}
+          fail-on-error: false
 
   coveralls_finish:
     needs: test
     runs-on: ubuntu-latest
     steps:
     - name: Coveralls Finished
-      uses: AndreMiras/coveralls-python-action@develop
+      uses: coverallsapp/github-action@v2
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
         parallel-finished: true
+        fail-on-error: false     
