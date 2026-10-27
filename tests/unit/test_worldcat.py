@@ -1,22 +1,18 @@
 # -*- coding: utf-8 -*-
-from contextlib import nullcontext as does_not_raise
 import logging
+from contextlib import nullcontext as does_not_raise
 
 import pytest
+from bookops_worldcat import MetadataSession, WorldcatAccessToken
+from bookops_worldcat.errors import WorldcatAuthorizationError, WorldcatRequestError
+
+from nightshift.comms.worldcat import BriefBibResponse, Worldcat
+from nightshift.datastore import Resource
 
 from ..conftest import (
-    MockSuccessfulHTTP200SessionResponseNoMatches,
     MockSuccessfulHTTP200SessionResponse,
+    MockSuccessfulHTTP200SessionResponseNoMatches,
 )
-
-from bookops_worldcat import WorldcatAccessToken, MetadataSession
-from bookops_worldcat.errors import (
-    WorldcatAuthorizationError,
-    WorldcatRequestError,
-)
-
-from nightshift.datastore import Resource
-from nightshift.comms.worldcat import Worldcat, BriefBibResponse
 
 
 class TestBriefBibResponse:
@@ -56,7 +52,7 @@ class TestWorldcatMocked:
             "key": "lib_key",
             "secret": "lib_secret",
             "scopes": "WorldCatMetadataAPI",
-            "agent": "NightShift/0.6.0",
+            "agent": "NightShift/0.6.2",
         }
 
     def test_get_access_token(self, mock_Worldcat):
@@ -64,11 +60,11 @@ class TestWorldcatMocked:
             "key": "lib_key",
             "secret": "lib_secret",
             "scopes": "WorldCatMetadataAPI",
-            "agent": "NightShift/0.6.0",
+            "agent": "NightShift/0.6.2",
         }
         token = mock_Worldcat._get_access_token(creds)
         assert isinstance(token, WorldcatAccessToken)
-        assert token.agent == "NightShift/0.6.0"
+        assert token.agent == "NightShift/0.6.2"
 
     def test_get_access_token_failure(
         self, caplog, mock_worldcat_creds, mock_failed_post_token_response
@@ -102,10 +98,7 @@ class TestWorldcatMocked:
         self, caplog, mock_Worldcat, mock_successful_session_get_request
     ):
         resource = Resource(
-            nid=1,
-            sierraId=22222222,
-            title="TEST TITLE",
-            oclcMatchNumber="123",
+            nid=1, sierraId=22222222, title="TEST TITLE", oclcMatchNumber="123"
         )
         with caplog.at_level(logging.DEBUG):
             result = next(mock_Worldcat.get_full_bibs([resource]))
@@ -124,10 +117,7 @@ class TestWorldcatMocked:
         self, caplog, mock_Worldcat, mock_session_error
     ):
         resource = Resource(
-            nid=1,
-            sierraId=22222222,
-            title="TEST TITLE",
-            oclcMatchNumber="123",
+            nid=1, sierraId=22222222, title="TEST TITLE", oclcMatchNumber="123"
         )
         with caplog.at_level(logging.ERROR):
             with pytest.raises(WorldcatRequestError):
@@ -241,10 +231,7 @@ class TestWorldcatMocked:
         )
 
     def test_get_brief_bibs_no_matches_found(
-        self,
-        caplog,
-        mock_Worldcat,
-        mock_successful_session_get_request_no_matches,
+        self, caplog, mock_Worldcat, mock_successful_session_get_request_no_matches
     ):
         resource = Resource(
             nid=1,
