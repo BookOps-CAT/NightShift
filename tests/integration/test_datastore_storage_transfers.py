@@ -1,16 +1,14 @@
-# -*- coding: utf-8 -*-
-from contextlib import nullcontext as does_not_raise
 import datetime
 import logging
-import os
+from contextlib import nullcontext as does_not_raise
 
 import pytest
 
-from nightshift.datastore import session_scope, SourceFile, Resource
-from nightshift.datastore_transactions import insert_or_ignore, add_resource
-from nightshift.comms.storage import get_credentials, Drive
-from nightshift.marc.marc_parser import BibReader
+from nightshift.comms.storage import Drive, get_credentials
 from nightshift.constants import LIBRARIES
+from nightshift.datastore import Resource, SourceFile, session_scope
+from nightshift.datastore_transactions import add_resource, insert_or_ignore
+from nightshift.marc.marc_parser import BibReader
 from nightshift.tasks import Tasks
 
 

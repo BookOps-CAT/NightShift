@@ -1,13 +1,12 @@
-# -*- coding: utf-8 -*-
+import logging
+import pickle
 from contextlib import nullcontext as does_not_raise
 from datetime import date
 from io import BytesIO
-import logging
-import pickle
 
+import pytest
 from bookops_marc import Bib
 from pymarc import Field, Subfield
-import pytest
 
 from nightshift.datastore import Resource
 from nightshift.marc.marc_parser import BibReader, worldcat_response_to_bib

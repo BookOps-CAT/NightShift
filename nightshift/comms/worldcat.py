@@ -1,23 +1,18 @@
-# -*- coding: utf-8 -*-
-
 """
 This module handles WorldCat Metadata API requests.
 """
-from collections.abc import Iterator
-import os
+
 import logging
+import os
+from collections.abc import Iterator
 from typing import Any
 
-from bookops_worldcat import WorldcatAccessToken, MetadataSession
-from bookops_worldcat.errors import (
-    WorldcatAuthorizationError,
-    WorldcatRequestError,
-)
+from bookops_worldcat import MetadataSession, WorldcatAccessToken
+from bookops_worldcat.errors import WorldcatAuthorizationError, WorldcatRequestError
 from requests import Response
 
 from nightshift import __title__, __version__
 from nightshift.datastore import Resource
-
 
 logger = logging.getLogger("nightshift")
 
@@ -251,7 +246,6 @@ class Worldcat:
         """
         try:
             for resource in resources:
-
                 payloads = self._prep_resource_queries_payloads(resource, rotten_apples)
                 if not payloads:
                     logger.warning(
@@ -289,7 +283,7 @@ class Worldcat:
                 yield (resource, brief_bib_response)
 
         except WorldcatRequestError:
-            logger.error(f"WorldcatRequestError. Aborting.")
+            logger.error("WorldcatRequestError. Aborting.")
             raise
 
     def get_full_bibs(

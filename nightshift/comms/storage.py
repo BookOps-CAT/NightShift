@@ -1,21 +1,18 @@
-# -*- coding: utf-8 -*-
-
 """
 This module handles communication with network drive accessible via SFTP where Sierra
 dumps daily files for processing and where CAT staff can access produces MARC files.
 """
-from io import BytesIO
+
 import logging
 import os
+from io import BytesIO
 from typing import Optional
 
-
-from paramiko.transport import Transport
 from paramiko.sftp_client import SFTPClient
 from paramiko.ssh_exception import SSHException
+from paramiko.transport import Transport
 
 from ..ns_exceptions import DriveError
-
 
 logger = logging.getLogger("nightshift")
 
@@ -154,7 +151,6 @@ class Drive:
         """
         if self.sftp:
             try:
-
                 remote_file_path = self._construct_dst_file_path(remote_file_name_base)
                 self.sftp.put(local_file_path, remote_file_path)
                 logger.info(f"Successfully created {remote_file_path} on the SFTP.")

@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm.session import Session
 from sqlalchemy.exc import DataError
-
-from ..conftest import MockSuccessfulHTTP200SessionResponse
+from sqlalchemy.orm.session import Session
 
 from nightshift.datastore import (
-    conf_db,
     DataAccessLayer,
     Event,
     Library,
@@ -19,10 +15,13 @@ from nightshift.datastore import (
     ResourceCategory,
     RottenApple,
     RottenAppleResource,
-    session_scope,
     SourceFile,
     WorldcatQuery,
+    conf_db,
+    session_scope,
 )
+
+from ..conftest import MockSuccessfulHTTP200SessionResponse
 
 
 def test_conf_db(mock_db_env):
@@ -164,8 +163,7 @@ def test_RottenAppleResource_tbl_repr():
 def test_SourceFile_tbl_repr():
     stamp = datetime.now()
     assert str(SourceFile(nid=1, libraryId=2, handle="foo.mrc", timestamp=stamp)) == (
-        f"<SourceFile(nid='1', libraryId='2', handle='foo.mrc', "
-        f"timestamp='{stamp}')>"
+        f"<SourceFile(nid='1', libraryId='2', handle='foo.mrc', timestamp='{stamp}')>"
     )
 
 
@@ -174,11 +172,7 @@ def test_WorldcatQuery_tbl_repr():
     assert (
         str(
             WorldcatQuery(
-                nid=1,
-                resourceId=2,
-                match=False,
-                response=None,
-                timestamp=stamp,
+                nid=1, resourceId=2, match=False, response=None, timestamp=stamp
             )
         )
         == f"<WorldcatQuery(nid='1', resourceId='2', match='False', timestamp='{stamp}')>"

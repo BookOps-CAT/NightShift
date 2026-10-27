@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-
 """
 This module provides methods for manipulation and serialization of Worldcat responses
 into MARC21.
 """
+
 import logging
 import pickle
 
@@ -13,7 +12,6 @@ from .. import __title__, __version__
 from ..datastore import Resource
 from ..datastore_transactions import ResCatById
 from .marc_parser import worldcat_response_to_bib
-
 
 logger = logging.getLogger("nightshift")
 
@@ -242,9 +240,7 @@ class BibEnhancer:
         command_tag = Field(
             tag="949",
             indicators=[" ", " "],
-            subfields=[
-                Subfield("a", f"*{command_str};"),
-            ],
+            subfields=[Subfield("a", f"*{command_str};")],
         )
         self.bib.add_field(command_tag)
         logger.debug(
@@ -267,7 +263,6 @@ class BibEnhancer:
                     self.bib.remove_field(field)
 
         elif resource_cat == "eaudio":
-
             # 'Audiobooks' term
             # remove electronic audiobooks
             for field in self.bib.subjects:

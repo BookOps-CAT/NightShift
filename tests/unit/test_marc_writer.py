@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
-
 """
 Tests `marc.marc_writer.py` module
 """
-from contextlib import nullcontext as does_not_raise
+
 import logging
 import os
 import pickle
+from contextlib import nullcontext as does_not_raise
 
-from pymarc import Field, MARCReader, Record, Subfield
 import pytest
+from pymarc import Field, MARCReader, Record, Subfield
 
 from nightshift import __title__, __version__
 from nightshift.datastore import Resource
@@ -127,22 +126,13 @@ class TestBibEnhancer:
     @pytest.mark.parametrize(
         "res_cat_id, tag, indicators, subfields, log_msgs",
         [
-            pytest.param(
-                1,
-                None,
-                [],
-                [],
-                [],
-                id="ebook: No previous tags",
-            ),
+            pytest.param(1, None, [], [], [], id="ebook: No previous tags"),
             pytest.param(
                 2,
                 None,
                 [],
                 [],
-                [
-                    "Added 'Audiobooks' LCGFT genre to 655 tag.",
-                ],
+                ["Added 'Audiobooks' LCGFT genre to 655 tag."],
                 id="eaudio: No previous tags",
             ),
             pytest.param(
@@ -153,14 +143,7 @@ class TestBibEnhancer:
                 ["Added 'Internet videos' LCGFT genre to 655 tag."],
                 id="evideo: No previous tags",
             ),
-            pytest.param(
-                99,
-                None,
-                [],
-                [],
-                [],
-                id="illegal resource category",
-            ),
+            pytest.param(99, None, [], [], [], id="illegal resource category"),
         ],
     )
     def test_clean_up_genre_tags_when_missing(
@@ -332,20 +315,9 @@ class TestBibEnhancer:
 
         assert "No local tags to keep were found for NYP b11111111a." in caplog.text
 
-    @pytest.mark.parametrize(
-        "library,tag",
-        [
-            ("NYP", "901"),
-            ("BPL", "947"),
-        ],
-    )
+    @pytest.mark.parametrize("library,tag", [("NYP", "901"), ("BPL", "947")])
     def test_add_initials_tag(
-        self,
-        caplog,
-        stub_resource,
-        stub_res_cat_by_id,
-        library,
-        tag,
+        self, caplog, stub_resource, stub_res_cat_by_id, library, tag
     ):
         be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
         with caplog.at_level(logging.DEBUG):
@@ -831,9 +803,7 @@ class TestBibEnhancer:
             ),
             pytest.param(
                 Field(
-                    tag="650",
-                    indicators=[" ", "1"],
-                    subfields=[Subfield("a", "Foo.")],
+                    tag="650", indicators=[" ", "1"], subfields=[Subfield("a", "Foo.")]
                 ),
                 id="Children's LCSH",
             ),

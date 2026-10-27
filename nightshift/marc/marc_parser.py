@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This module reads and parses MARC Sierra records (bibliographic and order data)
 to be inserted into the DB.
@@ -7,15 +5,15 @@ In case of e-resources only bib information is considered.
 Source MARC files for e-resources will have a mix of various formats (ebooks, eaudio,
 evideo)
 """
-from io import BytesIO
+
 import logging
 import pickle
+from io import BytesIO
 from typing import Any, BinaryIO, Iterator, Optional, Union
 
-from bookops_marc import SierraBibReader, Bib
+from bookops_marc import Bib, SierraBibReader
 from bookops_marc.bib import pymarc_record_to_local_bib
 from pymarc import parse_xml_to_array
-
 
 from ..datastore import Resource
 from ..datastore_transactions import ResCatByName

@@ -1,16 +1,14 @@
-# -*- coding: utf-8 -*-
-
 """
 NightShift's database schema.
 """
+
+import os
 from contextlib import contextmanager
 from datetime import datetime, timezone
-import os
 
 from sqlalchemy import (
     Boolean,
     Column,
-    create_engine,
     Date,
     DateTime,
     ForeignKey,
@@ -18,11 +16,11 @@ from sqlalchemy import (
     PickleType,
     String,
     UniqueConstraint,
+    create_engine,
 )
-from sqlalchemy.dialects.postgresql import ENUM, JSONB, BYTEA
+from sqlalchemy.dialects.postgresql import BYTEA, ENUM, JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
-
 
 Base = declarative_base()
 

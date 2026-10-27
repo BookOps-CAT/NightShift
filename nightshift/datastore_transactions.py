@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 from collections import namedtuple
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from sqlalchemy import and_, create_engine, delete, func, inspect, update
+from sqlalchemy import and_, create_engine, func, inspect
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -76,7 +75,7 @@ def init_db() -> None:
                 srcTags2Keep=v["srcTags2Keep"],
                 dstTags2Delete=v["dstTags2Delete"],
                 queryDays=v["queryDays"],
-            ),
+            )
         )
 
     for code, resource_cat_ids in constants.ROTTEN_APPLES.items():
@@ -120,12 +119,12 @@ def init_db() -> None:
         names = [row.name for row in categories]
         assert len(categories) == 11, "Invalid number of 'ResourceCategory' records."
         assert "ebook" in names, "Missing 'ebook' category in 'ResourceCategory' table."
-        assert (
-            "eaudio" in names
-        ), "Missing 'eaudio' category in 'ResourceCategory' table."
-        assert (
-            "evideo" in names
-        ), "Missing 'evideo' category in 'ResourceCategory' table."
+        assert "eaudio" in names, (
+            "Missing 'eaudio' category in 'ResourceCategory' table."
+        )
+        assert "evideo" in names, (
+            "Missing 'evideo' category in 'ResourceCategory' table."
+        )
     except AssertionError:
         raise
     finally:
@@ -422,9 +421,7 @@ def retrieve_open_older_resources(
     resources = (
         session.query(Resource)
         .join(subq, and_(Resource.nid == subq.c.nid))
-        .filter(
-            subq.c.last_query < Resource.bibDate + timedelta(days=minAge),
-        )
+        .filter(subq.c.last_query < Resource.bibDate + timedelta(days=minAge))
         .all()
     )
     return resources

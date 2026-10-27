@@ -1,18 +1,17 @@
-# -*- coding: utf-8 -*-
-
 """
 This module handles communication with NYPL Platform and BPL Solr.
 It is used to check status of records in Sierra between WorldCat queries
 so fully cataloged or deleted bibs are dropped from the process.
 """
+
 import logging
 import os
 from typing import Optional
 
-from bookops_nypl_platform import PlatformToken, PlatformSession
-from bookops_nypl_platform.errors import BookopsPlatformError
 from bookops_bpl_solr import SolrSession
 from bookops_bpl_solr.session import BookopsSolrError
+from bookops_nypl_platform import PlatformSession, PlatformToken
+from bookops_nypl_platform.errors import BookopsPlatformError
 from requests import Response
 
 from .. import __title__, __version__
@@ -268,7 +267,6 @@ class NypPlatform(PlatformSession):
             `ns_exceptions.SierraSearchPlatformError`
         """
         try:
-
             response = self.get_bib(sierraId)
             logger.debug(
                 f"NYPL Platform request ({response.status_code}): {response.url}."
@@ -292,11 +290,7 @@ class BplSolr(SolrSession):
         client_key, endpoint = self._get_credentials()
         agent = f"{__title__}/{__version__}"
 
-        super().__init__(
-            authorization=client_key,
-            endpoint=endpoint,
-            agent=agent,
-        )
+        super().__init__(authorization=client_key, endpoint=endpoint, agent=agent)
 
     def _get_credentials(self) -> tuple[Optional[str], Optional[str]]:
         """

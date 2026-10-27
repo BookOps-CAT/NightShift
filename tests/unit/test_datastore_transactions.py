@@ -1,16 +1,13 @@
-# -*- coding: utf-8 -*-
-from datetime import datetime, timedelta, timezone
 from contextlib import nullcontext as does_not_raise
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import create_engine, inspect
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.exc import IntegrityError
-
 
 from nightshift.constants import RESOURCE_CATEGORIES
-
 from nightshift.datastore import (
     Base,
     Event,
@@ -23,7 +20,6 @@ from nightshift.datastore import (
     WorldcatQuery,
 )
 from nightshift.datastore_transactions import (
-    ResCatById,
     ResCatByName,
     add_event,
     add_output_file,
@@ -36,9 +32,9 @@ from nightshift.datastore_transactions import (
     parse_query_days,
     resource_category_by_name,
     retrieve_expired_resources,
+    retrieve_new_resources,
     retrieve_open_matched_resources_with_full_bib_obtained,
     retrieve_open_matched_resources_without_full_bib,
-    retrieve_new_resources,
     retrieve_open_older_resources,
     retrieve_processed_files,
     retrieve_rotten_apples,
@@ -530,7 +526,7 @@ def test_retrieve_open_older_resources(
                     resourceId=1,
                     match=False,
                     timestamp=bib_date + timedelta(days=query_age),
-                ),
+                )
             ],
         )
     )

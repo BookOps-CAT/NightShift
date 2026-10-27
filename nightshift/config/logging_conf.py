@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
-
 """
 Configures app logging
 """
+
 import os
 
 
@@ -83,11 +82,7 @@ def log_conf() -> dict:
             },
         },
         "loggers": {
-            "nightshift": {
-                "handlers": handlers,
-                "level": "DEBUG",
-                "propagate": True,
-            }
+            "nightshift": {"handlers": handlers, "level": "DEBUG", "propagate": True}
         },
     }
     return logging_config

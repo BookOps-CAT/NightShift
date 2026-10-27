@@ -1,18 +1,17 @@
-# -*- coding: utf-8 -*-
-
 """
 This module provides the manager methods to perform particular tasks
 """
-from datetime import datetime, timezone
+
 import logging
 import os
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm.session import Session
 
+from nightshift.comms.sierra_search_platform import BplSolr, NypPlatform
+from nightshift.comms.storage import Drive, get_credentials
 from nightshift.comms.worldcat import Worldcat
-from nightshift.comms.sierra_search_platform import NypPlatform, BplSolr
-from nightshift.comms.storage import get_credentials, Drive
 from nightshift.datastore import Resource, WorldcatQuery
 from nightshift.datastore_transactions import (
     ResCatById,
@@ -234,7 +233,6 @@ class Tasks:
         """
         drive_creds = get_credentials()
         with Drive(*drive_creds) as drive:
-
             # find files that have not been processed
             unproc_files = self.isolate_unprocessed_files(drive)
             logger.info(f"Found following unprocessed files: {unproc_files}.")
@@ -388,9 +386,7 @@ class Tasks:
             return remote_file
 
     def update_status_to_upgraded(
-        self,
-        out_file_handle: Optional[str],
-        resources: list[Resource],
+        self, out_file_handle: Optional[str], resources: list[Resource]
     ) -> None:
         """
         Upgrades given resources status to "bot_enhanced" and records output file id.
@@ -402,7 +398,6 @@ class Tasks:
                                             instances
         """
         if out_file_handle is not None:
-
             logger.info(
                 f"Updating {len(resources)} resources status to 'bot_enhanced'."
             )
