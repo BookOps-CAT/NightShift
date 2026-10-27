@@ -79,8 +79,8 @@ dependencies = [
 
 [[package]]
 name = "bookops-marc"
-version = "0.10.0"
-source = { git = "https://github.com/BookOps-CAT/bookops-marc.git?rev=0.10.0#cd89f82f2dd093907e04871b1ba40b3f0407a9f4" }
+version = "0.12.2"
+source = { git = "https://github.com/BookOps-CAT/bookops-marc#60b5deb2d9f196218c0eb7a0460569ce27a60417" }
 dependencies = [
     { name = "pymarc" },
 ]
@@ -639,7 +639,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "bookops-bpl-solr", git = "https://github.com/BookOps-CAT/bookops-bpl-solr" },
-    { name = "bookops-marc", git = "https://github.com/BookOps-CAT/bookops-marc.git?rev=0.10.0" },
+    { name = "bookops-marc", git = "https://github.com/BookOps-CAT/bookops-marc" },
     { name = "bookops-nypl-platform", git = "https://github.com/BookOps-CAT/bookops-nypl-platform" },
     { name = "bookops-worldcat", specifier = ">=1.0.0" },
     { name = "loggly-python-handler", specifier = ">=1.0.1" },

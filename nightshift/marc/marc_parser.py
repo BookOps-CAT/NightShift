@@ -12,7 +12,6 @@ from io import BytesIO
 from typing import Any, BinaryIO, Iterator, Optional, Union
 
 from bookops_marc import Bib, SierraBibReader
-from bookops_marc.bib import pymarc_record_to_local_bib
 from pymarc import parse_xml_to_array
 
 from ..datastore import Resource
@@ -44,7 +43,7 @@ def worldcat_response_to_bib(response: bytes, library: str) -> Bib:
     else:
         data = BytesIO(response)
         pymarc_record = parse_xml_to_array(data)[0]
-        bib = pymarc_record_to_local_bib(pymarc_record, library)
+        bib = Bib.pymarc_record_to_local_bib(pymarc_record, library)
         return bib
 
 
@@ -126,13 +125,13 @@ class BibReader:
         """
         # Overdrive MarcExpress records control number starts with ODN
         try:
-            control_number = bib.control_number()
+            control_number = bib.control_number
         except AttributeError:
             # malformed MARC records may be returned by bookops-marc as none
             return None
 
         if control_number and control_number.startswith("ODN"):
-            rec_type = bib.record_type()
+            rec_type = bib.record_type
             if rec_type == "a":
                 return "ebook"
             elif rec_type == "i":
@@ -147,7 +146,7 @@ class BibReader:
             # based it on order information from the 960/961 tags
             logger.warning(
                 f"Unsupported bib type. Unable to ingest {self.library} bib # "
-                f"{bib.sierra_bib_id()}."
+                f"{bib.sierra_bib_id}."
             )
             return None
 
@@ -175,17 +174,19 @@ class BibReader:
         Returns:
             Resource:                       `datastore.Resource` instance
         """
-        sierraId = bib.sierra_bib_id_normalized()
+        sierraId = (
+            str(bib.sierra_bib_id_normalized) if bib.sierra_bib_id_normalized else None
+        )
         resourceCategoryId = self._res_cat[resource_category].nid
-        bibDate = bib.created_date()
+        bibDate = bib.created_date
         author = bib.author
         title = bib.title
         pubDate = bib.pubyear
-        congressNumber = bib.lccn()
-        controlNumber = bib.control_number()
-        distributorNumber = bib.overdrive_number()
-        suppressed = bib.suppressed()
-        otherNumber = bib.upc_number()
+        congressNumber = bib.lccn
+        controlNumber = bib.control_number
+        distributorNumber = bib.overdrive_number
+        suppressed = bib.suppressed
+        otherNumber = bib.upc_number
         srcFieldsToKeep = self._fields2keep(bib, resource_category)
         standardNumber = bib.isbn
 

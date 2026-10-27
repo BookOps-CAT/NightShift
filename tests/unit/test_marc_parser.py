@@ -159,7 +159,7 @@ def test_BibReader_map_data_eresource(
         Field(
             tag="037",
             indicators=[" ", " "],
-            subfields=[Subfield("a", "1234567"), Subfield("b", "Ovedrive")],
+            subfields=[Subfield("a", "1234567"), Subfield("b", "OverDrive, Inc.")],
         ),
         Field(
             tag="856", indicators=["4", "0"], subfields=[Subfield("u", "example.com")]
