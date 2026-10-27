@@ -2,7 +2,7 @@ from collections import namedtuple
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from sqlalchemy import and_, create_engine, func, inspect
+from sqlalchemy import Integer, and_, cast, create_engine, func, inspect
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -197,7 +197,10 @@ def add_resource(session: Session, resource: Resource) -> Optional[Resource]:
     """
     instance = (
         session.query(Resource)
-        .filter_by(sierraId=resource.sierraId, libraryId=resource.libraryId)
+        .filter_by(
+            sierraId=cast(resource.sierraId, Integer),
+            libraryId=cast(resource.libraryId, Integer),
+        )
         .one_or_none()
     )
     if not instance:

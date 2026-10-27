@@ -214,7 +214,7 @@ class TestNypPlatformMocked:
             platform = NypPlatform()
             assert platform.headers == {
                 "User-Agent": f"{__title__}/{__version__}",
-                "Accept-Encoding": "gzip, deflate",
+                "Accept-Encoding": "gzip, deflate, zstd",
                 "Accept": "application/json",
                 "Connection": "keep-alive",
                 "Authorization": "Bearer token_string_here",
