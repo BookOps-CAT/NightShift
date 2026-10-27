@@ -90,7 +90,6 @@ class BibEnhancer:
         self.resource = resource
         self.library = library
         self.res_cat = resource_categories.get(self.resource.resourceCategoryId)
-        logger.info(f"Enhancing {self.library} Sierra bib # b{resource.sierraId}a.")
 
         self.bib = worldcat_response_to_bib(resource.fullBib, self.library)
 

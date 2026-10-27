@@ -96,6 +96,7 @@ class Tasks:
             resources:                      list of `nightshift.datastore.Resource`
                                             instances to be checked
         """
+        sierra_platform: NypPlatform | BplSolr
         if self.library == "NYP":
             sierra_platform = NypPlatform()
         elif self.library == "BPL":
@@ -315,6 +316,7 @@ class Tasks:
             raise
 
         for resource in resources:
+            logger.info(f"Enhancing {self.library} Sierra bib # b{resource.sierraId}a.")
             be = BibEnhancer(resource, self.library, self._res_cat_idx)
             be.manipulate()
             if be.is_acceptable():
