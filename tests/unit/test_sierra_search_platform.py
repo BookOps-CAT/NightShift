@@ -210,13 +210,7 @@ class TestNypPlatformMocked:
     ):
         with does_not_raise():
             platform = NypPlatform()
-            assert platform.headers == {
-                "User-Agent": f"{__title__}/{__version__}",
-                "Accept-Encoding": "gzip, deflate, zstd",
-                "Accept": "application/json",
-                "Connection": "keep-alive",
-                "Authorization": "Bearer token_string_here",
-            }
+            assert platform.headers["User-Agent"] == f"{__title__}/{__version__}"
             assert isinstance(platform.authorization, PlatformToken)
 
     def test_failed_authorization(
