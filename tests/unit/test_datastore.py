@@ -197,7 +197,7 @@ def test_WorldcatQuery_tbl_json_column(test_session, test_data_core):
     test_session.add(WorldcatQuery(nid=1, resourceId=1, match=True, response=resp_json))
     test_session.commit()
     result = test_session.query(WorldcatQuery).filter_by(nid=1).first()
-    assert type(result.response) == dict
+    assert isinstance(result.response, dict)
 
 
 def test_datastore_connection(test_connection):
