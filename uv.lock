@@ -565,10 +565,7 @@ dependencies = [
     { name = "bookops-worldcat" },
     { name = "loggly-python-handler" },
     { name = "paramiko" },
-<<<<<<< HEAD
     { name = "psycopg", extra = ["binary"] },
-=======
->>>>>>> origin/main
     { name = "psycopg2" },
     { name = "pymarc" },
     { name = "pyyaml" },
@@ -593,10 +590,7 @@ requires-dist = [
     { name = "bookops-worldcat", specifier = ">=1.0.0" },
     { name = "loggly-python-handler", specifier = ">=1.0.1" },
     { name = "paramiko", specifier = ">=3.4.0" },
-<<<<<<< HEAD
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.6" },
-=======
->>>>>>> origin/main
     { name = "psycopg2", specifier = ">=2.9.9" },
     { name = "pymarc", specifier = ">=5.1.2" },
     { name = "pyyaml", specifier = ">=6.0.1" },
@@ -647,7 +641,6 @@ wheels = [
 ]
 
 [[package]]
-<<<<<<< HEAD
 name = "psycopg"
 version = "3.3.6"
 source = { registry = "https://pypi.org/simple" }
@@ -717,8 +710,6 @@ wheels = [
 ]
 
 [[package]]
-=======
->>>>>>> origin/main
 name = "psycopg2"
 version = "2.9.13"
 source = { registry = "https://pypi.org/simple" }
@@ -1032,7 +1023,6 @@ wheels = [
 ]
 
 [[package]]
-<<<<<<< HEAD
 name = "tzdata"
 version = "2026.5"
 source = { registry = "https://pypi.org/simple" }
@@ -1042,8 +1032,6 @@ wheels = [
 ]
 
 [[package]]
-=======
->>>>>>> origin/main
 name = "urllib3"
 version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }

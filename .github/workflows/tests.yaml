@@ -24,19 +24,14 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.12", "3.13", "3.14"]    
-    strategy:
-      matrix:
-        python-version: ["3.12", "3.13", "3.14"]    
     steps:
       - uses: actions/checkout@v6
       - name: Install uv and set python version
         uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Run tests with python ${{ matrix.python-version }}
         run: uv run --frozen pytest -m "not firewalled and not local" --cov=nightshift/
-       
       - name: Send report to Coveralls
         uses: coverallsapp/github-action@v2
         with:
