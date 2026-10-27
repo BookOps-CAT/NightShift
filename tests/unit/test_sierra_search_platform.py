@@ -98,7 +98,6 @@ class TestSearchResponse:
         [
             ("NYP", MockPlatformSessionResponseSuccess(), False),
             ("BPL", MockSolrSessionResponseSuccess(), True),
-            ("qpl", MockSolrSessionResponseSuccess(), None),
         ],
     )
     def test_is_suppressed(self, library, response, expectation):

@@ -12,7 +12,6 @@ dependencies = [
     "loggly-python-handler>=1.0.1",
     "SQLAlchemy>=1.4.40",
     "PyYAML>=6.0.1",
-    "psycopg2>=2.9.9",
     "paramiko>=3.4.0",
     "bookops-bpl-solr @ git+https://github.com/BookOps-CAT/bookops-bpl-solr",
     "bookops-nypl-platform @ git+https://github.com/BookOps-CAT/bookops-nypl-platform",
