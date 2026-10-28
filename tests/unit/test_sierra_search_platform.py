@@ -72,26 +72,26 @@ class TestSearchResponse:
             "NYP Sierra b11111111a not found (404 HTTP code). Request: request_url_here"
             in caplog.text
         )
-        assert sr._nyp_suppression() is False
+        assert sr.is_suppressed() is False
 
     @pytest.mark.parametrize("arg,expectation", [(False, False), (True, True)])
     def test_nyp_suppression_match_response(self, arg, expectation):
         response = MockPlatformSessionResponseSuccess()
         sr = SearchResponse(11111111, "NYP", response)
         sr.json_response = {"data": {"suppressed": arg}}
-        assert sr._nyp_suppression() == expectation
+        assert sr.is_suppressed() == expectation
 
     def test_bpl_suppression_not_found(self):
         response = MockSolrSessionResponseNotFound()
         sr = SearchResponse(11111111, "BPL", response)
-        assert sr._bpl_suppression() is False
+        assert sr.is_suppressed() is False
 
     @pytest.mark.parametrize("arg,expectation", [(False, False), (True, True)])
     def test_bpl_suppression_match_response(self, arg, expectation):
         response = MockSolrSessionResponseSuccess()
         sr = SearchResponse(11111111, "BPL", response)
         sr.json_response = {"response": {"docs": [{"suppressed": arg}]}}
-        assert sr._bpl_suppression() == expectation
+        assert sr.is_suppressed() == expectation
 
     @pytest.mark.parametrize(
         "library,response,expectation",
