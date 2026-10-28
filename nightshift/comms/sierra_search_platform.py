@@ -6,7 +6,7 @@ so fully cataloged or deleted bibs are dropped from the process.
 
 import logging
 import os
-from typing import Optional
+from typing import Any, Optional
 
 from bookops_bpl_solr import SolrSession
 from bookops_bpl_solr.session import BookopsSolrError
@@ -58,21 +58,28 @@ class SearchResponse:
         """
         self.sierraId = sierraId
         self.library = library.upper()
-
-        if response.status_code == 404:
+        self.response = response
+        self.status_code = self.response.status_code
+        if self.status_code == 404:
             logger.warning(
                 f"{self.library} Sierra b{self.sierraId}a not found (404 HTTP code). "
-                f"Request: {response.url}"
+                f"Request: {self.response.url}"
             )
-        elif response.status_code >= 400:
+        elif self.status_code >= 400:
             logger.error(
                 f"{self.library} search platform returned HTTP error code "
-                f"{response.status_code} for request {response.url}"
+                f"{self.status_code} for request {self.response.url}"
             )
             raise SierraSearchPlatformError
+        self.json_response = self.response.json()
 
-        self.response = response
-        self.json_response = response.json()
+    @property
+    def record(self) -> dict[str, Any]:
+        if self.library == "NYP":
+            return self.json_response.get("data", {})
+        else:
+            response = self.json_response.get("response", {}).get("docs", [])
+            return response[0] if response else {}
 
     def is_suppressed(self) -> bool:
         """
@@ -81,10 +88,10 @@ class SearchResponse:
         Returns:
             bool
         """
-        if self.library == "NYP":
-            return self._nyp_suppression()
+        if self.record.get("suppressed"):
+            return True
         else:
-            return self._bpl_suppression()
+            return False
 
     def get_status(self) -> Optional[str]:
         """
@@ -95,12 +102,12 @@ class SearchResponse:
         """
         bib_status = None
 
-        if self.response.status_code == 200:
+        if self.status_code == 200:
             if self.library == "NYP":
                 bib_status = self._determine_nyp_bib_status()
             elif self.library == "BPL":
                 bib_status = self._determine_bpl_bib_status()
-        elif self.response.status_code == 404:
+        elif self.status_code == 404:
             # on a rare occasion NYPL bibs may not get ingested into Platform
             bib_status = "staff_deleted"
 
@@ -166,34 +173,6 @@ class SearchResponse:
 
             # assume response failing previous clauses is a brief bib
             return "open"
-
-    def _bpl_suppression(self) -> bool:
-        """
-        Checks if BPL Sierra bib is suppressed from display.
-
-        Returns:
-            bool
-        """
-        if len(self.json_response["response"]["docs"]) == 0:
-            return False
-        elif self.json_response["response"]["docs"][0]["suppressed"]:
-            return True
-        else:
-            return False
-
-    def _nyp_suppression(self) -> bool:
-        """
-        Checks if NYPL Sierra bib is suppressed from display.
-
-        Returns:
-            bool
-        """
-        if self.response.status_code == 404:
-            return False
-        elif self.json_response["data"]["suppressed"]:
-            return True
-        else:
-            return False
 
 
 class NypPlatform(PlatformSession):
