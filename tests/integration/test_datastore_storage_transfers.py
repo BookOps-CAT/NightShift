@@ -13,7 +13,7 @@ from nightshift.tasks import Tasks
 
 
 @pytest.mark.firewalled
-def test_fetch_file_and_add_to_db(env_var, test_data_rich, stub_res_cat_by_name):
+def test_fetch_file_and_add_to_db(live_env_var, test_data_rich, stub_res_cat_by_name):
     test_file = "NYPeres210701-pout.mrc"
     library = "NYP"
 
@@ -52,7 +52,7 @@ def test_fetch_file_and_add_to_db(env_var, test_data_rich, stub_res_cat_by_name)
 
 @pytest.mark.firewalled
 def test_enhance_and_transfer_to_drive(
-    caplog, env_var, test_data_rich, stub_resource, stub_res_cat_by_name
+    caplog, live_env_var, test_data_rich, stub_resource, stub_res_cat_by_name
 ):
     new_resource = Resource(
         sierraId=22222222,
@@ -90,7 +90,7 @@ def test_enhance_and_transfer_to_drive(
 
 @pytest.mark.firewalled
 def test_isolate_unprocessed_files(
-    caplog, env_var, test_data_rich, stub_res_cat_by_name
+    caplog, live_env_var, test_data_rich, stub_res_cat_by_name
 ):
     with session_scope() as db_session:
         drive_creds = get_credentials()
@@ -107,7 +107,7 @@ def test_isolate_unprocessed_files(
 
 
 @pytest.mark.firewalled
-def test_ingest_new_files(caplog, env_var, test_data_rich, stub_res_cat_by_name):
+def test_ingest_new_files(caplog, live_env_var, test_data_rich, stub_res_cat_by_name):
     with session_scope() as db_session:
         with caplog.at_level(logging.INFO):
             tasks = Tasks(db_session, "NYP", 1, stub_res_cat_by_name)
@@ -138,7 +138,7 @@ def test_ingest_new_files(caplog, env_var, test_data_rich, stub_res_cat_by_name)
 
 @pytest.mark.firewalled
 def test_ingest_new_files_empty_file(
-    caplog, env_var, test_data_rich, stub_res_cat_by_name
+    caplog, live_env_var, test_data_rich, stub_res_cat_by_name
 ):
     with does_not_raise():
         with session_scope() as db_session:

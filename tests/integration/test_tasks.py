@@ -7,7 +7,7 @@ from nightshift.tasks import Tasks
 
 @pytest.mark.local
 def test_get_worldcat_brief_bib_matches_success(
-    test_session, test_data_rich, env_var, stub_res_cat_by_name
+    test_session, test_data_rich, live_env_var, stub_res_cat_by_name
 ):
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -36,7 +36,7 @@ def test_get_worldcat_brief_bib_matches_success(
 
 @pytest.mark.local
 def test_get_worldcat_brief_bib_matches_failure(
-    test_session, test_data_rich, env_var, stub_res_cat_by_name
+    test_session, test_data_rich, live_env_var, stub_res_cat_by_name
 ):
     # modify existing resource
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -67,7 +67,7 @@ def test_get_worldcat_brief_bib_matches_failure(
 
 @pytest.mark.local
 def test_get_worldcat_full_bibs(
-    test_session, test_data_rich, env_var, stub_res_cat_by_name
+    test_session, test_data_rich, live_env_var, stub_res_cat_by_name
 ):
     test_session.execute(
         update(Resource).where(Resource.nid == 1).values(oclcMatchNumber="779356905")

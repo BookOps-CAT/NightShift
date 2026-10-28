@@ -11,7 +11,7 @@ from nightshift.comms.storage import Drive, get_credentials
 
 
 @pytest.mark.firewalled
-def test_logger_on_run(env_var, caplog, test_data_rich):
+def test_logger_on_run(live_env_var, caplog, test_data_rich):
 
     with caplog.at_level(logging.INFO):
         run(env="prod")

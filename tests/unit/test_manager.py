@@ -16,7 +16,6 @@ class TestProcessResourcesMocked:
 
     def test_new_resources(
         self,
-        env_var,
         test_session,
         test_data_core,
         mock_sftp_env,
@@ -42,7 +41,6 @@ class TestProcessResourcesMocked:
 
     def test_older_resources(
         self,
-        env_var,
         test_session,
         test_data_rich,
         mock_sftp_env,
@@ -91,7 +89,7 @@ class TestProcessResourcesMocked:
     "age,status,tally", [(91, "open", 0), (179, "open", 0), (181, "expired", 1)]
 )
 def test_perform_db_maintenance_set_expired(
-    caplog, env_var, test_session, test_data_rich, age, status, tally
+    caplog, test_session, test_data_rich, age, status, tally
 ):
     # expired resource
     test_session.add(
@@ -130,14 +128,7 @@ def test_perform_db_maintenance_set_expired(
     [(91, 0, Resource), (191, 0, Resource), (300, 1, type(None))],
 )
 def test_perform_db_maintenance_delete(
-    caplog,
-    env_var,
-    test_session,
-    test_data_rich,
-    stub_res_cat_by_name,
-    age,
-    tally,
-    expectation,
+    caplog, test_session, test_data_rich, stub_res_cat_by_name, age, tally, expectation
 ):
     expiration_age = stub_res_cat_by_name["ebook"].queryDays[-1][1]
 
