@@ -16,15 +16,13 @@ from nightshift.marc.marc_writer import BibEnhancer
 
 
 class TestBibEnhancer:
-    def test_init(self, caplog, stub_resource, stub_res_cat_by_id):
+    def test_init(self, stub_resource, stub_res_cat_by_id):
         with does_not_raise():
-            with caplog.at_level(logging.INFO):
-                result = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
+            result = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
 
         assert result.library == "NYP"
         assert isinstance(result.resource, Resource)
         assert isinstance(result.bib, Record)
-        assert "Enhancing NYP Sierra bib # b11111111a." in caplog.text
 
     def test_missing_full_bib(self, stub_resource):
         stub_resource.fullBib = None

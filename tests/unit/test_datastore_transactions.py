@@ -114,8 +114,8 @@ def test_add_event(test_session, test_data_rich):
 
 def test_add_event_always_insert(test_session, test_data_rich):
     resource = test_session.query(Resource).where(Resource.nid == 1).one()
-    event1 = add_event(test_session, resource, status="expired")
-    event2 = add_event(test_session, resource, status="expired")
+    add_event(test_session, resource, status="expired")
+    add_event(test_session, resource, status="expired")
     test_session.commit()
 
     results = test_session.query(Event).all()
@@ -268,7 +268,7 @@ def test_delete_resources_too_early(test_session, test_data_rich):
 def test_insert_or_ignore_new(test_session):
     rec = insert_or_ignore(test_session, Library, code="NYP")
     test_session.commit()
-    assert type(rec) == Library
+    assert isinstance(rec, Library)
     assert rec.code == "NYP"
     assert rec.nid == 1
 

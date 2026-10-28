@@ -62,11 +62,19 @@ If for any reason the execution of the routine is interrupted (API error, etc.),
 
 ## Changelog
 [0.6.2] - 2026-10-28
+### Added
++ new dependencies:
+   + `psycopg[binary]`
 ### Changed
 + reformatted pyproject.toml per PEP 621
 + updated marc record parsing and writing for new `bookops-marc` syntax
 + updated dependencies:
    + `bookops-marc` 0.10.0 -> 0.12.2
+   + `SQLAlchemy` 1.4.40 -> 2.1.6
+   + `pymarc` 5.1.2 -> 5.4.0
+   + `bookops-worldcat` 1.0.0 -> 1.2.0
+   + `PyYAML` 6.0.1 -> 6.0.3
+   + `paramiko` 3.4.0 -> 5.1.0
 [0.6.1] - 2024-08-26
 ### Fixed
  + Unsupported-resource-type-warning-fix

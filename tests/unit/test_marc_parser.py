@@ -194,7 +194,7 @@ def test_BibReader_map_data_eresource(
 
     res = fake_BibReader._map_data(bib=bib, resource_category=arg2)
     assert isinstance(res, Resource)
-    assert res.sierraId == "22222222"
+    assert res.sierraId == 22222222
     assert res.libraryId == 1
     assert res.resourceCategoryId == expectation
     assert res.bibDate == date(2021, 7, 1)

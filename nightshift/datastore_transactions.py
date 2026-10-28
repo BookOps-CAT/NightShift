@@ -6,7 +6,6 @@ from sqlalchemy import and_, create_engine, func, inspect
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 
-# from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES
 from nightshift import constants
 from nightshift.datastore import (
     DataAccessLayer,
@@ -61,22 +60,25 @@ def init_db() -> None:
     session = dal.Session()
 
     # recreate schema & prepopulate needed tables
-    for k, v in constants.LIBRARIES.items():
-        session.add(Library(nid=v["nid"], code=k))
+    libraries = [Library(nid=v["nid"], code=k) for k, v in constants.LIBRARIES.items()]
+    for library in libraries:
+        session.add(library)
 
-    for k, v in constants.RESOURCE_CATEGORIES.items():
-        session.add(
-            ResourceCategory(
-                nid=v["nid"],
-                name=k,
-                description=v["description"],
-                sierraBibFormatBpl=v["sierraBibFormatBpl"],
-                sierraBibFormatNyp=v["sierraBibFormatNyp"],
-                srcTags2Keep=v["srcTags2Keep"],
-                dstTags2Delete=v["dstTags2Delete"],
-                queryDays=v["queryDays"],
-            )
+    res_cats = [
+        ResourceCategory(
+            nid=v["nid"],
+            name=k,
+            description=v["description"],
+            sierraBibFormatBpl=v["sierraBibFormatBpl"],
+            sierraBibFormatNyp=v["sierraBibFormatNyp"],
+            srcTags2Keep=v["srcTags2Keep"],
+            dstTags2Delete=v["dstTags2Delete"],
+            queryDays=v["queryDays"],
         )
+        for k, v in constants.RESOURCE_CATEGORIES.items()
+    ]
+    for res_cat in res_cats:
+        session.add(res_cat)
 
     for code, resource_cat_ids in constants.ROTTEN_APPLES.items():
         ids = [
@@ -283,7 +285,7 @@ def library_by_id(session: Session) -> dict[int, str]:
     return {i.nid: i.code for i in instances}
 
 
-def parse_query_days(query_days: str) -> list[tuple[int, int]]:
+def parse_query_days(query_days: str) -> list[tuple[int, ...]]:
     """
     Parses query days stored as strings in the datastore
     into proper format.
@@ -409,7 +411,7 @@ def retrieve_open_older_resources(
             Resource.libraryId == libraryId,
             Resource.resourceCategoryId == resourceCategoryId,
             Resource.status == "open",
-            Resource.oclcMatchNumber == None,
+            Resource.oclcMatchNumber.is_(None),
             Resource.bibDate > datetime.now(timezone.utc) - timedelta(days=maxAge),
             Resource.bibDate < datetime.now(timezone.utc) - timedelta(days=minAge),
         )
@@ -447,8 +449,8 @@ def retrieve_open_matched_resources_without_full_bib(
         .filter(
             Resource.libraryId == libraryId,
             Resource.status == "open",
-            Resource.oclcMatchNumber != None,
-            Resource.fullBib == None,
+            Resource.oclcMatchNumber.is_not(None),
+            Resource.fullBib.is_(None),
         )
         .order_by(Resource.resourceCategoryId, Resource.nid)
         .all()
@@ -514,7 +516,7 @@ def retrieve_rotten_apples(session: Session) -> dict[int, list[str]]:
         .all()
     )
 
-    rotten_apples = dict()
+    rotten_apples: dict[int, list[str]] = {}
 
     for r in results:
         if r.resourceCategoryId in rotten_apples:

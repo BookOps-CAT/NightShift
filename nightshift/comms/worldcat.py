@@ -166,15 +166,13 @@ class Worldcat:
             resource.resourceCategoryId, rotten_apples
         )
 
+        dist_number = resource.distributorNumber
         if resource.resourceCategoryId == 1:
             # ebook
             if resource.distributorNumber:
                 payloads.append(
                     dict(
-                        q=(
-                            f"sn={resource.distributorNumber} "
-                            f"NOT lv:3{forbidden_sources}"
-                        ),
+                        q=f"sn={dist_number} NOT lv:3{forbidden_sources}",
                         itemType="book",
                         itemSubType="book-digital",
                     )
@@ -184,7 +182,7 @@ class Worldcat:
             if resource.distributorNumber:
                 payloads.append(
                     dict(
-                        q=f"sn={resource.distributorNumber} NOT lv:3{forbidden_sources}",
+                        q=f"sn={dist_number} NOT lv:3{forbidden_sources}",
                         itemType="audiobook",
                         itemSubType="audiobook-digital",
                     )
@@ -194,7 +192,7 @@ class Worldcat:
             if resource.distributorNumber:
                 payloads.append(
                     dict(
-                        q=f"sn={resource.distributorNumber} NOT lv:3 NOT lv:M{forbidden_sources}",
+                        q=f"sn={dist_number} NOT lv:3 NOT lv:M{forbidden_sources}",
                         itemType="video",
                         itemSubType="video-digital",
                     )
@@ -294,12 +292,13 @@ class Worldcat:
         """
         try:
             for resource in resources:
-                response = self.session.bib_get(oclcNumber=resource.oclcMatchNumber)
-                logger.debug(
-                    f"Full bib Worldcat request for {self.library} Sierra bib # "
-                    f"b{resource.sierraId}a: {response.url}."
-                )
-                yield (resource, response.content)
+                if resource.oclcMatchNumber:
+                    response = self.session.bib_get(oclcNumber=resource.oclcMatchNumber)
+                    logger.debug(
+                        f"Full bib Worldcat request for {self.library} Sierra bib # "
+                        f"b{resource.sierraId}a: {response.url}."
+                    )
+                    yield (resource, response.content)
         except WorldcatRequestError:
             logger.error("WorldcatRequestError. Aborting.")
             raise

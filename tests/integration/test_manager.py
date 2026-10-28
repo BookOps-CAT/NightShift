@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from nightshift.comms.storage import get_credentials, Drive
+from nightshift.comms.storage import Drive, get_credentials
 from nightshift.datastore import Resource
 from nightshift.manager import process_resources
 
@@ -36,7 +36,6 @@ def test_process_resources_live(env_var, test_data_rich, test_session):
     # SFTP
     drive_creds = get_credentials()
     with Drive(*drive_creds) as drive:
-
         temp_files = drive.sftp.listdir(path=drive.dst_dir)
 
         today = datetime.now(timezone.utc).date()

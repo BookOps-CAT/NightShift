@@ -174,9 +174,7 @@ class BibReader:
         Returns:
             Resource:                       `datastore.Resource` instance
         """
-        sierraId = (
-            str(bib.sierra_bib_id_normalized) if bib.sierra_bib_id_normalized else None
-        )
+        sierraId = bib.sierra_bib_id_normalized
         resourceCategoryId = self._res_cat[resource_category].nid
         bibDate = bib.created_date
         author = bib.author
