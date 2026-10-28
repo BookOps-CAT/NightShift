@@ -202,26 +202,17 @@ class NypPlatform(PlatformSession):
         Authenticates and opens a session with NYPL Platform.
         Relies on credentials stored in environment variables.
         """
-        client_id, client_secret, oauth_server, target = self._get_credentials()
-        token = self._get_token(client_id, client_secret, oauth_server)
+        token = self._get_token(
+            client_id=os.environ["NYPL_PLATFORM_CLIENT"],
+            client_secret=os.environ["NYPL_PLATFORM_SECRET"],
+            oauth_server=os.environ["NYPL_PLATFORM_OAUTH"],
+        )
         agent = f"{__title__}/{__version__}"
 
-        super().__init__(authorization=token, agent=agent, target=target)
-        logger.info("NYPL Platform session initiated.")
-
-    def _get_credentials(self) -> tuple[str, str, str, str]:
-        """
-        Retrieves NYPL Platform credentials from environmental variables.
-
-        Returns:
-                (client_id, secret_id, oauth_server, platform_env)
-        """
-        return (
-            os.environ["NYPL_PLATFORM_CLIENT"],
-            os.environ["NYPL_PLATFORM_SECRET"],
-            os.environ["NYPL_PLATFORM_OAUTH"],
-            os.environ["NYPL_PLATFORM_ENV"],
+        super().__init__(
+            authorization=token, agent=agent, target=os.environ["NYPL_PLATFORM_ENV"]
         )
+        logger.info("NYPL Platform session initiated.")
 
     def _get_token(
         self, client_id: str, client_secret: str, oauth_server: str
@@ -282,19 +273,13 @@ class BplSolr(SolrSession):
         """
         Creates BPL Solr session.
         """
-        client_key, endpoint = self._get_credentials()
         agent = f"{__title__}/{__version__}"
 
-        super().__init__(authorization=client_key, endpoint=endpoint, agent=agent)
-
-    def _get_credentials(self) -> tuple[str, str]:
-        """
-        Obtains credentials from environmental variables.
-
-        Returns:
-            (client_key, endpoint)
-        """
-        return (os.environ["BPL_SOLR_CLIENT_KEY"], os.environ["BPL_SOLR_ENDPOINT"])
+        super().__init__(
+            authorization=os.environ["BPL_SOLR_CLIENT_KEY"],
+            endpoint=os.environ["BPL_SOLR_ENDPOINT"],
+            agent=agent,
+        )
 
     def get_sierra_bib(self, sierraId: int) -> SearchResponse:
         """
