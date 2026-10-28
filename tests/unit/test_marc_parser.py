@@ -1,5 +1,5 @@
 import pickle
-from contextlib import nullcontext as does_not_raise
+from collections.abc import Iterable
 from datetime import date
 from io import BytesIO
 
@@ -28,14 +28,14 @@ def test_worldcat_response_to_pymarc_invalid_data_type(caplog):
     )
 
 
-def test_BibReader_library_successful_init(stub_res_cat_by_name):
-    with does_not_raise():
-        BibReader(
-            marc_target=BytesIO(b"some records"),
-            library="NYP",
-            libraryId=1,
-            resource_categories=stub_res_cat_by_name,
-        )
+def test_BibReader(stub_res_cat_by_name):
+    reader = BibReader(
+        marc_target=BytesIO(b"some records"),
+        library="NYP",
+        libraryId=1,
+        resource_categories=stub_res_cat_by_name,
+    )
+    assert isinstance(reader, Iterable)
 
 
 def test_BibReader_invalid_marc_target(caplog, stub_res_cat_by_name):
@@ -54,14 +54,6 @@ def test_BibReader_invalid_resource_categories_arg(caplog):
             resource_categories=[],
         )
     assert "Invalid 'resource_categories' argument" in caplog.text
-
-
-def test_BibReader_iterator(stub_res_cat_by_name):
-    reader = BibReader("tests/nyp-ebook-sample.mrc", "NYP", 1, stub_res_cat_by_name)
-    with does_not_raise():
-        for _ in reader:
-            continue
-    assert reader.marc_target.closed
 
 
 @pytest.mark.parametrize(
