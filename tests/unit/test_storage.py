@@ -8,7 +8,7 @@ from nightshift.comms.storage import Drive, get_credentials
 from nightshift.ns_exceptions import DriveError
 
 
-def test_get_credentials(mock_sftp_env, sftpserver):
+def test_get_credentials(mock_env_vars, sftpserver):
     assert get_credentials() == (
         sftpserver.host,
         "nightshift",
@@ -22,10 +22,10 @@ def test_get_credentials(mock_sftp_env, sftpserver):
 class TestDriveMocked:
     """
     note, sftpserver fixture below has session scope by default and is called when
-    mock_sftp_env fixture is initated
+    mock_env_vars fixture is initated
     """
 
-    def test_drive_initiation(self, sftpserver, mock_sftp_env):
+    def test_drive_initiation(self, sftpserver, mock_env_vars):
         creds = get_credentials()
         with Drive(*creds) as drive:
             assert isinstance(drive.sftp, paramiko.sftp_client.SFTPClient)
@@ -145,7 +145,7 @@ class TestDriveMocked:
             mock_drive._construct_src_file_path("foo.mrc") == "sierra_dumps_dir/foo.mrc"
         )
 
-    def test_sftp_ssh_exception(self, caplog, mock_sftp_env, mock_ssh_exception):
+    def test_sftp_ssh_exception(self, caplog, mock_env_vars, mock_ssh_exception):
         creds = get_credentials()
         with caplog.at_level(logging.CRITICAL):
             with pytest.raises(DriveError):

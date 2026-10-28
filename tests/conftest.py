@@ -34,8 +34,25 @@ class FakeUtcNow(datetime.datetime):
 
 
 @pytest.fixture
-def mock_utcnow(monkeypatch):
-    monkeypatch.setattr(datetime, "datetime", FakeUtcNow)
+def mock_env_vars(monkeypatch, sftpserver):
+    monkeypatch.setenv("NYPL_PLATFORM_CLIENT", "app_client_id")
+    monkeypatch.setenv("NYPL_PLATFORM_SECRET", "app_secret")
+    monkeypatch.setenv("NYPL_PLATFORM_OAUTH", "outh_server")
+    monkeypatch.setenv("NYPL_PLATFORM_ENV", "prod")
+    monkeypatch.setenv("BPL_SOLR_CLIENT_KEY", "solr_key")
+    monkeypatch.setenv("BPL_SOLR_ENDPOINT", "solr_endpoint")
+    monkeypatch.setenv("WCNYP_KEY", "lib_key")
+    monkeypatch.setenv("WCNYP_SECRET", "lib_secret")
+    monkeypatch.setenv("WCNYP_SCOPE", "WorldCatMetadataAPI")
+    monkeypatch.setenv("WCBPL_KEY", "lib_key")
+    monkeypatch.setenv("WCBPL_SECRET", "lib_secret")
+    monkeypatch.setenv("WCBPL_SCOPE", "WorldCatMetadataAPI")
+    monkeypatch.setenv("SFTP_HOST", sftpserver.host)
+    monkeypatch.setenv("SFTP_PORT", str(sftpserver.port))
+    monkeypatch.setenv("SFTP_USER", "nightshift")
+    monkeypatch.setenv("SFTP_PASSW", "sftp_password")
+    monkeypatch.setenv("SFTP_NS_SRC", "sierra_dumps_dir")
+    monkeypatch.setenv("SFTP_NS_DST", "load_dir")
 
 
 @pytest.fixture
@@ -216,16 +233,6 @@ def test_data_rich(stub_resource, test_session, test_data_core):
 
 
 @pytest.fixture
-def mock_sftp_env(monkeypatch, sftpserver):
-    monkeypatch.setenv("SFTP_HOST", sftpserver.host)
-    monkeypatch.setenv("SFTP_PORT", str(sftpserver.port))
-    monkeypatch.setenv("SFTP_USER", "nightshift")
-    monkeypatch.setenv("SFTP_PASSW", "sftp_password")
-    monkeypatch.setenv("SFTP_NS_SRC", "sierra_dumps_dir")
-    monkeypatch.setenv("SFTP_NS_DST", "load_dir")
-
-
-@pytest.fixture
 def mock_ssh_exception(monkeypatch):
     def mock_ssh_exception(self, *args, **kwargs):
         raise paramiko.ssh_exception.SSHException
@@ -234,7 +241,7 @@ def mock_ssh_exception(monkeypatch):
 
 
 @pytest.fixture
-def mock_drive(mock_sftp_env):
+def mock_drive(mock_env_vars):
     creds = get_credentials()
     with Drive(*creds) as drive:
         yield drive
@@ -265,6 +272,11 @@ class MockHTTPResponse:
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
             raise requests.HTTPError
+
+
+@pytest.fixture
+def mock_400_response():
+    return MockHTTPResponse(status_code=400)
 
 
 # Worldcat fixtures ########
@@ -305,40 +317,28 @@ def stub_worldcat_response_no_matches():
 
 
 @pytest.fixture
-def mock_worldcat_creds(monkeypatch):
-    for lib in ("NYP", "BPL"):
-        monkeypatch.setenv(f"WC{lib}_KEY", "lib_key")
-        monkeypatch.setenv(f"WC{lib}_SECRET", "lib_secret")
-        monkeypatch.setenv(f"WC{lib}_SCOPE", "WorldCatMetadataAPI")
+def mock_failed_post_token_response(monkeypatch, mock_400_response):
+    monkeypatch.setattr(requests, "post", mock_400_response)
 
 
 @pytest.fixture
-def mock_failed_post_token_response(monkeypatch):
-    def mock_oauth_server_response(*args, **kwargs):
-        return MockHTTPResponse(status_code=401)
-
-    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
-
-
-@pytest.fixture
-def mock_successful_post_token_response(mock_utcnow, monkeypatch):
+def mock_successful_post_token_response(monkeypatch):
     def mock_oauth_server_response(*args, **kwargs):
         expires_at = datetime.datetime.strftime(
             datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(0, 1199),
             "%Y-%m-%d %H:%M:%SZ",
         )
         json_response = {
-            "access_token": "tk_Yebz4BpEp9dAsghA7KpWx6dYD1OZKWBlHjqW",
+            "access_token": "token_string_here",
             "token_type": "bearer",
-            "expires_in": "1199",
-            "principalID": "",
-            "principalIDNS": "",
-            "scopes": "scope1",
-            "contextInstitutionId": "00001",
             "expires_at": expires_at,
+            "scope": "scopes_here",
+            "id_token": "token_string_here",
+            "expires_in": 3600,
         }
         return MockHTTPResponse(status_code=200, _json=json_response)
 
+    monkeypatch.setattr(datetime, "datetime", FakeUtcNow)
     monkeypatch.setattr(requests, "post", mock_oauth_server_response)
 
 
@@ -367,54 +367,11 @@ def mock_session_error(monkeypatch):
 
 
 @pytest.fixture
-def mock_Worldcat(mock_worldcat_creds, mock_successful_post_token_response):
+def mock_Worldcat(mock_env_vars, mock_successful_post_token_response):
     return Worldcat("NYP")
 
 
 # NYPL Platform & BPL Solr fixtures ###
-
-
-class MockSearchSessionHTTPError:
-    """Mocks 500 HTTP error responses for both platforms"""
-
-    def __init__(self, code=500):
-        self.status_code = code
-        self.url = "request_url_here"
-
-    def json(self):
-        return {
-            "statusCode": self.status_code,
-            "type": "exception",
-            "message": "error message",
-            "error": [],
-            "debugInfo": [],
-        }
-
-
-class MockPlatformAuthServerResponseSuccess:
-    """Simulates oauth server response to successful token request"""
-
-    def __init__(self):
-        self.status_code = 200
-
-    def json(self):
-        return {
-            "access_token": "token_string_here",
-            "expires_in": 3600,
-            "token_type": "Bearer",
-            "scope": "scopes_here",
-            "id_token": "token_string_here",
-        }
-
-
-class MockPlatformAuthServerResponseFailure:
-    """Simulates oauth server response to successful token request"""
-
-    def __init__(self):
-        self.status_code = 400
-
-    def json(self):
-        return {"error": "No grant_type specified", "error_description": None}
 
 
 @pytest.fixture
@@ -477,137 +434,34 @@ def mock_platform_response():
 
 
 @pytest.fixture
-def mock_platform_response_oclc_origin():
-    return MockHTTPResponse(
-        status_code=200,
-        url="request_url_here",
-        _json={
-            "data": {
-                "id": "18578797",
-                "deleted": False,
-                "suppressed": False,
-                "varFields": [
-                    {
-                        "fieldTag": "y",
-                        "marcTag": "003",
-                        "ind1": " ",
-                        "ind2": " ",
-                        "content": "OCoLC",
-                        "subfields": None,
-                    }
-                ],
-            },
-            "count": 1,
-            "totalCount": 0,
-            "statusCode": 200,
-            "debugInfo": [],
-        },
-    )
+def mock_platform_response_oclc_origin(mock_platform_response):
+    json_response = mock_platform_response.json()
+    json_response["data"]["varFields"] = [{"marcTag": "003", "content": "OCoLC"}]
+    return MockHTTPResponse(_json=json_response)
 
 
 @pytest.fixture
-def mock_platform_response_deleted_record():
-    return MockHTTPResponse(
-        status_code=200,
-        url="request_url_here",
-        _json={
-            "data": {
-                "id": "19099433",
-                "nyplSource": "sierra-nypl",
-                "nyplType": "bib",
-                "updatedDate": None,
-                "createdDate": "2017-08-23T17:59:35-04:00",
-                "deletedDate": "2011-09-15",
-                "deleted": True,
-                "locations": [],
-                "suppressed": None,
-                "lang": None,
-                "title": None,
-                "author": None,
-                "materialType": None,
-                "bibLevel": None,
-                "publishYear": None,
-                "catalogDate": None,
-                "country": None,
-                "normTitle": None,
-                "normAuthor": None,
-                "standardNumbers": [],
-                "controlNumber": "",
-                "fixedFields": [],
-                "varFields": [],
-            },
-            "count": 1,
-            "totalCount": 0,
-            "statusCode": 200,
-            "debugInfo": [],
-        },
-    )
+def mock_platform_response_deleted_record(mock_platform_response):
+    json_response = mock_platform_response.json()
+    json_response["data"]["deleted"] = True
+    return MockHTTPResponse(_json=json_response)
 
 
 @pytest.fixture
 def mock_platform_response_not_found():
-    return MockHTTPResponse(
-        status_code=404,
-        url="request_url_here",
-        _json={
-            "statusCode": 404,
-            "type": "exception",
-            "message": "No record found",
-            "error": [],
-            "debugInfo": [],
-        },
-    )
+    return MockHTTPResponse(status_code=404)
 
 
 @pytest.fixture
-def mock_platform_response_other_error():
+def mock_platform_response_suppressed(mock_platform_response):
+    json_response = mock_platform_response.json()
+    json_response["data"]["suppressed"] = True
+    json_response["data"]["varFields"] = [
+        {"marcTag": "001", "content": "2010074825"},
+        {"marcTag": "091", "subfields": [{"tag": "a", "content": "eNYPL"}]},
+    ]
     return MockHTTPResponse(
-        status_code=401,
-        url="request_url_here",
-        _json={
-            "statusCode": 401,
-            "type": "",
-            "message": "",
-            "error": [],
-            "debugInfo": [],
-        },
-    )
-
-
-@pytest.fixture
-def mock_platform_response_suppressed():
-    return MockHTTPResponse(
-        status_code=200,
-        url="request_url_here",
-        _json={
-            "data": {
-                "id": "18578797",
-                "deleted": False,
-                "suppressed": True,
-                "varFields": [
-                    {
-                        "fieldTag": "o",
-                        "marcTag": "001",
-                        "ind1": " ",
-                        "ind2": " ",
-                        "content": "2010074825",
-                        "subfields": None,
-                    },
-                    {
-                        "fieldTag": "c",
-                        "marcTag": "091",
-                        "ind1": " ",
-                        "ind2": " ",
-                        "content": None,
-                        "subfields": [{"tag": "a", "content": "eNYPL"}],
-                    },
-                ],
-            },
-            "count": 1,
-            "totalCount": 0,
-            "statusCode": 200,
-            "debugInfo": [],
-        },
+        status_code=200, url="request_url_here", _json=json_response
     )
 
 
@@ -635,48 +489,21 @@ def mock_solr_response():
 
 
 @pytest.fixture
-def mock_solr_response_oclc_origin():
+def mock_solr_response_oclc_origin(mock_solr_response):
+    json_response = mock_solr_response.json()
+    json_response["response"]["docs"][0]["ss_marc_tag_003"] = "OCoLC"
     return MockHTTPResponse(
-        status_code=200,
-        url="request_url_here",
-        _json={
-            "response": {
-                "numFound": 1,
-                "start": 0,
-                "numFoundExact": True,
-                "docs": [
-                    {
-                        "id": "12234255",
-                        "suppressed": False,
-                        "deleted": False,
-                        "ss_marc_tag_003": "OCoLC",
-                    }
-                ],
-            }
-        },
+        status_code=200, url="request_url_here", _json=json_response
     )
 
 
 @pytest.fixture
-def mock_solr_response_suppressed():
+def mock_solr_response_suppressed(mock_solr_response):
+    json_response = mock_solr_response.json()
+    json_response["response"]["docs"][0]["suppressed"] = True
+    json_response["response"]["docs"][0]["call_number"] = "eBOOK"
     return MockHTTPResponse(
-        status_code=200,
-        url="request_url_here",
-        _json={
-            "response": {
-                "numFound": 1,
-                "start": 0,
-                "numFoundExact": True,
-                "docs": [
-                    {
-                        "id": "12234255",
-                        "suppressed": True,
-                        "deleted": False,
-                        "call_number": "eBOOK",
-                    }
-                ],
-            }
-        },
+        status_code=200, url="request_url_here", _json=json_response
     )
 
 
@@ -689,22 +516,6 @@ def mock_solr_response_record_not_found():
             "response": {"numFound": 0, "start": 0, "numFoundExact": True, "docs": []}
         },
     )
-
-
-@pytest.fixture
-def mock_successful_platform_post_token_response(monkeypatch):
-    def mock_oauth_server_response(*args, **kwargs):
-        return MockPlatformAuthServerResponseSuccess()
-
-    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
-
-
-@pytest.fixture
-def mock_failed_platform_post_token_response(monkeypatch):
-    def mock_oauth_server_response(*args, **kwargs):
-        return MockPlatformAuthServerResponseFailure
-
-    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
 
 
 @pytest.fixture
@@ -726,16 +537,6 @@ def mock_successful_platform_session_response_deleted_record(
 
 
 @pytest.fixture
-def mock_failed_platform_session_response(
-    monkeypatch, mock_platform_response_not_found
-):
-    def mock_api_response(*args, **kwargs):
-        return mock_platform_response_not_found
-
-    monkeypatch.setattr(requests.Session, "get", mock_api_response)
-
-
-@pytest.fixture
 def mock_successful_solr_session_response(monkeypatch, mock_solr_response_suppressed):
     def mock_api_response(*args, **kwargs):
         return mock_solr_response_suppressed
@@ -749,17 +550,3 @@ def mock_failed_solr_session_response(monkeypatch, mock_solr_response_record_not
         return mock_solr_response_record_not_found
 
     monkeypatch.setattr(requests.Session, "get", mock_api_response)
-
-
-@pytest.fixture
-def mock_platform_env(monkeypatch):
-    monkeypatch.setenv("NYPL_PLATFORM_CLIENT", "app_client_id")
-    monkeypatch.setenv("NYPL_PLATFORM_SECRET", "app_secret")
-    monkeypatch.setenv("NYPL_PLATFORM_OAUTH", "outh_server")
-    monkeypatch.setenv("NYPL_PLATFORM_ENV", "prod")
-
-
-@pytest.fixture
-def mock_solr_env(monkeypatch):
-    monkeypatch.setenv("BPL_SOLR_CLIENT_KEY", "solr_key")
-    monkeypatch.setenv("BPL_SOLR_ENDPOINT", "solr_endpoint")

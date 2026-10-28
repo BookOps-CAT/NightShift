@@ -32,7 +32,7 @@ class TestWorldcatMocked:
 
     @pytest.mark.parametrize("arg", ["NYP", "BPL", "nyp", "bpl"])
     def test_init_library_args(
-        self, arg, mock_worldcat_creds, mock_successful_post_token_response
+        self, arg, mock_env_vars, mock_successful_post_token_response
     ):
         with does_not_raise():
             reader = Worldcat(arg)
@@ -59,7 +59,7 @@ class TestWorldcatMocked:
         assert token.agent == "NightShift/0.6.2"
 
     def test_get_access_token_failure(
-        self, caplog, mock_worldcat_creds, mock_failed_post_token_response
+        self, caplog, mock_env_vars, mock_failed_post_token_response
     ):
         with caplog.at_level(logging.ERROR):
             with pytest.raises(WorldcatAuthorizationError):

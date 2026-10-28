@@ -40,8 +40,8 @@ def test_check_resources_sierra_state_nyp_platform(
     test_data_rich,
     stub_resource,
     stub_res_cat_by_name,
-    mock_platform_env,
-    mock_successful_platform_post_token_response,
+    mock_env_vars,
+    mock_successful_post_token_response,
     mock_successful_platform_session_response,
 ):
     stub_resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -73,8 +73,8 @@ def test_check_resources_sierra_state_nyp_platform_deleted_record(
     test_data_rich,
     stub_resource,
     stub_res_cat_by_name,
-    mock_platform_env,
-    mock_successful_platform_post_token_response,
+    mock_env_vars,
+    mock_successful_post_token_response,
     mock_successful_platform_session_response_deleted_record,
 ):
     stub_resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -106,7 +106,7 @@ def test_check_resources_sierra_state_bpl_solr(
     test_data_rich,
     stub_resource,
     stub_res_cat_by_name,
-    mock_solr_env,
+    mock_env_vars,
     mock_successful_solr_session_response,
 ):
     stub_resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -126,7 +126,7 @@ def test_check_resources_sierra_state_bpl_solr_no_record(
     test_session,
     test_data_rich,
     stub_res_cat_by_name,
-    mock_solr_env,
+    mock_env_vars,
     mock_failed_solr_session_response,
 ):
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -167,7 +167,7 @@ def test_enhance_and_output_bibs(
     test_data_rich,
     stub_res_cat_by_name,
     mock_drive,
-    mock_sftp_env,
+    mock_env_vars,
 ):
     remote_file = f"{datetime.now().date():%y%m%d}-NYP-ebook-01.mrc"
     resources = test_session.query(Resource).where(Resource.nid == 1).all()
@@ -197,7 +197,7 @@ def test_get_worldcat_brief_bib_matches_success(
     test_session,
     test_data_core,
     stub_res_cat_by_name,
-    mock_worldcat_creds,
+    mock_env_vars,
     mock_successful_post_token_response,
     mock_worldcat_response,
     stub_worldcat_response,
@@ -246,7 +246,7 @@ def test_get_worldcat_brief_bib_matches_failed(
     test_session,
     test_data_core,
     stub_res_cat_by_name,
-    mock_worldcat_creds,
+    mock_env_vars,
     mock_successful_post_token_response,
     mock_worldcat_response_no_matches,
     stub_worldcat_response_no_matches,
@@ -293,7 +293,7 @@ def test_get_worldcat_full_bibs(
     test_session,
     test_data_core,
     stub_res_cat_by_name,
-    mock_worldcat_creds,
+    mock_env_vars,
     mock_successful_post_token_response,
     mock_worldcat_response,
     stub_worldcat_response,
@@ -322,7 +322,7 @@ def test_get_worldcat_full_bibs(
 
 
 def test_ingest_new_files(
-    sftpserver, test_session, test_data_core, stub_res_cat_by_name, mock_sftp_env
+    sftpserver, test_session, test_data_core, stub_res_cat_by_name, mock_env_vars
 ):
     with open("tests/nyp-ebook-sample.mrc", "rb") as test_file:
         marc_data = test_file.read()
@@ -349,7 +349,7 @@ def test_ingest_new_files(
 
 
 def test_ingest_new_files_empty_file(
-    sftpserver, test_session, test_data_core, stub_res_cat_by_name, mock_sftp_env
+    sftpserver, test_session, test_data_core, stub_res_cat_by_name, mock_env_vars
 ):
 
     with sftpserver.serve_content(
@@ -507,7 +507,7 @@ def test_transfer_to_drive(
 
 
 def test_transfer_to_drive_temp_file_not_created(
-    caplog, sftpserver, mock_sftp_env, stub_res_cat_by_name
+    caplog, sftpserver, mock_env_vars, stub_res_cat_by_name
 ):
     with caplog.at_level(logging.INFO):
         tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
@@ -517,7 +517,7 @@ def test_transfer_to_drive_temp_file_not_created(
 
 
 def test_transfer_to_drive_sftp_error(
-    tmpdir, sftpserver, stub_res_cat_by_name, mock_sftp_env, mock_io_error
+    tmpdir, sftpserver, stub_res_cat_by_name, mock_env_vars, mock_io_error
 ):
     tmpfile = tmpdir.join("temp.mrc")
     tmpfile.write("spam")
