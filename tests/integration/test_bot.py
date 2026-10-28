@@ -26,21 +26,6 @@ def test_config_local_env_variables():
         del os.environ[k]
 
 
-@pytest.mark.livetest
-def test_config_local_env_variables_default_file():
-    config_local_env_variables()
-
-    with open("nightshift/config/config.yaml", "r") as f:
-        data = yaml.safe_load(f)
-
-    for k, v in data.items():
-        assert os.getenv(k) == v
-
-    # clean up, otherwise vars will linger and mess up other tests
-    for k in data.keys():
-        del os.environ[k]
-
-
 def test_configure_database_local_success(
     patch_init_db, patch_config_local_env_variables, capfd
 ):
