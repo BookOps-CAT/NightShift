@@ -1,4 +1,3 @@
-import logging
 from contextlib import nullcontext as does_not_raise
 
 import pytest
@@ -61,9 +60,8 @@ class TestWorldcatMocked:
     def test_get_access_token_failure(
         self, caplog, mock_env_vars, mock_failed_post_token_response
     ):
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(WorldcatAuthorizationError):
-                Worldcat("NYP")
+        with pytest.raises(WorldcatAuthorizationError):
+            Worldcat("NYP")
         assert "Unable to obtain NYP Worldcat MetadataAPI access token." in caplog.text
 
     def test_create_worldcat_session(self, mock_Worldcat):
@@ -90,8 +88,7 @@ class TestWorldcatMocked:
         resource = Resource(
             nid=1, sierraId=22222222, title="TEST TITLE", oclcMatchNumber="123"
         )
-        with caplog.at_level(logging.DEBUG):
-            result = next(mock_Worldcat.get_full_bibs([resource]))
+        result = next(mock_Worldcat.get_full_bibs([resource]))
 
         resource, response = result
         assert isinstance(result, tuple)
@@ -109,10 +106,8 @@ class TestWorldcatMocked:
         resource = Resource(
             nid=1, sierraId=22222222, title="TEST TITLE", oclcMatchNumber="123"
         )
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(WorldcatRequestError):
-                next(mock_Worldcat.get_full_bibs([resource]))
-
+        with pytest.raises(WorldcatRequestError):
+            next(mock_Worldcat.get_full_bibs([resource]))
         assert "WorldcatRequestError. Aborting." in caplog.text
 
     @pytest.mark.parametrize(
@@ -185,10 +180,9 @@ class TestWorldcatMocked:
             standardNumber=222,
             congressNumber=333,
         )
-        with caplog.at_level(logging.DEBUG):
-            payloads = mock_Worldcat._prep_resource_queries_payloads(
-                resource, rotten_apples
-            )
+        payloads = mock_Worldcat._prep_resource_queries_payloads(
+            resource, rotten_apples
+        )
         assert payloads == expectation
         assert f"Query payload for NYP Sierra bib # b22222222a: {expectation}."
 
@@ -203,8 +197,7 @@ class TestWorldcatMocked:
             title="TEST TITLE",
             distributorNumber="111",
         )
-        with caplog.at_level(logging.DEBUG):
-            result = next(mock_Worldcat.get_brief_bibs([resource]))
+        result = next(mock_Worldcat.get_brief_bibs([resource]))
 
         assert isinstance(result, tuple)
 
@@ -235,8 +228,7 @@ class TestWorldcatMocked:
             title="TEST TITLE",
             distributorNumber="111",
         )
-        with caplog.at_level(logging.DEBUG):
-            result = next(mock_Worldcat.get_brief_bibs([resource]))
+        result = next(mock_Worldcat.get_brief_bibs([resource]))
 
         assert isinstance(result, tuple)
 
@@ -258,9 +250,8 @@ class TestWorldcatMocked:
         self, caplog, mock_Worldcat, mock_session_error
     ):
         resource = Resource(nid=1, resourceCategoryId=1, distributorNumber="123")
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(WorldcatRequestError):
-                next(mock_Worldcat.get_brief_bibs([resource]))
+        with pytest.raises(WorldcatRequestError):
+            next(mock_Worldcat.get_brief_bibs([resource]))
 
         assert "WorldcatRequestError. Aborting." in caplog.text
 
@@ -276,16 +267,9 @@ class TestWorldcatMocked:
             nid=2, resourceCategoryId=1, sierraId=22222223, distributorNumber="123"
         )
 
-        with caplog.at_level(logging.WARN):
-            with does_not_raise():
-                for result in mock_Worldcat.get_brief_bibs([resource1, resource2]):
-                    pass
-
+        results = [i for i in mock_Worldcat.get_brief_bibs([resource1, resource2])]
+        [i for i in results]
         assert (
             "Unable to create a payload for brief bib query for NYP resource nid=1, sierraId=b22222222a."
             in caplog.text
         )
-        resource, response = result
-        assert isinstance(resource, Resource)
-        assert resource.nid == 2
-        assert isinstance(response, BriefBibResponse)

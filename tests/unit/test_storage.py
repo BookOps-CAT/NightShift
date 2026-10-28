@@ -1,4 +1,3 @@
-import logging
 from io import BytesIO
 
 import paramiko
@@ -42,8 +41,7 @@ class TestDriveMocked:
     def test_check_file_on_closed_sftp_client(self, caplog, mock_drive):
         mock_drive.sftp = None
         with pytest.raises(DriveError):
-            with caplog.at_level(logging.ERROR):
-                mock_drive.check_file_exists("foo.mrc")
+            mock_drive.check_file_exists("foo.mrc")
 
         assert "Attempted operation on a closed SFTP session."
 
@@ -55,15 +53,13 @@ class TestDriveMocked:
 
     def test_fetch_file_on_closed_sftp_client(self, caplog, mock_drive):
         mock_drive.sftp = None
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(DriveError):
-                mock_drive.fetch_file("foo.mrc")
+        with pytest.raises(DriveError):
+            mock_drive.fetch_file("foo.mrc")
         assert "Attempted operation on a closed SFTP session." in caplog.text
 
     def test_fetch_file_io_error(self, caplog, mock_drive):
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(DriveError):
-                mock_drive.fetch_file("foo.mrc")
+        with pytest.raises(DriveError):
+            mock_drive.fetch_file("foo.mrc")
         assert (
             "Unable to fetch file sierra_dumps_dir/foo.mrc from the SFTP."
             in caplog.text
@@ -77,18 +73,15 @@ class TestDriveMocked:
             assert result == ["foo1.mrc", "foo2.mrc"]
 
     def test_list_src_directory_io_error(self, caplog, mock_drive, mock_io_error):
-        with caplog.at_level(logging.ERROR):
-            mock_drive.src_dir = "FOO/SPAM"
-            with pytest.raises(DriveError):
-                mock_drive.list_src_directory()
-
+        mock_drive.src_dir = "FOO/SPAM"
+        with pytest.raises(DriveError):
+            mock_drive.list_src_directory()
         assert "Unable to reach FOO/SPAM on the SFTP." in caplog.text
 
     def test_list_src_directory_on_closed_sftp_client(self, caplog, mock_drive):
         mock_drive.sftp = None
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(DriveError):
-                mock_drive.list_src_directory()
+        with pytest.raises(DriveError):
+            mock_drive.list_src_directory()
 
         assert "Attempted an operation on a closed SFTP session." in caplog.text
 
@@ -106,9 +99,8 @@ class TestDriveMocked:
         assert out_file == "NYPebook210715-02.mrc"
 
     def test_output_file_io_error(self, caplog, mock_drive, mock_io_error):
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(DriveError):
-                mock_drive.output_file("temp.mrc", "NYPebook210715")
+        with pytest.raises(DriveError):
+            mock_drive.output_file("temp.mrc", "NYPebook210715")
         assert (
             "IOError. Unable to output temp.mrc to load_dir/NYPebook210715-01.mrc on the SFTP."
             in caplog.text
@@ -116,9 +108,8 @@ class TestDriveMocked:
 
     def test_output_file_on_closed_sftp_client(self, caplog, mock_drive):
         mock_drive.sftp = None
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(DriveError):
-                mock_drive.output_file("temp.mrc", "NYPebook210715")
+        with pytest.raises(DriveError):
+            mock_drive.output_file("temp.mrc", "NYPebook210715")
 
         assert (
             "SFTP session closed. Unable to output temp.mrc to NYPebook210715 on the drive."
@@ -147,9 +138,8 @@ class TestDriveMocked:
 
     def test_sftp_ssh_exception(self, caplog, mock_env_vars, mock_ssh_exception):
         creds = get_credentials()
-        with caplog.at_level(logging.CRITICAL):
-            with pytest.raises(DriveError):
-                Drive(*creds)
+        with pytest.raises(DriveError):
+            Drive(*creds)
         assert (
             "Unable to establish a secure channel and open SFTP session." in caplog.text
         )

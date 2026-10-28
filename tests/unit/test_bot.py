@@ -2,7 +2,6 @@
 Tests bot.py module
 """
 
-import logging
 import os
 from contextlib import nullcontext as does_not_raise
 
@@ -27,7 +26,7 @@ def test_config_local_env_variables():
         del os.environ[k]
 
 
-@pytest.mark.local
+@pytest.mark.livetest
 def test_config_local_env_variables_default_file():
     config_local_env_variables()
 
@@ -83,8 +82,7 @@ def test_run_local(
     patch_process_resources,
     patch_perform_db_maintenance,
 ):
-    with caplog.at_level(logging.INFO):
-        run(env="local")
+    run(env="local")
 
     assert "Launching local NightShift..." in caplog.text
     assert "Processing resources completed." in caplog.text
@@ -109,7 +107,6 @@ def test_main_run_arg(
     mock_log_env,
     caplog,
 ):
-    with caplog.at_level(logging.INFO):
-        main(["run", f"{arg}"])
+    main(["run", f"{arg}"])
 
     assert f"Launching {arg} NightShift..." in caplog.text

@@ -1,4 +1,3 @@
-import logging
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timedelta, timezone
 
@@ -105,8 +104,7 @@ def test_perform_db_maintenance_set_expired(
     )
     test_session.commit()
 
-    with caplog.at_level(logging.INFO):
-        perform_db_maintenance()
+    perform_db_maintenance()
 
     assert f"Changed {tally} ebook resource(s) status to 'expired'." in caplog.text
 
@@ -146,8 +144,7 @@ def test_perform_db_maintenance_delete(
     )
     test_session.commit()
 
-    with caplog.at_level(logging.INFO):
-        perform_db_maintenance()
+    perform_db_maintenance()
 
     assert (
         f"Deleted {tally} ebook resource(s) older than {expiration_age + 90} days from the database."

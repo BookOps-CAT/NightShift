@@ -2,7 +2,6 @@
 Tests `marc.marc_writer.py` module
 """
 
-import logging
 import os
 import pickle
 from contextlib import nullcontext as does_not_raise
@@ -57,8 +56,7 @@ class TestBibEnhancer:
         elif libraryId == 2:
             library = "BPL"
         be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
-        with caplog.at_level(logging.DEBUG):
-            assert be._add_call_number() is True
+        assert be._add_call_number() is True
         assert f"Added {expectation} to {library} b11111111a." in caplog.text
         bib = be.bib
         assert str(bib[tag]) == f"={tag}  \\\\$a{expectation}"
@@ -69,10 +67,7 @@ class TestBibEnhancer:
     ):
         stub_resource.resourceCategoryId = resourceId
         be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
-
-        with caplog.at_level(logging.WARN):
-            assert be._add_call_number() is False
-
+        assert be._add_call_number() is False
         assert f"Unable to create call number for {library} b11111111a." in caplog.text
 
     @pytest.mark.parametrize(
@@ -109,8 +104,7 @@ class TestBibEnhancer:
             library = "BPL"
 
         be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
-        with caplog.at_level(logging.DEBUG):
-            be._add_command_tag()
+        be._add_command_tag()
 
         assert (
             f"Added 949 command tag: {expectation} to {library} b11111111a."
@@ -160,9 +154,7 @@ class TestBibEnhancer:
 
         if tag:
             be.bib.add_field(Field(tag=tag, indicators=indicators, subfields=subfields))
-
-        with caplog.at_level(logging.DEBUG):
-            be._clean_up_genre_tags()
+        be._clean_up_genre_tags()
 
         for log_msg in log_msgs:
             assert log_msg in caplog.text
@@ -291,8 +283,7 @@ class TestBibEnhancer:
         pickled_fields = pickle.dumps(fields)
         stub_resource.srcFieldsToKeep = pickled_fields
         be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        with caplog.at_level(logging.DEBUG):
-            be._add_local_tags()
+        be._add_local_tags()
         assert (
             "Added following local fields ['020', '037', '856'] to NYP b11111111a."
             in caplog.text
@@ -308,8 +299,7 @@ class TestBibEnhancer:
         self, caplog, stub_resource, stub_res_cat_by_id
     ):
         be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        with caplog.at_level(logging.DEBUG):
-            be._add_local_tags()
+        be._add_local_tags()
 
         assert "No local tags to keep were found for NYP b11111111a." in caplog.text
 
@@ -318,8 +308,7 @@ class TestBibEnhancer:
         self, caplog, stub_resource, stub_res_cat_by_id, library, tag
     ):
         be = BibEnhancer(stub_resource, library, stub_res_cat_by_id)
-        with caplog.at_level(logging.DEBUG):
-            be._add_initials_tag()
+        be._add_initials_tag()
 
         assert f"Added initials tag {tag} to {library} b11111111a." in caplog.text
         assert str(be.bib[tag]) == f"={tag}  \\\\$a{__title__}/{__version__}"
@@ -384,13 +373,9 @@ class TestBibEnhancer:
 
     def test_manipulate_failed(self, caplog, stub_resource, stub_res_cat_by_id):
         stub_resource.resourceCategoryId = 99
-
-        with caplog.at_level(logging.INFO):
-            be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-            be.manipulate()
-
-            assert be.is_acceptable() is False
-
+        be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
+        be.manipulate()
+        assert be.is_acceptable() is False
         assert (
             "Worldcat record # 850939580 is rejected. Does not meet minimum requirements."
             in caplog.text
@@ -435,14 +420,9 @@ class TestBibEnhancer:
                 subfields=[Subfield("a", "foo")],
             )
         )
-        with does_not_raise():
-            with caplog.at_level(logging.INFO):
-                be.manipulate()
-
-                assert be.bib is not None
-
+        be.manipulate()
+        assert be.bib is not None
         assert "Worldcat record # 850939580 is acceptable. Meets minimum requirements."
-
         assert str(be.bib["020"]) == "=020  \\\\$a978123456789x"
         assert str(be.bib["037"]) == "=037  \\\\$a123$bOverdrive Inc."
         assert str(be.bib["856"]) == "=856  04$uurl_here$2opac msg"
@@ -475,8 +455,7 @@ class TestBibEnhancer:
                 subfields=[Subfield("a", "foo")],
             )
         )
-        with caplog.at_level(logging.DEBUG):
-            assert be._meets_minimum_criteria() is True
+        assert be._meets_minimum_criteria() is True
 
         assert "Worldcat record meets minimum criteria." in caplog.text
 
@@ -492,8 +471,7 @@ class TestBibEnhancer:
                 subfields=[Subfield("a", "FOO /"), Subfield("c", "spam")],
             )
         )
-        with caplog.at_level(logging.DEBUG):
-            assert be._meets_minimum_criteria() is False
+        assert be._meets_minimum_criteria() is False
 
         assert "Worldcat record failed uppercase title test." in caplog.text
 
@@ -509,8 +487,7 @@ class TestBibEnhancer:
                 subfields=[Subfield("a", "Foo.")],
             )
         )
-        with caplog.at_level(logging.DEBUG):
-            assert be._meets_minimum_criteria() is False
+        assert be._meets_minimum_criteria() is False
 
         assert "Worldcat record failed statement of resp. test." in caplog.text
 
@@ -527,8 +504,7 @@ class TestBibEnhancer:
             )
         )
         be.bib.remove_fields("300")
-        with caplog.at_level(logging.DEBUG):
-            assert be._meets_minimum_criteria() is False
+        assert be._meets_minimum_criteria() is False
 
         assert "Worldcat record failed physical desc. test." in caplog.text
 
@@ -602,8 +578,7 @@ class TestBibEnhancer:
                     ],
                 )
             )
-        with caplog.at_level(logging.DEBUG):
-            assert be._meets_minimum_criteria() == expectation
+        assert be._meets_minimum_criteria() == expectation
 
         assert msg in caplog.text
 
@@ -612,9 +587,7 @@ class TestBibEnhancer:
     ):
         be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         be.bib.remove_fields("650")
-        with caplog.at_level(logging.DEBUG):
-            assert be._meets_minimum_criteria() is False
-
+        assert be._meets_minimum_criteria() is False
         assert "Worldcat record failed subjects test." in caplog.text
 
     def test_purge_tags(self, caplog, stub_resource, stub_res_cat_by_id):
@@ -643,8 +616,7 @@ class TestBibEnhancer:
         for field in fields:
             assert field.tag in be.bib
 
-        with caplog.at_level(logging.DEBUG):
-            be._purge_tags()
+        be._purge_tags()
 
         assert (
             "Removed ['020', '029', '037', '090', '263', '856', '910', '938'] from NYP b11111111a."
@@ -866,8 +838,7 @@ class TestBibEnhancer:
 
     def test_save2file(self, caplog, stub_resource, stub_res_cat_by_id):
         be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        with caplog.at_level(logging.DEBUG):
-            be.save2file()
+        be.save2file()
         assert "Saving to file NYP record b11111111a." in caplog.text
 
         assert os.path.exists("temp.mrc")
@@ -883,9 +854,8 @@ class TestBibEnhancer:
         self, caplog, stub_resource, stub_res_cat_by_id, mock_os_error
     ):
         be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(OSError):
-                be.save2file()
+        with pytest.raises(OSError):
+            be.save2file()
 
         assert "Unable to save record to a temp file. Error" in caplog.text
 
@@ -895,8 +865,7 @@ class TestBibEnhancer:
         outfile = tmpdir.join("foo.mrc")
         stub_resource.resourceCategoryId = 99
         be = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
-        with caplog.at_level(logging.WARNING):
-            be.manipulate()
-            be.save2file(outfile)
+        be.manipulate()
+        be.save2file(outfile)
 
         assert "No pymarc object to serialize to MARC21" in caplog.text

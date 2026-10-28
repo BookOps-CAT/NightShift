@@ -1,4 +1,3 @@
-import logging
 import pickle
 from contextlib import nullcontext as does_not_raise
 from datetime import date
@@ -22,8 +21,7 @@ def test_worldcat_response_to_bib(library):
 
 def test_worldcat_response_to_pymarc_invalid_data_type(caplog):
     with pytest.raises(TypeError):
-        with caplog.at_level(logging.ERROR):
-            worldcat_response_to_bib(None, "NYP")
+        worldcat_response_to_bib(None, "NYP")
     assert (
         "Invalid MARC data format: NoneType. Not able to convert to bookops-marc Bib object."  # noqa: E501
         in caplog.text
@@ -42,21 +40,19 @@ def test_BibReader_library_successful_init(stub_res_cat_by_name):
 
 def test_BibReader_invalid_marc_target(caplog, stub_res_cat_by_name):
     with pytest.raises(TypeError):
-        with caplog.at_level(logging.ERROR):
-            BibReader(123, "NYP", 1, stub_res_cat_by_name)
+        BibReader(123, "NYP", 1, stub_res_cat_by_name)
 
     assert "Invalid 'marc_target' argument: '123' (int)" in caplog.text
 
 
 def test_BibReader_invalid_resource_categories_arg(caplog):
     with pytest.raises(TypeError):
-        with caplog.at_level(logging.ERROR):
-            BibReader(
-                marc_target=BytesIO(b"foo"),
-                library="NYP",
-                libraryId=1,
-                resource_categories=[],
-            )
+        BibReader(
+            marc_target=BytesIO(b"foo"),
+            library="NYP",
+            libraryId=1,
+            resource_categories=[],
+        )
     assert "Invalid 'resource_categories' argument" in caplog.text
 
 
@@ -94,9 +90,8 @@ def test_BibReader_unsupported_resource_type_log_warning(
     caplog, stub_marc, fake_BibReader
 ):
     stub_marc.leader = "00000nem a2200385Ka 4500"  # cartographic mat rec type
-    with caplog.at_level(logging.WARN):
-        fake_BibReader.library = "NYP"
-        fake_BibReader._determine_resource_category(stub_marc)
+    fake_BibReader.library = "NYP"
+    fake_BibReader._determine_resource_category(stub_marc)
 
     assert "Unsupported bib type. Unable to ingest NYP bib # b22222222x." in caplog.text
 

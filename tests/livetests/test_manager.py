@@ -8,8 +8,8 @@ from nightshift.datastore import Resource
 from nightshift.manager import process_resources
 
 
-@pytest.mark.firewalled
-def test_process_resources_live(live_env_var, test_data_rich, test_session):
+@pytest.mark.livetest
+def test_process_resources_live(live_env_vars, test_data_rich, test_session):
     """
     This tests runs using real data and live services
     """

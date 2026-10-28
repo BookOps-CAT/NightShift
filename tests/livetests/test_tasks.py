@@ -5,9 +5,9 @@ from nightshift.datastore import Resource
 from nightshift.tasks import Tasks
 
 
-@pytest.mark.local
+@pytest.mark.livetest
 def test_get_worldcat_brief_bib_matches_success(
-    test_session, test_data_rich, live_env_var, stub_res_cat_by_name
+    test_session, test_data_rich, live_env_vars, stub_res_cat_by_name
 ):
 
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -34,9 +34,9 @@ def test_get_worldcat_brief_bib_matches_success(
     assert res.status == "open"
 
 
-@pytest.mark.local
+@pytest.mark.livetest
 def test_get_worldcat_brief_bib_matches_failure(
-    test_session, test_data_rich, live_env_var, stub_res_cat_by_name
+    test_session, test_data_rich, live_env_vars, stub_res_cat_by_name
 ):
     # modify existing resource
     resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -65,9 +65,9 @@ def test_get_worldcat_brief_bib_matches_failure(
     assert query_record.timestamp is not None
 
 
-@pytest.mark.local
+@pytest.mark.livetest
 def test_get_worldcat_full_bibs(
-    test_session, test_data_rich, live_env_var, stub_res_cat_by_name
+    test_session, test_data_rich, live_env_vars, stub_res_cat_by_name
 ):
     test_session.execute(
         update(Resource).where(Resource.nid == 1).values(oclcMatchNumber="779356905")

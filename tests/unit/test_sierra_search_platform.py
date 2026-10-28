@@ -1,4 +1,3 @@
-import logging
 from contextlib import nullcontext as does_not_raise
 
 import pytest
@@ -114,9 +113,8 @@ class TestNypPlatformMocked:
     def test_failed_authorization(
         self, caplog, mock_env_vars, mock_failed_post_token_response
     ):
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(SierraSearchPlatformError):
-                NypPlatform()
+        with pytest.raises(SierraSearchPlatformError):
+            NypPlatform()
 
         assert "Unable to obtain access token for NYPL Platform." in caplog.text
 
@@ -128,9 +126,8 @@ class TestNypPlatformMocked:
         mock_session_error,
     ):
         with NypPlatform() as platform:
-            with caplog.at_level(logging.ERROR):
-                with pytest.raises(SierraSearchPlatformError):
-                    platform.get_sierra_bib(11111111)
+            with pytest.raises(SierraSearchPlatformError):
+                platform.get_sierra_bib(11111111)
         assert (
             "Error while querying NYPL Platform for Sierra bib # 11111111."
             in caplog.text
@@ -144,13 +141,12 @@ class TestNypPlatformMocked:
         mock_successful_platform_session_response,
     ):
         with NypPlatform() as platform:
-            with caplog.at_level(logging.DEBUG):
-                response = platform.get_sierra_bib(11111111)
+            response = platform.get_sierra_bib(11111111)
 
-            assert "NYPL Platform request (200): request_url_here." in caplog.text
-            assert isinstance(response, SearchResponse)
-            assert response.sierraId == 11111111
-            assert response.library == "NYP"
+        assert "NYPL Platform request (200): request_url_here." in caplog.text
+        assert isinstance(response, SearchResponse)
+        assert response.sierraId == 11111111
+        assert response.library == "NYP"
 
 
 class TestBplSolrMocked:
@@ -163,8 +159,7 @@ class TestBplSolrMocked:
     def test_get_sierra_bib_error(self, caplog, mock_env_vars, mock_session_error):
         solr = BplSolr()
         with pytest.raises(SierraSearchPlatformError):
-            with caplog.at_level(logging.ERROR):
-                solr.get_sierra_bib(11111111)
+            solr.get_sierra_bib(11111111)
         assert "Error while querying BPL Solr for Sierra bib # 11111111." in caplog.text
 
     def test_get_sierra_bib_success(

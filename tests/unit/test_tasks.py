@@ -1,6 +1,4 @@
-import logging
 import os
-from contextlib import nullcontext as does_not_raise
 from datetime import date, datetime, timezone
 
 import pytest
@@ -153,9 +151,8 @@ def test_check_resources_sierra_state_bpl_solr_no_record(
 
 def test_check_resources_sierra_state_invalid_library_arg(caplog):
     with pytest.raises(ValueError):
-        with caplog.at_level(logging.ERROR):
-            tasks = Tasks(None, "QPL", 3, {})
-            tasks.check_resources_sierra_state([])
+        tasks = Tasks(None, "QPL", 3, {})
+        tasks.check_resources_sierra_state([])
 
     assert "Invalid library argument passed: 'QPL'. Must be 'NYP' or 'BPL'"
 
@@ -172,10 +169,9 @@ def test_enhance_and_output_bibs(
     remote_file = f"{datetime.now().date():%y%m%d}-NYP-ebook-01.mrc"
     resources = test_session.query(Resource).where(Resource.nid == 1).all()
 
-    with caplog.at_level(logging.DEBUG):
-        with sftpserver.serve_content({"load_dir": {}}):
-            tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-            tasks.enhance_and_output_bibs("ebook", resources)
+    with sftpserver.serve_content({"load_dir": {}}):
+        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+        tasks.enhance_and_output_bibs("ebook", resources)
 
     assert "NYP b11111111a has been output to 'temp.mrc'." in caplog.text
 
@@ -379,12 +375,9 @@ def test_isolate_unprocessed_nyp_files(
     with sftpserver.serve_content(
         {"sierra_dumps_dir": {"foo1-pout": b"spam", "NYP-bar-pout": b"spam"}}
     ):
-        with caplog.at_level(logging.DEBUG):
-            tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-            results = tasks.isolate_unprocessed_files(mock_drive)
-
-        assert "Found following remote files for NYP: ['NYP-bar-pout']." in caplog.text
-
+        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+        results = tasks.isolate_unprocessed_files(mock_drive)
+    assert "Found following remote files for NYP: ['NYP-bar-pout']." in caplog.text
     assert results == ["NYP-bar-pout"]
 
 
@@ -394,11 +387,9 @@ def test_isolate_unprocessed_bpl_files(
     with sftpserver.serve_content(
         {"sierra_dumps_dir": {"foo1-pout": b"spam", "NYP-bar-pout": b"spam"}}
     ):
-        with caplog.at_level(logging.DEBUG):
-            tasks = Tasks(test_session, "BPL", 2, stub_res_cat_by_name)
-            results = tasks.isolate_unprocessed_files(mock_drive)
-        assert "Found following remote files for BPL: []." in caplog.text
-
+        tasks = Tasks(test_session, "BPL", 2, stub_res_cat_by_name)
+        results = tasks.isolate_unprocessed_files(mock_drive)
+    assert "Found following remote files for BPL: []." in caplog.text
     assert results == []
 
 
@@ -407,20 +398,15 @@ def test_manipulate_and_serialize_bibs_default_outfile(
 ):
 
     resources = test_session.query(Resource).all()
-    with caplog.at_level(logging.DEBUG):
-        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-        file, resources = tasks.manipulate_and_serialize_bibs("ebook", resources)
-
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+    file, resources = tasks.manipulate_and_serialize_bibs("ebook", resources)
     assert "NYP b11111111a has been output to 'temp.mrc'." in caplog.text
     assert "Enhanced and serialized 1 and skipped 0 NYP ebook record(s)." in caplog.text
-
     assert file == "temp.mrc"
     assert len(resources) == 1
-
     with open("temp.mrc", "rb") as f:
         reader = MARCReader(f)
         bib = next(reader)
-
     assert bib["091"].value() == "eNYPL Book"
     assert bib["945"].value() == ".b11111111a"
     assert bib["949"].value() == "*b2=z;bn=ia;"
@@ -438,18 +424,13 @@ def test_manipulate_and_serialize_bibs_custom_outfile(
 ):
     outfile = tmpdir.join("custom_file.mrc")
     resources = test_session.query(Resource).all()
-    with caplog.at_level(logging.DEBUG):
-        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-        file, resources = tasks.manipulate_and_serialize_bibs(
-            "ebook", resources, outfile
-        )
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+    file, resources = tasks.manipulate_and_serialize_bibs("ebook", resources, outfile)
 
     assert f"NYP b11111111a has been output to '{outfile}'." in caplog.text
     assert "Enhanced and serialized 1 and skipped 0 NYP ebook record(s)." in caplog.text
-
     assert file == outfile
     assert len(resources) == 1
-
     with open(outfile, "rb") as f:
         reader = MARCReader(f)
         bib = next(reader)
@@ -467,12 +448,10 @@ def test_manipulate_and_serialize_bibs_failed(
     resource = test_session.query(Resource).one_or_none()
     resource.resourceCategoryId = 5
 
-    with caplog.at_level(logging.WARNING):
-        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-        file, resources = tasks.manipulate_and_serialize_bibs("ebook", [resource])
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+    file, resources = tasks.manipulate_and_serialize_bibs("ebook", [resource])
 
     assert "NYP b11111111a enhancement incomplete. Skipping." in caplog.text
-
     assert file is None
     assert len(resources) == 0
 
@@ -482,9 +461,8 @@ def test_manipulate_and_serialize_bibs_os_error_on_temp_file_removal(
 ):
     resource = test_session.query(Resource).one()
     with pytest.raises(OSError):
-        with caplog.at_level(logging.ERROR):
-            tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-            tasks.manipulate_and_serialize_bibs("ebook", [resource])
+        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+        tasks.manipulate_and_serialize_bibs("ebook", [resource])
 
     assert "Unable to empty temp file 'temp.mrc'" in caplog.text
 
@@ -496,22 +474,20 @@ def test_transfer_to_drive(
     tmpfile = tmpdir.join("temp.mrc")
     tmpfile.write("spam")
     with sftpserver.serve_content({"load_dir": {f"{base_name}-01.mrc": "spam"}}):
-        with caplog.at_level(logging.INFO):
-            tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
-            tasks.transfer_to_drive("ebook", str(tmpfile))
-            assert mock_drive.sftp.listdir("load_dir") == [
-                f"{base_name}-01.mrc",
-                f"{base_name}-02.mrc",
-            ]
+        tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
+        tasks.transfer_to_drive("ebook", str(tmpfile))
+        assert mock_drive.sftp.listdir("load_dir") == [
+            f"{base_name}-01.mrc",
+            f"{base_name}-02.mrc",
+        ]
     assert f"NYP ebook records have been output to remote '{base_name}-02.mrc'"
 
 
 def test_transfer_to_drive_temp_file_not_created(
     caplog, sftpserver, mock_env_vars, stub_res_cat_by_name
 ):
-    with caplog.at_level(logging.INFO):
-        tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
-        remote_file = tasks.transfer_to_drive("ebook", None)
+    tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
+    remote_file = tasks.transfer_to_drive("ebook", None)
     assert remote_file is None
     assert "No source file to output to SFTP" in caplog.text
 
@@ -531,12 +507,10 @@ def test_update_status_to_upgraded(
     caplog, test_session, test_data_rich, stub_res_cat_by_name
 ):
     resources = test_session.query(Resource).all()
-    with does_not_raise():
-        with caplog.at_level(logging.INFO):
-            tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-            tasks.update_status_to_upgraded("foo3.mrc", resources)
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+    tasks.update_status_to_upgraded("foo3.mrc", resources)
 
-        assert "Updating 1 resources status to 'bot_enhanced'." in caplog.text
+    assert "Updating 1 resources status to 'bot_enhanced'." in caplog.text
 
     # check if output file record has been created
     out_file_record = (
@@ -567,10 +541,8 @@ def test_update_status_to_upgraded(
 def test_update_status_to_upgraded_no_new_file(
     caplog, test_session, stub_res_cat_by_name
 ):
-    with caplog.at_level(logging.INFO):
-        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-        tasks.update_status_to_upgraded(None, [])
-
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+    tasks.update_status_to_upgraded(None, [])
     assert (
         "Skipping resources enhancement status update. No SFTP output file this time."
         in caplog.text
