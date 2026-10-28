@@ -6,7 +6,7 @@ so fully cataloged or deleted bibs are dropped from the process.
 
 import logging
 import os
-from typing import Optional
+from typing import Any, Optional
 
 from bookops_bpl_solr import SolrSession
 from bookops_bpl_solr.session import BookopsSolrError
@@ -58,21 +58,27 @@ class SearchResponse:
         """
         self.sierraId = sierraId
         self.library = library.upper()
-
-        if response.status_code == 404:
+        self.response = response
+        if self.response.status_code == 404:
             logger.warning(
                 f"{self.library} Sierra b{self.sierraId}a not found (404 HTTP code). "
-                f"Request: {response.url}"
+                f"Request: {self.response.url}"
             )
-        elif response.status_code >= 400:
+        elif self.response.status_code >= 400:
             logger.error(
                 f"{self.library} search platform returned HTTP error code "
-                f"{response.status_code} for request {response.url}"
+                f"{self.response.status_code} for request {self.response.url}"
             )
             raise SierraSearchPlatformError
+        self.json_response = self.response.json()
 
-        self.response = response
-        self.json_response = response.json()
+    @property
+    def record(self) -> dict[str, Any]:
+        if self.library == "NYP":
+            return self.json_response.get("data", {})
+        else:
+            response = self.json_response.get("response", {}).get("docs", [])
+            return response[0] if response else {}
 
     def is_suppressed(self) -> bool:
         """
@@ -81,25 +87,24 @@ class SearchResponse:
         Returns:
             bool
         """
-        if self.library == "NYP":
-            return self._nyp_suppression()
+        if self.record.get("suppressed"):
+            return True
         else:
-            return self._bpl_suppression()
+            return False
 
     def get_status(self) -> Optional[str]:
         """
         Determines status of record in Sierra
 
         Returns:
-            'brief-bib', 'full-bib', or 'deleted' status
+            record status as a string or None
         """
         bib_status = None
 
-        if self.response.status_code == 200:
-            if self.library == "NYP":
-                bib_status = self._determine_nyp_bib_status()
-            elif self.library == "BPL":
-                bib_status = self._determine_bpl_bib_status()
+        if self.response.status_code == 200 and self.library == "NYP":
+            bib_status = self._determine_nyp_bib_status()
+        elif self.response.status_code == 200 and self.library == "BPL":
+            bib_status = self._determine_bpl_bib_status()
         elif self.response.status_code == 404:
             # on a rare occasion NYPL bibs may not get ingested into Platform
             bib_status = "staff_deleted"
@@ -114,27 +119,19 @@ class SearchResponse:
         Determines status of record in BPL Sierra.
 
         Returns:
-            'brief-bib', 'full-bib', 'deleted' status
+            record status as a string
         """
-        try:
-            data = self.json_response["response"]["docs"][0]
-        except IndexError:
-            # no results, treat as deleted
+        if not self.record or self.record.get("bs_deleted_in_sierra"):
             return "staff_deleted"
-        else:
-            try:
-                if data["bs_deleted_in_sierra"]:
-                    return "staff_deleted"
-            except KeyError:
-                pass
-            # if bib originated from Worldcat assume full bib
-            if "ss_marc_tag_003" in data and data["ss_marc_tag_003"] == "OCoLC":
-                return "staff_enhanced"
+        # if bib originated from Worldcat assume full bib
+        if self.record.get("ss_marc_tag_003") == "OCoLC":
+            return "staff_enhanced"
 
-            # print material with call number tag - assume full bib
-            # exclude electronic resources
-            if "call_number" in data and not is_eresource_callno(data["call_number"]):
-                return "staff_enhanced"
+        # print material with call number tag - assume full bib
+        # exclude electronic resources
+        call_number = self.record.get("call_number")
+        if call_number and not is_eresource_callno(call_number):
+            return "staff_enhanced"
 
         # assume at this point it must be a brief bib
         return "open"
@@ -144,56 +141,26 @@ class SearchResponse:
         Determines status of record in NYPL Sierra.
 
         Returns:
-            'bief-bib', 'full-bib' or 'deleted' status
+            record status as a string
         """
-        data = self.json_response["data"]
-        if data["deleted"]:
+        if self.record.get("deleted", False) is True:
             return "staff_deleted"
-        else:
-            # check first if Sierra bib came from the Worldcat;
-            # and catch here upgraded/enhanced electronic resources
-            for field in data["varFields"]:
-                if field["marcTag"] == "003" and field["content"] == "OCoLC":
+        # check first if Sierra bib came from the Worldcat;
+        # and catch here upgraded/enhanced electronic resources
+        for field in self.record["varFields"]:
+            if field["marcTag"] == "003" and field["content"] == "OCoLC":
+                return "staff_enhanced"
+
+        # print material full bibs may come from other sources than
+        # Worldcat (no or diff content of the '003' tag);
+        # brief bibs lack call numbers
+        for field in self.record["varFields"]:
+            if field["marcTag"] == "091":  # filter out electronic resources
+                if not is_eresource_callno(field["subfields"][0]["content"]):
                     return "staff_enhanced"
 
-            # print material full bibs may come from other sources than
-            # Worldcat (no or diff content of the '003' tag);
-            # brief bibs lack call numbers
-            for field in data["varFields"]:
-                if field["marcTag"] == "091":  # filter out electronic resources
-                    if not is_eresource_callno(field["subfields"][0]["content"]):
-                        return "staff_enhanced"
-
-            # assume response failing previous clauses is a brief bib
-            return "open"
-
-    def _bpl_suppression(self) -> bool:
-        """
-        Checks if BPL Sierra bib is suppressed from display.
-
-        Returns:
-            bool
-        """
-        if len(self.json_response["response"]["docs"]) == 0:
-            return False
-        elif self.json_response["response"]["docs"][0]["suppressed"]:
-            return True
-        else:
-            return False
-
-    def _nyp_suppression(self) -> bool:
-        """
-        Checks if NYPL Sierra bib is suppressed from display.
-
-        Returns:
-            bool
-        """
-        if self.response.status_code == 404:
-            return False
-        elif self.json_response["data"]["suppressed"]:
-            return True
-        else:
-            return False
+        # assume response failing previous clauses is a brief bib
+        return "open"
 
 
 class NypPlatform(PlatformSession):
@@ -202,26 +169,17 @@ class NypPlatform(PlatformSession):
         Authenticates and opens a session with NYPL Platform.
         Relies on credentials stored in environment variables.
         """
-        client_id, client_secret, oauth_server, target = self._get_credentials()
-        token = self._get_token(client_id, client_secret, oauth_server)
+        token = self._get_token(
+            client_id=os.environ["NYPL_PLATFORM_CLIENT"],
+            client_secret=os.environ["NYPL_PLATFORM_SECRET"],
+            oauth_server=os.environ["NYPL_PLATFORM_OAUTH"],
+        )
         agent = f"{__title__}/{__version__}"
 
-        super().__init__(authorization=token, agent=agent, target=target)
-        logger.info("NYPL Platform session initiated.")
-
-    def _get_credentials(self) -> tuple[str, str, str, str]:
-        """
-        Retrieves NYPL Platform credentials from environmental variables.
-
-        Returns:
-                (client_id, secret_id, oauth_server, platform_env)
-        """
-        return (
-            os.environ["NYPL_PLATFORM_CLIENT"],
-            os.environ["NYPL_PLATFORM_SECRET"],
-            os.environ["NYPL_PLATFORM_OAUTH"],
-            os.environ["NYPL_PLATFORM_ENV"],
+        super().__init__(
+            authorization=token, agent=agent, target=os.environ["NYPL_PLATFORM_ENV"]
         )
+        logger.info("NYPL Platform session initiated.")
 
     def _get_token(
         self, client_id: str, client_secret: str, oauth_server: str
@@ -282,19 +240,13 @@ class BplSolr(SolrSession):
         """
         Creates BPL Solr session.
         """
-        client_key, endpoint = self._get_credentials()
         agent = f"{__title__}/{__version__}"
 
-        super().__init__(authorization=client_key, endpoint=endpoint, agent=agent)
-
-    def _get_credentials(self) -> tuple[str, str]:
-        """
-        Obtains credentials from environmental variables.
-
-        Returns:
-            (client_key, endpoint)
-        """
-        return (os.environ["BPL_SOLR_CLIENT_KEY"], os.environ["BPL_SOLR_ENDPOINT"])
+        super().__init__(
+            authorization=os.environ["BPL_SOLR_CLIENT_KEY"],
+            endpoint=os.environ["BPL_SOLR_ENDPOINT"],
+            agent=agent,
+        )
 
     def get_sierra_bib(self, sierraId: int) -> SearchResponse:
         """
