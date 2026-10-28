@@ -10,6 +10,7 @@ from bookops_worldcat.errors import WorldcatRequestError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from nightshift import constants
 from nightshift.comms.storage import Drive, get_credentials
 from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES, ROTTEN_APPLES
@@ -53,6 +54,8 @@ def mock_env_vars(monkeypatch, sftpserver):
     monkeypatch.setenv("SFTP_PASSW", "sftp_password")
     monkeypatch.setenv("SFTP_NS_SRC", "sierra_dumps_dir")
     monkeypatch.setenv("SFTP_NS_DST", "load_dir")
+    monkeypatch.setenv("LOGGLY_TOKEN", "ns_token_here")
+    monkeypatch.setenv("LOG_HANDLERS", "console,file,loggly")
 
 
 @pytest.fixture
@@ -550,3 +553,24 @@ def mock_failed_solr_session_response(monkeypatch, mock_solr_response_record_not
         return mock_solr_response_record_not_found
 
     monkeypatch.setattr(requests.Session, "get", mock_api_response)
+
+
+@pytest.fixture
+def mock_os_error(monkeypatch):
+    def os_error(self, *args, **kwargs):
+        raise OSError
+
+    monkeypatch.setattr("builtins.open", os_error)
+
+
+@pytest.fixture
+def mock_os_error_on_remove(monkeypatch):
+    def os_error(self, *args, **kwargs):
+        raise OSError
+
+    monkeypatch.setattr("os.remove", os_error)
+
+
+@pytest.fixture
+def mock_init_libraries(monkeypatch):
+    monkeypatch.setattr(constants, "LIBRARIES", {"NYP": {"nid": 1}})

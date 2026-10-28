@@ -162,8 +162,11 @@ class Tasks:
             f"Searching Worldcat for brief records for {len(resources)} resources."
         )
 
-        if not self.rotten_apples:
-            self.rotten_apples = self._create_rotten_apples_idx()
+        self.rotten_apples = (
+            self._create_rotten_apples_idx()
+            if not self.rotten_apples
+            else self.rotten_apples
+        )
 
         with Worldcat(self.library) as worldcat:
             results = worldcat.get_brief_bibs(

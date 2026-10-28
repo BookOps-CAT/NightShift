@@ -97,6 +97,22 @@ class TestWorldcatMocked:
             in caplog.text
         )
 
+    def test_get_full_bibs_no_oclc_number(
+        self, caplog, mock_Worldcat, mock_worldcat_response
+    ):
+        resource1 = Resource(
+            nid=1, sierraId=22222222, title="TEST TITLE", oclcMatchNumber=None
+        )
+        resource2 = Resource(
+            nid=2, sierraId=33333333, title="TEST TITLE", oclcMatchNumber="123"
+        )
+        [i for i in mock_Worldcat.get_full_bibs([resource1, resource2])]
+        assert len(caplog.records) == 1
+        assert (
+            "Full bib Worldcat request for NYP Sierra bib # b33333333a: request_url_here."
+            in caplog.text
+        )
+
     def test_get_full_bibs_session_error(
         self, caplog, mock_Worldcat, mock_session_error
     ):
@@ -181,7 +197,29 @@ class TestWorldcatMocked:
             resource, rotten_apples
         )
         assert payloads == expectation
-        assert f"Query payload for NYP Sierra bib # b22222222a: {expectation}."
+        assert (
+            f"Query payload for NYP Sierra bib # b22222222a: {expectation}."
+            in caplog.text
+        )
+
+    @pytest.mark.parametrize(
+        "resource_cat_id,rotten_apples",
+        [
+            pytest.param(1, {1: ["FOO", "BAR"]}, id="ebook"),
+            pytest.param(2, {}, id="eaudio"),
+            pytest.param(3, {1: ["FOO", "BAR"]}, id="evideo"),
+            pytest.param(4, {}, id="book"),
+        ],
+    )
+    def test_prep_resource_queries_payloads_no_payload(
+        self, caplog, resource_cat_id, rotten_apples, mock_Worldcat
+    ):
+        resource = Resource(resourceCategoryId=resource_cat_id, sierraId=22222222)
+        payloads = mock_Worldcat._prep_resource_queries_payloads(
+            resource, rotten_apples
+        )
+        assert payloads == []
+        assert "Query payload for NYP Sierra bib # b22222222a: []." in caplog.text
 
     def test_get_brief_bibs(
         self, caplog, mock_Worldcat, mock_worldcat_response, stub_worldcat_response

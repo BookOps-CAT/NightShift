@@ -11,6 +11,51 @@ from nightshift.datastore import Resource
 from nightshift.marc.marc_parser import BibReader, worldcat_response_to_bib
 
 
+@pytest.fixture
+def stub_marc():
+    bib = Bib()
+    bib.leader = "02866pam  2200517 i 4500"
+    bib.add_field(Field(tag="008", data="190306s2017    ht a   j      000 1 hat d"))
+    bib.add_field(
+        Field(
+            tag="100",
+            indicators=Indicators("1", " "),
+            subfields=[Subfield("a", "Adams, John,"), Subfield("e", "author.")],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="245",
+            indicators=Indicators("1", "4"),
+            subfields=[Subfield("a", "The foo /"), Subfield("c", "by John Adams.")],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="264",
+            indicators=Indicators(" ", "1"),
+            subfields=[
+                Subfield("a", "Bar :"),
+                Subfield("b", "New York,"),
+                Subfield("c", "2021"),
+            ],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="907",
+            indicators=Indicators(" ", " "),
+            subfields=[
+                Subfield("a", ".b22222222x"),
+                Subfield("b", "07-01-21"),
+                Subfield("c", "07-01-2021 19:07"),
+            ],
+        )
+    )
+
+    return bib
+
+
 @pytest.mark.parametrize("library", ["BPL", "NYP"])
 def test_worldcat_response_to_bib(library):
     data = b'<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<entry xmlns="http://www.w3.org/2005/Atom">\n  <content type="application/xml">\n    <response xmlns="http://worldcat.org/rb" mimeType="application/vnd.oclc.marc21+xml">\n      <record xmlns="http://www.loc.gov/MARC21/slim">\n        <leader>00000cam a2200000Ia 4500</leader>\n        <controlfield tag="001">ocn850939580</controlfield>\n        <controlfield tag="003">OCoLC</controlfield>\n        <controlfield tag="005">20190426152409.0</controlfield>\n        <controlfield tag="008">120827s2012    nyua   a      000 f eng d</controlfield>\n        <datafield tag="040" ind1=" " ind2=" ">\n          <subfield code="a">OCPSB</subfield>\n          <subfield code="b">eng</subfield>\n          <subfield code="c">OCPSB</subfield>\n          <subfield code="d">OCPSB</subfield>\n          <subfield code="d">OCLCQ</subfield>\n          <subfield code="d">OCPSB</subfield>\n          <subfield code="d">OCLCQ</subfield>\n          <subfield code="d">NYP</subfield>\n    </datafield>\n        <datafield tag="035" ind1=" " ind2=" ">\n          <subfield code="a">(OCoLC)850939580</subfield>\n    </datafield>\n        <datafield tag="049" ind1=" " ind2=" ">\n          <subfield code="a">NYPP</subfield>\n    </datafield>\n        <datafield tag="100" ind1="0" ind2=" ">\n          <subfield code="a">OCLC RecordBuilder.</subfield>\n    </datafield>\n        <datafield tag="245" ind1="1" ind2="0">\n          <subfield code="a">Record Builder Added This Test Record On 06/26/2013 13:06:26.</subfield>\n    </datafield>\n        <datafield tag="336" ind1=" " ind2=" ">\n          <subfield code="a">text</subfield>\n          <subfield code="b">txt</subfield>\n          <subfield code="2">rdacontent</subfield>\n    </datafield>\n        <datafield tag="337" ind1=" " ind2=" ">\n          <subfield code="a">unmediated</subfield>\n          <subfield code="b">n</subfield>\n          <subfield code="2">rdamedia</subfield>\n    </datafield>\n        <datafield tag="500" ind1=" " ind2=" ">\n          <subfield code="a">TEST RECORD -- DO NOT USE.</subfield>\n    </datafield>\n        <datafield tag="500" ind1=" " ind2=" ">\n          <subfield code="a">Added Field by MarcEdit.</subfield>\n    </datafield>\n  </record>\n    </response>\n  </content>\n  <id>http://worldcat.org/oclc/850939580</id>\n  <link href="http://worldcat.org/oclc/850939580"/>\n</entry>'  # noqa: E501
@@ -30,7 +75,7 @@ def test_worldcat_response_to_pymarc_invalid_data_type(caplog):
 
 def test_BibReader(stub_res_cat_by_name):
     reader = BibReader(
-        marc_target=BytesIO(b"some records"),
+        marc_target="tests/nyp-ebook-sample.mrc",
         library="NYP",
         libraryId=1,
         resource_categories=stub_res_cat_by_name,
@@ -67,35 +112,38 @@ def test_BibReader_invalid_resource_categories_arg(caplog):
     ],
 )
 def test_BibReader_determine_resource_category(
-    arg1, arg2, expectation, stub_marc, fake_BibReader
+    arg1, arg2, expectation, stub_marc, stub_res_cat_by_name
 ):
     stub_marc.leader = f"00000n{arg1}m a2200385Ka 4500"
     stub_marc.add_field(Field(tag="001", data=arg2))
-    assert fake_BibReader._determine_resource_category(stub_marc) == expectation
+    reader = BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
+    assert reader._determine_resource_category(stub_marc) == expectation
 
 
-def test_BibReader_determine_resource_category_bib_none(fake_BibReader):
-    assert fake_BibReader._determine_resource_category(None) is None
+def test_BibReader_determine_resource_category_bib_none(stub_res_cat_by_name):
+    reader = BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
+    assert reader._determine_resource_category(None) is None
 
 
 def test_BibReader_unsupported_resource_type_log_warning(
-    caplog, stub_marc, fake_BibReader
+    caplog, stub_marc, stub_res_cat_by_name
 ):
     stub_marc.leader = "00000nem a2200385Ka 4500"  # cartographic mat rec type
-    fake_BibReader.library = "NYP"
-    fake_BibReader._determine_resource_category(stub_marc)
+    reader = BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
+    reader._determine_resource_category(stub_marc)
 
     assert "Unsupported bib type. Unable to ingest NYP bib # b22222222x." in caplog.text
 
 
-def test_BibReader_pickle_obj(fake_BibReader):
-    assert isinstance(fake_BibReader._pickle_obj(["foo"]), bytes)
+def test_BibReader_pickle_obj(stub_res_cat_by_name):
+    reader = BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
+    assert isinstance(reader._pickle_obj(["foo"]), bytes)
 
 
 @pytest.mark.parametrize(
     "arg1, arg2", [("a", "ebook"), ("i", "eaudio"), ("g", "evideo")]
 )
-def test_BibReader_fields2keep_eresource(arg1, arg2, stub_marc, fake_BibReader):
+def test_BibReader_fields2keep_eresource(arg1, arg2, stub_marc, stub_res_cat_by_name):
     tags = [
         Field(tag="001", data="ODN12345"),
         Field(
@@ -122,8 +170,8 @@ def test_BibReader_fields2keep_eresource(arg1, arg2, stub_marc, fake_BibReader):
     stub_marc.leader = f"00000n{arg1}m a2200385Ka 4500"
     for tag in tags:
         stub_marc.add_field(tag)
-
-    pickled = fake_BibReader._fields2keep(bib=stub_marc, resource_category=arg2)
+    reader = BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
+    pickled = reader._fields2keep(bib=stub_marc, resource_category=arg2)
     result = pickle.loads(pickled)
     assert len(result) == 4
     assert result[0].tag == "020"
@@ -137,7 +185,7 @@ def test_BibReader_fields2keep_eresource(arg1, arg2, stub_marc, fake_BibReader):
     [("a", "ebook", 1), ("i", "eaudio", 2), ("g", "evideo", 3)],
 )
 def test_BibReader_map_data_eresource(
-    arg1, arg2, expectation, stub_marc, fake_BibReader
+    arg1, arg2, expectation, stub_marc, stub_res_cat_by_name
 ):
     bib = stub_marc
     bib.leader = f"00000n{arg1}m a2200385Ka 4500"
@@ -178,8 +226,8 @@ def test_BibReader_map_data_eresource(
     ]
     for tag in tags:
         bib.add_field(tag)
-
-    res = fake_BibReader._map_data(bib=bib, resource_category=arg2)
+    reader = BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
+    res = reader._map_data(bib=bib, resource_category=arg2)
     assert isinstance(res, Resource)
     assert res.sierraId == 22222222
     assert res.libraryId == 1

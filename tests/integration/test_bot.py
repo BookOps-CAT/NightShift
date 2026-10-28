@@ -3,7 +3,6 @@ Tests bot.py module
 """
 
 import os
-from contextlib import nullcontext as does_not_raise
 
 import pytest
 import yaml
@@ -29,10 +28,9 @@ def test_config_local_env_variables():
 def test_configure_database_local_success(
     patch_init_db, patch_config_local_env_variables, capfd
 ):
-    with does_not_raise():
-        configure_database(env="local")
-        captured = capfd.readouterr()
-        assert captured.out == "NightShift local database successfully set up.\n"
+    configure_database(env="local")
+    captured = capfd.readouterr()
+    assert captured.out == "NightShift local database successfully set up.\n"
 
 
 def test_configure_database_again(
@@ -76,9 +74,8 @@ def test_run_local(
 
 @pytest.mark.parametrize("arg", ["local", "prod"])
 def test_main_init_arg(arg, patch_init_db, patch_config_local_env_variables, capfd):
-    with does_not_raise():
-        main(["init", f"{arg}"])
-        captured = capfd.readouterr()
+    main(["init", f"{arg}"])
+    captured = capfd.readouterr()
 
     assert f"NightShift {arg} database successfully set up." in captured.out
 
