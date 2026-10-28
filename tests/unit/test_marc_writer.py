@@ -379,7 +379,7 @@ class TestBibEnhancer:
             in caplog.text
         )
 
-    def test_manipulate_success(self, caplog, stub_resource, stub_res_cat_by_id):
+    def test_manipulate_nyp(self, caplog, stub_resource, stub_res_cat_by_id):
         stub_resource.resourceCategoryId = 1
         stub_resource.libraryId = 1
         fields = [
@@ -420,7 +420,10 @@ class TestBibEnhancer:
         )
         be.manipulate()
         assert be.bib is not None
-        assert "Worldcat record # 850939580 is acceptable. Meets minimum requirements."
+        assert (
+            "Worldcat record # 850939580 is acceptable. Meets minimum requirements."
+            in caplog.text
+        )
         assert str(be.bib["020"]) == "=020  \\\\$a978123456789x"
         assert str(be.bib["037"]) == "=037  \\\\$a123$bOverdrive Inc."
         assert str(be.bib["856"]) == "=856  04$uurl_here$2opac msg"
@@ -432,6 +435,63 @@ class TestBibEnhancer:
         # check if fields have been duplicated by accident
         assert len(be.bib.get_fields("001")) == 1
         assert len(be.bib.get_fields("091")) == 1
+        assert len(be.bib.get_fields("037")) == 1
+
+    def test_manipulate_bpl(self, caplog, stub_resource, stub_res_cat_by_id):
+        stub_resource.resourceCategoryId = 1
+        stub_resource.libraryId = 1
+        fields = [
+            Field(
+                tag="020",
+                indicators=Indicators(" ", " "),
+                subfields=[Subfield("a", "978123456789x")],
+            ),
+            Field(
+                tag="037",
+                indicators=Indicators(" ", " "),
+                subfields=[Subfield("a", "123"), Subfield("b", "Overdrive Inc.")],
+            ),
+            Field(
+                tag="856",
+                indicators=Indicators("0", "4"),
+                subfields=[Subfield("u", "url_here"), Subfield("2", "opac msg")],
+            ),
+        ]
+        pickled_fields = pickle.dumps(fields)
+        stub_resource.srcFieldsToKeep = pickled_fields
+
+        be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
+        be.bib.remove_fields("245", "300")
+        be.bib.add_field(
+            Field(
+                tag="245",
+                indicators=Indicators("1", "0"),
+                subfields=[Subfield("a", "Foo /"), Subfield("c", "Spam.")],
+            )
+        )
+        be.bib.add_field(
+            Field(
+                tag="300",
+                indicators=Indicators(" ", " "),
+                subfields=[Subfield("a", "foo")],
+            )
+        )
+        be.manipulate()
+        assert be.bib is not None
+        assert (
+            "Worldcat record # 850939580 is acceptable. Meets minimum requirements."
+            in caplog.text
+        )
+        assert str(be.bib["020"]) == "=020  \\\\$a978123456789x"
+        assert str(be.bib["037"]) == "=037  \\\\$a123$bOverdrive Inc."
+        assert str(be.bib["856"]) == "=856  04$uurl_here$2opac msg"
+        assert str(be.bib["947"]) == f"=947  \\\\$a{__title__}/{__version__}"
+        assert str(be.bib["907"]) == "=907  \\\\$a.b11111111a"
+        assert str(be.bib["949"]) == "=949  \\\\$a*b2=x;bn=elres;"
+
+        # check if fields have been duplicated by accident
+        assert len(be.bib.get_fields("001")) == 1
+        assert len(be.bib.get_fields("099")) == 1
         assert len(be.bib.get_fields("037")) == 1
 
     def test_meets_minimum_criteria_success(

@@ -177,26 +177,24 @@ class Worldcat:
                         itemSubType="book-digital",
                     )
                 )
-        elif resource.resourceCategoryId == 2:
+        elif resource.resourceCategoryId == 2 and resource.distributorNumber:
             # eaudio
-            if resource.distributorNumber:
-                payloads.append(
-                    dict(
-                        q=f"sn={dist_number} NOT lv:3{forbidden_sources}",
-                        itemType="audiobook",
-                        itemSubType="audiobook-digital",
-                    )
+            payloads.append(
+                dict(
+                    q=f"sn={dist_number} NOT lv:3{forbidden_sources}",
+                    itemType="audiobook",
+                    itemSubType="audiobook-digital",
                 )
-        elif resource.resourceCategoryId == 3:
+            )
+        elif resource.resourceCategoryId == 3 and resource.distributorNumber:
             # evideo
-            if resource.distributorNumber:
-                payloads.append(
-                    dict(
-                        q=f"sn={dist_number} NOT lv:3 NOT lv:M{forbidden_sources}",
-                        itemType="video",
-                        itemSubType="video-digital",
-                    )
+            payloads.append(
+                dict(
+                    q=f"sn={dist_number} NOT lv:3 NOT lv:M{forbidden_sources}",
+                    itemType="video",
+                    itemSubType="video-digital",
                 )
+            )
         elif resource.resourceCategoryId in range(4, 12):
             # print monograph materials
             if resource.standardNumber:
