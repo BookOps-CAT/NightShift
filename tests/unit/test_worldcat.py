@@ -8,22 +8,15 @@ from bookops_worldcat.errors import WorldcatAuthorizationError, WorldcatRequestE
 from nightshift.comms.worldcat import BriefBibResponse, Worldcat
 from nightshift.datastore import Resource
 
-from ..conftest import (
-    MockSuccessfulHTTP200SessionResponse,
-    MockSuccessfulHTTP200SessionResponseNoMatches,
-)
-
 
 class TestBriefBibResponse:
-    def test_successful_match_to_worldcat_record(self):
-        response = MockSuccessfulHTTP200SessionResponse()
-        data = BriefBibResponse(response)
+    def test_successful_match_to_worldcat_record(self, stub_worldcat_response):
+        data = BriefBibResponse(stub_worldcat_response)
         assert data.is_match
         assert data.oclc_number == "44959645"
 
-    def test_failed_match_to_worldcat_record(self):
-        response = MockSuccessfulHTTP200SessionResponseNoMatches()
-        data = BriefBibResponse(response)
+    def test_failed_match_to_worldcat_record(self, stub_worldcat_response_no_matches):
+        data = BriefBibResponse(stub_worldcat_response_no_matches)
         assert data.is_match is False
         assert data.oclc_number is None
 
@@ -93,9 +86,7 @@ class TestWorldcatMocked:
             == expectation
         )
 
-    def test_get_full_bibs(
-        self, caplog, mock_Worldcat, mock_successful_session_get_request
-    ):
+    def test_get_full_bibs(self, caplog, mock_Worldcat, mock_worldcat_response):
         resource = Resource(
             nid=1, sierraId=22222222, title="TEST TITLE", oclcMatchNumber="123"
         )
@@ -202,7 +193,7 @@ class TestWorldcatMocked:
         assert f"Query payload for NYP Sierra bib # b22222222a: {expectation}."
 
     def test_get_brief_bibs(
-        self, caplog, mock_Worldcat, mock_successful_session_get_request
+        self, caplog, mock_Worldcat, mock_worldcat_response, stub_worldcat_response
     ):
         resource = Resource(
             nid=1,
@@ -222,7 +213,7 @@ class TestWorldcatMocked:
         assert isinstance(data, BriefBibResponse)
         assert resource.nid == 1
         assert data.is_match
-        assert data.as_json == MockSuccessfulHTTP200SessionResponse().json()
+        assert data.as_json == stub_worldcat_response.json()
         assert data.oclc_number == "44959645"
         assert (
             "Brief bib Worldcat query for NYP Sierra bib # b22222222a: request_url_here"
@@ -230,7 +221,11 @@ class TestWorldcatMocked:
         )
 
     def test_get_brief_bibs_no_matches_found(
-        self, caplog, mock_Worldcat, mock_successful_session_get_request_no_matches
+        self,
+        caplog,
+        mock_Worldcat,
+        mock_worldcat_response_no_matches,
+        stub_worldcat_response_no_matches,
     ):
         resource = Resource(
             nid=1,
@@ -250,7 +245,7 @@ class TestWorldcatMocked:
         assert isinstance(res, Resource)
         assert isinstance(data, BriefBibResponse)
         assert resource.nid == 1
-        assert data.as_json == MockSuccessfulHTTP200SessionResponseNoMatches().json()
+        assert data.as_json == stub_worldcat_response_no_matches.json()
         assert not data.is_match
         assert data.oclc_number is None
 
@@ -270,7 +265,7 @@ class TestWorldcatMocked:
         assert "WorldcatRequestError. Aborting." in caplog.text
 
     def test_get_brief_bibs_no_payload_available(
-        self, caplog, mock_Worldcat, mock_successful_session_get_request
+        self, caplog, mock_Worldcat, mock_worldcat_response
     ):
         """
         In a rare situation resource may not have any identifiers to be used for

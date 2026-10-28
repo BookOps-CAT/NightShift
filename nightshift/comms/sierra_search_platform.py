@@ -101,13 +101,10 @@ class SearchResponse:
         """
         bib_status = None
 
-        if self.response.status_code == 200 and self.library == "NYP":
+        if self.library == "NYP":
             bib_status = self._determine_nyp_bib_status()
-        elif self.response.status_code == 200 and self.library == "BPL":
+        else:
             bib_status = self._determine_bpl_bib_status()
-        elif self.response.status_code == 404:
-            # on a rare occasion NYPL bibs may not get ingested into Platform
-            bib_status = "staff_deleted"
 
         logger.debug(
             f"{self.library} Sierra bib # {self.sierraId} status: {bib_status}"
@@ -143,7 +140,10 @@ class SearchResponse:
         Returns:
             record status as a string
         """
-        if self.record.get("deleted", False) is True:
+        if (
+            self.response.status_code == 404
+            or self.record.get("deleted", False) is True
+        ):
             return "staff_deleted"
         # check first if Sierra bib came from the Worldcat;
         # and catch here upgraded/enhanced electronic resources

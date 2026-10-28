@@ -11,11 +11,6 @@ from nightshift.datastore_transactions import ResCatById, ResCatByName
 from nightshift.ns_exceptions import DriveError
 from nightshift.tasks import Tasks
 
-from ..conftest import (
-    MockSuccessfulHTTP200SessionResponse,
-    MockSuccessfulHTTP200SessionResponseNoMatches,
-)
-
 
 def test_create_resource_category_idx(test_session, stub_res_cat_by_name):
     tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
@@ -204,7 +199,8 @@ def test_get_worldcat_brief_bib_matches_success(
     stub_res_cat_by_name,
     mock_worldcat_creds,
     mock_successful_post_token_response,
-    mock_successful_session_get_request,
+    mock_worldcat_response,
+    stub_worldcat_response,
 ):
     test_session.add(
         Resource(
@@ -228,7 +224,7 @@ def test_get_worldcat_brief_bib_matches_success(
     query = res.queries[0]
     assert query.nid == 1
     assert query.match
-    assert query.response == MockSuccessfulHTTP200SessionResponse().json()
+    assert query.response == stub_worldcat_response.json()
     assert res.oclcMatchNumber == "44959645"
     assert res.status == "open"
 
@@ -252,7 +248,8 @@ def test_get_worldcat_brief_bib_matches_failed(
     stub_res_cat_by_name,
     mock_worldcat_creds,
     mock_successful_post_token_response,
-    mock_successful_session_get_request_no_matches,
+    mock_worldcat_response_no_matches,
+    stub_worldcat_response_no_matches,
 ):
     test_session.add(
         Resource(
@@ -277,7 +274,7 @@ def test_get_worldcat_brief_bib_matches_failed(
     assert query.nid == 1
     assert query.resourceId == 1
     assert query.match is False
-    assert query.response == MockSuccessfulHTTP200SessionResponseNoMatches().json()
+    assert query.response == stub_worldcat_response_no_matches.json()
     assert res.oclcMatchNumber is None
     assert res.status == "open"
 
@@ -298,7 +295,8 @@ def test_get_worldcat_full_bibs(
     stub_res_cat_by_name,
     mock_worldcat_creds,
     mock_successful_post_token_response,
-    mock_successful_session_get_request,
+    mock_worldcat_response,
+    stub_worldcat_response,
 ):
     test_session.add(
         Resource(
@@ -320,7 +318,7 @@ def test_get_worldcat_full_bibs(
     tasks.get_worldcat_full_bibs(resources)
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]
-    assert res.fullBib == MockSuccessfulHTTP200SessionResponse().content
+    assert res.fullBib == stub_worldcat_response.content
 
 
 def test_ingest_new_files(

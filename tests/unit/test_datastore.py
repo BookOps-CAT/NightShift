@@ -21,8 +21,6 @@ from nightshift.datastore import (
     session_scope,
 )
 
-from ..conftest import MockSuccessfulHTTP200SessionResponse
-
 
 def test_conf_db(mock_db_env):
     assert sorted(conf_db().keys()) == [
@@ -179,7 +177,9 @@ def test_WorldcatQuery_tbl_repr():
     )
 
 
-def test_WorldcatQuery_tbl_json_column(test_session, test_data_core):
+def test_WorldcatQuery_tbl_json_column(
+    test_session, test_data_core, stub_worldcat_response
+):
     test_session.add(
         Resource(
             nid=1,
@@ -193,7 +193,7 @@ def test_WorldcatQuery_tbl_json_column(test_session, test_data_core):
     )
     test_session.commit()
 
-    resp_json = MockSuccessfulHTTP200SessionResponse().json()
+    resp_json = stub_worldcat_response.json()
     test_session.add(WorldcatQuery(nid=1, resourceId=1, match=True, response=resp_json))
     test_session.commit()
     result = test_session.query(WorldcatQuery).filter_by(nid=1).first()
