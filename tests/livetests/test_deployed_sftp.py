@@ -1,4 +1,3 @@
-from contextlib import nullcontext as does_not_raise
 from io import BytesIO
 
 import pytest
@@ -21,8 +20,7 @@ class TestDriveLive:
     def test_fetch_file(self, live_env_vars):
         creds = get_credentials()
         with Drive(*creds) as drive:
-            with does_not_raise():
-                file = drive.fetch_file("NYPeres210701-pout.mrc")
+            file = drive.fetch_file("NYPeres210701-pout.mrc")
             assert isinstance(file, BytesIO)
 
     def test_construct_dst_file_path(self, live_env_vars):

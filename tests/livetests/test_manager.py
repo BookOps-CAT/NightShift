@@ -1,4 +1,3 @@
-from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
 
 import pytest
@@ -13,8 +12,7 @@ def test_process_resources_live(live_env_vars, test_data_rich, test_session):
     """
     This tests runs using real data and live services
     """
-    with does_not_raise():
-        process_resources()
+    process_resources()
 
     # assert here changes in the db
     # and correct manipulations to bibs

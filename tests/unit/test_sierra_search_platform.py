@@ -1,5 +1,3 @@
-from contextlib import nullcontext as does_not_raise
-
 import pytest
 from bookops_nypl_platform import PlatformToken
 
@@ -105,10 +103,9 @@ class TestNypPlatformMocked:
     def test_successful_initation(
         self, mock_env_vars, mock_successful_post_token_response
     ):
-        with does_not_raise():
-            platform = NypPlatform()
-            assert platform.headers["User-Agent"] == f"{__title__}/{__version__}"
-            assert isinstance(platform.authorization, PlatformToken)
+        platform = NypPlatform()
+        assert platform.headers["User-Agent"] == f"{__title__}/{__version__}"
+        assert isinstance(platform.authorization, PlatformToken)
 
     def test_failed_authorization(
         self, caplog, mock_env_vars, mock_failed_post_token_response

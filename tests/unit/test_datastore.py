@@ -1,4 +1,3 @@
-from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
 
 import pytest
@@ -35,8 +34,7 @@ def test_conf_db(mock_db_env):
 def test_DataAccessLayer_connect(test_connection):
     dal = DataAccessLayer()
     dal.conn = test_connection
-    with does_not_raise():
-        dal.connect()
+    dal.connect()
 
 
 def test_session_scope_success(test_connection, test_session):
@@ -201,6 +199,5 @@ def test_WorldcatQuery_tbl_json_column(
 
 
 def test_datastore_connection(test_connection):
-    with does_not_raise():
-        engine = create_engine(test_connection)
-        engine.connect()
+    engine = create_engine(test_connection)
+    engine.connect()

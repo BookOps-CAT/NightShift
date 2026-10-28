@@ -1,5 +1,4 @@
 import datetime
-from contextlib import nullcontext as does_not_raise
 
 import pytest
 
@@ -136,31 +135,30 @@ def test_ingest_new_files(caplog, live_env_vars, test_data_rich, stub_res_cat_by
 def test_ingest_new_files_empty_file(
     caplog, live_env_vars, test_data_rich, stub_res_cat_by_name
 ):
-    with does_not_raise():
-        with session_scope() as db_session:
-            tasks = Tasks(db_session, "NYP", 1, stub_res_cat_by_name)
-            tasks.ingest_new_files()
-            assert (
-                "Found following unprocessed files: ['NYPeres210701-pout.mrc', 'NYP-eres-pout.20220811020001']."
-                in caplog.text
-            )
+    with session_scope() as db_session:
+        tasks = Tasks(db_session, "NYP", 1, stub_res_cat_by_name)
+        tasks.ingest_new_files()
+        assert (
+            "Found following unprocessed files: ['NYPeres210701-pout.mrc', 'NYP-eres-pout.20220811020001']."
+            in caplog.text
+        )
 
-            assert (
-                "Added SourceFile record for 'NYP-eres-pout.20220811020001': "
-                in caplog.text
-            )
+        assert (
+            "Added SourceFile record for 'NYP-eres-pout.20220811020001': "
+            in caplog.text
+        )
 
-            # make sure empty Sierra export has been added to the datastore
-            empty_sf_rec = (
-                db_session.query(SourceFile)
-                .where(SourceFile.handle == "NYP-eres-pout.20220811020001")
-                .one_or_none()
-            )
-            assert empty_sf_rec is not None
-            assert empty_sf_rec.nid == 4
-            assert empty_sf_rec.libraryId == 1
+        # make sure empty Sierra export has been added to the datastore
+        empty_sf_rec = (
+            db_session.query(SourceFile)
+            .where(SourceFile.handle == "NYP-eres-pout.20220811020001")
+            .one_or_none()
+        )
+        assert empty_sf_rec is not None
+        assert empty_sf_rec.nid == 4
+        assert empty_sf_rec.libraryId == 1
 
-            # make sure no resources associated with the empty file are present
-            results = db_session.query(Resource).where(Resource.sourceId == 4).all()
+        # make sure no resources associated with the empty file are present
+        results = db_session.query(Resource).where(Resource.sourceId == 4).all()
 
-            assert results == []
+        assert results == []

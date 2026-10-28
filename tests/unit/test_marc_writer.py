@@ -4,7 +4,6 @@ Tests `marc.marc_writer.py` module
 
 import os
 import pickle
-from contextlib import nullcontext as does_not_raise
 
 import pytest
 from pymarc import Field, Indicators, MARCReader, Record, Subfield
@@ -16,8 +15,7 @@ from nightshift.marc.marc_writer import BibEnhancer
 
 class TestBibEnhancer:
     def test_init(self, stub_resource, stub_res_cat_by_id):
-        with does_not_raise():
-            result = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
+        result = BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
 
         assert result.library == "NYP"
         assert isinstance(result.resource, Resource)
@@ -629,8 +627,7 @@ class TestBibEnhancer:
 
     def test_purge_tags_non_existent(self, stub_resource, stub_res_cat_by_id):
         be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
-        with does_not_raise():
-            be._purge_tags()
+        be._purge_tags()
 
     @pytest.mark.parametrize(
         "vendor",

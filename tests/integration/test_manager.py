@@ -1,4 +1,3 @@
-from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -25,8 +24,7 @@ class TestProcessResourcesMocked:
         mock_get_worldcat_full_bibs,
         mock_transfer_to_drive,
     ):
-        with does_not_raise():
-            process_resources()
+        process_resources()
 
         results = test_session.query(Resource).all()
         assert len(results) == 2
@@ -66,8 +64,7 @@ class TestProcessResourcesMocked:
         test_session.add(resource)
         test_session.commit()
 
-        with does_not_raise():
-            process_resources()
+        process_resources()
 
         results = test_session.query(Resource).all()
         assert len(results) == 1

@@ -1,5 +1,3 @@
-from contextlib import nullcontext as does_not_raise
-
 import pytest
 from bookops_worldcat import MetadataSession, WorldcatAccessToken
 from bookops_worldcat.errors import WorldcatAuthorizationError, WorldcatRequestError
@@ -33,8 +31,7 @@ class TestWorldcatMocked:
     def test_init_library_args(
         self, arg, mock_env_vars, mock_successful_post_token_response
     ):
-        with does_not_raise():
-            reader = Worldcat(arg)
+        reader = Worldcat(arg)
 
         assert reader.library == arg.upper()
 
