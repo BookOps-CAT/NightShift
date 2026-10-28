@@ -59,16 +59,15 @@ class SearchResponse:
         self.sierraId = sierraId
         self.library = library.upper()
         self.response = response
-        self.status_code = self.response.status_code
-        if self.status_code == 404:
+        if self.response.status_code == 404:
             logger.warning(
                 f"{self.library} Sierra b{self.sierraId}a not found (404 HTTP code). "
                 f"Request: {self.response.url}"
             )
-        elif self.status_code >= 400:
+        elif self.response.status_code >= 400:
             logger.error(
                 f"{self.library} search platform returned HTTP error code "
-                f"{self.status_code} for request {self.response.url}"
+                f"{self.response.status_code} for request {self.response.url}"
             )
             raise SierraSearchPlatformError
         self.json_response = self.response.json()
@@ -98,16 +97,15 @@ class SearchResponse:
         Determines status of record in Sierra
 
         Returns:
-            'brief-bib', 'full-bib', or 'deleted' status
+            record status as a string or None
         """
         bib_status = None
 
-        if self.status_code == 200:
-            if self.library == "NYP":
-                bib_status = self._determine_nyp_bib_status()
-            elif self.library == "BPL":
-                bib_status = self._determine_bpl_bib_status()
-        elif self.status_code == 404:
+        if self.response.status_code == 200 and self.library == "NYP":
+            bib_status = self._determine_nyp_bib_status()
+        elif self.response.status_code == 200 and self.library == "BPL":
+            bib_status = self._determine_bpl_bib_status()
+        elif self.response.status_code == 404:
             # on a rare occasion NYPL bibs may not get ingested into Platform
             bib_status = "staff_deleted"
 
@@ -121,27 +119,19 @@ class SearchResponse:
         Determines status of record in BPL Sierra.
 
         Returns:
-            'brief-bib', 'full-bib', 'deleted' status
+            record status as a string
         """
-        try:
-            data = self.json_response["response"]["docs"][0]
-        except IndexError:
-            # no results, treat as deleted
+        if not self.record or self.record.get("bs_deleted_in_sierra"):
             return "staff_deleted"
-        else:
-            try:
-                if data["bs_deleted_in_sierra"]:
-                    return "staff_deleted"
-            except KeyError:
-                pass
-            # if bib originated from Worldcat assume full bib
-            if "ss_marc_tag_003" in data and data["ss_marc_tag_003"] == "OCoLC":
-                return "staff_enhanced"
+        # if bib originated from Worldcat assume full bib
+        if self.record.get("ss_marc_tag_003") == "OCoLC":
+            return "staff_enhanced"
 
-            # print material with call number tag - assume full bib
-            # exclude electronic resources
-            if "call_number" in data and not is_eresource_callno(data["call_number"]):
-                return "staff_enhanced"
+        # print material with call number tag - assume full bib
+        # exclude electronic resources
+        call_number = self.record.get("call_number")
+        if call_number and not is_eresource_callno(call_number):
+            return "staff_enhanced"
 
         # assume at this point it must be a brief bib
         return "open"
@@ -151,28 +141,26 @@ class SearchResponse:
         Determines status of record in NYPL Sierra.
 
         Returns:
-            'bief-bib', 'full-bib' or 'deleted' status
+            record status as a string
         """
-        data = self.json_response["data"]
-        if data["deleted"]:
+        if self.record.get("deleted", False) is True:
             return "staff_deleted"
-        else:
-            # check first if Sierra bib came from the Worldcat;
-            # and catch here upgraded/enhanced electronic resources
-            for field in data["varFields"]:
-                if field["marcTag"] == "003" and field["content"] == "OCoLC":
+        # check first if Sierra bib came from the Worldcat;
+        # and catch here upgraded/enhanced electronic resources
+        for field in self.record["varFields"]:
+            if field["marcTag"] == "003" and field["content"] == "OCoLC":
+                return "staff_enhanced"
+
+        # print material full bibs may come from other sources than
+        # Worldcat (no or diff content of the '003' tag);
+        # brief bibs lack call numbers
+        for field in self.record["varFields"]:
+            if field["marcTag"] == "091":  # filter out electronic resources
+                if not is_eresource_callno(field["subfields"][0]["content"]):
                     return "staff_enhanced"
 
-            # print material full bibs may come from other sources than
-            # Worldcat (no or diff content of the '003' tag);
-            # brief bibs lack call numbers
-            for field in data["varFields"]:
-                if field["marcTag"] == "091":  # filter out electronic resources
-                    if not is_eresource_callno(field["subfields"][0]["content"]):
-                        return "staff_enhanced"
-
-            # assume response failing previous clauses is a brief bib
-            return "open"
+        # assume response failing previous clauses is a brief bib
+        return "open"
 
 
 class NypPlatform(PlatformSession):
