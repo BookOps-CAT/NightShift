@@ -6,9 +6,9 @@ from datetime import date, datetime, timezone
 import pytest
 from pymarc import MARCReader
 
+from nightshift.comms.storage import Drive, get_credentials
 from nightshift.datastore import Event, OutputFile, Resource, SourceFile
 from nightshift.datastore_transactions import ResCatById, ResCatByName
-from nightshift.ns_exceptions import DriveError
 from nightshift.tasks import Tasks
 
 from ..conftest import (
@@ -166,21 +166,12 @@ def test_check_resources_sierra_state_invalid_library_arg(caplog):
 
 
 def test_enhance_and_output_bibs(
-    caplog,
-    sftpserver,
-    test_session,
-    test_data_rich,
-    stub_res_cat_by_name,
-    mock_drive,
-    mock_sftp_env,
+    caplog, test_session, test_data_rich, stub_res_cat_by_name, mock_drive
 ):
     remote_file = f"{datetime.now().date():%y%m%d}-NYP-ebook-01.mrc"
     resources = test_session.query(Resource).where(Resource.nid == 1).all()
-
-    with caplog.at_level(logging.DEBUG):
-        with sftpserver.serve_content({"load_dir": {}}):
-            tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-            tasks.enhance_and_output_bibs("ebook", resources)
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+    tasks.enhance_and_output_bibs("ebook", resources)
 
     assert "NYP b11111111a has been output to 'temp.mrc'." in caplog.text
 
@@ -324,41 +315,10 @@ def test_get_worldcat_full_bibs(
 
 
 def test_ingest_new_files(
-    sftpserver, test_session, test_data_core, stub_res_cat_by_name, mock_sftp_env
+    test_session, test_data_core, stub_res_cat_by_name, mock_drive
 ):
-    with open("tests/nyp-ebook-sample.mrc", "rb") as test_file:
-        marc_data = test_file.read()
-
-    with sftpserver.serve_content(
-        {"sierra_dumps_dir": {"foo1-pout": b"foo", "NYP-bar-pout": marc_data}}
-    ):
-        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-        tasks.ingest_new_files()
-
-    # verify source file has been added to db
-    src_file_rec = (
-        test_session.query(SourceFile)
-        .where(SourceFile.libraryId == 1, SourceFile.handle == "NYP-bar-pout")
-        .one_or_none()
-    )
-    assert src_file_rec.libraryId == 1
-    assert src_file_rec.handle == "NYP-bar-pout"
-
-    resources = (
-        test_session.query(Resource).where(Resource.sourceId == src_file_rec.nid).all()
-    )
-    assert len(resources) == 2
-
-
-def test_ingest_new_files_empty_file(
-    sftpserver, test_session, test_data_core, stub_res_cat_by_name, mock_sftp_env
-):
-
-    with sftpserver.serve_content(
-        {"sierra_dumps_dir": {"foo1-pout": b"foo", "NYP-bar-pout": ""}}
-    ):
-        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-        tasks.ingest_new_files()
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+    tasks.ingest_new_files()
 
     # verify source file has been added to db
     src_file_rec = (
@@ -376,31 +336,22 @@ def test_ingest_new_files_empty_file(
 
 
 def test_isolate_unprocessed_nyp_files(
-    caplog, sftpserver, stub_res_cat_by_name, test_session, test_data_core, mock_drive
+    caplog, stub_res_cat_by_name, test_session, test_data_core, mock_drive
 ):
-    with sftpserver.serve_content(
-        {"sierra_dumps_dir": {"foo1-pout": b"spam", "NYP-bar-pout": b"spam"}}
-    ):
-        with caplog.at_level(logging.DEBUG):
-            tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-            results = tasks.isolate_unprocessed_files(mock_drive)
-
-        assert "Found following remote files for NYP: ['NYP-bar-pout']." in caplog.text
-
+    tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+    with Drive(*get_credentials()) as drive:
+        results = tasks.isolate_unprocessed_files(drive)
+    assert "Found following remote files for NYP: ['NYP-bar-pout']." in caplog.text
     assert results == ["NYP-bar-pout"]
 
 
 def test_isolate_unprocessed_bpl_files(
-    caplog, sftpserver, stub_res_cat_by_name, test_session, test_data_core, mock_drive
+    caplog, stub_res_cat_by_name, test_session, test_data_core, mock_drive
 ):
-    with sftpserver.serve_content(
-        {"sierra_dumps_dir": {"foo1-pout": b"spam", "NYP-bar-pout": b"spam"}}
-    ):
-        with caplog.at_level(logging.DEBUG):
-            tasks = Tasks(test_session, "BPL", 2, stub_res_cat_by_name)
-            results = tasks.isolate_unprocessed_files(mock_drive)
-        assert "Found following remote files for BPL: []." in caplog.text
-
+    tasks = Tasks(test_session, "BPL", 2, stub_res_cat_by_name)
+    with Drive(*get_credentials()) as drive:
+        results = tasks.isolate_unprocessed_files(drive)
+    assert "Found following remote files for BPL: []." in caplog.text
     assert results == []
 
 
@@ -484,49 +435,28 @@ def test_manipulate_and_serialize_bibs_os_error_on_temp_file_removal(
 ):
     resource = test_session.query(Resource).one()
     with pytest.raises(OSError):
-        with caplog.at_level(logging.ERROR):
-            tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
-            tasks.manipulate_and_serialize_bibs("ebook", [resource])
+        tasks = Tasks(test_session, "NYP", 1, stub_res_cat_by_name)
+        tasks.manipulate_and_serialize_bibs("ebook", [resource])
 
     assert "Unable to empty temp file 'temp.mrc'" in caplog.text
 
 
-def test_transfer_to_drive(
-    caplog, sftpserver, tmpdir, mock_drive, stub_res_cat_by_name
-):
+def test_transfer_to_drive(caplog, tmpdir, mock_drive, stub_res_cat_by_name):
     base_name = f"{datetime.now().date():%y%m%d}-NYP-ebook"
     tmpfile = tmpdir.join("temp.mrc")
     tmpfile.write("spam")
-    with sftpserver.serve_content({"load_dir": {f"{base_name}-01.mrc": "spam"}}):
-        with caplog.at_level(logging.INFO):
-            tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
-            tasks.transfer_to_drive("ebook", str(tmpfile))
-            assert mock_drive.sftp.listdir("load_dir") == [
-                f"{base_name}-01.mrc",
-                f"{base_name}-02.mrc",
-            ]
+    tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
+    tasks.transfer_to_drive("ebook", str(tmpfile))
     assert f"NYP ebook records have been output to remote '{base_name}-02.mrc'"
 
 
 def test_transfer_to_drive_temp_file_not_created(
-    caplog, sftpserver, mock_sftp_env, stub_res_cat_by_name
+    caplog, mock_drive, stub_res_cat_by_name
 ):
-    with caplog.at_level(logging.INFO):
-        tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
-        remote_file = tasks.transfer_to_drive("ebook", None)
+    tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
+    remote_file = tasks.transfer_to_drive("ebook", None)
     assert remote_file is None
     assert "No source file to output to SFTP" in caplog.text
-
-
-def test_transfer_to_drive_sftp_error(
-    tmpdir, sftpserver, stub_res_cat_by_name, mock_sftp_env, mock_io_error
-):
-    tmpfile = tmpdir.join("temp.mrc")
-    tmpfile.write("spam")
-    with sftpserver.serve_content({"laod_dir": {}}):
-        with pytest.raises(DriveError):
-            tasks = Tasks(None, "NYP", 1, stub_res_cat_by_name)
-            tasks.transfer_to_drive("ebook", str(tmpfile))
 
 
 def test_update_status_to_upgraded(

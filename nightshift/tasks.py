@@ -26,7 +26,6 @@ from nightshift.datastore_transactions import (
 )
 from nightshift.marc.marc_parser import BibReader
 from nightshift.marc.marc_writer import BibEnhancer
-from nightshift.ns_exceptions import DriveError
 
 logger = logging.getLogger("nightshift")
 
@@ -373,19 +372,14 @@ class Tasks:
         """
         today = datetime.now().date()
         remote_file_name_base = f"{today:%y%m%d}-{self.library}-{resource_category}"
-        remote_file = None
 
         creds = get_credentials()
         with Drive(*creds) as drive:
-            try:
-                if src_file is not None:
-                    remote_file = drive.output_file(src_file, remote_file_name_base)
-                else:
-                    logger.info("No source file to output to SFTP.")
-            except DriveError:
-                raise
-
-            return remote_file
+            if src_file is not None:
+                return drive.output_file(src_file, remote_file_name_base)
+            else:
+                logger.info("No source file to output to SFTP.")
+        return None
 
     def update_status_to_upgraded(
         self, out_file_handle: Optional[str], resources: list[Resource]

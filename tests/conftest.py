@@ -1,16 +1,16 @@
 import datetime
 import os
 
-import paramiko
 import pytest
 import requests
 import yaml
 from bookops_worldcat import MetadataSession, WorldcatAccessToken
 from bookops_worldcat.errors import WorldcatRequestError
+from paramiko import SFTPClient
+from paramiko.ssh_exception import SSHException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from nightshift.comms.storage import Drive, get_credentials
 from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES, ROTTEN_APPLES
 from nightshift.datastore import (
@@ -36,18 +36,6 @@ class FakeUtcNow(datetime.datetime):
 @pytest.fixture
 def mock_utcnow(monkeypatch):
     monkeypatch.setattr(datetime, "datetime", FakeUtcNow)
-
-
-class MockIOError:
-    def __init__(self, *args, **kwargs):
-        raise IOError
-
-
-@pytest.fixture
-def mock_io_error(monkeypatch):
-    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.put", MockIOError)
-    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.listdir", MockIOError)
-    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.file", MockIOError)
 
 
 @pytest.fixture
@@ -236,31 +224,82 @@ def test_data_rich(stub_resource, test_session, test_data_core):
 # SFTP / newtowrked drive #############
 
 
+class MockStat:
+    def __init__(self):
+        self.st_size = 1
+
+
+class MockFile:
+    def __enter__(self, *args, **kwargs):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        pass
+
+    def prefetch(self, *args, **kwargs):
+        pass
+
+    def read(self, *args, **kwargs):
+        return b""
+
+    def stat(self, *args, **kwargs):
+        return MockStat()
+
+
 @pytest.fixture
-def mock_sftp_env(monkeypatch, sftpserver):
-    monkeypatch.setenv("SFTP_HOST", sftpserver.host)
-    monkeypatch.setenv("SFTP_PORT", str(sftpserver.port))
+def mock_drive(monkeypatch, mocker):
+    mock_obj = mocker.MagicMock()
+
+    def mock_file(*args, **kwargs):
+        return MockFile()
+
+    def mock_listdir(*args, **kwargs):
+        return ["NYP-bar-pout"]
+
+    def mock_stat(*args, **kwargs):
+        all_args = [i for i in args] + [i for i in kwargs.values()]
+        if "foo.mrc" in all_args or "load_dir/foo-01.mrc" in all_args:
+            pass
+        else:
+            raise FileNotFoundError
+
+    monkeypatch.setenv("SFTP_HOST", "sftp.fakehost.com")
+    monkeypatch.setenv("SFTP_PORT", "22")
     monkeypatch.setenv("SFTP_USER", "nightshift")
     monkeypatch.setenv("SFTP_PASSW", "sftp_password")
     monkeypatch.setenv("SFTP_NS_SRC", "sierra_dumps_dir")
     monkeypatch.setenv("SFTP_NS_DST", "load_dir")
-
-
-class MockSSHException:
-    def __init__(self, *args, **kwargs):
-        raise paramiko.ssh_exception.SSHException
+    monkeypatch.setattr(SFTPClient, "_send_version", lambda *args, **kwargs: None)
+    monkeypatch.setattr(SFTPClient, "_log", lambda *args, **kwargs: None)
+    monkeypatch.setattr(SFTPClient, "file", mock_file)
+    monkeypatch.setattr(SFTPClient, "close", lambda *args, **kwargs: None)
+    monkeypatch.setattr(SFTPClient, "listdir", mock_listdir)
+    monkeypatch.setattr(SFTPClient, "put", lambda *args, **kwargs: None)
+    monkeypatch.setattr(SFTPClient, "stat", mock_stat)
+    monkeypatch.setattr("nightshift.comms.storage.Transport", mock_obj)
 
 
 @pytest.fixture
-def mock_ssh_exception(monkeypatch):
-    monkeypatch.setattr("paramiko.transport.Transport.connect", MockSSHException)
+def mock_empty_sftp_client(monkeypatch, mock_drive):
+    monkeypatch.setattr(SFTPClient, "from_transport", lambda *args, **kwargs: None)
 
 
 @pytest.fixture
-def mock_drive(mock_sftp_env):
-    creds = get_credentials()
-    with Drive(*creds) as drive:
-        yield drive
+def mock_ssh_exception(monkeypatch, mock_drive):
+    def mock_ssh_exception(self, *args, **kwargs):
+        raise SSHException
+
+    monkeypatch.setattr("nightshift.comms.storage.Transport", mock_ssh_exception)
+
+
+@pytest.fixture
+def mock_io_error(monkeypatch, mock_drive):
+    def io_error(self, *args, **kwargs):
+        raise IOError
+
+    monkeypatch.setattr(SFTPClient, "put", io_error)
+    monkeypatch.setattr(SFTPClient, "listdir", io_error)
+    monkeypatch.setattr(SFTPClient, "file", io_error)
 
 
 # Worldcat fixtures ########
