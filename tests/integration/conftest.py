@@ -7,7 +7,6 @@ from sqlalchemy.exc import IntegrityError
 
 from nightshift import bot, datastore_transactions, manager
 from nightshift.comms.storage import Drive
-from nightshift.config import logging_conf
 from nightshift.datastore import WorldcatQuery
 from nightshift.tasks import Tasks
 
@@ -25,15 +24,7 @@ def patch_config_local_env_variables(monkeypatch):
     def _patch(*args, **kwargs):
         return
 
-    def _patch_token(*args, **kwargs):
-        return "dummy_token"
-
-    def _patch_handlers(*args, **kwargs):
-        return ["console"]
-
     monkeypatch.setattr(bot, "config_local_env_variables", _patch)
-    monkeypatch.setattr(logging_conf, "get_token", _patch_token)
-    monkeypatch.setattr(logging_conf, "get_handlers", _patch_handlers)
 
 
 @pytest.fixture
@@ -58,12 +49,6 @@ def mock_init_db_invalid_structure(monkeypatch):
         raise AssertionError("Foo Error")
 
     monkeypatch.setattr(datastore_transactions, "init_db", _patch)
-
-
-@pytest.fixture
-def mock_log_env(monkeypatch):
-    monkeypatch.setenv("LOGGLY_TOKEN", "ns_token_here")
-    monkeypatch.setenv("LOG_HANDLERS", "console,file,loggly")
 
 
 @pytest.fixture

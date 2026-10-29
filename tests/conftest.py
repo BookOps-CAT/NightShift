@@ -34,7 +34,7 @@ class FakeUtcNow(datetime.datetime):
         return cls(2021, 1, 1, 17, 0, 0, 0, tzinfo=datetime.timezone.utc)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_env_vars(monkeypatch, caplog):
     caplog.set_level("DEBUG")
     monkeypatch.setenv("NYPL_PLATFORM_CLIENT", "app_client_id")

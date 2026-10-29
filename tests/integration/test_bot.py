@@ -61,7 +61,6 @@ def test_configure_database_with_improper_structure(
 def test_run_local(
     caplog,
     patch_config_local_env_variables,
-    mock_log_env,
     patch_process_resources,
     patch_perform_db_maintenance,
 ):
@@ -86,7 +85,6 @@ def test_main_run_arg(
     patch_config_local_env_variables,
     patch_process_resources,
     patch_perform_db_maintenance,
-    mock_log_env,
     caplog,
 ):
     main(["run", f"{arg}"])
