@@ -39,7 +39,7 @@ def test_check_resources_sierra_state_nyp_platform(
     stub_resource,
     stub_res_cat_by_name,
     mock_env_vars,
-    mock_successful_post_token_response,
+    mock_token,
     mock_successful_platform_session_response,
 ):
     stub_resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -72,7 +72,7 @@ def test_check_resources_sierra_state_nyp_platform_deleted_record(
     stub_resource,
     stub_res_cat_by_name,
     mock_env_vars,
-    mock_successful_post_token_response,
+    mock_token,
     mock_successful_platform_session_response_deleted_record,
 ):
     stub_resource = test_session.query(Resource).filter_by(nid=1).one()
@@ -186,9 +186,8 @@ def test_get_worldcat_brief_bib_matches_success(
     test_data_core,
     stub_res_cat_by_name,
     mock_env_vars,
-    mock_successful_post_token_response,
+    mock_token,
     mock_worldcat_response,
-    stub_worldcat_response,
 ):
     test_session.add(
         Resource(
@@ -212,7 +211,7 @@ def test_get_worldcat_brief_bib_matches_success(
     query = res.queries[0]
     assert query.nid == 1
     assert query.match
-    assert query.response == stub_worldcat_response.json()
+    assert query.response == mock_worldcat_response.json()
     assert res.oclcMatchNumber == "44959645"
     assert res.status == "open"
 
@@ -235,9 +234,8 @@ def test_get_worldcat_brief_bib_matches_failed(
     test_data_core,
     stub_res_cat_by_name,
     mock_env_vars,
-    mock_successful_post_token_response,
+    mock_token,
     mock_worldcat_response_no_matches,
-    stub_worldcat_response_no_matches,
 ):
     test_session.add(
         Resource(
@@ -262,7 +260,7 @@ def test_get_worldcat_brief_bib_matches_failed(
     assert query.nid == 1
     assert query.resourceId == 1
     assert query.match is False
-    assert query.response == stub_worldcat_response_no_matches.json()
+    assert query.response == mock_worldcat_response_no_matches.json()
     assert res.oclcMatchNumber is None
     assert res.status == "open"
 
@@ -282,9 +280,8 @@ def test_get_worldcat_full_bibs(
     test_data_core,
     stub_res_cat_by_name,
     mock_env_vars,
-    mock_successful_post_token_response,
+    mock_token,
     mock_worldcat_response,
-    stub_worldcat_response,
 ):
     test_session.add(
         Resource(
@@ -306,7 +303,7 @@ def test_get_worldcat_full_bibs(
     tasks.get_worldcat_full_bibs(resources)
 
     res = test_session.query(Resource).filter_by(nid=1).all()[0]
-    assert res.fullBib == stub_worldcat_response.content
+    assert res.fullBib == mock_worldcat_response.content
 
 
 def test_ingest_new_files(

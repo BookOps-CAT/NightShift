@@ -176,7 +176,7 @@ def test_WorldcatQuery_tbl_repr():
 
 
 def test_WorldcatQuery_tbl_json_column(
-    test_session, test_data_core, stub_worldcat_response
+    test_session, test_data_core, mock_worldcat_response
 ):
     test_session.add(
         Resource(
@@ -191,7 +191,7 @@ def test_WorldcatQuery_tbl_json_column(
     )
     test_session.commit()
 
-    resp_json = stub_worldcat_response.json()
+    resp_json = mock_worldcat_response.json()
     test_session.add(WorldcatQuery(nid=1, resourceId=1, match=True, response=resp_json))
     test_session.commit()
     result = test_session.query(WorldcatQuery).filter_by(nid=1).first()

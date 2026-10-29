@@ -100,27 +100,19 @@ class TestSearchResponse:
 
 
 class TestNypPlatformMocked:
-    def test_successful_initation(
-        self, mock_env_vars, mock_successful_post_token_response
-    ):
+    def test_successful_initation(self, mock_env_vars, mock_token):
         platform = NypPlatform()
         assert platform.headers["User-Agent"] == f"{__title__}/{__version__}"
         assert isinstance(platform.authorization, PlatformToken)
 
-    def test_failed_authorization(
-        self, caplog, mock_env_vars, mock_failed_post_token_response
-    ):
+    def test_failed_authorization(self, caplog, mock_env_vars, mock_token_error):
         with pytest.raises(SierraSearchPlatformError):
             NypPlatform()
 
         assert "Unable to obtain access token for NYPL Platform." in caplog.text
 
     def test_get_sierra_bib_error(
-        self,
-        caplog,
-        mock_env_vars,
-        mock_successful_post_token_response,
-        mock_session_error,
+        self, caplog, mock_env_vars, mock_token, mock_session_error
     ):
         with NypPlatform() as platform:
             with pytest.raises(SierraSearchPlatformError):
@@ -134,7 +126,7 @@ class TestNypPlatformMocked:
         self,
         caplog,
         mock_env_vars,
-        mock_successful_post_token_response,
+        mock_token,
         mock_successful_platform_session_response,
     ):
         with NypPlatform() as platform:

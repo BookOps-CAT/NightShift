@@ -35,7 +35,8 @@ class FakeUtcNow(datetime.datetime):
 
 
 @pytest.fixture
-def mock_env_vars(monkeypatch):
+def mock_env_vars(monkeypatch, caplog):
+    caplog.set_level("DEBUG")
     monkeypatch.setenv("NYPL_PLATFORM_CLIENT", "app_client_id")
     monkeypatch.setenv("NYPL_PLATFORM_SECRET", "app_secret")
     monkeypatch.setenv("NYPL_PLATFORM_OAUTH", "outh_server")
@@ -333,7 +334,33 @@ def mock_400_response():
 
 
 @pytest.fixture
-def stub_worldcat_response():
+def mock_token_error(monkeypatch, mock_400_response):
+    monkeypatch.setattr(requests, "post", mock_400_response)
+
+
+@pytest.fixture
+def mock_token(monkeypatch):
+    def mock_oauth_server_response(*args, **kwargs):
+        expires_at = datetime.datetime.strftime(
+            datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(0, 1199),
+            "%Y-%m-%d %H:%M:%SZ",
+        )
+        json_response = {
+            "access_token": "token_string_here",
+            "token_type": "bearer",
+            "expires_at": expires_at,
+            "scope": "scopes_here",
+            "id_token": "token_string_here",
+            "expires_in": 3600,
+        }
+        return MockHTTPResponse(status_code=200, _json=json_response)
+
+    monkeypatch.setattr(datetime, "datetime", FakeUtcNow)
+    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
+
+
+@pytest.fixture
+def mock_worldcat_response(monkeypatch):
     json_response = {
         "numberOfRecords": 1,
         "briefRecords": [
@@ -358,54 +385,24 @@ def stub_worldcat_response():
             }
         ],
     }
-    return MockHTTPResponse(status_code=200, _json=json_response)
+    response = MockHTTPResponse(status_code=200, _json=json_response)
 
-
-@pytest.fixture
-def stub_worldcat_response_no_matches():
-    return MockHTTPResponse(status_code=200, _json={"numberOfRecords": 0})
-
-
-@pytest.fixture
-def mock_failed_post_token_response(monkeypatch, mock_400_response):
-    monkeypatch.setattr(requests, "post", mock_400_response)
-
-
-@pytest.fixture
-def mock_successful_post_token_response(monkeypatch):
-    def mock_oauth_server_response(*args, **kwargs):
-        expires_at = datetime.datetime.strftime(
-            datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(0, 1199),
-            "%Y-%m-%d %H:%M:%SZ",
-        )
-        json_response = {
-            "access_token": "token_string_here",
-            "token_type": "bearer",
-            "expires_at": expires_at,
-            "scope": "scopes_here",
-            "id_token": "token_string_here",
-            "expires_in": 3600,
-        }
-        return MockHTTPResponse(status_code=200, _json=json_response)
-
-    monkeypatch.setattr(datetime, "datetime", FakeUtcNow)
-    monkeypatch.setattr(requests, "post", mock_oauth_server_response)
-
-
-@pytest.fixture
-def mock_worldcat_response(monkeypatch, stub_worldcat_response):
     def mock_api_response(*args, **kwargs):
-        return stub_worldcat_response
+        return response
 
     monkeypatch.setattr(requests.Session, "send", mock_api_response)
+    return response
 
 
 @pytest.fixture
 def mock_worldcat_response_no_matches(monkeypatch):
+    response = MockHTTPResponse(status_code=200, _json={"numberOfRecords": 0})
+
     def mock_api_response(*args, **kwargs):
-        return MockHTTPResponse(status_code=200, _json={"numberOfRecords": 0})
+        return response
 
     monkeypatch.setattr(requests.Session, "send", mock_api_response)
+    return response
 
 
 @pytest.fixture
@@ -417,8 +414,9 @@ def mock_session_error(monkeypatch):
 
 
 @pytest.fixture
-def mock_Worldcat(mock_env_vars, mock_successful_post_token_response):
-    return Worldcat("NYP")
+def stub_worldcat_session(mock_env_vars, mock_token, mock_worldcat_response):
+    with Worldcat("NYP") as session:
+        yield session
 
 
 # NYPL Platform & BPL Solr fixtures ###
