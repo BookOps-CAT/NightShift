@@ -16,7 +16,8 @@ dependencies = [
     "bookops-bpl-solr @ git+https://github.com/BookOps-CAT/bookops-bpl-solr",
     "bookops-nypl-platform @ git+https://github.com/BookOps-CAT/bookops-nypl-platform",
     "bookops-marc @ git+https://github.com/BookOps-CAT/bookops-marc",
-    "psycopg[binary]>=3.3.6"    
+    "psycopg[binary]>=3.3.6",
+    "pytest-mock>=3.17.0",
 ]
 
 [dependency-groups]
