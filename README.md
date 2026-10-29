@@ -75,6 +75,8 @@ If for any reason the execution of the routine is interrupted (API error, etc.),
    + `bookops-worldcat` 1.0.0 -> 1.2.0
    + `PyYAML` 6.0.1 -> 6.0.3
    + `paramiko` 3.4.0 -> 5.1.0
+### Removed
++ `pytest-sftpserver` as a dependency as it hasn't been updated in 7 years   
 [0.6.1] - 2024-08-26
 ### Fixed
  + Unsupported-resource-type-warning-fix

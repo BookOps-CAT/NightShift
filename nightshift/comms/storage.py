@@ -17,20 +17,20 @@ from ..ns_exceptions import DriveError
 logger = logging.getLogger("nightshift")
 
 
-def get_credentials():
+def get_credentials() -> tuple[str, ...]:
     """
     Retrieves SFTP credentials from environmental variables.
 
     Returns:
-        credentials
+        credentials as a tuple of strings
     """
     return (
-        os.getenv("SFTP_HOST"),
-        os.getenv("SFTP_USER"),
-        os.getenv("SFTP_PASSW"),
-        os.getenv("SFTP_NS_SRC"),
-        os.getenv("SFTP_NS_DST"),
-        os.getenv("SFTP_PORT"),
+        os.environ["SFTP_HOST"],
+        os.environ["SFTP_USER"],
+        os.environ["SFTP_PASSW"],
+        os.environ["SFTP_NS_SRC"],
+        os.environ["SFTP_NS_DST"],
+        os.environ["SFTP_PORT"],
     )
 
 
@@ -54,6 +54,7 @@ class Drive:
             password:                   SFTP user password
             home_directory:             NighShift directory on the drive
         """
+        self.transport: Transport | None = None
         sock = self._sock(host, port)
         self.sftp = self._sftp(sock, user, password)
         self.src_dir = src_dir
@@ -78,19 +79,15 @@ class Drive:
         Raises:
             DriveError
         """
-        if self.sftp:
-            try:
-                self.sftp.stat(remote_file_path)
-                logger.debug(f"'{remote_file_path}' found on SFTP.")
-                return True
-            except FileNotFoundError:
-                logger.debug(f"'{remote_file_path}' not found on SFTP.")
-                return False
-        else:
-            logger.error("Attempted operation on a closed SFTP session.")
-            raise DriveError
+        try:
+            self.sftp.stat(remote_file_path)
+            logger.debug(f"'{remote_file_path}' found on SFTP.")
+            return True
+        except FileNotFoundError:
+            logger.debug(f"'{remote_file_path}' not found on SFTP.")
+            return False
 
-    def fetch_file(self, src_fh: str) -> Optional[BytesIO]:
+    def fetch_file(self, src_fh: str) -> BytesIO:
         """
         Retrieves file of the given path
 
@@ -106,34 +103,24 @@ class Drive:
         """
         src_file_path = self._construct_src_file_path(src_fh)
         logger.info(f"Fetching {src_file_path} file from the SFTP.")
-        if self.sftp:
-            try:
-                with self.sftp.file(src_file_path, mode="r") as file:
-                    file_size = file.stat().st_size
-                    file.prefetch(file_size)
-                    return BytesIO(file.read(file_size))
-            except IOError as exc:
-                logger.error(
-                    f"Unable to fetch file {src_file_path} from the SFTP. {exc}."
-                )
-                raise DriveError
-        else:
-            logger.error("Attempted operation on a closed SFTP session.")
+        try:
+            with self.sftp.file(src_file_path, mode="r") as file:
+                file_size = file.stat().st_size
+                file.prefetch(file_size)
+                return BytesIO(file.read(file_size))
+        except IOError as exc:
+            logger.error(f"Unable to fetch file {src_file_path} from the SFTP. {exc}.")
             raise DriveError
 
     def list_src_directory(self) -> list[str]:
         """
         Returns a list of files found in SFTP/Drive sierra_dumps directory
         """
-        if self.sftp is None:
-            logger.error("Attempted an operation on a closed SFTP session.")
+        try:
+            return self.sftp.listdir(path=self.src_dir)
+        except IOError as exc:
+            logger.error(f"Unable to reach {self.src_dir} on the SFTP. {exc}")
             raise DriveError
-        else:
-            try:
-                return self.sftp.listdir(path=self.src_dir)
-            except IOError as exc:
-                logger.error(f"Unable to reach {self.src_dir} on the SFTP. {exc}")
-                raise DriveError
 
     def output_file(self, local_file_path: str, remote_file_name_base: str) -> str:
         """
@@ -149,23 +136,16 @@ class Drive:
         Raises:
             DriveError
         """
-        if self.sftp:
-            try:
-                remote_file_path = self._construct_dst_file_path(remote_file_name_base)
-                self.sftp.put(local_file_path, remote_file_path)
-                logger.info(f"Successfully created {remote_file_path} on the SFTP.")
-                return os.path.basename(remote_file_path)
+        try:
+            remote_file_path = self._construct_dst_file_path(remote_file_name_base)
+            self.sftp.put(local_file_path, remote_file_path)
+            logger.info(f"Successfully created {remote_file_path} on the SFTP.")
+            return os.path.basename(remote_file_path)
 
-            except IOError as exc:
-                logger.error(
-                    f"IOError. Unable to output {local_file_path} to "
-                    f"{remote_file_path} on the SFTP. {exc}"
-                )
-                raise DriveError
-        else:
+        except IOError as exc:
             logger.error(
-                f"SFTP session closed. Unable to output {local_file_path} "
-                f"to {remote_file_name_base} on the drive."
+                f"IOError. Unable to output {local_file_path} to "
+                f"{remote_file_path} on the SFTP. {exc}"
             )
             raise DriveError
 
@@ -173,9 +153,10 @@ class Drive:
         """
         Closes SFTP session and underlying channel.
         """
-        if self.sftp:
-            self.sftp.close()
-            logger.debug("SFTP client session closed.")
+        self.sftp.close()
+        logger.debug("SFTP client session closed.")
+        if self.transport:
+            # necessary since paramiko keeps open threads hanging occasionally
             self.transport.close()
             logger.debug("Secure channels closed.")
 
@@ -231,14 +212,13 @@ class Drive:
         """
         return f"{self.src_dir}/{src_fh}"
 
-    def _sftp(self, sock: str, user: str, password: str) -> Optional[SFTPClient]:
+    def _sftp(self, sock: str, user: str, password: str) -> SFTPClient:
         """
         Establishes a secure channel to SFTP server and returns a client/session for
         communication.
 
         Args:
-            host:                   SFTP server host
-            port:                   SFTP server port (optional)
+            sock:                   SFTP server host and port
             user:                   SFTP account user
             password:               SFTP account password
 
@@ -255,9 +235,12 @@ class Drive:
                 f"Unable to establish a secure channel and open SFTP session. {exc}"
             )
             raise DriveError
-        else:
+        if sftp:
             logger.debug("Successfully connected to the SFTP.")
             return sftp
+        else:
+            logger.critical("Unable to create SFTP Client from Transport.")
+            raise DriveError
 
     def _sock(self, host: str, port: Optional[str] = None) -> str:
         if port:

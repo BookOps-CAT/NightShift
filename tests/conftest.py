@@ -2,16 +2,16 @@ import datetime
 import os
 from typing import Any
 
-import paramiko
 import pytest
 import requests
 import yaml
 from bookops_worldcat.errors import WorldcatRequestError
+from paramiko import SFTPClient
+from paramiko.ssh_exception import SSHException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from nightshift import constants
-from nightshift.comms.storage import Drive, get_credentials
 from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES, ROTTEN_APPLES
 from nightshift.datastore import (
@@ -35,7 +35,7 @@ class FakeUtcNow(datetime.datetime):
 
 
 @pytest.fixture
-def mock_env_vars(monkeypatch, sftpserver):
+def mock_env_vars(monkeypatch):
     monkeypatch.setenv("NYPL_PLATFORM_CLIENT", "app_client_id")
     monkeypatch.setenv("NYPL_PLATFORM_SECRET", "app_secret")
     monkeypatch.setenv("NYPL_PLATFORM_OAUTH", "outh_server")
@@ -48,24 +48,14 @@ def mock_env_vars(monkeypatch, sftpserver):
     monkeypatch.setenv("WCBPL_KEY", "lib_key")
     monkeypatch.setenv("WCBPL_SECRET", "lib_secret")
     monkeypatch.setenv("WCBPL_SCOPE", "WorldCatMetadataAPI")
-    monkeypatch.setenv("SFTP_HOST", sftpserver.host)
-    monkeypatch.setenv("SFTP_PORT", str(sftpserver.port))
+    monkeypatch.setenv("SFTP_HOST", "sftp.fakehost.com")
+    monkeypatch.setenv("SFTP_PORT", "22")
     monkeypatch.setenv("SFTP_USER", "nightshift")
     monkeypatch.setenv("SFTP_PASSW", "sftp_password")
     monkeypatch.setenv("SFTP_NS_SRC", "sierra_dumps_dir")
     monkeypatch.setenv("SFTP_NS_DST", "load_dir")
     monkeypatch.setenv("LOGGLY_TOKEN", "ns_token_here")
     monkeypatch.setenv("LOG_HANDLERS", "console,file,loggly")
-
-
-@pytest.fixture
-def mock_io_error(monkeypatch):
-    def io_error(*args, **kwargs):
-        raise IOError
-
-    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.put", io_error)
-    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.listdir", io_error)
-    monkeypatch.setattr("paramiko.sftp_client.SFTPClient.file", io_error)
 
 
 @pytest.fixture
@@ -235,19 +225,82 @@ def test_data_rich(stub_resource, test_session, test_data_core):
 # SFTP / newtowrked drive #############
 
 
+class MockStat:
+    def __init__(self):
+        self.st_size = 1
+
+
+class MockFile:
+    def __enter__(self, *args, **kwargs):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        pass
+
+    def prefetch(self, *args, **kwargs):
+        pass
+
+    def read(self, *args, **kwargs):
+        return b""
+
+    def stat(self, *args, **kwargs):
+        return MockStat()
+
+
 @pytest.fixture
-def mock_ssh_exception(monkeypatch):
+def mock_drive(monkeypatch, mocker):
+    mock_obj = mocker.MagicMock()
+
+    def mock_file(*args, **kwargs):
+        return MockFile()
+
+    def mock_listdir(*args, **kwargs):
+        return ["NYP-bar-pout"]
+
+    def mock_stat(*args, **kwargs):
+        all_args = [i for i in args] + [i for i in kwargs.values()]
+        if "foo.mrc" in all_args or "load_dir/foo-01.mrc" in all_args:
+            pass
+        else:
+            raise FileNotFoundError
+
+    monkeypatch.setenv("SFTP_HOST", "sftp.fakehost.com")
+    monkeypatch.setenv("SFTP_PORT", "22")
+    monkeypatch.setenv("SFTP_USER", "nightshift")
+    monkeypatch.setenv("SFTP_PASSW", "sftp_password")
+    monkeypatch.setenv("SFTP_NS_SRC", "sierra_dumps_dir")
+    monkeypatch.setenv("SFTP_NS_DST", "load_dir")
+    monkeypatch.setattr(SFTPClient, "_send_version", lambda *args, **kwargs: None)
+    monkeypatch.setattr(SFTPClient, "_log", lambda *args, **kwargs: None)
+    monkeypatch.setattr(SFTPClient, "file", mock_file)
+    monkeypatch.setattr(SFTPClient, "close", lambda *args, **kwargs: None)
+    monkeypatch.setattr(SFTPClient, "listdir", mock_listdir)
+    monkeypatch.setattr(SFTPClient, "put", lambda *args, **kwargs: None)
+    monkeypatch.setattr(SFTPClient, "stat", mock_stat)
+    monkeypatch.setattr("nightshift.comms.storage.Transport", mock_obj)
+
+
+@pytest.fixture
+def mock_empty_sftp_client(monkeypatch, mock_drive):
+    monkeypatch.setattr(SFTPClient, "from_transport", lambda *args, **kwargs: None)
+
+
+@pytest.fixture
+def mock_ssh_exception(monkeypatch, mock_drive):
     def mock_ssh_exception(self, *args, **kwargs):
-        raise paramiko.ssh_exception.SSHException
+        raise SSHException
 
-    monkeypatch.setattr("paramiko.transport.Transport.connect", mock_ssh_exception)
+    monkeypatch.setattr("nightshift.comms.storage.Transport", mock_ssh_exception)
 
 
 @pytest.fixture
-def mock_drive(mock_env_vars):
-    creds = get_credentials()
-    with Drive(*creds) as drive:
-        yield drive
+def mock_io_error(monkeypatch, mock_drive):
+    def io_error(self, *args, **kwargs):
+        raise IOError
+
+    monkeypatch.setattr(SFTPClient, "put", io_error)
+    monkeypatch.setattr(SFTPClient, "listdir", io_error)
+    monkeypatch.setattr(SFTPClient, "file", io_error)
 
 
 class MockHTTPResponse:
