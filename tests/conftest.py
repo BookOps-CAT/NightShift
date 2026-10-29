@@ -248,7 +248,7 @@ class MockFile:
 
 
 @pytest.fixture
-def mock_drive(monkeypatch, mocker):
+def mock_drive(monkeypatch, mocker, mock_env_vars):
     mock_obj = mocker.MagicMock()
 
     def mock_file(*args, **kwargs):
@@ -264,12 +264,6 @@ def mock_drive(monkeypatch, mocker):
         else:
             raise FileNotFoundError
 
-    monkeypatch.setenv("SFTP_HOST", "sftp.fakehost.com")
-    monkeypatch.setenv("SFTP_PORT", "22")
-    monkeypatch.setenv("SFTP_USER", "nightshift")
-    monkeypatch.setenv("SFTP_PASSW", "sftp_password")
-    monkeypatch.setenv("SFTP_NS_SRC", "sierra_dumps_dir")
-    monkeypatch.setenv("SFTP_NS_DST", "load_dir")
     monkeypatch.setattr(SFTPClient, "_send_version", lambda *args, **kwargs: None)
     monkeypatch.setattr(SFTPClient, "_log", lambda *args, **kwargs: None)
     monkeypatch.setattr(SFTPClient, "file", mock_file)

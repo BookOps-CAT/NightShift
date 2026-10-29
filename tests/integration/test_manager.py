@@ -16,7 +16,6 @@ class TestProcessResourcesMocked:
         self,
         test_session,
         test_data_core,
-        mock_env_vars,
         mock_drive,
         mock_drive_unprocessed_files,
         mock_drive_fetch_file,
