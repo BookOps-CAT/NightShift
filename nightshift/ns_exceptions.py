@@ -17,3 +17,9 @@ class SierraSearchPlatformError(Exception):
     """
 
     pass
+
+
+class DatabaseInitializationError(Exception):
+    """Raised when the database fails to initialize with required schema or data."""
+
+    pass
