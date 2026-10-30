@@ -26,7 +26,7 @@ def test_config_local_env_variables():
 
 
 def test_configure_database_local_success(
-    patch_init_db, patch_config_local_env_variables, capfd
+    patch_init_db, patch_config_local_env_variables, mock_db_env, capfd
 ):
     configure_database(env="local")
     captured = capfd.readouterr()
@@ -34,7 +34,7 @@ def test_configure_database_local_success(
 
 
 def test_configure_database_again(
-    patch_config_local_env_variables, mock_init_db_integrity_error, capfd
+    patch_config_local_env_variables, mock_init_db_integrity_error, mock_db_env, capfd
 ):
     configure_database()
     captured = capfd.readouterr()
@@ -44,14 +44,16 @@ def test_configure_database_again(
     )
 
 
-def test_configure_database_without_env_variables(capfd, mock_init_db_value_error):
+def test_configure_database_without_env_variables(
+    capfd, mock_db_env, mock_init_db_value_error
+):
     configure_database()
     captured = capfd.readouterr()
     assert "Environmental variables are not configured properly." in captured.out
 
 
 def test_configure_database_with_improper_structure(
-    capfd, mock_init_db_invalid_structure
+    capfd, mock_db_env, mock_init_db_invalid_structure
 ):
     configure_database()
     captured = capfd.readouterr()
@@ -60,6 +62,7 @@ def test_configure_database_with_improper_structure(
 
 def test_run_local(
     caplog,
+    mock_db_env,
     patch_config_local_env_variables,
     patch_process_resources,
     patch_perform_db_maintenance,
@@ -72,7 +75,9 @@ def test_run_local(
 
 
 @pytest.mark.parametrize("arg", ["local", "prod"])
-def test_main_init_arg(arg, patch_init_db, patch_config_local_env_variables, capfd):
+def test_main_init_arg(
+    arg, mock_db_env, patch_init_db, patch_config_local_env_variables, capfd
+):
     main(["init", f"{arg}"])
     captured = capfd.readouterr()
 
@@ -82,6 +87,7 @@ def test_main_init_arg(arg, patch_init_db, patch_config_local_env_variables, cap
 @pytest.mark.parametrize("arg", ["local", "prod"])
 def test_main_run_arg(
     arg,
+    mock_db_env,
     patch_config_local_env_variables,
     patch_process_resources,
     patch_perform_db_maintenance,

@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from nightshift import bot, datastore_transactions, manager
 from nightshift.comms.storage import Drive
 from nightshift.datastore import WorldcatQuery
+from nightshift.ns_exceptions import DatabaseInitializationError
 from nightshift.tasks import Tasks
 
 
@@ -46,7 +47,7 @@ def mock_init_db_value_error(monkeypatch):
 @pytest.fixture
 def mock_init_db_invalid_structure(monkeypatch):
     def _patch(*args, **kwargs):
-        raise AssertionError("Foo Error")
+        raise DatabaseInitializationError("Foo Error")
 
     monkeypatch.setattr(datastore_transactions, "init_db", _patch)
 

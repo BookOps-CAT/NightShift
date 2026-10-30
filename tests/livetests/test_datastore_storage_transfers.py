@@ -11,7 +11,7 @@ from nightshift.tasks import Tasks
 
 
 @pytest.mark.livetest
-def test_fetch_file_and_add_to_db(env_var, db_provider, test_data_rich, stub_res_cat_by_name):
+def test_fetch_file_and_add_to_db(db_provider, test_data_rich, stub_res_cat_by_name):
     test_file = "NYPeres210701-pout.mrc"
     library = "NYP"
 
@@ -50,7 +50,7 @@ def test_fetch_file_and_add_to_db(env_var, db_provider, test_data_rich, stub_res
 
 @pytest.mark.livetest
 def test_enhance_and_transfer_to_drive(
-    caplog, env_var, test_data_rich, db_provider stub_resource, stub_res_cat_by_name
+    caplog, test_data_rich, db_provider, stub_resource, stub_res_cat_by_name
 ):
     new_resource = Resource(
         sierraId=22222222,
@@ -102,8 +102,8 @@ def test_isolate_unprocessed_files(
         assert unproc == ["BPLeres210701-pout.mrc"]
 
 
-@pytest.mark.firewalled
-def test_ingest_new_files(caplog, env_var, test_data_rich, stub_res_cat_by_name, db_provider):
+@pytest.mark.livetest
+def test_ingest_new_files(caplog, test_data_rich, stub_res_cat_by_name, db_provider):
     with db_provider.session_scope() as db_session:
         tasks = Tasks(db_session, "NYP", 1, stub_res_cat_by_name)
         tasks.ingest_new_files()
@@ -143,10 +143,7 @@ def test_ingest_new_files_empty_file(
             in caplog.text
         )
 
-    assert (
-        "Added SourceFile record for 'NYP-eres-pout.20220811020001': "
-        in caplog.text
-    )
+    assert "Added SourceFile record for 'NYP-eres-pout.20220811020001': " in caplog.text
 
     # make sure empty Sierra export has been added to the datastore
     empty_sf_rec = (
