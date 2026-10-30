@@ -205,19 +205,18 @@ def test_add_resource_unique_constraint_violation(test_session, test_data_core):
     )
     test_session.commit()
 
-    with does_not_raise():
-        result = add_resource(
-            test_session,
-            Resource(
-                sierraId=11111111,
-                libraryId=1,
-                sourceId=2,
-                resourceCategoryId=1,
-                bibDate=bib_date,
-            ),
-        )
-        test_session.commit()
-        assert result is None
+    result = add_resource(
+        test_session,
+        Resource(
+            sierraId=11111111,
+            libraryId=1,
+            sourceId=2,
+            resourceCategoryId=1,
+            bibDate=bib_date,
+        ),
+    )
+    test_session.commit()
+    assert result is None
 
 
 def test_add_source_file(test_session, test_data_core):

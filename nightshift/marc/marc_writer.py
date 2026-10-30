@@ -236,17 +236,15 @@ class BibEnhancer:
         commands = []
 
         # Sierra bib format
-        if "bib_format_attr" in self.values:
-            sierra_format_code = getattr(self.res_cat, self.values["bib_format_attr"])
-            commands.append(f"b2={sierra_format_code}")
+        sierra_format_code = getattr(self.res_cat, self.values["bib_format_attr"])
+        commands.append(f"b2={sierra_format_code}")
 
         # Sierra suppression code
         if self.resource.suppressed:
             commands.append("b3=n")
 
         # set default location
-        if "default_loc" in self.values:
-            commands.append(self.values["default_loc"])
+        commands.append(self.values["default_loc"])
 
         command_str = ";".join(commands)
 
@@ -362,14 +360,13 @@ class BibEnhancer:
         Adds 907 (BPL) or 945 (NYP) tag to manipulated MARC record for
         matching/overlaying purposes.
         """
-        if "sierra_id_tag" in self.tags:
-            self.bib.add_field(
-                Field(
-                    tag=self.tags["sierra_id_tag"],
-                    indicators=Indicators(" ", " "),
-                    subfields=[Subfield("a", f".b{self.resource.sierraId}a")],
-                )
+        self.bib.add_field(
+            Field(
+                tag=self.tags["sierra_id_tag"],
+                indicators=Indicators(" ", " "),
+                subfields=[Subfield("a", f".b{self.resource.sierraId}a")],
             )
+        )
 
     def _digits_only_in_tag_001(self) -> None:
         """

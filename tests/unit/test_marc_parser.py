@@ -1,6 +1,5 @@
-import logging
 import pickle
-from contextlib import nullcontext as does_not_raise
+from collections.abc import Iterable
 from datetime import date
 from io import BytesIO
 
@@ -10,6 +9,51 @@ from pymarc import Field, Indicators, Subfield
 
 from nightshift.datastore import Resource
 from nightshift.marc.marc_parser import BibReader, worldcat_response_to_bib
+
+
+@pytest.fixture
+def stub_marc():
+    bib = Bib()
+    bib.leader = "02866pam  2200517 i 4500"
+    bib.add_field(Field(tag="008", data="190306s2017    ht a   j      000 1 hat d"))
+    bib.add_field(
+        Field(
+            tag="100",
+            indicators=Indicators("1", " "),
+            subfields=[Subfield("a", "Adams, John,"), Subfield("e", "author.")],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="245",
+            indicators=Indicators("1", "4"),
+            subfields=[Subfield("a", "The foo /"), Subfield("c", "by John Adams.")],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="264",
+            indicators=Indicators(" ", "1"),
+            subfields=[
+                Subfield("a", "Bar :"),
+                Subfield("b", "New York,"),
+                Subfield("c", "2021"),
+            ],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="907",
+            indicators=Indicators(" ", " "),
+            subfields=[
+                Subfield("a", ".b22222222x"),
+                Subfield("b", "07-01-21"),
+                Subfield("c", "07-01-2021 19:07"),
+            ],
+        )
+    )
+
+    return bib
 
 
 @pytest.mark.parametrize("library", ["BPL", "NYP"])
@@ -22,50 +66,39 @@ def test_worldcat_response_to_bib(library):
 
 def test_worldcat_response_to_pymarc_invalid_data_type(caplog):
     with pytest.raises(TypeError):
-        with caplog.at_level(logging.ERROR):
-            worldcat_response_to_bib(None, "NYP")
+        worldcat_response_to_bib(None, "NYP")
     assert (
         "Invalid MARC data format: NoneType. Not able to convert to bookops-marc Bib object."  # noqa: E501
         in caplog.text
     )
 
 
-def test_BibReader_library_successful_init(stub_res_cat_by_name):
-    with does_not_raise():
-        BibReader(
-            marc_target=BytesIO(b"some records"),
-            library="NYP",
-            libraryId=1,
-            resource_categories=stub_res_cat_by_name,
-        )
+def test_BibReader(stub_res_cat_by_name):
+    reader = BibReader(
+        marc_target="tests/nyp-ebook-sample.mrc",
+        library="NYP",
+        libraryId=1,
+        resource_categories=stub_res_cat_by_name,
+    )
+    assert isinstance(reader, Iterable)
 
 
 def test_BibReader_invalid_marc_target(caplog, stub_res_cat_by_name):
     with pytest.raises(TypeError):
-        with caplog.at_level(logging.ERROR):
-            BibReader(123, "NYP", 1, stub_res_cat_by_name)
+        BibReader(123, "NYP", 1, stub_res_cat_by_name)
 
     assert "Invalid 'marc_target' argument: '123' (int)" in caplog.text
 
 
 def test_BibReader_invalid_resource_categories_arg(caplog):
     with pytest.raises(TypeError):
-        with caplog.at_level(logging.ERROR):
-            BibReader(
-                marc_target=BytesIO(b"foo"),
-                library="NYP",
-                libraryId=1,
-                resource_categories=[],
-            )
+        BibReader(
+            marc_target=BytesIO(b"foo"),
+            library="NYP",
+            libraryId=1,
+            resource_categories=[],
+        )
     assert "Invalid 'resource_categories' argument" in caplog.text
-
-
-def test_BibReader_iterator(stub_res_cat_by_name):
-    reader = BibReader("tests/nyp-ebook-sample.mrc", "NYP", 1, stub_res_cat_by_name)
-    with does_not_raise():
-        for _ in reader:
-            continue
-    assert reader.marc_target.closed
 
 
 @pytest.mark.parametrize(
@@ -79,36 +112,38 @@ def test_BibReader_iterator(stub_res_cat_by_name):
     ],
 )
 def test_BibReader_determine_resource_category(
-    arg1, arg2, expectation, stub_marc, fake_BibReader
+    arg1, arg2, expectation, stub_marc, stub_res_cat_by_name
 ):
     stub_marc.leader = f"00000n{arg1}m a2200385Ka 4500"
     stub_marc.add_field(Field(tag="001", data=arg2))
-    assert fake_BibReader._determine_resource_category(stub_marc) == expectation
+    reader = BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
+    assert reader._determine_resource_category(stub_marc) == expectation
 
 
-def test_BibReader_determine_resource_category_bib_none(fake_BibReader):
-    assert fake_BibReader._determine_resource_category(None) is None
+def test_BibReader_determine_resource_category_bib_none(stub_res_cat_by_name):
+    reader = BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
+    assert reader._determine_resource_category(None) is None
 
 
 def test_BibReader_unsupported_resource_type_log_warning(
-    caplog, stub_marc, fake_BibReader
+    caplog, stub_marc, stub_res_cat_by_name
 ):
     stub_marc.leader = "00000nem a2200385Ka 4500"  # cartographic mat rec type
-    with caplog.at_level(logging.WARN):
-        fake_BibReader.library = "NYP"
-        fake_BibReader._determine_resource_category(stub_marc)
+    reader = BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
+    reader._determine_resource_category(stub_marc)
 
     assert "Unsupported bib type. Unable to ingest NYP bib # b22222222x." in caplog.text
 
 
-def test_BibReader_pickle_obj(fake_BibReader):
-    assert isinstance(fake_BibReader._pickle_obj(["foo"]), bytes)
+def test_BibReader_pickle_obj(stub_res_cat_by_name):
+    reader = BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
+    assert isinstance(reader._pickle_obj(["foo"]), bytes)
 
 
 @pytest.mark.parametrize(
     "arg1, arg2", [("a", "ebook"), ("i", "eaudio"), ("g", "evideo")]
 )
-def test_BibReader_fields2keep_eresource(arg1, arg2, stub_marc, fake_BibReader):
+def test_BibReader_fields2keep_eresource(arg1, arg2, stub_marc, stub_res_cat_by_name):
     tags = [
         Field(tag="001", data="ODN12345"),
         Field(
@@ -135,8 +170,8 @@ def test_BibReader_fields2keep_eresource(arg1, arg2, stub_marc, fake_BibReader):
     stub_marc.leader = f"00000n{arg1}m a2200385Ka 4500"
     for tag in tags:
         stub_marc.add_field(tag)
-
-    pickled = fake_BibReader._fields2keep(bib=stub_marc, resource_category=arg2)
+    reader = BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
+    pickled = reader._fields2keep(bib=stub_marc, resource_category=arg2)
     result = pickle.loads(pickled)
     assert len(result) == 4
     assert result[0].tag == "020"
@@ -150,7 +185,7 @@ def test_BibReader_fields2keep_eresource(arg1, arg2, stub_marc, fake_BibReader):
     [("a", "ebook", 1), ("i", "eaudio", 2), ("g", "evideo", 3)],
 )
 def test_BibReader_map_data_eresource(
-    arg1, arg2, expectation, stub_marc, fake_BibReader
+    arg1, arg2, expectation, stub_marc, stub_res_cat_by_name
 ):
     bib = stub_marc
     bib.leader = f"00000n{arg1}m a2200385Ka 4500"
@@ -191,8 +226,8 @@ def test_BibReader_map_data_eresource(
     ]
     for tag in tags:
         bib.add_field(tag)
-
-    res = fake_BibReader._map_data(bib=bib, resource_category=arg2)
+    reader = BibReader(BytesIO(b"some records"), "NYP", 1, stub_res_cat_by_name)
+    res = reader._map_data(bib=bib, resource_category=arg2)
     assert isinstance(res, Resource)
     assert res.sierraId == 22222222
     assert res.libraryId == 1

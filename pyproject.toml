@@ -35,10 +35,9 @@ python = ">=3.12,<4.0"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-    "local: locally run test to be excluded from CI",
-    "firewalled: tests that can only run inside firewall network, skipping CI"
+    "livetest: tests hitting live web or db resources",
 ]
-addopts = '-m "not local and not firewalled" --cov=nightshift/'
+addopts = '-m "not livetest" --cov=nightshift/'
 
 [tool.coverage.run]
 branch = true

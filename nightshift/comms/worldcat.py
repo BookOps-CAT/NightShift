@@ -8,7 +8,6 @@ from collections.abc import Iterator
 from typing import Any
 
 from bookops_worldcat import MetadataSession, WorldcatAccessToken
-from bookops_worldcat.errors import WorldcatAuthorizationError, WorldcatRequestError
 from requests import Response
 
 from nightshift import __title__, __version__
@@ -41,10 +40,9 @@ class BriefBibResponse:
         Returns:
             oclc_number
         """
-        try:
+        if self.is_match:
             return self.as_json["briefRecords"][0]["oclcNumber"]
-        except (IndexError, KeyError):
-            return None
+        return None
 
 
 class Worldcat:
@@ -102,14 +100,10 @@ class Worldcat:
         Returns:
             a segment of query string
         """
-        try:
-            rotten_apples_str = "".join(
-                [f" NOT cs={a}" for a in rotten_apples[resource_category_id]]
-            )
-        except KeyError:
-            rotten_apples_str = ""
-
-        return rotten_apples_str
+        rotten_apples_list = rotten_apples.get(resource_category_id)
+        if not rotten_apples_list:
+            return ""
+        return "".join([f" NOT cs={a}" for a in rotten_apples_list])
 
     def _get_access_token(self, credentials: dict) -> WorldcatAccessToken:
         """
@@ -121,15 +115,9 @@ class Worldcat:
         Returns:
             access_token:               an instance of `WorldcatAccessToken`
         """
-        try:
-            access_token = WorldcatAccessToken(**credentials)
-            logger.info(f"{self.library} Worldcat Metadata API access token obtained.")
-            return access_token
-        except WorldcatAuthorizationError:
-            logger.error(
-                f"Unable to obtain {self.library} Worldcat MetadataAPI access token."
-            )
-            raise
+        access_token = WorldcatAccessToken(**credentials)
+        logger.info(f"{self.library} Worldcat Metadata API access token obtained.")
+        return access_token
 
     def _get_credentials(self) -> dict:
         """
@@ -139,8 +127,8 @@ class Worldcat:
             credentials
         """
         return dict(
-            key=os.getenv(f"WC{self.library}_KEY"),
-            secret=os.getenv(f"WC{self.library}_SECRET"),
+            key=os.environ[f"WC{self.library}_KEY"],
+            secret=os.environ[f"WC{self.library}_SECRET"],
             scopes="WorldCatMetadataAPI",
             agent=f"{__title__}/{__version__}",
         )
@@ -177,26 +165,24 @@ class Worldcat:
                         itemSubType="book-digital",
                     )
                 )
-        elif resource.resourceCategoryId == 2:
+        elif resource.resourceCategoryId == 2 and resource.distributorNumber:
             # eaudio
-            if resource.distributorNumber:
-                payloads.append(
-                    dict(
-                        q=f"sn={dist_number} NOT lv:3{forbidden_sources}",
-                        itemType="audiobook",
-                        itemSubType="audiobook-digital",
-                    )
+            payloads.append(
+                dict(
+                    q=f"sn={dist_number} NOT lv:3{forbidden_sources}",
+                    itemType="audiobook",
+                    itemSubType="audiobook-digital",
                 )
-        elif resource.resourceCategoryId == 3:
+            )
+        elif resource.resourceCategoryId == 3 and resource.distributorNumber:
             # evideo
-            if resource.distributorNumber:
-                payloads.append(
-                    dict(
-                        q=f"sn={dist_number} NOT lv:3 NOT lv:M{forbidden_sources}",
-                        itemType="video",
-                        itemSubType="video-digital",
-                    )
+            payloads.append(
+                dict(
+                    q=f"sn={dist_number} NOT lv:3 NOT lv:M{forbidden_sources}",
+                    itemType="video",
+                    itemSubType="video-digital",
                 )
+            )
         elif resource.resourceCategoryId in range(4, 12):
             # print monograph materials
             if resource.standardNumber:
@@ -242,47 +228,42 @@ class Worldcat:
             (`Resource`, `BriefBibResponse`)
 
         """
-        try:
-            for resource in resources:
-                payloads = self._prep_resource_queries_payloads(resource, rotten_apples)
-                if not payloads:
-                    logger.warning(
-                        f"Unable to create a payload for brief bib query for "
-                        f"{self.library} resource nid={resource.nid}, "
-                        f"sierraId=b{resource.sierraId}a."
-                    )
-                    continue
+        for resource in resources:
+            payloads = self._prep_resource_queries_payloads(resource, rotten_apples)
+            if not payloads:
+                logger.warning(
+                    f"Unable to create a payload for brief bib query for "
+                    f"{self.library} resource nid={resource.nid}, "
+                    f"sierraId=b{resource.sierraId}a."
+                )
+                continue
 
-                for payload in payloads:
-                    response = self.session.brief_bibs_search(
-                        **payload,
-                        inCatalogLanguage="eng",
-                        orderBy="mostWidelyHeld",
-                        limit=1,
-                    )
+            for payload in payloads:
+                response = self.session.brief_bibs_search(
+                    **payload,
+                    inCatalogLanguage="eng",
+                    orderBy="mostWidelyHeld",
+                    limit=1,
+                )
 
-                    brief_bib_response = BriefBibResponse(response)
+                brief_bib_response = BriefBibResponse(response)
+                logger.debug(
+                    f"Brief bib Worldcat query for {self.library} Sierra bib "
+                    f"# b{resource.sierraId}a: {response.url}"
+                )
+                if brief_bib_response.is_match:
                     logger.debug(
-                        f"Brief bib Worldcat query for {self.library} Sierra bib "
-                        f"# b{resource.sierraId}a: {response.url}"
+                        f"Match found for {self.library} Sierra bib # "
+                        f"b{resource.sierraId}a."
                     )
-                    if brief_bib_response.is_match:
-                        logger.debug(
-                            f"Match found for {self.library} Sierra bib # "
-                            f"b{resource.sierraId}a."
-                        )
-                        break
-                    else:
-                        logger.debug(
-                            f"No matches found for {self.library} Sierra bib # "
-                            f"b{resource.sierraId}a: {response.url}"
-                        )
+                    break
+                else:
+                    logger.debug(
+                        f"No matches found for {self.library} Sierra bib # "
+                        f"b{resource.sierraId}a: {response.url}"
+                    )
 
-                yield (resource, brief_bib_response)
-
-        except WorldcatRequestError:
-            logger.error("WorldcatRequestError. Aborting.")
-            raise
+            yield (resource, brief_bib_response)
 
     def get_full_bibs(
         self, resources: list[Resource]
@@ -290,15 +271,11 @@ class Worldcat:
         """
         Makes MetadataAPI requests for full bibliographic resources
         """
-        try:
-            for resource in resources:
-                if resource.oclcMatchNumber:
-                    response = self.session.bib_get(oclcNumber=resource.oclcMatchNumber)
-                    logger.debug(
-                        f"Full bib Worldcat request for {self.library} Sierra bib # "
-                        f"b{resource.sierraId}a: {response.url}."
-                    )
-                    yield (resource, response.content)
-        except WorldcatRequestError:
-            logger.error("WorldcatRequestError. Aborting.")
-            raise
+        for resource in resources:
+            if resource.oclcMatchNumber:
+                response = self.session.bib_get(oclcNumber=resource.oclcMatchNumber)
+                logger.debug(
+                    f"Full bib Worldcat request for {self.library} Sierra bib # "
+                    f"b{resource.sierraId}a: {response.url}."
+                )
+                yield (resource, response.content)

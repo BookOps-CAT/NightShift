@@ -1,6 +1,4 @@
 import datetime
-import logging
-from contextlib import nullcontext as does_not_raise
 
 import pytest
 
@@ -12,10 +10,8 @@ from nightshift.marc.marc_parser import BibReader
 from nightshift.tasks import Tasks
 
 
-@pytest.mark.firewalled
-def test_fetch_file_and_add_to_db(
-    env_var, test_data_rich, stub_res_cat_by_name, db_provider
-):
+@pytest.mark.livetest
+def test_fetch_file_and_add_to_db(db_provider, test_data_rich, stub_res_cat_by_name):
     test_file = "NYPeres210701-pout.mrc"
     library = "NYP"
 
@@ -52,9 +48,9 @@ def test_fetch_file_and_add_to_db(
         assert bib.resourceCategoryId == 1
 
 
-@pytest.mark.firewalled
+@pytest.mark.livetest
 def test_enhance_and_transfer_to_drive(
-    caplog, env_var, test_data_rich, stub_resource, stub_res_cat_by_name, db_provider
+    caplog, test_data_rich, db_provider, stub_resource, stub_res_cat_by_name
 ):
     new_resource = Resource(
         sierraId=22222222,
@@ -74,9 +70,8 @@ def test_enhance_and_transfer_to_drive(
             db_session.query(Resource).where(Resource.sierraId == 22222222).all()
         )
 
-        with caplog.at_level(logging.DEBUG):
-            tasks = Tasks(db_session, "NYP", 1, stub_res_cat_by_name)
-            tasks.enhance_and_output_bibs("ebook", resources)
+        tasks = Tasks(db_session, "NYP", 1, stub_res_cat_by_name)
+        tasks.enhance_and_output_bibs("ebook", resources)
 
     today = datetime.datetime.now().date()
     drive_creds = get_credentials()
@@ -90,16 +85,15 @@ def test_enhance_and_transfer_to_drive(
         drive.sftp.remove(f"{drive.dst_dir}/{today:%y%m%d}-NYP-ebook-01.mrc")
 
 
-@pytest.mark.firewalled
+@pytest.mark.livetest
 def test_isolate_unprocessed_files(
     caplog, env_var, test_data_rich, stub_res_cat_by_name, db_provider
 ):
     with db_provider.session_scope() as db_session:
         drive_creds = get_credentials()
         with Drive(*drive_creds) as drive:
-            with caplog.at_level(logging.DEBUG):
-                tasks = Tasks(db_session, "BPL", 2, stub_res_cat_by_name)
-                unproc = tasks.isolate_unprocessed_files(drive)
+            tasks = Tasks(db_session, "BPL", 2, stub_res_cat_by_name)
+            unproc = tasks.isolate_unprocessed_files(drive)
 
             assert (
                 "Found following remote files for BPL: ['BPLeres210701-pout.mrc']"
@@ -108,14 +102,11 @@ def test_isolate_unprocessed_files(
         assert unproc == ["BPLeres210701-pout.mrc"]
 
 
-@pytest.mark.firewalled
-def test_ingest_new_files(
-    caplog, env_var, test_data_rich, stub_res_cat_by_name, db_provider
-):
+@pytest.mark.livetest
+def test_ingest_new_files(caplog, test_data_rich, stub_res_cat_by_name, db_provider):
     with db_provider.session_scope() as db_session:
-        with caplog.at_level(logging.INFO):
-            tasks = Tasks(db_session, "NYP", 1, stub_res_cat_by_name)
-            tasks.ingest_new_files()
+        tasks = Tasks(db_session, "NYP", 1, stub_res_cat_by_name)
+        tasks.ingest_new_files()
 
         assert (
             "Found following unprocessed files: ['NYPeres210701-pout.mrc', 'NYP-eres-pout.20220811020001']."
@@ -140,36 +131,31 @@ def test_ingest_new_files(
         assert res_rec.sierraId == 21642892
 
 
-@pytest.mark.firewalled
+@pytest.mark.livetest
 def test_ingest_new_files_empty_file(
     caplog, env_var, test_data_rich, stub_res_cat_by_name, db_provider
 ):
-    with does_not_raise():
-        with db_provider.session_scope() as db_session:
-            with caplog.at_level(logging.DEBUG):
-                tasks = Tasks(db_session, "NYP", 1, stub_res_cat_by_name)
-                tasks.ingest_new_files()
-            assert (
-                "Found following unprocessed files: ['NYPeres210701-pout.mrc', 'NYP-eres-pout.20220811020001']."
-                in caplog.text
-            )
+    with db_provider.session_scope() as db_session:
+        tasks = Tasks(db_session, "NYP", 1, stub_res_cat_by_name)
+        tasks.ingest_new_files()
+        assert (
+            "Found following unprocessed files: ['NYPeres210701-pout.mrc', 'NYP-eres-pout.20220811020001']."
+            in caplog.text
+        )
 
-            assert (
-                "Added SourceFile record for 'NYP-eres-pout.20220811020001': "
-                in caplog.text
-            )
+    assert "Added SourceFile record for 'NYP-eres-pout.20220811020001': " in caplog.text
 
-            # make sure empty Sierra export has been added to the datastore
-            empty_sf_rec = (
-                db_session.query(SourceFile)
-                .where(SourceFile.handle == "NYP-eres-pout.20220811020001")
-                .one_or_none()
-            )
-            assert empty_sf_rec is not None
-            assert empty_sf_rec.nid == 4
-            assert empty_sf_rec.libraryId == 1
+    # make sure empty Sierra export has been added to the datastore
+    empty_sf_rec = (
+        db_session.query(SourceFile)
+        .where(SourceFile.handle == "NYP-eres-pout.20220811020001")
+        .one_or_none()
+    )
+    assert empty_sf_rec is not None
+    assert empty_sf_rec.nid == 4
+    assert empty_sf_rec.libraryId == 1
 
-            # make sure no resources associated with the empty file are present
-            results = db_session.query(Resource).where(Resource.sourceId == 4).all()
+    # make sure no resources associated with the empty file are present
+    results = db_session.query(Resource).where(Resource.sourceId == 4).all()
 
-            assert results == []
+    assert results == []

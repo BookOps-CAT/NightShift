@@ -1,54 +1,161 @@
-from contextlib import nullcontext as does_not_raise
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from nightshift.comms.storage import Drive, get_credentials
-from nightshift.datastore import Resource
-from nightshift.manager import process_resources
+from nightshift.datastore import Event, Resource, WorldcatQuery
+from nightshift.manager import perform_db_maintenance, process_resources
 
 
-@pytest.mark.firewalled
-def test_process_resources_live(env_var, test_data_rich, test_session):
+class TestProcessResourcesMocked:
     """
-    This tests runs using real data and live services
+    These test runs using higher level patching: mocked SFTP, Worldcat, NYPL Platform
+    and BPL Solr. It still uses local Postgres db
     """
-    with does_not_raise():
-        process_resources()
 
-    # assert here changes in the db
-    # and correct manipulations to bibs
-    # retrieve manipulated file in SFTP and examine
+    def test_new_resources(
+        self,
+        test_session,
+        test_data_core,
+        mock_drive,
+        mock_drive_unprocessed_files,
+        mock_drive_fetch_file,
+        mock_worldcat_brief_bib_matches,
+        mock_check_resources_sierra_state_open,
+        mock_get_worldcat_full_bibs,
+        mock_transfer_to_drive,
+        db_provider,
+    ):
+        process_resources(db_provider)
 
-    # db
-    results = test_session.query(Resource).all()
-    assert len(results) == 3
-    for res in results:
-        assert (
-            len(res.queries) == 1
-        )  # initial stub resource indicates it was already successfully searched
+        results = test_session.query(Resource).all()
+        assert len(results) == 2
+        for res in results:
+            assert len(res.queries) == 1
+            assert res.oclcMatchNumber is not None
+            assert res.fullBib is not None
+            assert res.outputId is not None
+            assert res.status == "bot_enhanced"
+            assert res.enhanceTimestamp is not None
+
+    def test_older_resources(
+        self,
+        test_session,
+        test_data_rich,
+        mock_env_vars,
+        mock_drive,
+        stub_resource,
+        mock_drive_unprocessed_files_empty,
+        mock_check_resources_sierra_state_open,
+        mock_worldcat_brief_bib_matches,
+        mock_get_worldcat_full_bibs,
+        mock_transfer_to_drive,
+        db_provider,
+    ):
+        resource = stub_resource
+        resource.status = "open"
+        resource.fullBib = None
+        resource.oclcMatchNumber = None
+        resource.enhanceTimestamp = None
+        resource.queries = [
+            WorldcatQuery(
+                match=False,
+                timestamp=datetime.now(timezone.utc).date() - timedelta(days=31),
+            )
+        ]
+        resource.outputId = None
+
+        test_session.add(resource)
+        test_session.commit()
+
+        process_resources(db_provider)
+
+        results = test_session.query(Resource).all()
+        assert len(results) == 1
+
+        res = results[0]
+
+        assert len(res.queries) == 2
+        assert res.queries[0].match is False
+        assert res.queries[1].match is True
         assert res.oclcMatchNumber is not None
         assert res.fullBib is not None
         assert res.outputId is not None
         assert res.status == "bot_enhanced"
         assert res.enhanceTimestamp is not None
 
-    # SFTP
-    drive_creds = get_credentials()
-    with Drive(*drive_creds) as drive:
-        temp_files = drive.sftp.listdir(path=drive.dst_dir)
 
-        today = datetime.now(timezone.utc).date()
-        assert temp_files == [
-            f"{today:%y%m%d}-NYP-ebook-01.mrc",
-            f"{today:%y%m%d}-BPL-ebook-01.mrc",
-        ]
+@pytest.mark.parametrize(
+    "age,status,tally", [(91, "open", 0), (179, "open", 0), (181, "expired", 1)]
+)
+def test_perform_db_maintenance_set_expired(
+    caplog, test_session, test_data_rich, age, status, tally, db_provider
+):
+    # expired resource
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            status="open",
+            bibDate=datetime.now(timezone.utc).date() - timedelta(days=age),
+            queries=[WorldcatQuery(match=False)],
+        )
+    )
+    test_session.commit()
 
-        for file_handle in temp_files:
-            with drive.sftp.file(f"{drive.dst_dir}/{file_handle}", mode="r") as file:
-                file_size = file.stat().st_size
-                assert file_size > 0
+    perform_db_maintenance(db_provider)
 
-        # cleanup (fix needed, make sure it always happens)
-        for file_handle in temp_files:
-            drive.sftp.remove(f"{drive.dst_dir}/{file_handle}")
+    assert f"Changed {tally} ebook resource(s) status to 'expired'." in caplog.text
+
+    resource = test_session.query(Resource).filter_by(sierraId=22222222).one()
+    assert resource.status == status
+
+    # check the Event table
+    event = test_session.query(Event).filter_by(sierraId=22222222).one_or_none()
+    if tally == 0:
+        assert event is None
+    else:
+        assert event is not None
+        assert event.status == "expired"
+        assert event.timestamp.date() == datetime.now(timezone.utc).date()
+
+
+@pytest.mark.parametrize(
+    "age,tally,expectation",
+    [(91, 0, Resource), (191, 0, Resource), (300, 1, type(None))],
+)
+def test_perform_db_maintenance_delete(
+    caplog,
+    test_session,
+    test_data_rich,
+    stub_res_cat_by_name,
+    age,
+    tally,
+    expectation,
+    db_provider,
+):
+    expiration_age = stub_res_cat_by_name["ebook"].queryDays[-1][1]
+
+    # expired resource
+    test_session.add(
+        Resource(
+            sierraId=22222222,
+            libraryId=1,
+            sourceId=1,
+            resourceCategoryId=1,
+            status="open",
+            bibDate=datetime.now(timezone.utc).date() - timedelta(days=age),
+            queries=[WorldcatQuery(match=False)],
+        )
+    )
+    test_session.commit()
+
+    perform_db_maintenance(db_provider)
+
+    assert (
+        f"Deleted {tally} ebook resource(s) older than {expiration_age + 90} days from the database."
+        in caplog.text
+    )
+    resource = test_session.query(Resource).filter_by(sierraId=22222222).one_or_none()
+    assert isinstance(resource, expectation)

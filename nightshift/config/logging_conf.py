@@ -5,38 +5,6 @@ Configures app logging
 import os
 
 
-def get_handlers() -> list:
-    """
-    Retrieves from env variables logging handlers to be used and
-    returns them as a list
-
-    Returns:
-        handlers
-
-    Raises:
-        EnvironmentError
-    """
-    handlers = os.getenv("LOG_HANDLERS")
-    if not handlers:
-        raise EnvironmentError("Missing logger handlers in environment variables.")
-    else:
-        return handlers.split(",")
-
-
-def get_token() -> str:
-    """
-    Retrieves from env variables loggly customer token
-
-    Returns:
-        token
-    """
-    token = os.getenv("LOGGLY_TOKEN")
-    if not token:
-        raise EnvironmentError("Missing loggly token in environment variables.")
-    else:
-        return token
-
-
 def log_conf() -> dict:
     """
     Returns dictionary with logger configuration. Depends on
@@ -45,9 +13,9 @@ def log_conf() -> dict:
     Returns:
         logging_config
     """
-    log_token = get_token()
-    handlers = get_handlers()
-
+    log_token = os.environ["LOGGLY_TOKEN"]
+    log_handlers = os.environ["LOG_HANDLERS"]
+    handlers = log_handlers.split(",")
     logging_config = {
         "version": 1,
         "disable_existing_loggers": False,

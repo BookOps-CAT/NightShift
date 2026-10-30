@@ -1,4 +1,3 @@
-from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
 
 import pytest
@@ -17,8 +16,6 @@ from nightshift.datastore import (
     SourceFile,
     WorldcatQuery,
 )
-
-from ..conftest import MockSuccessfulHTTP200SessionResponse
 
 
 def test_DatabaseProvider(db_provider):
@@ -164,7 +161,9 @@ def test_WorldcatQuery_tbl_repr():
     )
 
 
-def test_WorldcatQuery_tbl_json_column(test_session, test_data_core):
+def test_WorldcatQuery_tbl_json_column(
+    test_session, test_data_core, mock_worldcat_response
+):
     test_session.add(
         Resource(
             nid=1,
@@ -178,7 +177,7 @@ def test_WorldcatQuery_tbl_json_column(test_session, test_data_core):
     )
     test_session.commit()
 
-    resp_json = MockSuccessfulHTTP200SessionResponse().json()
+    resp_json = mock_worldcat_response.json()
     test_session.add(WorldcatQuery(nid=1, resourceId=1, match=True, response=resp_json))
     test_session.commit()
     result = test_session.query(WorldcatQuery).filter_by(nid=1).first()
@@ -186,6 +185,5 @@ def test_WorldcatQuery_tbl_json_column(test_session, test_data_core):
 
 
 def test_datastore_connection(test_connection):
-    with does_not_raise():
-        engine = create_engine(test_connection)
-        engine.connect()
+    engine = create_engine(test_connection)
+    engine.connect()
