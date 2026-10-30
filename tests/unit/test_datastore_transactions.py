@@ -314,36 +314,6 @@ def test_insert_or_ignore_dup(test_session):
     assert rec2.nid == 1
 
 
-# def test_insert_or_ignore_resubmitted_changed_record_exception(
-#     test_session, test_data_core
-# ):
-#     # not possible to add the same record but exception raised
-#     # should this be trapped somehow and instead return None?
-#     insert_or_ignore(
-#         test_session,
-#         Resource,
-#         sierraId=22222222,
-#         libraryId=1,
-#         resourceCategoryId=1,
-#         sourceId=1,
-#         bibDate=datetime.now(timezone.utc).date(),
-#         title="TEST TITLE 1",
-#     )
-#     test_session.commit()
-#     insert_or_ignore(
-#         test_session,
-#         Resource,
-#         sierraId=22222222,
-#         libraryId=1,
-#         resourceCategoryId=1,
-#         sourceId=2,
-#         bibDate=datetime.now(timezone.utc).date(),
-#         title="REV TEST TITLE 1",
-#     )
-#     with pytest.raises(IntegrityError):
-#         test_session.commit()
-
-
 def test_library_by_id(test_session, test_data_core):
     assert library_by_id(test_session) == {1: "NYP", 2: "BPL"}
 
