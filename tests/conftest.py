@@ -14,6 +14,7 @@ from nightshift import constants
 from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES, ROTTEN_APPLES
 from nightshift.datastore import (
+    Base,
     DatabaseProvider,
     Library,
     OutputFile,
@@ -108,8 +109,9 @@ def stub_res_cat_by_id():
     return data
 
 
-@pytest.fixture(scope="function")
-def mock_db_env(monkeypatch):
+@pytest.fixture(scope="session")
+def mock_db_env():
+    mpatch = pytest.MonkeyPatch()
     if os.getenv("GITHUB_ACTIONS"):
         data = dict(
             POSTGRES_HOST="127.0.0.1",
@@ -122,82 +124,100 @@ def mock_db_env(monkeypatch):
         with open("tests/envar.yaml", "r") as f:
             data = yaml.safe_load(f)
 
-    monkeypatch.setenv("POSTGRES_USER", data["POSTGRES_USER"])
-    monkeypatch.setenv("POSTGRES_PASSWORD", data["POSTGRES_PASSWORD"])
-    monkeypatch.setenv("POSTGRES_HOST", data["POSTGRES_HOST"])
-    monkeypatch.setenv("POSTGRES_PORT", data["POSTGRES_PORT"])
-    monkeypatch.setenv("POSTGRES_DB", data["POSTGRES_DB"])
+    mpatch.setenv("POSTGRES_USER", data["POSTGRES_USER"])
+    mpatch.setenv("POSTGRES_PASSWORD", data["POSTGRES_PASSWORD"])
+    mpatch.setenv("POSTGRES_HOST", data["POSTGRES_HOST"])
+    mpatch.setenv("POSTGRES_PORT", data["POSTGRES_PORT"])
+    mpatch.setenv("POSTGRES_DB", data["POSTGRES_DB"])
 
 
-@pytest.fixture(scope="function")
-def test_connection(mock_db_env):
-    # create db engine differently on local machine or Github Actions
-    conn = f"postgresql://{os.environ['POSTGRES_USER']}:{os.environ['POSTGRES_PASSWORD']}@{os.environ['POSTGRES_HOST']}:{os.environ['POSTGRES_PORT']}/{os.environ['POSTGRES_DB']}"
-    return conn
-
-
-@pytest.fixture(scope="function")
-def db_provider(mock_db_env):
-    """Provides the injected DatabaseProvider using the local test database."""
-    conn = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
-
+@pytest.fixture(scope="session")
+def session_db_provider(mock_db_env):
+    """Initializes the provider and creates the schema ONCE for the entire test session."""
+    conn = (
+        f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@"
+        f"{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+    )
     provider = DatabaseProvider(conn)
+
+    # Create tables once per run
+    with provider.engine.begin() as connection:
+        # If your models use Base.metadata.create_all:
+        Base.metadata.create_all(connection)
+
     yield provider
 
-    # Nuclear teardown to ensure custom ENUMs and types are cleared
+    # Optional final session-level cleanup
     with provider.session_scope() as session:
         session.execute(text("DROP SCHEMA public CASCADE; CREATE SCHEMA public;"))
+    provider.engine.dispose()
 
 
-@pytest.fixture
-def test_session(db_provider):
+@pytest.fixture(scope="function")
+def db_provider(session_db_provider):
     """
-    Wraps the provider's session_scope to provide backward compatibility
-    for the hundreds of tests expecting a bare `session` object.
+    Yields the session-level provider and performs ultra-fast table truncation
+    between tests instead of dropping the schema.
     """
-    with db_provider.session_scope() as session:
-        yield session
-        # No need to manually close or drop_all here; the provider teardown handles it.
+    yield session_db_provider
 
-
-@pytest.fixture
-def test_data_core(test_session):
-    for k, v in LIBRARIES.items():
-        test_session.add(Library(nid=v["nid"], code=k))
-    for k, v in RESOURCE_CATEGORIES.items():
-        test_session.add(
-            ResourceCategory(
-                nid=v["nid"],
-                name=k,
-                description=v["description"],
-                sierraBibFormatBpl=v["sierraBibFormatBpl"],
-                sierraBibFormatNyp=v["sierraBibFormatNyp"],
-                srcTags2Keep=v["srcTags2Keep"],
-                dstTags2Delete=v["dstTags2Delete"],
-                queryDays=v["queryDays"],
+    # Fast cleanup: truncate tables in reverse topological order (or with CASCADE)
+    with session_db_provider.session_scope() as session:
+        session.execute(
+            text(
+                """
+                TRUNCATE TABLE
+                    event,
+                    worldcat_query,
+                    resource,
+                    output_file,
+                    source_file,
+                    rotten_apple_resource,
+                    rotten_apple,
+                    resource_category,
+                    library
+                RESTART IDENTITY CASCADE;
+                """
             )
         )
-    for code, resource_cat_ids in ROTTEN_APPLES.items():
-        ids = [
-            RottenAppleResource(resourceCategoryId=RESOURCE_CATEGORIES[n]["nid"])
-            for n in resource_cat_ids
-        ]
-        test_session.add(RottenApple(code=code, applicableResourceIds=ids))
-    test_session.add(SourceFile(libraryId=1, handle="foo1.mrc"))
-    test_session.add(SourceFile(libraryId=2, handle="foo2.mrc"))
-    test_session.commit()
 
 
 @pytest.fixture
-def test_data_rich(stub_resource, test_session, test_data_core):
-    test_session.add(OutputFile(libraryId=1, handle="spam.mrc"))
-    test_session.commit()
+def test_data_core(db_provider):
+    with db_provider.session_scope() as session:
+        for k, v in LIBRARIES.items():
+            session.add(Library(nid=v["nid"], code=k))
+        for k, v in RESOURCE_CATEGORIES.items():
+            session.add(
+                ResourceCategory(
+                    nid=v["nid"],
+                    name=k,
+                    description=v["description"],
+                    sierraBibFormatBpl=v["sierraBibFormatBpl"],
+                    sierraBibFormatNyp=v["sierraBibFormatNyp"],
+                    srcTags2Keep=v["srcTags2Keep"],
+                    dstTags2Delete=v["dstTags2Delete"],
+                    queryDays=v["queryDays"],
+                )
+            )
+        for code, resource_cat_ids in ROTTEN_APPLES.items():
+            ids = [
+                RottenAppleResource(resourceCategoryId=RESOURCE_CATEGORIES[n]["nid"])
+                for n in resource_cat_ids
+            ]
+            session.add(RottenApple(code=code, applicableResourceIds=ids))
+        session.add(SourceFile(libraryId=1, handle="foo1.mrc"))
+        session.add(SourceFile(libraryId=2, handle="foo2.mrc"))
 
-    test_session.add(stub_resource)
-    test_session.commit()
+
+@pytest.fixture
+def test_data_rich(stub_resource, db_provider, test_data_core):
+    with db_provider.session_scope() as session:
+        session.add(OutputFile(libraryId=1, handle="spam.mrc"))
+        session.add(stub_resource)
 
 
-# SFTP / newtowrked drive #############
+# SFTP / networked drive #############
 
 
 class MockStat:

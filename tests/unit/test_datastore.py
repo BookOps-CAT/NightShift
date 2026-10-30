@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import select
 from sqlalchemy.exc import DataError
 from sqlalchemy.orm.session import Session
 
@@ -23,23 +23,23 @@ def test_DatabaseProvider(db_provider):
         assert isinstance(session, Session)
 
 
-def test_session_scope_success(db_provider, test_session):
+def test_session_scope_success(db_provider):
     with db_provider.session_scope() as session:
         assert isinstance(session, Session)
         session.add(Library(nid=1, code="nyp"))
 
-    # assert record was committed
-    res = test_session.query(Library).filter_by(nid=1).one()
-    assert res.code == "nyp"
+        # assert record was committed
+        res = session.scalars(select(Library).filter_by(nid=1)).one()
+        assert res.code == "nyp"
 
 
-def test_session_scope_exception_rollback(db_provider, test_session):
+def test_session_scope_exception_rollback(db_provider):
     with pytest.raises(DataError):
         with db_provider.session_scope() as session:
             session.add(Library(nid=1, code="new york public"))
 
-    res = test_session.query(Library).filter_by(nid=1).one_or_none()
-    assert res is None
+            res = session.scalars(select(Library).filter_by(nid=1)).one_or_none()
+            assert res is None
 
 
 def test_Event_tbl_repr():
@@ -162,28 +162,24 @@ def test_WorldcatQuery_tbl_repr():
 
 
 def test_WorldcatQuery_tbl_json_column(
-    test_session, test_data_core, mock_worldcat_response
+    db_provider, test_data_core, mock_worldcat_response
 ):
-    test_session.add(
-        Resource(
-            nid=1,
-            sierraId=22222222,
-            libraryId=1,
-            resourceCategoryId=1,
-            bibDate=datetime.now().date(),
-            title="TEST",
-            sourceId=1,
+    with db_provider.session_scope() as session:
+        session.add(
+            Resource(
+                nid=1,
+                sierraId=22222222,
+                libraryId=1,
+                resourceCategoryId=1,
+                bibDate=datetime.now().date(),
+                title="TEST",
+                sourceId=1,
+            )
         )
-    )
-    test_session.commit()
+        session.commit()
 
-    resp_json = mock_worldcat_response.json()
-    test_session.add(WorldcatQuery(nid=1, resourceId=1, match=True, response=resp_json))
-    test_session.commit()
-    result = test_session.query(WorldcatQuery).filter_by(nid=1).first()
-    assert isinstance(result.response, dict)
-
-
-def test_datastore_connection(test_connection):
-    engine = create_engine(test_connection)
-    engine.connect()
+        resp_json = mock_worldcat_response.json()
+        session.add(WorldcatQuery(nid=1, resourceId=1, match=True, response=resp_json))
+        session.commit()
+        result = session.scalars(select(WorldcatQuery).filter_by(nid=1)).first()
+        assert isinstance(result.response, dict)

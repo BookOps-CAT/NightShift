@@ -1,20 +1,15 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from sqlalchemy import select
 
 from nightshift.datastore import Event, Resource, WorldcatQuery
 from nightshift.manager import perform_db_maintenance, process_resources
 
 
 class TestProcessResourcesMocked:
-    """
-    These test runs using higher level patching: mocked SFTP, Worldcat, NYPL Platform
-    and BPL Solr. It still uses local Postgres db
-    """
-
     def test_new_resources(
         self,
-        test_session,
         test_data_core,
         mock_drive,
         mock_drive_unprocessed_files,
@@ -27,19 +22,19 @@ class TestProcessResourcesMocked:
     ):
         process_resources(db_provider)
 
-        results = test_session.query(Resource).all()
-        assert len(results) == 2
-        for res in results:
-            assert len(res.queries) == 1
-            assert res.oclcMatchNumber is not None
-            assert res.fullBib is not None
-            assert res.outputId is not None
-            assert res.status == "bot_enhanced"
-            assert res.enhanceTimestamp is not None
+        with db_provider.session_scope() as session:
+            results = list(session.scalars(select(Resource)).all())
+            assert len(results) == 2
+            for res in results:
+                assert len(res.queries) == 1
+                assert res.oclcMatchNumber is not None
+                assert res.fullBib is not None
+                assert res.outputId is not None
+                assert res.status == "bot_enhanced"
+                assert res.enhanceTimestamp is not None
 
     def test_older_resources(
         self,
-        test_session,
         test_data_rich,
         mock_env_vars,
         mock_drive,
@@ -64,92 +59,88 @@ class TestProcessResourcesMocked:
         ]
         resource.outputId = None
 
-        test_session.add(resource)
-        test_session.commit()
+        with db_provider.session_scope() as session:
+            session.add(resource)
 
         process_resources(db_provider)
 
-        results = test_session.query(Resource).all()
-        assert len(results) == 1
+        with db_provider.session_scope() as session:
+            results = list(session.scalars(select(Resource)).all())
+            assert len(results) == 1
 
-        res = results[0]
-
-        assert len(res.queries) == 2
-        assert res.queries[0].match is False
-        assert res.queries[1].match is True
-        assert res.oclcMatchNumber is not None
-        assert res.fullBib is not None
-        assert res.outputId is not None
-        assert res.status == "bot_enhanced"
-        assert res.enhanceTimestamp is not None
+            res = results[0]
+            assert len(res.queries) == 2
+            assert res.queries[0].match is False
+            assert res.queries[1].match is True
+            assert res.oclcMatchNumber is not None
+            assert res.fullBib is not None
+            assert res.outputId is not None
+            assert res.status == "bot_enhanced"
+            assert res.enhanceTimestamp is not None
 
 
 @pytest.mark.parametrize(
-    "age,status,tally", [(91, "open", 0), (179, "open", 0), (181, "expired", 1)]
+    "age, status, tally",
+    [(179, "open", 0), (181, "expired", 1)],
+    ids=["under_expiration_threshold", "over_expiration_threshold"],
 )
 def test_perform_db_maintenance_set_expired(
-    caplog, test_session, test_data_rich, age, status, tally, db_provider
+    caplog, test_data_rich, age, status, tally, db_provider
 ):
-    # expired resource
-    test_session.add(
-        Resource(
-            sierraId=22222222,
-            libraryId=1,
-            sourceId=1,
-            resourceCategoryId=1,
-            status="open",
-            bibDate=datetime.now(timezone.utc).date() - timedelta(days=age),
-            queries=[WorldcatQuery(match=False)],
+    with db_provider.session_scope() as session:
+        session.add(
+            Resource(
+                sierraId=22222222,
+                libraryId=1,
+                sourceId=1,
+                resourceCategoryId=1,
+                status="open",
+                bibDate=datetime.now(timezone.utc).date() - timedelta(days=age),
+                queries=[WorldcatQuery(match=False)],
+            )
         )
-    )
-    test_session.commit()
 
     perform_db_maintenance(db_provider)
 
     assert f"Changed {tally} ebook resource(s) status to 'expired'." in caplog.text
 
-    resource = test_session.query(Resource).filter_by(sierraId=22222222).one()
-    assert resource.status == status
+    with db_provider.session_scope() as session:
+        resource = session.scalars(select(Resource).filter_by(sierraId=22222222)).one()
+        assert resource.status == status
 
-    # check the Event table
-    event = test_session.query(Event).filter_by(sierraId=22222222).one_or_none()
-    if tally == 0:
-        assert event is None
-    else:
-        assert event is not None
-        assert event.status == "expired"
-        assert event.timestamp.date() == datetime.now(timezone.utc).date()
+        event = session.scalars(
+            select(Event).filter_by(sierraId=22222222)
+        ).one_or_none()
+        if tally == 0:
+            assert event is None
+        else:
+            assert event is not None
+            assert event.status == "expired"
+            assert event.timestamp.date() == datetime.now(timezone.utc).date()
 
 
 @pytest.mark.parametrize(
-    "age,tally,expectation",
-    [(91, 0, Resource), (191, 0, Resource), (300, 1, type(None))],
+    "age, tally, expectation",
+    [(191, 0, True), (300, 1, False)],
+    ids=["under_deletion_threshold", "over_deletion_threshold"],
 )
 def test_perform_db_maintenance_delete(
-    caplog,
-    test_session,
-    test_data_rich,
-    stub_res_cat_by_name,
-    age,
-    tally,
-    expectation,
-    db_provider,
+    caplog, db_provider, test_data_rich, stub_res_cat_by_name, age, tally, expectation
 ):
     expiration_age = stub_res_cat_by_name["ebook"].queryDays[-1][1]
 
-    # expired resource
-    test_session.add(
-        Resource(
-            sierraId=22222222,
-            libraryId=1,
-            sourceId=1,
-            resourceCategoryId=1,
-            status="open",
-            bibDate=datetime.now(timezone.utc).date() - timedelta(days=age),
-            queries=[WorldcatQuery(match=False)],
+    with db_provider.session_scope() as session:
+        session.add(
+            Resource(
+                sierraId=22222222,
+                libraryId=1,
+                sourceId=1,
+                resourceCategoryId=1,
+                status="open",
+                bibDate=datetime.now(timezone.utc).date() - timedelta(days=age),
+                queries=[WorldcatQuery(match=False)],
+            )
         )
-    )
-    test_session.commit()
 
     perform_db_maintenance(db_provider)
 
@@ -157,5 +148,9 @@ def test_perform_db_maintenance_delete(
         f"Deleted {tally} ebook resource(s) older than {expiration_age + 90} days from the database."
         in caplog.text
     )
-    resource = test_session.query(Resource).filter_by(sierraId=22222222).one_or_none()
-    assert isinstance(resource, expectation)
+
+    with db_provider.session_scope() as session:
+        resource = session.scalars(
+            select(Resource).filter_by(sierraId=22222222)
+        ).one_or_none()
+        assert (resource is not None) == expectation

@@ -50,86 +50,85 @@ def process_resources(db_provider: DatabaseProvider) -> None:
         process.
 
     """
-    with db_provider.session_scope() as db_session:
-        lib_idx = library_by_id(db_session)
-        res_cat = resource_category_by_name(db_session)
+    with db_provider.session_scope() as session:
+        lib_idx = library_by_id(session)
+        res_cat = resource_category_by_name(session)
 
-        for lib_nid, library in lib_idx.items():
-            logger.info(f"Processing {library} resources.")
+    for lib_nid, library in lib_idx.items():
+        logger.info(f"Processing {library} resources.")
 
-            # initiate Task client for the library
-            tasks = Tasks(db_session, library, lib_nid, res_cat)
+        # initiate Task client for the library
+        tasks = Tasks(db_provider, library, lib_nid, res_cat)
 
-            # ingest new resources
-            tasks.ingest_new_files()
-            logger.info(f"New {library} remote files have been ingested.")
+        # ingest new resources
+        tasks.ingest_new_files()
+        logger.info(f"New {library} remote files have been ingested.")
 
-            # search newly added resources
-            resources = retrieve_new_resources(db_session, lib_nid)
+        # search newly added resources
+        with db_provider.session_scope() as session:
+            resources = retrieve_new_resources(session, lib_nid)
 
-            # perform searches for each resource and store results
-            if resources:
-                tasks.get_worldcat_brief_bib_matches(resources)
-                logger.info(
-                    f"Obtaining Worldcat matches for {len(resources)} {library} "
-                    "new resources completed."
-                )
-
-            # check & update status of older resources if changed in Sierra
-            for res_category, res_cat_data in res_cat.items():
-                for age_min, age_max in res_cat_data.queryDays:
-                    resources = retrieve_open_older_resources(
-                        db_session, lib_nid, res_cat_data.nid, age_min, age_max
-                    )
-                    # query Sierra platform to update their status if changed
-                    if resources:
-                        tasks.check_resources_sierra_state(resources)
-                        logger.info(
-                            f"Checking Sierra status of {len(resources)} {library} "
-                            f"{res_category} older resources completed."
-                        )
-
-            # search again older resources dropping any resources already enhanced
-            # or deleted
-            for res_category, res_cat_data in res_cat.items():
-                for age_min, age_max in res_cat_data.queryDays:
-                    resources = retrieve_open_older_resources(
-                        db_session, lib_nid, res_cat_data.nid, age_min, age_max
-                    )
-
-                    # perform WorldCat searches for open older resources
-                    if resources:
-                        tasks.get_worldcat_brief_bib_matches(resources)
-                        logger.info(
-                            f"Obtaining WorldCat matches for {len(resources)} "
-                            f"{library} {res_category} older resources completed."
-                        )
-
-            # perform download of full records for matched resources
-            resources = retrieve_open_matched_resources_without_full_bib(
-                db_session, lib_nid
+        if resources:
+            tasks.get_worldcat_brief_bib_matches(resources)
+            logger.info(
+                f"Obtaining Worldcat matches for {len(resources)} {library} "
+                "new resources completed."
             )
-            if resources:
-                tasks.get_worldcat_full_bibs(resources)
-                logger.info(
-                    f"Downloading {len(resources)} {library} {res_category} "
-                    "full records from WorldCat completed."
-                )
 
-            # serialize as MARC21 and output to a file of enhanced bibs
-            for res_category, res_cat_data in res_cat.items():
-                resources = retrieve_open_matched_resources_with_full_bib_obtained(
-                    db_session, lib_nid, res_cat_data.nid
-                )
-
-                # manipulate Worldcat bibs, serialize to MARC21 and save to SFTP
-                if resources:
-                    tasks.enhance_and_output_bibs(res_category, resources)
-
-                    logger.info(
-                        f"Enhancement and serialization of {library} {res_category} "
-                        "complete."
+        # check & update status of older resources if changed in Sierra
+        for res_category, res_cat_data in res_cat.items():
+            for age_min, age_max in res_cat_data.queryDays:
+                with db_provider.session_scope() as session:
+                    resources = retrieve_open_older_resources(
+                        session, lib_nid, res_cat_data.nid, age_min, age_max
                     )
+                if resources:
+                    tasks.check_resources_sierra_state(resources)
+                    logger.info(
+                        f"Checking Sierra status of {len(resources)} {library} "
+                        f"{res_category} older resources completed."
+                    )
+
+        # search older resources again dropping resources already enhanced or deleted
+        for res_category, res_cat_data in res_cat.items():
+            for age_min, age_max in res_cat_data.queryDays:
+                with db_provider.session_scope() as session:
+                    resources = retrieve_open_older_resources(
+                        session, lib_nid, res_cat_data.nid, age_min, age_max
+                    )
+                # perform WorldCat searches for open older resources
+                if resources:
+                    tasks.get_worldcat_brief_bib_matches(resources)
+                    logger.info(
+                        f"Obtaining WorldCat matches for {len(resources)} "
+                        f"{library} {res_category} older resources completed."
+                    )
+
+        # perform download of full records for matched resources
+        with db_provider.session_scope() as session:
+            resources = retrieve_open_matched_resources_without_full_bib(
+                session, lib_nid
+            )
+        if resources:
+            tasks.get_worldcat_full_bibs(resources)
+            logger.info(
+                f"Downloading {len(resources)} {library} "
+                "full records from WorldCat completed."
+            )
+
+        # serialize as MARC21 and output to a file of enhanced bibs
+        for res_category, res_cat_data in res_cat.items():
+            with db_provider.session_scope() as session:
+                resources = retrieve_open_matched_resources_with_full_bib_obtained(
+                    session, lib_nid, res_cat_data.nid
+                )
+            # manipulate Worldcat bibs, serialize to MARC21 and save to SFTP
+            if resources:
+                tasks.enhance_and_output_bibs(res_category, resources)
+                logger.info(
+                    f"Enhancement and serialization of {library} {res_category} "
+                    "complete."
+                )
 
 
 def perform_db_maintenance(db_provider: DatabaseProvider) -> None:

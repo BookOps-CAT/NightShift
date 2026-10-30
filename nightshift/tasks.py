@@ -7,12 +7,10 @@ import os
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy.orm.session import Session
-
 from nightshift.comms.sierra_search_platform import BplSolr, NypPlatform
 from nightshift.comms.storage import Drive, get_credentials
 from nightshift.comms.worldcat import Worldcat
-from nightshift.datastore import Resource, WorldcatQuery
+from nightshift.datastore import DatabaseProvider, Resource, WorldcatQuery
 from nightshift.datastore_transactions import (
     ResCatById,
     ResCatByName,
@@ -38,20 +36,20 @@ class Tasks:
 
     def __init__(
         self,
-        db_session: Session,
+        db_provider: DatabaseProvider,
         library: str,
         libraryId: int,
         resource_categories: dict[str, ResCatByName],
     ) -> None:
         """
         Args:
-            db_session:                         `sqlalchemy.Session` instance
+            db_provider:                        `DatabaseProvider` instance
             library:                            'NYP' or 'BPL'
             libraryId:                          `datastore.Library.nid`
             resource_categories:                dictionary by category name with
                                                 associated data
         """
-        self.db_session = db_session
+        self.db_provider = db_provider
         self.library = library
         self.libraryId = libraryId
         self._res_cat = resource_categories
@@ -59,15 +57,9 @@ class Tasks:
         self.rotten_apples: dict[int, list[str]] = dict()
 
     def _create_resource_category_idx(self) -> dict[int, ResCatById]:
-        """
-        Creates a dictionary of resource categories by their id
-
-        Returns:
-            resource categories by id
-        """
-        res_cat_idx = dict()
-        for name, data in self._res_cat.items():
-            res_cat_idx[data.nid] = ResCatById(
+        """Creates a dictionary of resource categories by their id."""
+        return {
+            data.nid: ResCatById(
                 name,
                 data.sierraBibFormatBpl,
                 data.sierraBibFormatNyp,
@@ -75,27 +67,23 @@ class Tasks:
                 data.dstTags2Delete,
                 data.queryDays,
             )
-        return res_cat_idx
+            for name, data in self._res_cat.items()
+        }
 
     def _create_rotten_apples_idx(self) -> dict[int, list[str]]:
         """
-        Creates a dictionary of forbidden organization codes which records
-        should be excluded from retrieved from Worldcat results
+        Creates a dictionary of forbidden organization codes whose records
+        should be excluded from WorldCat results.
         """
-        rotten_apples = retrieve_rotten_apples(self.db_session)
-        return rotten_apples
+        with self.db_provider.session_scope() as session:
+            return retrieve_rotten_apples(session)
 
     def check_resources_sierra_state(self, resources: list[Resource]) -> None:
         """
         Checks and updates status & suppression of records using
         NYPL Platform & BPL Solr.
-        This method updates resources in the database.
-
-        Args:
-            resources:                      list of `nightshift.datastore.Resource`
-                                            instances to be checked
         """
-        sierra_platform: NypPlatform | BplSolr
+        sierra_platform: BplSolr | NypPlatform
         if self.library == "NYP":
             sierra_platform = NypPlatform()
         elif self.library == "BPL":
@@ -111,25 +99,31 @@ class Tasks:
             f"Checking {self.library} Sierra status for {len(resources)} resources."
         )
 
-        for resource in resources:
-            response = sierra_platform.get_sierra_bib(resource.sierraId)
-            resource.suppressed = response.is_suppressed()
-            resource.status = response.get_status()
+        try:
+            for resource in resources:
+                response = sierra_platform.get_sierra_bib(resource.sierraId)
+                resource.suppressed = response.is_suppressed()
+                resource.status = response.get_status()
 
-            if resource.status in ("staff_enhanced", "staff_deleted"):
-                add_event(self.db_session, resource, status=resource.status)
-
-            # persist changes
-            self.db_session.commit()
-
-        sierra_platform.close()
+                with self.db_provider.session_scope() as session:
+                    update_resource(
+                        session,
+                        resource.sierraId,
+                        resource.libraryId,
+                        suppressed=resource.suppressed,
+                        status=resource.status,
+                    )
+                    if resource.status in ("staff_enhanced", "staff_deleted"):
+                        add_event(session, resource, status=resource.status)
+        finally:
+            sierra_platform.close()
 
     def enhance_and_output_bibs(
         self, resource_category: str, resources: list[Resource]
     ) -> None:
         """
-        Manipulates downloaded WorldCat records, serializes them into MARC21 format
-        and saves produced file to SFTP
+        Manipulates downloaded WorldCat records, serializes them into MARC21 format,
+        transfers file to SFTP, and updates database records.
 
         Args:
             resource_category:              name of resource category being
@@ -137,21 +131,15 @@ class Tasks:
             resources:                      list of `nightshift.datastore.Resource`
                                             instances to be processed
         """
-        # manipulate records and save to a temporary file
         temp_file, enhanced_resources = self.manipulate_and_serialize_bibs(
             resource_category, resources
         )
-
-        # move temporary file to SFTP
         remote_file = self.transfer_to_drive(resource_category, temp_file)
-
-        # finalize datastore resource status
         self.update_status_to_upgraded(remote_file, enhanced_resources)
 
     def get_worldcat_brief_bib_matches(self, resources: list[Resource]) -> None:
         """
-        Queries Worldcat for given resources and persists responses
-        in the database.
+        Queries Worldcat for given resources and persists responses in the database.
 
         Args:
             resources:                      list of `nightshift.datastore.Resource`
@@ -172,38 +160,39 @@ class Tasks:
                 resources, rotten_apples=self.rotten_apples
             )
             for resource, response in results:
-                if response.is_match:
-                    instance = update_resource(
-                        self.db_session,
-                        resource.sierraId,
-                        resource.libraryId,
-                        oclcMatchNumber=response.oclc_number,
-                    )
-                    instance.queries.append(
-                        WorldcatQuery(
-                            resourceId=resource.nid,
-                            match=True,
-                            response=response.as_json,
+                with self.db_provider.session_scope() as session:
+                    if response.is_match:
+                        instance = update_resource(
+                            session,
+                            resource.sierraId,
+                            resource.libraryId,
+                            oclcMatchNumber=response.oclc_number,
                         )
-                    )
-
-                    # add event for stats
-                    add_event(self.db_session, resource, status="worldcat_hit")
-                else:
-                    resource.queries.append(
-                        WorldcatQuery(match=False, response=response.as_json)
-                    )
-                    add_event(self.db_session, resource, status="worldcat_miss")
-                self.db_session.commit()
+                        instance.queries.append(
+                            WorldcatQuery(
+                                resourceId=resource.nid,
+                                match=True,
+                                response=response.as_json,
+                            )
+                        )
+                        add_event(session, resource, status="worldcat_hit")
+                    else:
+                        db_res = update_resource(
+                            session, resource.sierraId, resource.libraryId
+                        )
+                        db_res.queries.append(
+                            WorldcatQuery(
+                                resourceId=resource.nid,
+                                match=False,
+                                response=response.as_json,
+                            )
+                        )
+                        add_event(session, resource, status="worldcat_miss")
 
     def get_worldcat_full_bibs(self, resources: list[Resource]) -> None:
         """
         Requests full bibliographic records from MetadataAPI service and
         stores the responses in the db.
-
-        Args:
-            resources:                      list of `nightshift.datastore.Resource`
-                                            instances
         """
         logger.info(
             f"Downloading full records from WorldCat for {len(resources)} resources."
@@ -211,67 +200,46 @@ class Tasks:
         with Worldcat(self.library) as worldcat:
             results = worldcat.get_full_bibs(resources)
             for resource, response in results:
-                update_resource(
-                    self.db_session,
-                    resource.sierraId,
-                    resource.libraryId,
-                    fullBib=response,
-                )
-
-                # commit each full bib response in case something
-                # breaks during this lengthy process;
-                # this should save time if process need to be restarted
-                self.db_session.commit()
+                with self.db_provider.session_scope() as session:
+                    update_resource(
+                        session, resource.sierraId, resource.libraryId, fullBib=response
+                    )
 
     def ingest_new_files(self) -> None:
         """
-        Imports to the database resources in a newly added files on the SFTP.
-
-        Files on the remote server must have 'NYP' or 'BPL' in their names to be
-        considered by this process (Sierra bib themselves do not have any
-        system identifying data to rely on).
-
-        Sierra Scheduler will be configured to output data dumps following this
-        practice.
+        Imports resources from newly added SFTP files to the database.
         """
         drive_creds = get_credentials()
         with Drive(*drive_creds) as drive:
-            # find files that have not been processed
             unproc_files = self.isolate_unprocessed_files(drive)
             logger.info(f"Found following unprocessed files: {unproc_files}.")
 
-            # add records data to the db
             for handle in unproc_files:
-                file_record = add_source_file(self.db_session, self.libraryId, handle)
-                logger.debug(f"Added SourceFile record for '{handle}': {file_record}")
                 marc_target = drive.fetch_file(handle)
                 marc_reader = BibReader(
                     marc_target, self.library, self.libraryId, self._res_cat
                 )
 
-                n = 0
-                for resource in marc_reader:
-                    n += 1
-                    resource.sourceId = file_record.nid
-                    add_resource(self.db_session, resource)
+                with self.db_provider.session_scope() as session:
+                    file_record = add_source_file(session, self.libraryId, handle)
+                    logger.debug(
+                        f"Added SourceFile record for '{handle}': {file_record}"
+                    )
 
-                self.db_session.commit()
-                logger.info(f"Ingested {n} records from the file '{handle}'.")
+                    n = 0
+                    for resource in marc_reader:
+                        n += 1
+                        resource.sourceId = file_record.nid
+                        add_resource(session, resource)
+
+                    logger.info(f"Ingested {n} records from the file '{handle}'.")
 
     def isolate_unprocessed_files(self, drive: Drive) -> list[str]:
         """
-        Finds unprocessed files on the network drive but comparing db SourceFile
+        Finds unprocessed files on the network drive by comparing db SourceFile
         record handles with handles retrieved from the drive.
-
-        Args:
-            drive:                      `nightshift.comms.storage.Drive` client instance
-
-        Returns:
-            list of remote unprocessed file handles
         """
         remote_files = drive.list_src_directory()
-
-        # select only files with library code and -pout suffix
         library_remote_files = [
             file for file in remote_files if self.library in file and "-pout" in file
         ]
@@ -279,7 +247,8 @@ class Tasks:
             f"Found following remote files for {self.library}: {library_remote_files}."
         )
 
-        proc_files = retrieve_processed_files(self.db_session, self.libraryId)
+        with self.db_provider.session_scope() as session:
+            proc_files = retrieve_processed_files(session, self.libraryId)
 
         return [f for f in library_remote_files if f not in proc_files]
 
@@ -305,7 +274,6 @@ class Tasks:
         enhanced_resources = []
         skipped_resources = []
 
-        # make sure to start from scratch
         try:
             os.remove(out_fh)
         except FileNotFoundError:
@@ -329,14 +297,14 @@ class Tasks:
                 )
                 enhanced_resources.append(resource)
             else:
-                # update to blank state to allow later date query
-                update_resource(
-                    self.db_session,
-                    resource.sierraId,
-                    resource.libraryId,
-                    oclcMatchNumber=None,
-                    fullBib=None,
-                )
+                with self.db_provider.session_scope() as session:
+                    update_resource(
+                        session,
+                        resource.sierraId,
+                        resource.libraryId,
+                        oclcMatchNumber=None,
+                        fullBib=None,
+                    )
                 logger.warning(
                     f"{self.library} b{resource.sierraId}a enhancement incomplete. "
                     "Skipping."
@@ -347,12 +315,10 @@ class Tasks:
             f"Enhanced and serialized {len(enhanced_resources)} and skipped "
             f"{len(skipped_resources)} {self.library} {resource_category} record(s)."
         )
-        self.db_session.commit()
 
         if len(enhanced_resources) > 0:
             return (out_fh, enhanced_resources)
-        else:
-            return (None, enhanced_resources)
+        return (None, enhanced_resources)
 
     def transfer_to_drive(
         self, resource_category: str, src_file: Optional[str]
@@ -380,8 +346,7 @@ class Tasks:
         with Drive(*creds) as drive:
             if src_file is not None:
                 return drive.output_file(src_file, remote_file_name_base)
-            else:
-                logger.info("No source file to output to SFTP.")
+            logger.info("No source file to output to SFTP.")
         return None
 
     def update_status_to_upgraded(
@@ -396,30 +361,25 @@ class Tasks:
             resources:                      list of `nightshift.datastore.Resource`
                                             instances
         """
-        if out_file_handle is not None:
+        if out_file_handle is None:
             logger.info(
-                f"Updating {len(resources)} resources status to 'bot_enhanced'."
+                "Skipping resources enhancement status update. "
+                "No SFTP output file this time."
             )
+            return
 
-            out_file_record = add_output_file(
-                self.db_session, self.libraryId, out_file_handle
-            )
+        logger.info(f"Updating {len(resources)} resources status to 'bot_enhanced'.")
+
+        with self.db_provider.session_scope() as session:
+            out_file_record = add_output_file(session, self.libraryId, out_file_handle)
 
             for resource in resources:
                 update_resource(
-                    self.db_session,
+                    session,
                     resource.sierraId,
                     resource.libraryId,
                     status="bot_enhanced",
                     outputId=out_file_record.nid,
                     enhanceTimestamp=datetime.now(timezone.utc),
                 )
-
-                add_event(self.db_session, resource, status="bot_enhanced")
-
-            self.db_session.commit()
-        else:
-            logger.info(
-                "Skipping resources enhancement status update. "
-                "No SFTP output file this time."
-            )
+                add_event(session, resource, status="bot_enhanced")
