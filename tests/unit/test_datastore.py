@@ -6,7 +6,6 @@ from sqlalchemy.exc import DataError
 from sqlalchemy.orm.session import Session
 
 from nightshift.datastore import (
-    DataAccessLayer,
     Event,
     Library,
     OutputFile,
@@ -16,29 +15,16 @@ from nightshift.datastore import (
     RottenAppleResource,
     SourceFile,
     WorldcatQuery,
-    conf_db,
-    session_scope,
 )
 
 
-def test_conf_db(mock_db_env):
-    assert sorted(conf_db().keys()) == [
-        "POSTGRES_DB",
-        "POSTGRES_HOST",
-        "POSTGRES_PASSWORD",
-        "POSTGRES_PORT",
-        "POSTGRES_USER",
-    ]
+def test_DatabaseProvider(db_provider):
+    with db_provider.session_scope() as session:
+        assert isinstance(session, Session)
 
 
-def test_DataAccessLayer_connect(test_connection):
-    dal = DataAccessLayer()
-    dal.conn = test_connection
-    dal.connect()
-
-
-def test_session_scope_success(test_connection, test_session):
-    with session_scope() as session:
+def test_session_scope_success(db_provider, test_session):
+    with db_provider.session_scope() as session:
         assert isinstance(session, Session)
         session.add(Library(nid=1, code="nyp"))
 
@@ -47,9 +33,9 @@ def test_session_scope_success(test_connection, test_session):
     assert res.code == "nyp"
 
 
-def test_session_scope_exception_rollback(test_connection, test_session):
+def test_session_scope_exception_rollback(db_provider, test_session):
     with pytest.raises(DataError):
-        with session_scope() as session:
+        with db_provider.session_scope() as session:
             session.add(Library(nid=1, code="new york public"))
 
     res = test_session.query(Library).filter_by(nid=1).one_or_none()

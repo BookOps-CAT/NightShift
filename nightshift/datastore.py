@@ -3,7 +3,6 @@ NightShift's database schema.
 """
 
 import datetime
-import os
 from contextlib import contextmanager
 from typing import Any, Optional
 
@@ -45,50 +44,31 @@ STATUS = ENUM(
 )
 
 
-def conf_db():
+class DatabaseProvider:
     """
-    Retrieves db configuration from env variables
-
-    Returns:
-        db settings as dictionary
+    Manages the SQLAlchemy engine globally and provides a context manager
+    for individual database sessions.
     """
-    return dict(
-        POSTGRES_USER=os.environ["POSTGRES_USER"],
-        POSTGRES_PASSWORD=os.environ["POSTGRES_PASSWORD"],
-        POSTGRES_HOST=os.environ["POSTGRES_HOST"],
-        POSTGRES_PORT=os.environ["POSTGRES_PORT"],
-        POSTGRES_DB=os.environ["POSTGRES_DB"],
-    )
 
-
-class DataAccessLayer:
-    def __init__(self):
-        db = conf_db()
-        self.conn = f"postgresql://{db['POSTGRES_USER']}:{db['POSTGRES_PASSWORD']}@{db['POSTGRES_HOST']}:{db['POSTGRES_PORT']}/{db['POSTGRES_DB']}"
-        self.engine = None
-
-    def connect(self):
-        self.engine = create_engine(self.conn)
+    def __init__(self, connection_string: str):
+        self.engine = create_engine(connection_string)
         Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
+        self.SessionFactory = sessionmaker(bind=self.engine)
 
-
-@contextmanager
-def session_scope():
-    """
-    Provides a transactional scope around series of operations.
-    """
-    dal = DataAccessLayer()
-    dal.connect()
-    session = dal.Session()
-    try:
-        yield session
-        session.commit()
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
+    @contextmanager
+    def session_scope(self):
+        """
+        Provides a transactional scope around a series of operations.
+        """
+        session = self.SessionFactory()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
 
 class Event(Base):

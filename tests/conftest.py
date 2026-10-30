@@ -8,14 +8,13 @@ import yaml
 from bookops_worldcat.errors import WorldcatRequestError
 from paramiko import SFTPClient
 from paramiko.ssh_exception import SSHException
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
 
 from nightshift import constants
 from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES, ROTTEN_APPLES
 from nightshift.datastore import (
-    Base,
+    DatabaseProvider,
     Library,
     OutputFile,
     Resource,
@@ -137,19 +136,28 @@ def test_connection(mock_db_env):
     return conn
 
 
+@pytest.fixture(scope="function")
+def db_provider(mock_db_env):
+    """Provides the injected DatabaseProvider using the local test database."""
+    conn = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+
+    provider = DatabaseProvider(conn)
+    yield provider
+
+    # Nuclear teardown to ensure custom ENUMs and types are cleared
+    with provider.session_scope() as session:
+        session.execute(text("DROP SCHEMA public CASCADE; CREATE SCHEMA public;"))
+
+
 @pytest.fixture
-def test_session(test_connection):
-    engine = create_engine(test_connection)
-
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    yield session
-    session.close()
-
-    # teardown
-    Base.metadata.drop_all(engine)
+def test_session(db_provider):
+    """
+    Wraps the provider's session_scope to provide backward compatibility
+    for the hundreds of tests expecting a bare `session` object.
+    """
+    with db_provider.session_scope() as session:
+        yield session
+        # No need to manually close or drop_all here; the provider teardown handles it.
 
 
 @pytest.fixture

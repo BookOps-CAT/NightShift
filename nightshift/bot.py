@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 
 from nightshift import datastore_transactions, manager
 from nightshift.config.logging_conf import log_conf
+from nightshift.ns_exceptions import DatabaseInitializationError
 
 
 def config_local_env_variables(
@@ -41,8 +42,10 @@ def configure_database(env: str = "prod") -> None:
     """
     if env == "local":
         config_local_env_variables()
+    connection_str = datastore_transactions.get_connection_string()
     try:
-        datastore_transactions.init_db()
+        db_provider = datastore_transactions.create_db_provider(connection_str)
+        datastore_transactions.init_db(db_provider)
         print(f"NightShift {env} database successfully set up.")
     except IntegrityError as exc:
         print(
@@ -51,7 +54,7 @@ def configure_database(env: str = "prod") -> None:
         )
     except ValueError:
         print("Environmental variables are not configured properly.")
-    except AssertionError as exc:
+    except DatabaseInitializationError as exc:
         print(f"Created database has invalid structure. Error: {exc}.")
 
 
@@ -76,13 +79,12 @@ def run(env: str = "prod") -> None:
     conf = log_conf()
     logging.config.dictConfig(conf)
     logger = logging.getLogger("nightshift")
-
+    connection_str = datastore_transactions.get_connection_string()
     logger.info(f"Launching {env} NightShift...")
-
-    manager.process_resources()
+    db_provider = datastore_transactions.create_db_provider(connection_str)
+    manager.process_resources(db_provider)
     logger.info("Processing resources completed.")
-
-    manager.perform_db_maintenance()
+    manager.perform_db_maintenance(db_provider)
     logger.info("Database maintenance completed.")
 
 
