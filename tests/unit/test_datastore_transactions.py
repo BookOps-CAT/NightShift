@@ -95,24 +95,29 @@ def test_init_db_invalid_res_cat_count(db_provider, monkeypatch):
 def test_init_db_missing_res_cat(
     db_provider, mocker, included_categories, expected_error_msg
 ):
-    mock_query = mocker.patch("sqlalchemy.orm.Session.query")
+    mock_scalars = mocker.patch("sqlalchemy.orm.Session.scalars")
 
-    def query_side_effect(model):
+    def scalars_side_effect(stmt):
         mock_chain = mocker.MagicMock()
-        if model == Library:
+        # In SQLAlchemy 2.0 select statements, column_descriptions reveals the targeted entity
+        target_entity = stmt.column_descriptions[0]["entity"]
+
+        if target_entity == Library:
             mock_chain.all.return_value = [Library(code="NYP"), Library(code="BPL")]
-        elif model == ResourceCategory:
+
+        elif target_entity == ResourceCategory:
             mock_records = [ResourceCategory(name=name) for name in included_categories]
             while len(mock_records) < 11:
-                mock_records.append(
-                    ResourceCategory(name=f"dummy_cat_{len(mock_records)}")
-                )
+                mock_records.append(ResourceCategory(name=f"dummy_{len(mock_records)}"))
             mock_chain.all.return_value = mock_records
+
         return mock_chain
 
-    mock_query.side_effect = query_side_effect
+    mock_scalars.side_effect = scalars_side_effect
+
     with pytest.raises(DatabaseInitializationError) as exc:
         init_db(db_provider)
+
     assert expected_error_msg in str(exc.value)
 
 

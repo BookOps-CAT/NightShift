@@ -1,9 +1,11 @@
 import os
 from collections import namedtuple
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, cast
 
-from sqlalchemy import and_, func, inspect
+from sqlalchemy import and_, delete, func, inspect, select, update
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.orm import Session
 
 from nightshift import constants
@@ -121,7 +123,7 @@ def init_db(db_provider: DatabaseProvider) -> None:
             raise DatabaseInitializationError("Database is missing required tables.")
 
         # check both libraries were added
-        libraries = session.query(Library).all()
+        libraries = list(session.scalars(select(Library)).all())
         if not len(libraries) == 2:
             raise DatabaseInitializationError("Invalid number of initial libraries.")
         codes = [row.code for row in libraries]
@@ -131,7 +133,7 @@ def init_db(db_provider: DatabaseProvider) -> None:
             raise DatabaseInitializationError("'BPL' code missing in 'Library' table.")
 
         # check e-resource names in ResourceCategory table
-        categories = session.query(ResourceCategory).all()
+        categories = list(session.scalars(select(ResourceCategory)).all())
         names = [row.name for row in categories]
         if not len(categories) == 11:
             raise DatabaseInitializationError(
@@ -214,17 +216,16 @@ def add_resource(session: Session, resource: Resource) -> Optional[Resource]:
     Returns:
         `Resource` instance updated with `nid`
     """
-    instance = (
-        session.query(Resource)
-        .filter_by(sierraId=resource.sierraId, libraryId=resource.libraryId)
-        .one_or_none()
+    values = {
+        column.name: getattr(resource, column.name)
+        for column in Resource.__table__.columns
+        if getattr(resource, column.name) is not None
+    }
+    stmt = (
+        insert(Resource).values(**values).on_conflict_do_nothing().returning(Resource)
     )
-    if not instance:
-        session.add(resource)
-        session.flush()
-        return resource
-    else:
-        return None
+
+    return session.scalars(stmt).first()
 
 
 def add_source_file(session: Session, libraryId: int, handle: str) -> SourceFile:
@@ -257,15 +258,15 @@ def delete_resources(session: Session, resourceCategoryId: int, age: int) -> int
     Returns:
         number of deleted rows in the database
     """
-    rowcount = (
-        session.query(Resource)
-        .filter(
-            Resource.resourceCategoryId == resourceCategoryId,
-            Resource.bibDate < datetime.now(timezone.utc) - timedelta(days=age),
-        )
-        .delete()
+    cutoff_date = datetime.now(timezone.utc).date() - timedelta(days=age)
+    stmt = (
+        delete(Resource)
+        .where(Resource.resourceCategoryId == resourceCategoryId)
+        .where(Resource.status == "expired")
+        .where(Resource.bibDate < cutoff_date)
     )
-    return rowcount
+    result = cast(CursorResult, session.execute(stmt))
+    return result.rowcount
 
 
 def insert_or_ignore(session, model, **kwargs):
@@ -280,13 +281,12 @@ def insert_or_ignore(session, model, **kwargs):
     Returns:
         instance of inserted or duplicate record
     """
-    instance = session.query(model).filter_by(**kwargs).one_or_none()
-    if not instance:
-        instance = model(**kwargs)
-        session.add(instance)
-        return instance
-    else:
-        return instance
+    stmt = insert(model).values(**kwargs).on_conflict_do_nothing()
+    session.execute(stmt)
+
+    select_stmt = select(model).filter_by(**kwargs)
+
+    return session.scalars(select_stmt).one()
 
 
 def library_by_id(session: Session) -> dict[int, str]:
@@ -300,7 +300,8 @@ def library_by_id(session: Session) -> dict[int, str]:
     Returns:
         dict of `nid` and library `codes`
     """
-    instances = session.query(Library).all()
+    stmt = select(Library)
+    instances = session.scalars(stmt).all()
     return {i.nid: i.code for i in instances}
 
 
@@ -334,12 +335,13 @@ def resource_category_by_name(session: Session) -> dict[str, ResCatByName]:
     Returns:
         dict of `names` and resource category data as values
     """
-    instances = session.query(ResourceCategory).all()
+    stmt = select(ResourceCategory)
+    instances = session.scalars(stmt).all()
     data = dict()
     for i in instances:
         queryDays = parse_query_days(i.queryDays)
-        srcTags2Keep = i.srcTags2Keep.split(",")
-        dstTags2Delete = i.dstTags2Delete.split(",")
+        srcTags2Keep = i.srcTags2Keep.split(",") if i.srcTags2Keep else []
+        dstTags2Delete = i.dstTags2Delete.split(",") if i.dstTags2Delete else []
 
         data[i.name] = ResCatByName(
             i.nid,
@@ -368,17 +370,13 @@ def retrieve_expired_resources(
     Returns:
         list of matching query `Resource` instances
     """
-    resources = (
-        session.query(Resource)
-        .filter(
-            Resource.resourceCategoryId == resourceCategoryId,
-            Resource.status == "open",
-            Resource.bibDate
-            < datetime.now(timezone.utc).date() - timedelta(days=expiration_age),
-        )
-        .all()
+    resources = select(Resource).where(
+        Resource.resourceCategoryId == resourceCategoryId,
+        Resource.status == "open",
+        Resource.bibDate
+        < datetime.now(timezone.utc).date() - timedelta(days=expiration_age),
     )
-    return resources
+    return list(session.scalars(resources).all())
 
 
 def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
@@ -396,12 +394,11 @@ def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
         list of `Resource` instances
     """
     resources = (
-        session.query(Resource)
+        select(Resource)
         .filter_by(libraryId=libraryId, status="open", queries=None)
         .order_by(Resource.resourceCategoryId, Resource.nid)
-        .all()
     )
-    return resources
+    return list(session.scalars(resources).all())
 
 
 def retrieve_open_older_resources(
@@ -421,31 +418,29 @@ def retrieve_open_older_resources(
     Returns:
         list of `Row` instances
     """
+    now = datetime.now(timezone.utc)
 
-    # select only resources which age is between minAge & maxAge
     subq = (
-        session.query(Resource, func.max(WorldcatQuery.timestamp).label("last_query"))
+        select(Resource.nid, func.max(WorldcatQuery.timestamp).label("last_query"))
         .join(WorldcatQuery)
-        .filter(
+        .where(
             Resource.libraryId == libraryId,
             Resource.resourceCategoryId == resourceCategoryId,
             Resource.status == "open",
             Resource.oclcMatchNumber.is_(None),
-            Resource.bibDate > datetime.now(timezone.utc) - timedelta(days=maxAge),
-            Resource.bibDate < datetime.now(timezone.utc) - timedelta(days=minAge),
+            Resource.bibDate > now - timedelta(days=maxAge),
+            Resource.bibDate < now - timedelta(days=minAge),
         )
         .group_by(Resource.nid)
         .subquery()
     )
 
-    # select resources with last query before minAge of the given period
-    resources = (
-        session.query(Resource)
+    stmt = (
+        select(Resource)
         .join(subq, and_(Resource.nid == subq.c.nid))
-        .filter(subq.c.last_query < Resource.bibDate + timedelta(days=minAge))
-        .all()
+        .where(subq.c.last_query < Resource.bibDate + timedelta(days=minAge))
     )
-    return resources
+    return list(session.scalars(stmt).all())
 
 
 def retrieve_open_matched_resources_without_full_bib(
@@ -464,17 +459,16 @@ def retrieve_open_matched_resources_without_full_bib(
         list of `Resource` instances
     """
     resources = (
-        session.query(Resource)
-        .filter(
+        select(Resource)
+        .where(
             Resource.libraryId == libraryId,
             Resource.status == "open",
             Resource.oclcMatchNumber.is_not(None),
             Resource.fullBib.is_(None),
         )
         .order_by(Resource.resourceCategoryId, Resource.nid)
-        .all()
     )
-    return resources
+    return list(session.scalars(resources).all())
 
 
 def retrieve_open_matched_resources_with_full_bib_obtained(
@@ -491,17 +485,13 @@ def retrieve_open_matched_resources_with_full_bib_obtained(
     Returns:
         list of `Resource` instances
     """
-    resources = (
-        session.query(Resource)
-        .filter(
-            Resource.libraryId == libraryId,
-            Resource.resourceCategoryId == resourceCategoryId,
-            Resource.status == "open",
-            Resource.fullBib.isnot(None),
-        )
-        .all()
+    resources = select(Resource).where(
+        Resource.libraryId == libraryId,
+        Resource.resourceCategoryId == resourceCategoryId,
+        Resource.status == "open",
+        Resource.fullBib.isnot(None),
     )
-    return resources
+    return list(session.scalars(resources).all())
 
 
 def retrieve_processed_files(session: Session, libraryId: int) -> list[str]:
@@ -515,8 +505,8 @@ def retrieve_processed_files(session: Session, libraryId: int) -> list[str]:
     Returns:
         list of file handles
     """
-    instances = session.query(SourceFile.handle).filter_by(libraryId=libraryId).all()
-    return [instance[0] for instance in instances]
+    stmt = select(SourceFile.handle).filter_by(libraryId=libraryId)
+    return list(session.scalars(stmt).all())
 
 
 def retrieve_rotten_apples(session: Session) -> dict[int, list[str]]:
@@ -529,21 +519,18 @@ def retrieve_rotten_apples(session: Session) -> dict[int, list[str]]:
     Returns:
         dictionary of resource category ids and list of org codes
     """
-    results = (
-        session.query(RottenAppleResource.resourceCategoryId, RottenApple.code)
-        .join(RottenApple, RottenApple.nid == RottenAppleResource.rottenAppleId)
-        .all()
+    stmt = select(RottenAppleResource.resourceCategoryId, RottenApple.code).join(
+        RottenApple, RottenApple.nid == RottenAppleResource.rottenAppleId
     )
 
+    results = session.execute(stmt).all()
     rotten_apples: dict[int, list[str]] = {}
 
-    for r in results:
-        if r.resourceCategoryId in rotten_apples:
-            codes = rotten_apples[r.resourceCategoryId]
-            codes.append(r.code)
-            rotten_apples[r.resourceCategoryId] = codes
+    for cat_id, code in results:
+        if cat_id in rotten_apples:
+            rotten_apples[cat_id].append(code)
         else:
-            rotten_apples[r.resourceCategoryId] = [r.code]
+            rotten_apples[cat_id] = [code]
 
     return rotten_apples
 
@@ -563,16 +550,17 @@ def set_resources_to_expired(
     Returns:
         number of updated rows in the database
     """
-    rowcount = (
-        session.query(Resource)
-        .filter(
+    stmt = (
+        update(Resource)
+        .where(
             Resource.resourceCategoryId == resourceCategoryId,
             Resource.status == "open",
             Resource.bibDate < datetime.now(timezone.utc).date() - timedelta(days=age),
         )
-        .update({"status": "expired"})
+        .values(status="expired")
     )
-    return rowcount
+    result = cast(CursorResult, session.execute(stmt))
+    return result.rowcount
 
 
 def update_resource(session, sierraId, libraryId, **kwargs) -> Resource:
@@ -589,9 +577,11 @@ def update_resource(session, sierraId, libraryId, **kwargs) -> Resource:
         instance of updated record
 
     """
-    instance = (
-        session.query(Resource).filter_by(sierraId=sierraId, libraryId=libraryId).one()
-    )
+    stmt = select(Resource).filter_by(sierraId=sierraId, libraryId=libraryId)
+
+    instance = session.scalars(stmt).one()
+
     for key, value in kwargs.items():
         setattr(instance, key, value)
+
     return instance
