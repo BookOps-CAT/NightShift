@@ -53,7 +53,7 @@ class DatabaseProvider:
     def __init__(self, connection_string: str):
         self.engine = create_engine(connection_string)
         Base.metadata.create_all(self.engine)
-        self.SessionFactory = sessionmaker(bind=self.engine)
+        self.SessionFactory = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     @contextmanager
     def session_scope(self):
