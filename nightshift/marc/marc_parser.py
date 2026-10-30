@@ -59,7 +59,6 @@ class BibReader:
         library: str,
         libraryId: int,
         resource_categories: dict[str, ResCatByName],
-        hide_utf8_warnings: bool = True,
     ) -> None:
         """
         The constructor.
@@ -69,7 +68,6 @@ class BibReader:
             libraryId:                     `datastore.Library.nid`
             resource_categories:            a dictionary of resource categories and
                                             data associated them as namedtuple
-            hide_utf8_warnings:             hides character encoding warnings
 
         """
         logger.info("Initiating BibReader.")
@@ -95,12 +93,9 @@ class BibReader:
         self.library = library
         self.libraryId = libraryId
         self._res_cat = resource_categories
-        self.hide_utf8_warnings = hide_utf8_warnings
 
     def __iter__(self) -> Iterator[Resource]:
-        reader = SierraBibReader(
-            self.marc_target, hide_utf8_warnings=self.hide_utf8_warnings
-        )
+        reader = SierraBibReader(self.marc_target, hide_utf8_warnings=True)
         for bib in reader:
             resource_category = self._determine_resource_category(bib)
 
