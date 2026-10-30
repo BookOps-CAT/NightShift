@@ -18,7 +18,7 @@ def test_config_local_env_variables_default_file():
         data = yaml.safe_load(f)
 
     for k, v in data.items():
-        assert os.getenv(k) == v
+        assert os.environ[k] == v
 
     # clean up, otherwise vars will linger and mess up other tests
     for k in data.keys():

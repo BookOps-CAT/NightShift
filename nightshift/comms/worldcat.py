@@ -127,8 +127,8 @@ class Worldcat:
             credentials
         """
         return dict(
-            key=os.getenv(f"WC{self.library}_KEY"),
-            secret=os.getenv(f"WC{self.library}_SECRET"),
+            key=os.environ[f"WC{self.library}_KEY"],
+            secret=os.environ[f"WC{self.library}_SECRET"],
             scopes="WorldCatMetadataAPI",
             agent=f"{__title__}/{__version__}",
         )

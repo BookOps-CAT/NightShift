@@ -60,40 +60,6 @@ def mock_env_vars(monkeypatch, caplog):
 
 
 @pytest.fixture
-def local_test_config():
-    """
-    Requires yaml file with local logging configuration
-    example:
-    ---
-    POSTGRES_HOST: postgres_host
-    POSTGRES_USER: postgres_user
-    POSTGRES_PASSWORD: postgres_password
-    POSTGRES_PORT: postgres_port
-    POSTGRES_DB: postgred_db_name
-    WCNYP_KEY: nypl_worldcat_key
-    WCNYP_SECRET: nypl_worldcat_secret
-    WCBPL_KEY: bpl_worldcat_key
-    WCBPL_SECRET: bpl_worlcat_secret
-    LOGGLY_TOKEN: loggly_token
-    LOG_HANDLERS: "loggly,file,console"
-    SFTP_HOST: sftp_host
-    SFTP_USER: sftp_user
-    SFTP_PASSW: sfpt_password
-    SFTP_NS_SRC: "/NSDROP/TEST/sierra_dumps/nightshift"
-    SFTP_NS_DST:  "/NSDROP/TEST/load"
-    NYPL_PLATFORM_CLIENT: nypl_platform_client
-    NYPL_PLATFORM_SECRET: nypl_platform_secret
-    NYPL_PLATFORM_OAUTH: nypl_platform_oauth_server
-    NYPL_PLATFORM_ENV: prod
-    BPL_SOLR_CLIENT_KEY: bpl_solr_client_key
-    BPL_SOLR_ENDPOINT: bpl_solr_endpoint
-    """
-    with open("tests/envar.yaml", "r") as f:
-        data = yaml.safe_load(f)
-        return data
-
-
-@pytest.fixture
 def stub_resource():
     return Resource(
         sierraId=11111111,
@@ -113,7 +79,7 @@ def stub_resource():
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def stub_res_cat_by_name():
     data = dict()
     for k, v in RESOURCE_CATEGORIES.items():
@@ -128,7 +94,7 @@ def stub_res_cat_by_name():
     return data
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def stub_res_cat_by_id():
     data = dict()
     for k, v in RESOURCE_CATEGORIES.items():
@@ -167,7 +133,7 @@ def mock_db_env(monkeypatch):
 @pytest.fixture(scope="function")
 def test_connection(mock_db_env):
     # create db engine differently on local machine or Github Actions
-    conn = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+    conn = f"postgresql://{os.environ['POSTGRES_USER']}:{os.environ['POSTGRES_PASSWORD']}@{os.environ['POSTGRES_HOST']}:{os.environ['POSTGRES_PORT']}/{os.environ['POSTGRES_DB']}"
     return conn
 
 
