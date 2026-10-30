@@ -26,9 +26,10 @@ class TestProcessResourcesMocked:
         mock_check_resources_sierra_state_open,
         mock_get_worldcat_full_bibs,
         mock_transfer_to_drive,
+        db_provider,
     ):
         with does_not_raise():
-            process_resources()
+            process_resources(db_provider)
 
         results = test_session.query(Resource).all()
         assert len(results) == 2
@@ -52,6 +53,7 @@ class TestProcessResourcesMocked:
         mock_worldcat_brief_bib_matches,
         mock_get_worldcat_full_bibs,
         mock_transfer_to_drive,
+        db_provider,
     ):
         resource = stub_resource
         resource.status = "open"
@@ -70,7 +72,7 @@ class TestProcessResourcesMocked:
         test_session.commit()
 
         with does_not_raise():
-            process_resources()
+            process_resources(db_provider)
 
         results = test_session.query(Resource).all()
         assert len(results) == 1
@@ -91,7 +93,7 @@ class TestProcessResourcesMocked:
     "age,status,tally", [(91, "open", 0), (179, "open", 0), (181, "expired", 1)]
 )
 def test_perform_db_maintenance_set_expired(
-    caplog, env_var, test_session, test_data_rich, age, status, tally
+    caplog, env_var, test_session, test_data_rich, age, status, tally, db_provider
 ):
     # expired resource
     test_session.add(
@@ -108,7 +110,7 @@ def test_perform_db_maintenance_set_expired(
     test_session.commit()
 
     with caplog.at_level(logging.INFO):
-        perform_db_maintenance()
+        perform_db_maintenance(db_provider)
 
     assert f"Changed {tally} ebook resource(s) status to 'expired'." in caplog.text
 
@@ -138,6 +140,7 @@ def test_perform_db_maintenance_delete(
     age,
     tally,
     expectation,
+    db_provider,
 ):
     expiration_age = stub_res_cat_by_name["ebook"].queryDays[-1][1]
 
@@ -156,7 +159,7 @@ def test_perform_db_maintenance_delete(
     test_session.commit()
 
     with caplog.at_level(logging.INFO):
-        perform_db_maintenance()
+        perform_db_maintenance(db_provider)
 
     assert (
         f"Deleted {tally} ebook resource(s) older than {expiration_age + 90} days from the database."

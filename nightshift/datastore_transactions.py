@@ -1,14 +1,14 @@
+import os
 from collections import namedtuple
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from sqlalchemy import and_, create_engine, func, inspect
+from sqlalchemy import and_, func, inspect
 from sqlalchemy.orm import Session
-from sqlalchemy.orm.exc import NoResultFound
 
 from nightshift import constants
 from nightshift.datastore import (
-    DataAccessLayer,
+    DatabaseProvider,
     Event,
     Library,
     OutputFile,
@@ -19,6 +19,7 @@ from nightshift.datastore import (
     SourceFile,
     WorldcatQuery,
 )
+from nightshift.ns_exceptions import DatabaseInitializationError
 
 ResCatById = namedtuple(
     "ResCatById",
@@ -45,7 +46,22 @@ ResCatByName = namedtuple(
 )
 
 
-def init_db() -> None:
+def get_connection_string() -> str:
+    """Get the Postgres database URI from environment variables."""
+    user = os.environ["POSTGRES_USER"]
+    pw = os.environ["POSTGRES_PASSWORD"]
+    host = os.environ["POSTGRES_HOST"]
+    port = os.environ["POSTGRES_PORT"]
+    name = os.environ["POSTGRES_DB"]
+    uri = f"postgresql://{user}:{pw}@{host}:{port}/{name}"
+    return uri
+
+
+def create_db_provider(connection_str: str) -> DatabaseProvider:
+    return DatabaseProvider(connection_str)
+
+
+def init_db(db_provider: DatabaseProvider) -> None:
     """
     Initiates the database and prepopulates needed tables
 
@@ -53,84 +69,87 @@ def init_db() -> None:
         session:                `sqlalchemy.Session` instance
     """
     # make sure to start from scratch
-    dal = DataAccessLayer()
-
-    dal.engine = create_engine(dal.conn)
-    dal.connect()
-    session = dal.Session()
-
     # recreate schema & prepopulate needed tables
-    libraries = [Library(nid=v["nid"], code=k) for k, v in constants.LIBRARIES.items()]
-    for library in libraries:
-        session.add(library)
-
-    res_cats = [
-        ResourceCategory(
-            nid=v["nid"],
-            name=k,
-            description=v["description"],
-            sierraBibFormatBpl=v["sierraBibFormatBpl"],
-            sierraBibFormatNyp=v["sierraBibFormatNyp"],
-            srcTags2Keep=v["srcTags2Keep"],
-            dstTags2Delete=v["dstTags2Delete"],
-            queryDays=v["queryDays"],
-        )
-        for k, v in constants.RESOURCE_CATEGORIES.items()
-    ]
-    for res_cat in res_cats:
-        session.add(res_cat)
-
-    for code, resource_cat_ids in constants.ROTTEN_APPLES.items():
-        ids = [
-            RottenAppleResource(
-                resourceCategoryId=constants.RESOURCE_CATEGORIES[n]["nid"]
-            )
-            for n in resource_cat_ids
+    with db_provider.session_scope() as session:
+        libraries = [
+            Library(nid=v["nid"], code=k) for k, v in constants.LIBRARIES.items()
         ]
-        session.add(RottenApple(code=code, applicableResourceIds=ids))
+        for library in libraries:
+            session.add(library)
 
-    session.commit()
+        res_cats = [
+            ResourceCategory(
+                nid=v["nid"],
+                name=k,
+                description=v["description"],
+                sierraBibFormatBpl=v["sierraBibFormatBpl"],
+                sierraBibFormatNyp=v["sierraBibFormatNyp"],
+                srcTags2Keep=v["srcTags2Keep"],
+                dstTags2Delete=v["dstTags2Delete"],
+                queryDays=v["queryDays"],
+            )
+            for k, v in constants.RESOURCE_CATEGORIES.items()
+        ]
+        session.add_all(res_cats)
 
-    # verify integrity of the database
-    try:
-        # check all tables were created
-        insp = inspect(dal.engine)
-        assert sorted(insp.get_table_names()) == sorted(
-            [
-                "event",
-                "library",
-                "output_file",
-                "resource",
-                "resource_category",
-                "rotten_apple",
-                "rotten_apple_resource",
-                "source_file",
-                "worldcat_query",
+        rotten_apples = []
+        for code, resource_cat_ids in constants.ROTTEN_APPLES.items():
+            ids = [
+                RottenAppleResource(
+                    resourceCategoryId=constants.RESOURCE_CATEGORIES[n]["nid"]
+                )
+                for n in resource_cat_ids
             ]
-        ), "Database is missing required tables."
+            rotten_apples.append(RottenApple(code=code, applicableResourceIds=ids))
+        session.add_all(rotten_apples)
+
+        session.flush()
+
+        insp = inspect(db_provider.engine)
+        expected_tables = [
+            "event",
+            "library",
+            "output_file",
+            "resource",
+            "resource_category",
+            "rotten_apple",
+            "rotten_apple_resource",
+            "source_file",
+            "worldcat_query",
+        ]
+        if not sorted(insp.get_table_names()) == sorted(expected_tables):
+            raise DatabaseInitializationError("Database is missing required tables.")
 
         # check both libraries were added
         libraries = session.query(Library).all()
-        assert len(libraries) == 2, "Invalid number of initial libraries."
+        if not len(libraries) == 2:
+            raise DatabaseInitializationError("Invalid number of initial libraries.")
         codes = [row.code for row in libraries]
-        assert "NYP" in codes, "'NYP' code missing in 'Library' table."
-        assert "BPL" in codes, "'BPL' code missing in 'Library' table."
+        if "NYP" not in codes:
+            raise DatabaseInitializationError("'NYP' code missing in 'Library' table.")
+        if "BPL" not in codes:
+            raise DatabaseInitializationError("'BPL' code missing in 'Library' table.")
 
         # check e-resource names in ResourceCategory table
         categories = session.query(ResourceCategory).all()
         names = [row.name for row in categories]
-        assert len(categories) == 11, "Invalid number of 'ResourceCategory' records."
-        assert "ebook" in names, "Missing 'ebook' category in 'ResourceCategory' table."
-        assert "eaudio" in names, (
-            "Missing 'eaudio' category in 'ResourceCategory' table."
-        )
-        assert "evideo" in names, (
-            "Missing 'evideo' category in 'ResourceCategory' table."
-        )
-    except AssertionError:
-        raise
-    finally:
-        session.close()
+        if not len(categories) == 11:
+            raise DatabaseInitializationError(
+                "Invalid number of 'ResourceCategory' records."
+            )
+
+        if "ebook" not in names:
+            raise DatabaseInitializationError(
+                "Missing 'ebook' category in 'ResourceCategory' table."
+            )
+        if "eaudio" not in names:
+            raise DatabaseInitializationError(
+                "Missing 'eaudio' category in 'ResourceCategory' table."
+            )
+        if "evideo" not in names:
+            raise DatabaseInitializationError(
+                "Missing 'evideo' category in 'ResourceCategory' table."
+            )
 
 
 def add_event(session: Session, resource: Resource, status: str) -> Event:
@@ -569,18 +588,10 @@ def update_resource(session, sierraId, libraryId, **kwargs) -> Resource:
     Returns:
         instance of updated record
 
-    Raises:
-        NoResultFound
     """
-    try:
-        instance = (
-            session.query(Resource)
-            .filter_by(sierraId=sierraId, libraryId=libraryId)
-            .one()
-        )
-    except NoResultFound:
-        raise
-    else:
-        for key, value in kwargs.items():
-            setattr(instance, key, value)
-        return instance
+    instance = (
+        session.query(Resource).filter_by(sierraId=sierraId, libraryId=libraryId).one()
+    )
+    for key, value in kwargs.items():
+        setattr(instance, key, value)
+    return instance

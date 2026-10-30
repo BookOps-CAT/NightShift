@@ -7,11 +7,12 @@ from bookops_marc import Bib
 from pymarc import Field, Indicators, Subfield
 from sqlalchemy.exc import IntegrityError
 
-from nightshift import bot, constants, datastore_transactions, manager
+from nightshift import bot, datastore_transactions, manager
 from nightshift.comms.storage import Drive
 from nightshift.config import logging_conf
 from nightshift.datastore import OutputFile, WorldcatQuery
 from nightshift.marc.marc_parser import BibReader
+from nightshift.ns_exceptions import DatabaseInitializationError
 from nightshift.tasks import Tasks
 
 
@@ -101,14 +102,9 @@ def mock_init_db_value_error(monkeypatch):
 @pytest.fixture
 def mock_init_db_invalid_structure(monkeypatch):
     def _patch(*args, **kwargs):
-        raise AssertionError("Foo Error")
+        raise DatabaseInitializationError("Foo Error")
 
     monkeypatch.setattr(datastore_transactions, "init_db", _patch)
-
-
-@pytest.fixture
-def mock_init_libraries(monkeypatch):
-    monkeypatch.setattr(constants, "LIBRARIES", {"NYP": {"nid": 1}})
 
 
 # Bibs fixtures ##############

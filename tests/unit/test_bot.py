@@ -43,7 +43,7 @@ def test_config_local_env_variables_default_file():
 
 
 def test_configure_database_local_success(
-    patch_init_db, patch_config_local_env_variables, capfd
+    patch_init_db, patch_config_local_env_variables, mock_db_env, capfd
 ):
     with does_not_raise():
         configure_database(env="local")
@@ -52,7 +52,7 @@ def test_configure_database_local_success(
 
 
 def test_configure_database_again(
-    patch_config_local_env_variables, mock_init_db_integrity_error, capfd
+    patch_config_local_env_variables, mock_init_db_integrity_error, mock_db_env, capfd
 ):
     configure_database()
     captured = capfd.readouterr()
@@ -62,14 +62,16 @@ def test_configure_database_again(
     )
 
 
-def test_configure_database_without_env_variables(capfd, mock_init_db_value_error):
+def test_configure_database_without_env_variables(
+    capfd, mock_init_db_value_error, mock_db_env
+):
     configure_database()
     captured = capfd.readouterr()
     assert "Environmental variables are not configured properly." in captured.out
 
 
 def test_configure_database_with_improper_structure(
-    capfd, mock_init_db_invalid_structure
+    capfd, mock_init_db_invalid_structure, mock_db_env
 ):
     configure_database()
     captured = capfd.readouterr()
@@ -82,6 +84,7 @@ def test_run_local(
     mock_log_env,
     patch_process_resources,
     patch_perform_db_maintenance,
+    mock_db_env,
 ):
     with caplog.at_level(logging.INFO):
         run(env="local")
@@ -92,7 +95,9 @@ def test_run_local(
 
 
 @pytest.mark.parametrize("arg", ["local", "prod"])
-def test_main_init_arg(arg, patch_init_db, patch_config_local_env_variables, capfd):
+def test_main_init_arg(
+    arg, patch_init_db, patch_config_local_env_variables, mock_db_env, capfd
+):
     with does_not_raise():
         main(["init", f"{arg}"])
         captured = capfd.readouterr()
@@ -108,6 +113,7 @@ def test_main_run_arg(
     patch_perform_db_maintenance,
     mock_log_env,
     caplog,
+    mock_db_env,
 ):
     with caplog.at_level(logging.INFO):
         main(["run", f"{arg}"])

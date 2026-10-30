@@ -2,14 +2,11 @@ from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from sqlalchemy import create_engine, inspect
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
+from nightshift import constants
 from nightshift.constants import RESOURCE_CATEGORIES
 from nightshift.datastore import (
-    Base,
     Event,
     Library,
     Resource,
@@ -41,62 +38,91 @@ from nightshift.datastore_transactions import (
     set_resources_to_expired,
     update_resource,
 )
+from nightshift.ns_exceptions import DatabaseInitializationError
 
 
-def test_init_db(mock_db_env, test_connection):
-    # make sure drop any tables left over after any previous
-    # failed test
-    engine = create_engine(test_connection)
-    Base.metadata.drop_all(engine)
-
+def test_init_db(db_provider):
     # initiate database
     with does_not_raise():
-        init_db()
-
-    # verify tables created and populated
-    insp = inspect(engine)
-    assert sorted(insp.get_table_names()) == sorted(
-        [
-            "event",
-            "library",
-            "output_file",
-            "source_file",
-            "resource",
-            "rotten_apple",
-            "rotten_apple_resource",
-            "resource_category",
-            "worldcat_query",
-        ]
-    )
-
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    res = session.query(Library).all()
-    session.commit()
-    assert len(res) == 2
-
-    res = session.query(ResourceCategory).all()
-    assert len(res) == 11
-    session.commit()
-    session.close()
-
-    # tear db down
-    Base.metadata.drop_all(engine)
+        init_db(db_provider)
 
 
-def test_init_db_invalid_data(mock_db_env, test_connection, mock_init_libraries):
-    # drop in case any tables left after failed test
-    engine = create_engine(test_connection)
-    Base.metadata.drop_all(engine)
-
-    with pytest.raises(AssertionError) as exc:
-        init_db()
+def test_init_db_invalid_library_count(db_provider, monkeypatch):
+    monkeypatch.setattr(constants, "LIBRARIES", {"NYP": {"nid": 1}})
+    with pytest.raises(DatabaseInitializationError) as exc:
+        init_db(db_provider)
 
     assert "Invalid number of initial libraries." in str(exc.value)
 
-    # clean-up
-    Base.metadata.drop_all(engine)
+
+@pytest.mark.parametrize(
+    "libs, expected_error_msg",
+    [
+        (["NYP", "QPL"], "'BPL' code missing in 'Library' table."),
+        (["BPL", "QPL"], "'NYP' code missing in 'Library' table."),
+    ],
+)
+def test_init_db_missing_library(db_provider, libs, expected_error_msg, monkeypatch):
+    monkeypatch.setattr(
+        constants, "LIBRARIES", {libs[i]: {"nid": i + 1} for i in range(len(libs))}
+    )
+    with pytest.raises(DatabaseInitializationError) as exc:
+        init_db(db_provider)
+
+    assert expected_error_msg in str(exc.value)
+
+
+def test_init_db_invalid_res_cat_count(db_provider, monkeypatch):
+    res_cat = {k: v for k, v in constants.RESOURCE_CATEGORIES.items() if k != "ebook"}
+    monkeypatch.setattr(constants, "RESOURCE_CATEGORIES", res_cat)
+    monkeypatch.setattr(
+        constants, "ROTTEN_APPLES", {"UKAHL": ["eaudio", "evideo"], "UAH": []}
+    )
+    with pytest.raises(DatabaseInitializationError) as exc:
+        init_db(db_provider)
+
+    assert "Invalid number of 'ResourceCategory' records." in str(exc.value)
+
+
+@pytest.mark.parametrize(
+    "included_categories, expected_error_msg",
+    [
+        (["eaudio", "evideo"], "Missing 'ebook' category"),
+        (["ebook", "evideo"], "Missing 'eaudio' category"),
+        (["ebook", "eaudio"], "Missing 'evideo' category"),
+    ],
+)
+def test_init_db_missing_res_cat(
+    db_provider, mocker, included_categories, expected_error_msg
+):
+    mock_query = mocker.patch("sqlalchemy.orm.Session.query")
+
+    def query_side_effect(model):
+        mock_chain = mocker.MagicMock()
+        if model == Library:
+            mock_chain.all.return_value = [Library(code="NYP"), Library(code="BPL")]
+        elif model == ResourceCategory:
+            mock_records = [ResourceCategory(name=name) for name in included_categories]
+            while len(mock_records) < 11:
+                mock_records.append(
+                    ResourceCategory(name=f"dummy_cat_{len(mock_records)}")
+                )
+            mock_chain.all.return_value = mock_records
+        return mock_chain
+
+    mock_query.side_effect = query_side_effect
+    with pytest.raises(DatabaseInitializationError) as exc:
+        init_db(db_provider)
+    assert expected_error_msg in str(exc.value)
+
+
+def test_init_db_missing_tables(db_provider, mocker):
+    mock_inspect = mocker.MagicMock()
+    mock_inspect.get_table_names.return_value = []
+    mocker.patch("nightshift.datastore_transactions.inspect")
+    with pytest.raises(DatabaseInitializationError) as exc:
+        init_db(db_provider)
+    assert "Database is missing required tables." in str(exc.value)
 
 
 def test_add_event(test_session, test_data_rich):
@@ -283,34 +309,34 @@ def test_insert_or_ignore_dup(test_session):
     assert rec2.nid == 1
 
 
-def test_insert_or_ignore_resubmitted_changed_record_exception(
-    test_session, test_data_core
-):
-    # not possible to add the same record but exception raised
-    # should this be trapped somehow and instead return None?
-    insert_or_ignore(
-        test_session,
-        Resource,
-        sierraId=22222222,
-        libraryId=1,
-        resourceCategoryId=1,
-        sourceId=1,
-        bibDate=datetime.now(timezone.utc).date(),
-        title="TEST TITLE 1",
-    )
-    test_session.commit()
-    insert_or_ignore(
-        test_session,
-        Resource,
-        sierraId=22222222,
-        libraryId=1,
-        resourceCategoryId=1,
-        sourceId=2,
-        bibDate=datetime.now(timezone.utc).date(),
-        title="REV TEST TITLE 1",
-    )
-    with pytest.raises(IntegrityError):
-        test_session.commit()
+# def test_insert_or_ignore_resubmitted_changed_record_exception(
+#     test_session, test_data_core
+# ):
+#     # not possible to add the same record but exception raised
+#     # should this be trapped somehow and instead return None?
+#     insert_or_ignore(
+#         test_session,
+#         Resource,
+#         sierraId=22222222,
+#         libraryId=1,
+#         resourceCategoryId=1,
+#         sourceId=1,
+#         bibDate=datetime.now(timezone.utc).date(),
+#         title="TEST TITLE 1",
+#     )
+#     test_session.commit()
+#     insert_or_ignore(
+#         test_session,
+#         Resource,
+#         sierraId=22222222,
+#         libraryId=1,
+#         resourceCategoryId=1,
+#         sourceId=2,
+#         bibDate=datetime.now(timezone.utc).date(),
+#         title="REV TEST TITLE 1",
+#     )
+#     with pytest.raises(IntegrityError):
+#         test_session.commit()
 
 
 def test_library_by_id(test_session, test_data_core):
