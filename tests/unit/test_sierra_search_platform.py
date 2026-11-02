@@ -112,7 +112,7 @@ class TestNypPlatformMocked:
         assert "Unable to obtain access token for NYPL Platform." in caplog.text
 
     def test_get_sierra_bib_error(
-        self, caplog, mock_env_vars, mock_token, mock_session_error
+        self, caplog, mock_env_vars, mock_token, mock_worldcat_session_error
     ):
         with NypPlatform() as platform:
             with pytest.raises(SierraSearchPlatformError):
@@ -145,7 +145,9 @@ class TestBplSolrMocked:
         assert solr.endpoint == "solr_endpoint"
         assert solr.headers["User-Agent"] == f"{__title__}/{__version__}"
 
-    def test_get_sierra_bib_error(self, caplog, mock_env_vars, mock_session_error):
+    def test_get_sierra_bib_error(
+        self, caplog, mock_env_vars, mock_worldcat_session_error
+    ):
         solr = BplSolr()
         with pytest.raises(SierraSearchPlatformError):
             solr.get_sierra_bib(11111111)

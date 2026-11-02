@@ -10,7 +10,6 @@ from paramiko import SFTPClient
 from paramiko.ssh_exception import SSHException
 from sqlalchemy import text
 
-from nightshift import constants
 from nightshift.comms.worldcat import Worldcat
 from nightshift.constants import LIBRARIES, RESOURCE_CATEGORIES, ROTTEN_APPLES
 from nightshift.datastore import (
@@ -400,7 +399,7 @@ def mock_worldcat_response_no_matches(monkeypatch):
 
 
 @pytest.fixture
-def mock_session_error(monkeypatch):
+def mock_worldcat_session_error(monkeypatch):
     def mock_error(self, *args, **kwargs):
         raise WorldcatRequestError("Timeout error")
 
@@ -608,8 +607,3 @@ def mock_os_error_on_remove(monkeypatch):
         raise OSError
 
     monkeypatch.setattr("os.remove", os_error)
-
-
-@pytest.fixture
-def mock_init_libraries(monkeypatch):
-    monkeypatch.setattr(constants, "LIBRARIES", {"NYP": {"nid": 1}})
