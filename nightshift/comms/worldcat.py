@@ -155,16 +155,15 @@ class Worldcat:
         )
 
         dist_number = resource.distributorNumber
-        if resource.resourceCategoryId == 1:
+        if resource.resourceCategoryId == 1 and resource.distributorNumber:
             # ebook
-            if resource.distributorNumber:
-                payloads.append(
-                    dict(
-                        q=f"sn={dist_number} NOT lv:3{forbidden_sources}",
-                        itemType="book",
-                        itemSubType="book-digital",
-                    )
+            payloads.append(
+                dict(
+                    q=f"sn={dist_number} NOT lv:3{forbidden_sources}",
+                    itemType="book",
+                    itemSubType="book-digital",
                 )
+            )
         elif resource.resourceCategoryId == 2 and resource.distributorNumber:
             # eaudio
             payloads.append(
