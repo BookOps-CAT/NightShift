@@ -416,23 +416,13 @@ def stub_worldcat_session(mock_env_vars, mock_token, mock_worldcat_response):
 
 
 @pytest.fixture
-def mock_platform_response():
-    return MockHTTPResponse(
-        status_code=200,
-        url="request_url_here",
+def mock_platform_response(monkeypatch):
+    response = MockHTTPResponse(
         _json={
             "data": {
                 "id": "18578797",
                 "deleted": False,
                 "suppressed": False,
-                "title": "Zendegi",
-                "author": "Egan, Greg, 1961-",
-                "standardNumbers": ["9781597801744", "1597801747"],
-                "controlNumber": "2010074825",
-                "fixedFields": {
-                    "24": {"label": "Language", "value": "eng", "display": "English"},
-                    "107": {"label": "MARC Type", "value": " ", "display": None},
-                },
                 "varFields": [
                     {
                         "fieldTag": "c",
@@ -440,77 +430,63 @@ def mock_platform_response():
                         "ind1": " ",
                         "ind2": " ",
                         "content": None,
-                        "subfields": [
-                            {"tag": "a", "content": "SCI-FI"},
-                            {"tag": "c", "content": "EGAN"},
-                        ],
-                    },
-                    {
-                        "fieldTag": "o",
-                        "marcTag": "001",
-                        "ind1": " ",
-                        "ind2": " ",
-                        "content": "2010074825",
-                        "subfields": None,
-                    },
-                    {
-                        "fieldTag": "t",
-                        "marcTag": "245",
-                        "ind1": "1",
-                        "ind2": "0",
-                        "content": None,
-                        "subfields": [
-                            {"tag": "a", "content": "Zendegi /"},
-                            {"tag": "c", "content": "Greg Egan."},
-                        ],
-                    },
+                        "subfields": [{"tag": "a", "content": "SCI-FI"}],
+                    }
                 ],
             },
             "count": 1,
             "totalCount": 0,
             "statusCode": 200,
             "debugInfo": [],
-        },
+        }
     )
+
+    def mock_api_response(*args, **kwargs):
+        return response
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+    return response
 
 
 @pytest.fixture
-def mock_platform_response_oclc_origin(mock_platform_response):
+def mock_platform_record_oclc_origin(mock_platform_response):
     json_response = mock_platform_response.json()
     json_response["data"]["varFields"] = [{"marcTag": "003", "content": "OCoLC"}]
     return MockHTTPResponse(_json=json_response)
 
 
 @pytest.fixture
-def mock_platform_response_deleted_record(mock_platform_response):
+def mock_platform_deleted_record(monkeypatch, mock_platform_response):
     json_response = mock_platform_response.json()
     json_response["data"]["deleted"] = True
-    return MockHTTPResponse(_json=json_response)
+    response = MockHTTPResponse(_json=json_response)
+
+    def mock_api_response(*args, **kwargs):
+        return response
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+    return response
 
 
 @pytest.fixture
-def mock_platform_response_not_found():
+def mock_platform_record_not_found():
     return MockHTTPResponse(status_code=404)
 
 
 @pytest.fixture
-def mock_platform_response_suppressed(mock_platform_response):
+def mock_platform_record_suppressed(mock_platform_response):
     json_response = mock_platform_response.json()
     json_response["data"]["suppressed"] = True
     json_response["data"]["varFields"] = [
         {"marcTag": "001", "content": "2010074825"},
         {"marcTag": "091", "subfields": [{"tag": "a", "content": "eNYPL"}]},
     ]
-    return MockHTTPResponse(
-        status_code=200, url="request_url_here", _json=json_response
-    )
+    return MockHTTPResponse(_json=json_response)
 
 
 @pytest.fixture
-def mock_solr_response():
-    return MockHTTPResponse(
-        status_code=200,
-        url="request_url_here",
+def mock_solr_response(monkeypatch):
+    response = MockHTTPResponse(
         _json={
             "response": {
                 "numFound": 1,
@@ -525,70 +501,47 @@ def mock_solr_response():
                     }
                 ],
             }
-        },
+        }
     )
+
+    def mock_api_response(*args, **kwargs):
+        return response
+
+    monkeypatch.setattr(requests.Session, "get", mock_api_response)
+    return response
 
 
 @pytest.fixture
-def mock_solr_response_oclc_origin(mock_solr_response):
+def mock_solr_record_oclc_origin(mock_solr_response):
     json_response = mock_solr_response.json()
     json_response["response"]["docs"][0]["ss_marc_tag_003"] = "OCoLC"
-    return MockHTTPResponse(
-        status_code=200, url="request_url_here", _json=json_response
-    )
+    return MockHTTPResponse(_json=json_response)
 
 
 @pytest.fixture
-def mock_solr_response_suppressed(mock_solr_response):
+def mock_solr_record_suppressed(mock_solr_response):
     json_response = mock_solr_response.json()
     json_response["response"]["docs"][0]["suppressed"] = True
     json_response["response"]["docs"][0]["call_number"] = "eBOOK"
-    return MockHTTPResponse(
-        status_code=200, url="request_url_here", _json=json_response
-    )
+    return MockHTTPResponse(_json=json_response)
 
 
 @pytest.fixture
-def mock_solr_response_record_not_found():
-    return MockHTTPResponse(
-        status_code=200,
-        url="request_url_here",
-        _json={
-            "response": {"numFound": 0, "start": 0, "numFoundExact": True, "docs": []}
-        },
-    )
+def mock_solr_record_not_found(monkeypatch):
+    json_response = {"numFound": 0, "start": 0, "numFoundExact": True, "docs": []}
+    response = MockHTTPResponse(_json={"response": json_response})
 
-
-@pytest.fixture
-def mock_successful_platform_session_response(monkeypatch, mock_platform_response):
     def mock_api_response(*args, **kwargs):
-        return mock_platform_response
+        return response
 
     monkeypatch.setattr(requests.Session, "get", mock_api_response)
+    return response
 
 
 @pytest.fixture
-def mock_successful_platform_session_response_deleted_record(
-    monkeypatch, mock_platform_response_deleted_record
-):
+def mock_sierra_session_error(monkeypatch):
     def mock_api_response(*args, **kwargs):
-        return mock_platform_response_deleted_record
-
-    monkeypatch.setattr(requests.Session, "get", mock_api_response)
-
-
-@pytest.fixture
-def mock_successful_solr_session_response(monkeypatch, mock_solr_response_suppressed):
-    def mock_api_response(*args, **kwargs):
-        return mock_solr_response_suppressed
-
-    monkeypatch.setattr(requests.Session, "get", mock_api_response)
-
-
-@pytest.fixture
-def mock_failed_solr_session_response(monkeypatch, mock_solr_response_record_not_found):
-    def mock_api_response(*args, **kwargs):
-        return mock_solr_response_record_not_found
+        raise requests.Timeout
 
     monkeypatch.setattr(requests.Session, "get", mock_api_response)
 
