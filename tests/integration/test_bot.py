@@ -5,94 +5,59 @@ Tests bot.py module
 import os
 
 import pytest
-import yaml
 
+from nightshift import constants
 from nightshift.bot import config_local_env_variables, configure_database, main, run
 
 
-def test_config_local_env_variables():
+def test_config_local_env_variables(mock_envar_yaml):
     test_config_file = "nightshift/config/config.yaml.example"
     config_local_env_variables(config_file=test_config_file)
-
-    with open(test_config_file, "r") as f:
-        data = yaml.safe_load(f)
-
-    for k, v in data.items():
-        assert os.environ[k] == v
-
-    # clean up, otherwise vars will linger and mess up other tests
-    for k in data.keys():
-        del os.environ[k]
+    assert os.environ["POSTGRES_DB"] == "nightshift_test"
 
 
-def test_configure_database_local_success(
-    patch_init_db, patch_config_local_env_variables, mock_db_env, capfd
-):
+def test_configure_database_local_success(mock_init_db, caplog):
     configure_database(env="local")
-    captured = capfd.readouterr()
-    assert captured.out == "NightShift local database successfully set up.\n"
+    assert "NightShift local database successfully set up.\n" in caplog.text
 
 
-def test_configure_database_again(
-    patch_config_local_env_variables, mock_init_db_integrity_error, mock_db_env, capfd
-):
+def test_configure_database_integrity_error(mock_db_integrity_error, caplog):
     configure_database()
-    captured = capfd.readouterr()
     assert (
         "NightShift database appears to be already set up. Operation raised following error: "
-        in captured.out
+        in caplog.text
     )
 
 
-def test_configure_database_without_env_variables(
-    capfd, mock_db_env, mock_init_db_value_error
-):
+def test_configure_database_db_initialization_error(caplog, mock_db_env, monkeypatch):
+    monkeypatch.setattr(constants, "LIBRARIES", {"NYP": {"nid": 1}})
     configure_database()
-    captured = capfd.readouterr()
-    assert "Environmental variables are not configured properly." in captured.out
+    assert "Created database has invalid structure. " in caplog.text
 
 
-def test_configure_database_with_improper_structure(
-    capfd, mock_db_env, mock_init_db_invalid_structure
-):
+def test_configure_database_value_error(caplog, mock_db_env, monkeypatch):
+    monkeypatch.delenv("POSTGRES_DB")
     configure_database()
-    captured = capfd.readouterr()
-    assert "Created database has invalid structure. Error: Foo Error." in captured.out
+    assert "Environmental variables are not configured properly." in caplog.text
 
 
-def test_run_local(
-    caplog,
-    mock_db_env,
-    patch_config_local_env_variables,
-    patch_process_resources,
-    patch_perform_db_maintenance,
-):
-    run(env="local")
+@pytest.mark.parametrize("arg", ["local", "prod"])
+def test_run(caplog, mock_db_env, mock_manager, arg):
+    run(env=arg)
 
-    assert "Launching local NightShift..." in caplog.text
+    assert f"Launching {arg} NightShift..." in caplog.text
     assert "Processing resources completed." in caplog.text
     assert "Database maintenance completed." in caplog.text
 
 
-@pytest.mark.parametrize("arg", ["local", "prod"])
-def test_main_init_arg(
-    arg, mock_db_env, patch_init_db, patch_config_local_env_variables, capfd
-):
-    main(["init", f"{arg}"])
-    captured = capfd.readouterr()
+@pytest.mark.parametrize(
+    "arg,output",
+    [
+        ("init", "NightShift local database successfully set up."),
+        ("run", "Launching local NightShift..."),
+    ],
+)
+def test_main(mock_init_db, mock_manager, arg, output, caplog):
+    main([f"{arg}", "local"])
 
-    assert f"NightShift {arg} database successfully set up." in captured.out
-
-
-@pytest.mark.parametrize("arg", ["local", "prod"])
-def test_main_run_arg(
-    arg,
-    mock_db_env,
-    patch_config_local_env_variables,
-    patch_process_resources,
-    patch_perform_db_maintenance,
-    caplog,
-):
-    main(["run", f"{arg}"])
-
-    assert f"Launching {arg} NightShift..." in caplog.text
+    assert output in caplog.text
