@@ -25,7 +25,7 @@ class TestWorldcatMocked:
             ),
         ],
     )
-    def test_session(self, arg, expectation, mock_env_vars, mock_token):
+    def test_session(self, arg, expectation, mock_token):
         with expectation:
             Worldcat(arg)
 
