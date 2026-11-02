@@ -17,8 +17,8 @@ class TestDriveMocked:
             assert isinstance(drive.sftp, SFTPClient)
             assert drive.src_dir == "sierra_dumps_dir"
             assert drive.dst_dir == "load_dir"
-        assert caplog.records[0].msg == f"Opening a secure channel to {expectation}."
-        assert caplog.records[1].msg == "Successfully connected to the SFTP."
+        assert f"Opening a secure channel to {expectation}." in caplog.text
+        assert "Successfully connected to the SFTP." in caplog.text
 
     def test_drive_connection_error(self, caplog, mock_ssh_exception):
         creds = get_credentials()
