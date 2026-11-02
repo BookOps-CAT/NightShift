@@ -139,19 +139,11 @@ def init_db(db_provider: DatabaseProvider) -> None:
             raise DatabaseInitializationError(
                 "Invalid number of 'ResourceCategory' records."
             )
-
-        if "ebook" not in names:
-            raise DatabaseInitializationError(
-                "Missing 'ebook' category in 'ResourceCategory' table."
-            )
-        if "eaudio" not in names:
-            raise DatabaseInitializationError(
-                "Missing 'eaudio' category in 'ResourceCategory' table."
-            )
-        if "evideo" not in names:
-            raise DatabaseInitializationError(
-                "Missing 'evideo' category in 'ResourceCategory' table."
-            )
+        for res_cat in ["ebook", "eaudio", "evideo"]:
+            if res_cat not in names:
+                raise DatabaseInitializationError(
+                    f"Missing '{res_cat}' category in 'ResourceCategory' table."
+                )
 
 
 def add_event(session: Session, resource: Resource, status: str) -> Event:
