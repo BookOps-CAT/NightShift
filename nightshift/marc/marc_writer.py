@@ -5,14 +5,15 @@ into MARC21.
 
 import logging
 import pickle
+from io import BytesIO
 
+from bookops_marc import Bib
 from bookops_marc.models import OclcNumber
-from pymarc import Field, Indicators, Subfield
+from pymarc import Field, Indicators, Subfield, parse_xml_to_array
 
 from .. import __title__, __version__
 from ..datastore import Resource
 from ..datastore_transactions import ResCatById
-from .marc_parser import worldcat_response_to_bib
 
 logger = logging.getLogger("nightshift")
 
@@ -91,7 +92,7 @@ class BibEnhancer:
         self.library = library
         self.res_cat = resource_categories.get(self.resource.resourceCategoryId)
 
-        self.bib = worldcat_response_to_bib(resource.fullBib, self.library)
+        self.bib = self.worldcat_response_to_bib(resource.fullBib)
 
     @property
     def tags(self) -> dict[str, str]:
@@ -191,6 +192,31 @@ class BibEnhancer:
         else:
             logger.warning("No pymarc object to serialize to MARC21.")
 
+    def worldcat_response_to_bib(self, response: bytes | None) -> Bib:
+        """
+        Converts MetadataApi responses into `bookops_marc.Bib` objects.
+
+        Args:
+            response:                           MARC XML in binary format
+        Returns:
+            `bookops_marc.bib.Bib` instance
+
+        Raises:
+            TypeError
+        """
+        logger.debug("Converting Worldcat response to bookops-marc Bib object.")
+        if not isinstance(response, bytes):
+            logger.error(
+                f"Invalid MARC data format: {type(response).__name__}. "
+                "Not able to convert to bookops-marc Bib object."
+            )
+            raise TypeError("Invalid MARC data format. Must be bytes.")
+        else:
+            data = BytesIO(response)
+            pymarc_record = parse_xml_to_array(data)[0]
+            bib = Bib.pymarc_record_to_local_bib(pymarc_record, self.library)
+            return bib
+
     def _add_call_number(self) -> bool:
         """
         Adds a call number MARC tag specific to resource category and each library.
@@ -271,7 +297,7 @@ class BibEnhancer:
                 if "electronic books" in field.value().lower():
                     self.bib.remove_field(field)
 
-        elif resource_cat == "eaudio":
+        if resource_cat == "eaudio":
             # 'Audiobooks' term
             # remove electronic audiobooks
             for field in self.bib.subjects:
@@ -297,7 +323,7 @@ class BibEnhancer:
                 )
                 logger.debug("Added 'Audiobooks' LCGFT genre to 655 tag.")
 
-        elif resource_cat == "evideo":
+        if resource_cat == "evideo":
             found = False
             for field in self.bib.subjects:
                 if "internet videos." in field.value().lower():
@@ -340,20 +366,18 @@ class BibEnhancer:
         """
         Marks records as produced by the NightShift bot.
         """
-        if "initials_tag" in self.tags:
-            tag = self.tags["initials_tag"]
+        tag = self.tags["initials_tag"]
 
-            self.bib.add_field(
-                Field(
-                    tag=tag,
-                    indicators=Indicators(" ", " "),
-                    subfields=[Subfield("a", f"{__title__}/{__version__}")],
-                )
+        self.bib.add_field(
+            Field(
+                tag=tag,
+                indicators=Indicators(" ", " "),
+                subfields=[Subfield("a", f"{__title__}/{__version__}")],
             )
-            logger.debug(
-                f"Added initials tag {tag} to {self.library} "
-                f"b{self.resource.sierraId}a."
-            )
+        )
+        logger.debug(
+            f"Added initials tag {tag} to {self.library} b{self.resource.sierraId}a."
+        )
 
     def _add_sierraId(self) -> None:
         """
