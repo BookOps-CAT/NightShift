@@ -5,7 +5,7 @@ This module provides the manager methods to perform particular tasks
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Callable, Optional
 
 from nightshift.comms.sierra_search_platform import BplSolr, NypPlatform
 from nightshift.comms.storage import Drive, get_credentials
@@ -83,11 +83,11 @@ class Tasks:
         Checks and updates status & suppression of records using
         NYPL Platform & BPL Solr.
         """
-        sierra_platform: BplSolr | NypPlatform
+        sierra_platform_factory: Callable[..., BplSolr | NypPlatform]
         if self.library == "NYP":
-            sierra_platform = NypPlatform()
+            sierra_platform_factory = NypPlatform
         elif self.library == "BPL":
-            sierra_platform = BplSolr()
+            sierra_platform_factory = BplSolr
         else:
             logger.error(
                 f"Invalid library argument passed: '{self.library}'. "
@@ -99,7 +99,7 @@ class Tasks:
             f"Checking {self.library} Sierra status for {len(resources)} resources."
         )
 
-        try:
+        with sierra_platform_factory() as sierra_platform:
             for resource in resources:
                 response = sierra_platform.get_sierra_bib(resource.sierraId)
                 resource.suppressed = response.is_suppressed()
@@ -115,8 +115,6 @@ class Tasks:
                     )
                     if resource.status in ("staff_enhanced", "staff_deleted"):
                         add_event(session, resource, status=resource.status)
-        finally:
-            sierra_platform.close()
 
     def enhance_and_output_bibs(
         self, resource_category: str, resources: list[Resource]
