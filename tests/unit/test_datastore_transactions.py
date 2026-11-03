@@ -1,5 +1,6 @@
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timedelta, timezone
+from typing import Callable
 
 import pytest
 from sqlalchemy import select
@@ -23,7 +24,9 @@ from nightshift.datastore_transactions import (
     add_output_file,
     add_resource,
     add_source_file,
+    create_db_provider,
     delete_resources,
+    get_connection_string,
     init_db,
     insert_or_ignore,
     library_by_id,
@@ -40,6 +43,23 @@ from nightshift.datastore_transactions import (
     update_resource,
 )
 from nightshift.ns_exceptions import DatabaseInitializationError
+
+
+def test_get_connection_string(monkeypatch):
+    monkeypatch.setenv("POSTGRES_USER", "user")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "password")
+    monkeypatch.setenv("POSTGRES_HOST", "host")
+    monkeypatch.setenv("POSTGRES_PORT", "5432")
+    monkeypatch.setenv("POSTGRES_DB", "db")
+    connection_str = get_connection_string()
+    assert connection_str == "postgresql://user:password@host:5432/db"
+
+
+def test_create_db_provider(monkeypatch):
+    monkeypatch.setattr("sqlalchemy.MetaData.create_all", lambda *args, **kwargs: None)
+    db_provider = create_db_provider("sqlite:///:memory:")
+    assert hasattr(db_provider, "engine")
+    assert isinstance(db_provider.SessionFactory, Callable)
 
 
 def test_init_db(db_provider):
