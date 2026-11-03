@@ -9,7 +9,7 @@ evideo)
 import logging
 import pickle
 from io import BytesIO
-from typing import Any, BinaryIO, Iterator, Optional, Union
+from typing import BinaryIO, Iterator, Optional, Union
 
 from bookops_marc import Bib, SierraBibReader
 
@@ -91,11 +91,7 @@ class BibReader:
             resource_category
         """
         # Overdrive MarcExpress records control number starts with ODN
-        try:
-            control_number = bib.control_number
-        except AttributeError:
-            # malformed MARC records may be returned by bookops-marc as none
-            return None
+        control_number = getattr(bib, "control_number", None)
 
         if control_number and control_number.startswith("ODN"):
             rec_type = bib.record_type
@@ -117,9 +113,6 @@ class BibReader:
             )
             return None
 
-    def _pickle_obj(self, obj: Any) -> bytes:
-        return pickle.dumps(obj)
-
     def _fields2keep(self, bib: Bib, resource_category: str) -> bytes:
         """
         Resource category specific MARC tags to be carried over to output records
@@ -127,7 +120,7 @@ class BibReader:
         keep = []
         tags2keep = self._res_cat[resource_category].srcTags2Keep
         keep.extend(bib.get_fields(*tags2keep))
-        pickled_keep = self._pickle_obj(keep)
+        pickled_keep = pickle.dumps(keep)
 
         return pickled_keep
 

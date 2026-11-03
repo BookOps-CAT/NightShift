@@ -33,7 +33,7 @@ def mock_envar_yaml(monkeypatch, mock_db_env):
 
 
 @pytest.fixture
-def mock_db_integrity_error(monkeypatch, mock_init_db):
+def mock_db_integrity_error(monkeypatch, mock_db_env):
     def mock_integrity_error(*args, **kwargs):
         raise IntegrityError("err", "params", "orig")
 
@@ -171,3 +171,11 @@ def mock_transfer_to_drive(monkeypatch):
         os.remove("temp.mrc")
     except OSError:
         pass
+
+
+@pytest.fixture
+def mock_enhance_and_output_bibs(monkeypatch):
+    def enhance_and_output(*args, **kwargs):
+        pass
+
+    monkeypatch.setattr(Tasks, "enhance_and_output_bibs", enhance_and_output)
