@@ -567,7 +567,6 @@ dependencies = [
     { name = "paramiko" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pymarc" },
-    { name = "pytest-mock" },
     { name = "pyyaml" },
     { name = "sqlalchemy" },
 ]
@@ -576,6 +575,7 @@ dependencies = [
 dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "pytest-mock" },
     { name = "types-paramiko" },
     { name = "types-pyyaml" },
     { name = "types-requests" },
@@ -591,7 +591,6 @@ requires-dist = [
     { name = "paramiko", specifier = ">=3.4.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.6" },
     { name = "pymarc", specifier = ">=5.1.2" },
-    { name = "pytest-mock", specifier = ">=3.17.0" },
     { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "sqlalchemy", specifier = ">=1.4.40" },
 ]
@@ -600,6 +599,7 @@ requires-dist = [
 dev = [
     { name = "pytest", specifier = ">=8.1.1" },
     { name = "pytest-cov", specifier = ">=5.0.0" },
+    { name = "pytest-mock", specifier = ">=3.17.0" },
     { name = "types-paramiko", specifier = ">=3.4.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
     { name = "types-requests", specifier = ">=2.31.0.20241016" },

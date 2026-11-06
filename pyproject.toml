@@ -17,7 +17,6 @@ dependencies = [
     "bookops-nypl-platform @ git+https://github.com/BookOps-CAT/bookops-nypl-platform",
     "bookops-marc @ git+https://github.com/BookOps-CAT/bookops-marc",
     "psycopg[binary]>=3.3.6",
-    "pytest-mock>=3.17.0",
 ]
 
 [dependency-groups]
@@ -26,7 +25,8 @@ dev = [
     "pytest-cov>=5.0.0",
     "types-requests>=2.31.0.20241016",
     "types-paramiko>=3.4.0",
-    "types-pyyaml>=6.0.12.20250915"
+    "types-pyyaml>=6.0.12.20250915",
+    "pytest-mock>=3.17.0",
 ]
 
 [tool.poetry.dependencies]
