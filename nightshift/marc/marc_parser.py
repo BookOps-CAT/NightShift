@@ -9,42 +9,14 @@ evideo)
 import logging
 import pickle
 from io import BytesIO
-from typing import Any, BinaryIO, Iterator, Optional, Union
+from typing import BinaryIO, Iterator, Optional, Union
 
 from bookops_marc import Bib, SierraBibReader
-from pymarc import parse_xml_to_array
 
 from ..datastore import Resource
 from ..datastore_transactions import ResCatByName
 
 logger = logging.getLogger("nightshift")
-
-
-def worldcat_response_to_bib(response: bytes | None, library: str) -> Bib:
-    """
-    Converts MetadataApi responses into `bookops_marc.Bib` objects.
-
-    Args:
-        response:                           MARC XML in binary format
-        library:                            "NYP" or "BPL"
-    Returns:
-        `bookops_marc.bib.Bib` instance
-
-    Raises:
-        TypeError
-    """
-    logger.debug("Converting Worldcat response to bookops-marc Bib object.")
-    if not isinstance(response, bytes):
-        logger.error(
-            f"Invalid MARC data format: {type(response).__name__}. "
-            "Not able to convert to bookops-marc Bib object."
-        )
-        raise TypeError("Invalid MARC data format. Must be bytes.")
-    else:
-        data = BytesIO(response)
-        pymarc_record = parse_xml_to_array(data)[0]
-        bib = Bib.pymarc_record_to_local_bib(pymarc_record, library)
-        return bib
 
 
 class BibReader:
@@ -119,11 +91,7 @@ class BibReader:
             resource_category
         """
         # Overdrive MarcExpress records control number starts with ODN
-        try:
-            control_number = bib.control_number
-        except AttributeError:
-            # malformed MARC records may be returned by bookops-marc as none
-            return None
+        control_number = getattr(bib, "control_number", None)
 
         if control_number and control_number.startswith("ODN"):
             rec_type = bib.record_type
@@ -145,9 +113,6 @@ class BibReader:
             )
             return None
 
-    def _pickle_obj(self, obj: Any) -> bytes:
-        return pickle.dumps(obj)
-
     def _fields2keep(self, bib: Bib, resource_category: str) -> bytes:
         """
         Resource category specific MARC tags to be carried over to output records
@@ -155,7 +120,7 @@ class BibReader:
         keep = []
         tags2keep = self._res_cat[resource_category].srcTags2Keep
         keep.extend(bib.get_fields(*tags2keep))
-        pickled_keep = self._pickle_obj(keep)
+        pickled_keep = pickle.dumps(keep)
 
         return pickled_keep
 

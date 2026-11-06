@@ -3,69 +3,50 @@ import os
 from io import BytesIO
 
 import pytest
+import yaml
 from sqlalchemy.exc import IntegrityError
 
-from nightshift import bot, datastore_transactions, manager
+from nightshift import datastore_transactions, manager
 from nightshift.comms.storage import Drive
 from nightshift.datastore import WorldcatQuery
-from nightshift.ns_exceptions import DatabaseInitializationError
 from nightshift.tasks import Tasks
 
 
 @pytest.fixture
-def patch_init_db(monkeypatch):
-    def _patch(*args, **kwargs):
-        return
+def mock_init_db(monkeypatch, db_provider):
+    def mock_db_provider(*args, **kwargs):
+        return db_provider
 
-    monkeypatch.setattr(datastore_transactions, "init_db", _patch)
+    def mock_init(*args, **kwargs):
+        pass
 
-
-@pytest.fixture
-def patch_config_local_env_variables(monkeypatch):
-    def _patch(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(bot, "config_local_env_variables", _patch)
+    monkeypatch.setattr(datastore_transactions, "create_db_provider", mock_db_provider)
+    monkeypatch.setattr(datastore_transactions, "init_db", mock_init)
 
 
 @pytest.fixture
-def mock_init_db_integrity_error(monkeypatch):
-    def _patch(*args, **kwargs):
+def mock_envar_yaml(monkeypatch, mock_db_env):
+    def mock_data(*args, **kwargs):
+        return {}
+
+    monkeypatch.setattr(yaml, "safe_load", mock_data)
+
+
+@pytest.fixture
+def mock_db_integrity_error(monkeypatch, mock_db_env):
+    def mock_integrity_error(*args, **kwargs):
         raise IntegrityError("err", "params", "orig")
 
-    monkeypatch.setattr(datastore_transactions, "init_db", _patch)
+    monkeypatch.setattr(datastore_transactions, "init_db", mock_integrity_error)
 
 
 @pytest.fixture
-def mock_init_db_value_error(monkeypatch):
-    def _patch(*args, **kwargs):
-        raise ValueError
+def mock_manager(monkeypatch):
+    def null_return(*args, **kwargs):
+        pass
 
-    monkeypatch.setattr(datastore_transactions, "init_db", _patch)
-
-
-@pytest.fixture
-def mock_init_db_invalid_structure(monkeypatch):
-    def _patch(*args, **kwargs):
-        raise DatabaseInitializationError("Foo Error")
-
-    monkeypatch.setattr(datastore_transactions, "init_db", _patch)
-
-
-@pytest.fixture
-def patch_process_resources(monkeypatch):
-    def _patch(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(manager, "process_resources", _patch)
-
-
-@pytest.fixture
-def patch_perform_db_maintenance(monkeypatch):
-    def _patch(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(manager, "perform_db_maintenance", _patch)
+    monkeypatch.setattr(manager, "process_resources", null_return)
+    monkeypatch.setattr(manager, "perform_db_maintenance", null_return)
 
 
 @pytest.fixture
@@ -190,3 +171,11 @@ def mock_transfer_to_drive(monkeypatch):
         os.remove("temp.mrc")
     except OSError:
         pass
+
+
+@pytest.fixture
+def mock_enhance_and_output_bibs(monkeypatch):
+    def enhance_and_output(*args, **kwargs):
+        pass
+
+    monkeypatch.setattr(Tasks, "enhance_and_output_bibs", enhance_and_output)

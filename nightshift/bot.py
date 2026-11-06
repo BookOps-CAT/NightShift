@@ -42,20 +42,24 @@ def configure_database(env: str = "prod") -> None:
     """
     if env == "local":
         config_local_env_variables()
-    connection_str = datastore_transactions.get_connection_string()
+    logging.config.dictConfig(log_conf())
+    logger = logging.getLogger("nightshift")
     try:
+        connection_str = datastore_transactions.get_connection_string()
         db_provider = datastore_transactions.create_db_provider(connection_str)
         datastore_transactions.init_db(db_provider)
-        print(f"NightShift {env} database successfully set up.")
+        logger.info(f"NightShift {env} database successfully set up.")
     except IntegrityError as exc:
-        print(
+        logger.error(
             "NightShift database appears to be already set up. "
             f"Operation raised following error: {exc}"
         )
-    except ValueError:
-        print("Environmental variables are not configured properly.")
+    except KeyError as exc:
+        logger.error(
+            f"Environmental variables are not configured properly. Missing {exc}."
+        )
     except DatabaseInitializationError as exc:
-        print(f"Created database has invalid structure. Error: {exc}.")
+        logger.error(f"Created database has invalid structure. Error: {exc}.")
 
 
 def run(env: str = "prod") -> None:
@@ -76,8 +80,7 @@ def run(env: str = "prod") -> None:
     if env == "local":
         config_local_env_variables()
 
-    conf = log_conf()
-    logging.config.dictConfig(conf)
+    logging.config.dictConfig(log_conf())
     logger = logging.getLogger("nightshift")
     connection_str = datastore_transactions.get_connection_string()
     logger.info(f"Launching {env} NightShift...")

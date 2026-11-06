@@ -40,7 +40,7 @@ def test_check_resources_sierra_state_nyp_platform(
     stub_res_cat_by_name,
     mock_env_vars,
     mock_token,
-    mock_successful_platform_session_response,
+    mock_platform_response,
 ):
     with db_provider.session_scope() as session:
         stub_resource = session.scalars(select(Resource).filter_by(nid=1)).one()
@@ -71,7 +71,7 @@ def test_check_resources_sierra_state_nyp_platform_deleted_record(
     stub_res_cat_by_name,
     mock_env_vars,
     mock_token,
-    mock_successful_platform_session_response_deleted_record,
+    mock_platform_deleted_record,
 ):
     with db_provider.session_scope() as session:
         stub_resource = session.scalars(select(Resource).filter_by(nid=1)).one()
@@ -97,11 +97,7 @@ def test_check_resources_sierra_state_nyp_platform_deleted_record(
 
 
 def test_check_resources_sierra_state_bpl_solr(
-    db_provider,
-    test_data_rich,
-    stub_res_cat_by_name,
-    mock_env_vars,
-    mock_successful_solr_session_response,
+    db_provider, test_data_rich, stub_res_cat_by_name, mock_env_vars, mock_solr_response
 ):
     with db_provider.session_scope() as session:
         stub_resource = session.scalars(select(Resource).filter_by(nid=1)).one()
@@ -113,8 +109,8 @@ def test_check_resources_sierra_state_bpl_solr(
 
     with db_provider.session_scope() as session:
         resource = session.scalars(select(Resource).filter_by(nid=1)).one()
-        assert resource.suppressed
-        assert resource.status == "open"
+        assert resource.suppressed is False
+        assert resource.status == "staff_enhanced"
 
 
 def test_check_resources_sierra_state_bpl_solr_no_record(
@@ -122,7 +118,7 @@ def test_check_resources_sierra_state_bpl_solr_no_record(
     test_data_rich,
     stub_res_cat_by_name,
     mock_env_vars,
-    mock_failed_solr_session_response,
+    mock_solr_record_not_found,
 ):
     with db_provider.session_scope() as session:
         resource = session.scalars(select(Resource).filter_by(nid=1)).one()

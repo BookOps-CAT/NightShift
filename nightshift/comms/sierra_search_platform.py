@@ -30,14 +30,12 @@ def is_eresource_callno(callno: str) -> bool:
     Returns:
         bool
     """
-    try:
-        norm_callno = callno.lower()
-    except AttributeError:
+    if not isinstance(callno, str):
         return False
 
-    if norm_callno.startswith("enypl"):  # NYPL pattern
-        return True
-    elif norm_callno in ("ebook", "eaudio", "evideo"):  # BPL pattern
+    norm_callno = callno.lower()
+
+    if norm_callno.startswith("enypl") or norm_callno in ("ebook", "eaudio", "evideo"):
         return True
     else:
         return False

@@ -230,7 +230,7 @@ class Drive:
             self.transport.connect(None, user, password)
             sftp = SFTPClient.from_transport(self.transport)
         except SSHException as exc:
-            logger.critical(
+            logger.error(
                 f"Unable to establish a secure channel and open SFTP session. {exc}"
             )
             raise DriveError
@@ -238,7 +238,7 @@ class Drive:
             logger.debug("Successfully connected to the SFTP.")
             return sftp
         else:
-            logger.critical("Unable to create SFTP Client from Transport.")
+            logger.error("Unable to create SFTP Client from Transport.")
             raise DriveError
 
     def _sock(self, host: str, port: Optional[str] = None) -> str:
