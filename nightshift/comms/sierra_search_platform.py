@@ -149,14 +149,15 @@ class SearchResponse:
             return "staff_deleted"
         # check first if Sierra bib came from the Worldcat;
         # and catch here upgraded/enhanced electronic resources
-        for field in self.record["varFields"]:
+        var_fields = self.record.get("varFields", [])
+        for field in var_fields:
             if field["marcTag"] == "003" and field["content"] == "OCoLC":
                 return "staff_enhanced"
 
         # print material full bibs may come from other sources than
         # Worldcat (no or diff content of the '003' tag);
         # brief bibs lack call numbers
-        for field in self.record["varFields"]:
+        for field in var_fields:
             if field["marcTag"] == "091" and not is_eresource_callno(
                 field["subfields"][0]["content"]
             ):  # filter out electronic resources
