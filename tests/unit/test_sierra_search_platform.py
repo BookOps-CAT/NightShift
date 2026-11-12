@@ -99,9 +99,8 @@ class TestNypPlatformMocked:
         assert "Unable to obtain access token for NYPL Platform." in caplog.text
 
     def test_get_sierra_bib_error(self, caplog, mock_token, mock_sierra_session_error):
-        with NypPlatform() as platform:
-            with pytest.raises(SierraSearchPlatformError):
-                platform.get_sierra_bib(11111111)
+        with NypPlatform() as platform, pytest.raises(SierraSearchPlatformError):
+            platform.get_sierra_bib(11111111)
         assert (
             "Error while querying NYPL Platform for Sierra bib # 11111111."
             in caplog.text

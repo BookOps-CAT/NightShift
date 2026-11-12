@@ -1,6 +1,6 @@
+from collections.abc import Callable
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime, timedelta, timezone
-from typing import Callable
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -273,8 +273,7 @@ def test_delete_resources(
                 sourceId=1,
                 resourceCategoryId=1,
                 status="expired",
-                bibDate=datetime.now(timezone.utc)
-                - timedelta(days=last_day + 90 + day_offset),
+                bibDate=datetime.now(UTC) - timedelta(days=last_day + 90 + day_offset),
                 queries=[WorldcatQuery(match=False)],
             )
         )
@@ -409,8 +408,7 @@ def test_retrieve_expired_resources(
                 sourceId=1,
                 resourceCategoryId=nid,
                 status="open",
-                bibDate=datetime.now(timezone.utc)
-                - timedelta(days=last_day + day_offset),
+                bibDate=datetime.now(UTC) - timedelta(days=last_day + day_offset),
             )
         )
 
@@ -437,7 +435,7 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
     full_bib,
     expectation,
 ):
-    bib_date = datetime.now(timezone.utc).date()
+    bib_date = datetime.now(UTC).date()
     with db_provider.session_scope() as session:
         session.add(
             Resource(
@@ -484,7 +482,7 @@ def test_retrieve_open_matched_resources_with_full_bib_obtained(
 def test_retrieve_open_older_resources(
     db_provider, test_data_core, min_age, max_age, query_age, expectation
 ):
-    bib_date = datetime.now(timezone.utc) - timedelta(days=80)
+    bib_date = datetime.now(UTC) - timedelta(days=80)
 
     with db_provider.session_scope() as session:
         session.add(
@@ -523,7 +521,7 @@ def test_retrieve_open_older_resources_no_queries_performed(
                 nid=1,
                 sierraId=22222222,
                 libraryId=1,
-                bibDate=datetime.now(timezone.utc) - timedelta(days=80),
+                bibDate=datetime.now(UTC) - timedelta(days=80),
                 resourceCategoryId=1,
                 title="TEST TITLE",
                 sourceId=1,
@@ -547,7 +545,7 @@ def test_retrieve_open_older_resources_no_queries_performed(
 def test_retrieve_open_older_resources_multiple_queries_performed(
     db_provider, test_data_core, query_age, expectation
 ):
-    bib_date = datetime.now(timezone.utc) - timedelta(days=100)
+    bib_date = datetime.now(UTC) - timedelta(days=100)
 
     with db_provider.session_scope() as session:
         session.add(
@@ -610,7 +608,7 @@ def test_retrieve_open_older_resources_invalid_resources(
     max_age,
     expectation,
 ):
-    bib_date = datetime.now(timezone.utc) - timedelta(days=max_age)
+    bib_date = datetime.now(UTC) - timedelta(days=max_age)
 
     with db_provider.session_scope() as session:
         session.add(
@@ -655,7 +653,7 @@ def test_retrieve_new_resources(db_provider, test_data_core):
                 sierraId=11111111,
                 libraryId=2,
                 resourceCategoryId=2,
-                bibDate=datetime.now(timezone.utc).date(),
+                bibDate=datetime.now(UTC).date(),
                 title="TEST TITLE 5",
                 sourceId=2,
                 status="open",
@@ -669,7 +667,7 @@ def test_retrieve_new_resources(db_provider, test_data_core):
                 sierraId=22222222,
                 libraryId=1,
                 resourceCategoryId=1,
-                bibDate=datetime.now(timezone.utc).date(),
+                bibDate=datetime.now(UTC).date(),
                 title="TEST TITLE 1",
                 sourceId=1,
                 status="open",
@@ -681,7 +679,7 @@ def test_retrieve_new_resources(db_provider, test_data_core):
                 sierraId=22222223,
                 libraryId=1,
                 resourceCategoryId=2,
-                bibDate=datetime.now(timezone.utc).date(),
+                bibDate=datetime.now(UTC).date(),
                 title="TEST TITLE 2",
                 sourceId=1,
                 status="open",
@@ -693,7 +691,7 @@ def test_retrieve_new_resources(db_provider, test_data_core):
                 sierraId=22222224,
                 libraryId=1,
                 resourceCategoryId=1,
-                bibDate=datetime.now(timezone.utc).date(),
+                bibDate=datetime.now(UTC).date(),
                 title="TEST TITLE 3",
                 sourceId=1,
                 status="open",
@@ -705,7 +703,7 @@ def test_retrieve_new_resources(db_provider, test_data_core):
                 sierraId=22222225,
                 libraryId=1,
                 resourceCategoryId=1,
-                bibDate=datetime.now(timezone.utc).date(),
+                bibDate=datetime.now(UTC).date(),
                 title="TEST TITLE 4",
                 sourceId=1,
                 status="open",
@@ -722,7 +720,7 @@ def test_retrieve_new_resources(db_provider, test_data_core):
 
 
 def test_retrieve_open_matched_resources_without_full_bib(db_provider, test_data_core):
-    some_date = datetime.now(timezone.utc).date()
+    some_date = datetime.now(UTC).date()
     with db_provider.session_scope() as session:
         # BPL resources
         session.add(
@@ -859,8 +857,7 @@ def test_set_resources_to_expired(
                 sourceId=1,
                 resourceCategoryId=1,
                 status="open",
-                bibDate=datetime.now(timezone.utc)
-                - timedelta(days=last_day + day_offset),
+                bibDate=datetime.now(UTC) - timedelta(days=last_day + day_offset),
             )
         )
 
@@ -902,7 +899,7 @@ def test_update_resource(db_provider):
             sierraId=sierraId,
             libraryId=lib_rec.nid,
             resourceCategoryId=cat_rec.nid,
-            bibDate=datetime.now(timezone.utc).date(),
+            bibDate=datetime.now(UTC).date(),
             title="TEST TITLE",
             sourceId=src_rec.nid,
             status="open",
@@ -917,6 +914,5 @@ def test_update_resource(db_provider):
 
 
 def test_update_resource_instance_does_not_exist(db_provider):
-    with pytest.raises(NoResultFound):
-        with db_provider.session_scope() as session:
-            update_resource(session, sierraId=22222222, libraryId=1, status="expired")
+    with pytest.raises(NoResultFound), db_provider.session_scope() as session:
+        update_resource(session, sierraId=22222222, libraryId=1, status="expired")

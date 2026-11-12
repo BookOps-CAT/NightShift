@@ -33,7 +33,7 @@ def test_bib_reader(stub_res_cat_by_name, mocker, stub_marc):
     mock_read = mocker.mock_open(read_data=stub_marc.as_marc())
     mocker.patch("nightshift.marc.marc_parser.open", mock_read)
     reader = BibReader("temp.mrc", "NYP", 1, stub_res_cat_by_name)
-    records = [i for i in reader]
+    records = list(reader)
     assert len(records) > 0
     assert isinstance(records[0].srcFieldsToKeep, bytes)
 

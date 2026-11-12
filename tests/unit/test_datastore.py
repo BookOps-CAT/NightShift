@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import select
@@ -34,16 +34,15 @@ def test_session_scope_success(db_provider):
 
 
 def test_session_scope_exception_rollback(db_provider):
-    with pytest.raises(DataError):
-        with db_provider.session_scope() as session:
-            session.add(Library(nid=1, code="new york public"))
+    with pytest.raises(DataError), db_provider.session_scope() as session:
+        session.add(Library(nid=1, code="new york public"))
 
-            res = session.scalars(select(Library).filter_by(nid=1)).one_or_none()
-            assert res is None
+        res = session.scalars(select(Library).filter_by(nid=1)).one_or_none()
+        assert res is None
 
 
 def test_Event_tbl_repr():
-    stamp = datetime.now(timezone.utc)
+    stamp = datetime.now(UTC)
     today = stamp.date()
     assert (
         str(
@@ -67,7 +66,7 @@ def test_Library_tbl_repr():
 
 
 def test_OutputFile_tbl_repr():
-    stamp = datetime.now(timezone.utc)
+    stamp = datetime.now(UTC)
     assert (
         str(OutputFile(nid=1, libraryId=2, handle="foo.mrc", timestamp=stamp))
         == f"<OutputFile(nid='1', libraryId='2', handle='foo.mrc', timestamp='{stamp}')>"
@@ -75,7 +74,7 @@ def test_OutputFile_tbl_repr():
 
 
 def test_Resource_tbl_repr():
-    stamp = datetime.now(timezone.utc)
+    stamp = datetime.now(UTC)
     bibDate = stamp.date()
     assert (
         str(

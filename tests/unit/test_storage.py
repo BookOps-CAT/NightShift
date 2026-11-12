@@ -45,9 +45,8 @@ class TestDriveMocked:
             assert isinstance(result, io.BytesIO)
 
     def test_fetch_file_io_error(self, caplog, mock_drive, mock_io_error):
-        with Drive(*get_credentials()) as drive:
-            with pytest.raises(DriveError):
-                drive.fetch_file("foo.mrc")
+        with Drive(*get_credentials()) as drive, pytest.raises(DriveError):
+            drive.fetch_file("foo.mrc")
         assert (
             "Unable to fetch file sierra_dumps_dir/foo.mrc from the SFTP."
             in caplog.text
@@ -59,9 +58,8 @@ class TestDriveMocked:
             assert result == ["NYP-bar-pout"]
 
     def test_list_src_directory_io_error(self, caplog, mock_drive, mock_io_error):
-        with Drive(*get_credentials()) as drive:
-            with pytest.raises(DriveError):
-                drive.list_src_directory()
+        with Drive(*get_credentials()) as drive, pytest.raises(DriveError):
+            drive.list_src_directory()
 
         assert "Unable to reach sierra_dumps_dir on the SFTP." in caplog.text
 
@@ -71,9 +69,8 @@ class TestDriveMocked:
         assert out_file == "foo-02.mrc"
 
     def test_output_file_io_error(self, caplog, mock_drive, mock_io_error):
-        with Drive(*get_credentials()) as drive:
-            with pytest.raises(DriveError):
-                drive.output_file("temp.mrc", "NYPebook210715")
+        with Drive(*get_credentials()) as drive, pytest.raises(DriveError):
+            drive.output_file("temp.mrc", "NYPebook210715")
         assert (
             "IOError. Unable to output temp.mrc to load_dir/NYPebook210715-01.mrc on the SFTP."
             in caplog.text
