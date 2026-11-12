@@ -26,8 +26,8 @@ class TestBibEnhancer:
         with pytest.raises(TypeError):
             BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         assert (
-            caplog.records[1].msg
-            == "Invalid MARC data format: NoneType. Not able to convert to bookops-marc Bib object."
+            "Invalid MARC data format: NoneType. Not able to convert to bookops-marc Bib object."
+            in caplog.text
         )
 
     def test_init_invalid_library(self, stub_resource, stub_res_cat_by_id):
