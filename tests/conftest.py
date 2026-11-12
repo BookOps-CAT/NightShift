@@ -29,8 +29,8 @@ from nightshift.datastore_transactions import ResCatById, ResCatByName, parse_qu
 
 class FakeUtcNow(datetime.datetime):
     @classmethod
-    def now(cls, tzinfo=datetime.timezone.utc):
-        return cls(2021, 1, 1, 17, 0, 0, 0, tzinfo=datetime.timezone.utc)
+    def now(cls, tzinfo=datetime.UTC):
+        return cls(2021, 1, 1, 17, 0, 0, 0, tzinfo=datetime.UTC)
 
 
 @pytest.fixture(autouse=True)
@@ -60,7 +60,7 @@ def mock_env_vars(monkeypatch, caplog):
 
 @pytest.fixture
 def stub_resource():
-    today = datetime.datetime.now(datetime.timezone.utc).date()
+    today = datetime.datetime.now(datetime.UTC).date()
     return Resource(
         sierraId=11111111,
         libraryId=1,
@@ -79,7 +79,7 @@ def stub_resource():
 
 @pytest.fixture(scope="session")
 def stub_res_cat_by_name():
-    data = dict()
+    data = {}
     for k, v in RESOURCE_CATEGORIES.items():
         data[k] = ResCatByName(
             v["nid"],
@@ -94,7 +94,7 @@ def stub_res_cat_by_name():
 
 @pytest.fixture(scope="session")
 def stub_res_cat_by_id():
-    data = dict()
+    data = {}
     for k, v in RESOURCE_CATEGORIES.items():
         data[v["nid"]] = ResCatById(
             k,
@@ -111,13 +111,13 @@ def stub_res_cat_by_id():
 def mock_db_env():
     mpatch = pytest.MonkeyPatch()
     if os.getenv("GITHUB_ACTIONS"):
-        data = dict(
-            POSTGRES_HOST="127.0.0.1",
-            POSTGRES_USER="postgres",
-            POSTGRES_PASSWORD="postgres",
-            POSTGRES_PORT="5432",
-            POSTGRES_DB="ns_db",
-        )
+        data = {
+            "POSTGRES_HOST": "127.0.0.1",
+            "POSTGRES_USER": "postgres",
+            "POSTGRES_PASSWORD": "postgres",
+            "POSTGRES_PORT": "5432",
+            "POSTGRES_DB": "ns_db",
+        }
     else:
         with open("tests/envar.yaml", "r") as f:
             data = yaml.safe_load(f)
@@ -251,7 +251,7 @@ def mock_drive(monkeypatch, mocker, mock_env_vars):
         return ["NYP-bar-pout"]
 
     def mock_stat(*args, **kwargs):
-        all_args = [i for i in args] + [i for i in kwargs.values()]
+        all_args = list(args) + list(kwargs.values())
         if "foo.mrc" in all_args or "load_dir/foo-01.mrc" in all_args:
             pass
         else:
@@ -283,7 +283,7 @@ def mock_ssh_exception(monkeypatch, mock_drive):
 @pytest.fixture
 def mock_io_error(monkeypatch, mock_drive):
     def io_error(self, *args, **kwargs):
-        raise IOError
+        raise OSError
 
     monkeypatch.setattr(SFTPClient, "put", io_error)
     monkeypatch.setattr(SFTPClient, "listdir", io_error)
@@ -294,13 +294,13 @@ class MockHTTPResponse:
     def __init__(
         self,
         _content: bytes = b"some content here",
-        _json: dict[str, Any] = {},
+        _json: dict[str, Any] | None = None,
         reason: str = "foo",
         status_code: int = 200,
         url: str = "request_url_here",
     ):
         self._content = _content
-        self._json = _json
+        self._json = _json if _json else {}
         self.reason = reason
         self.status_code = status_code
         self.url = url
@@ -334,7 +334,7 @@ def mock_token_error(monkeypatch, mock_400_response):
 def mock_token(monkeypatch):
     def mock_oauth_server_response(*args, **kwargs):
         expires_at = datetime.datetime.strftime(
-            datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(0, 1199),
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(0, 1199),
             "%Y-%m-%d %H:%M:%SZ",
         )
         json_response = {
@@ -555,7 +555,7 @@ def mock_os_error(monkeypatch):
 
 @pytest.fixture
 def mock_os_error_on_remove(monkeypatch):
-    def os_error(self, *args, **kwargs):
+    def os_error(*args, **kwargs):
         raise OSError
 
     monkeypatch.setattr("os.remove", os_error)

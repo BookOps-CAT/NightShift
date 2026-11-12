@@ -21,5 +21,5 @@ def test_config_local_env_variables_default_file():
         assert os.environ[k] == v
 
     # clean up, otherwise vars will linger and mess up other tests
-    for k in data.keys():
-        del os.environ[k]
+    for key in data:
+        del os.environ[key]

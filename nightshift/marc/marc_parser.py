@@ -1,15 +1,14 @@
-"""
-This module reads and parses MARC Sierra records (bibliographic and order data)
-to be inserted into the DB.
-In case of e-resources only bib information is considered.
-Source MARC files for e-resources will have a mix of various formats (ebooks, eaudio,
-evideo)
+"""Read and parse MARC Sierra records (bib and order data) to be inserted into the DB.
+
+In case of e-resources only bib information is considered. Source MARC files
+for e-resources will have a mix of various formats (ebooks, eaudio, evideo).
 """
 
 import logging
 import pickle
+from collections.abc import Iterator
 from io import BytesIO
-from typing import BinaryIO, Iterator, Optional, Union
+from typing import BinaryIO
 
 from bookops_marc import Bib, SierraBibReader
 
@@ -20,26 +19,23 @@ logger = logging.getLogger("nightshift")
 
 
 class BibReader:
-    """
-    An iterator class for extracting Sierra bib data from a file or bytes
-    stream of MARC21 records
-    """
+    """Iterator class that extracts Sierra bib data from a file or bytes stream."""
 
     def __init__(
         self,
-        marc_target: Union[BytesIO, BinaryIO],
+        marc_target: BytesIO | BinaryIO,
         library: str,
         libraryId: int,
         resource_categories: dict[str, ResCatByName],
     ) -> None:
-        """
-        The constructor.
+        """Initialize a `BibReader` instance.
+
         Args:
             marc_target:                    MARC file or file-like object
             library:                        'NYP' or 'BPL'
             libraryId:                     `datastore.Library.nid`
             resource_categories:            a dictionary of resource categories and
-                                            data associated them as namedtuple
+                                            data associated them as namedtuple.
 
         """
         logger.info("Initiating BibReader.")
@@ -67,6 +63,7 @@ class BibReader:
         self._res_cat = resource_categories
 
     def __iter__(self) -> Iterator[Resource]:
+        """Create iterator for marc target."""
         reader = SierraBibReader(self.marc_target, hide_utf8_warnings=True)
         for bib in reader:
             resource_category = self._determine_resource_category(bib)
@@ -80,15 +77,15 @@ class BibReader:
 
         self.marc_target.close()
 
-    def _determine_resource_category(self, bib: Bib) -> Optional[str]:
-        """
-        Determines resource category based on bib and order information.
+    def _determine_resource_category(self, bib: Bib) -> str | None:
+        """Determine resource category based on bib and order information.
 
         Args:
-            bib:                            `bookops_marc.Bib` instance
+            bib: `bookops_marc.Bib` instance
 
         Returns:
             resource_category
+
         """
         # Overdrive MarcExpress records control number starts with ODN
         control_number = getattr(bib, "control_number", None)
@@ -114,9 +111,7 @@ class BibReader:
             return None
 
     def _fields2keep(self, bib: Bib, resource_category: str) -> bytes:
-        """
-        Resource category specific MARC tags to be carried over to output records
-        """
+        """Resource category specific MARC tags to be carried over to output records."""
         keep = []
         tags2keep = self._res_cat[resource_category].srcTags2Keep
         keep.extend(bib.get_fields(*tags2keep))
@@ -125,14 +120,15 @@ class BibReader:
         return pickled_keep
 
     def _map_data(self, bib: Bib, resource_category: str) -> Resource:
-        """
-        Maps selected data from bib to `datastore.Resource` table columns.
+        """Map selected data from bib to `datastore.Resource` table columns.
 
         Args:
-            bib:                            `bookops_marc.Bib` instance
+            bib: `bookops_marc.Bib` instance
+            resource_category: the resource_category for the bib record as a string
 
         Returns:
-            Resource:                       `datastore.Resource` instance
+            a `datastore.Resource` instance
+
         """
         sierraId = bib.sierra_bib_id_normalized
         resourceCategoryId = self._res_cat[resource_category].nid

@@ -1,6 +1,4 @@
-"""
-This module includes top level processes to be performed by the app
-"""
+"""Top level processes to be performed by the app."""
 
 import logging
 
@@ -23,8 +21,7 @@ logger = logging.getLogger("nightshift")
 
 
 def process_resources(db_provider: DatabaseProvider) -> None:
-    """
-    Processes newly added and older not enhanced yet resources.
+    """Process newly added and older, not enhanced yet resources.
 
     Ingests brief bibliographic and order records exported from Sierra and searches
     WorldCat to find good full records to be used to upgrade Sierra bib. Performs
@@ -132,9 +129,7 @@ def process_resources(db_provider: DatabaseProvider) -> None:
 
 
 def perform_db_maintenance(db_provider: DatabaseProvider) -> None:
-    """
-    Marks resources as expired or deletes them if past certain age.
-    """
+    """Mark resources as expired or delete them if past certain age."""
     with db_provider.session_scope() as db_session:
         res_cat = resource_category_by_name(db_session)
 

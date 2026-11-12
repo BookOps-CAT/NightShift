@@ -65,9 +65,8 @@ class TestDriveLive:
 
     def test_output_file_io_error(self, caplog, live_env_vars, mock_io_error):
         creds = get_credentials()
-        with Drive(*creds) as drive:
-            with pytest.raises(DriveError):
-                drive.output_file("tests/nyp-ebook-sample.mrc", "foo")
+        with Drive(*creds) as drive, pytest.raises(DriveError):
+            drive.output_file("tests/nyp-ebook-sample.mrc", "foo")
         assert (
             "IOError. Unable to output tests/nyp-ebook-sample.mrc to /NSDROP/TEST/load/foo-01.mrc on the SFTP."
             in caplog.text
