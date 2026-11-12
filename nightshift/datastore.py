@@ -1,10 +1,9 @@
-"""
-NightShift's database schema.
-"""
+"""NightShift's database schema."""
 
 import datetime
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -21,6 +20,7 @@ from sqlalchemy.dialects.postgresql import BYTEA, ENUM, JSONB
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
+    Session,
     mapped_column,
     relationship,
     sessionmaker,
@@ -28,7 +28,7 @@ from sqlalchemy.orm import (
 
 
 class Base(DeclarativeBase):
-    pass
+    """Base class."""
 
 
 STATUS = ENUM(
@@ -45,21 +45,26 @@ STATUS = ENUM(
 
 
 class DatabaseProvider:
-    """
-    Manages the SQLAlchemy engine globally and provides a context manager
+    """Support interactions with database with SQLAlchemy engine and session objects.
+
+    This class anages the SQLAlchemy engine globally and provides a context manager
     for individual database sessions.
     """
 
-    def __init__(self, connection_string: str):
+    def __init__(self, connection_string: str) -> None:
+        """Initialize a `DatabaseProvider` instance.
+
+        Args:
+            connection_string: the connection string for the postgres sql database
+
+        """
         self.engine = create_engine(connection_string)
         Base.metadata.create_all(self.engine)
         self.SessionFactory = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     @contextmanager
-    def session_scope(self):
-        """
-        Provides a transactional scope around a series of operations.
-        """
+    def session_scope(self) -> Generator[Session, None, None]:
+        """Provide a transactional scope around a series of operations."""
         session = self.SessionFactory()
         try:
             yield session
@@ -72,8 +77,8 @@ class DatabaseProvider:
 
 
 class Event(Base):
-    """
-    Statistics table.
+    """Statistics table.
+
     Stores information about transactions affecting resources, such as
     WorldCat matches/upgrades, resources being dropped out from the process because
     they were cataloged or deleted by cataloging staff, finally, marks resources
@@ -84,7 +89,7 @@ class Event(Base):
 
     nid: Mapped[int] = mapped_column(Integer, primary_key=True)
     timestamp: Mapped[datetime.datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.datetime.now(datetime.timezone.utc)
+        DateTime, nullable=False, default=datetime.datetime.now(datetime.UTC)
     )
     libraryId: Mapped[int] = mapped_column(
         Integer, ForeignKey("library.nid"), nullable=False
@@ -96,7 +101,8 @@ class Event(Base):
     )
     status: Mapped[str] = mapped_column(STATUS, nullable=False)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Output class as a string."""
         return (
             f"<Event(nid='{self.nid}', timestamp='{self.timestamp}', "
             f"libraryId='{self.libraryId}', sierraId='{self.sierraId}', "
@@ -107,23 +113,20 @@ class Event(Base):
 
 
 class Library(Base):
-    """
-    Library system.
-    """
+    """Library system."""
 
     __tablename__ = "library"
 
     nid: Mapped[int] = mapped_column(Integer, primary_key=True)
     code: Mapped[str] = mapped_column(String(3), unique=True)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Output class as a string."""
         return f"<Library(nid='{self.nid}', code='{self.code}')>"
 
 
 class OutputFile(Base):
-    """
-    Output MARC file info.
-    """
+    """Output MARC file info."""
 
     __tablename__ = "output_file"
     __table_args__ = (UniqueConstraint("handle", "libraryId"),)
@@ -134,10 +137,11 @@ class OutputFile(Base):
     )
     handle: Mapped[str] = mapped_column(String, nullable=False)
     timestamp: Mapped[datetime.datetime] = mapped_column(
-        DateTime, default=datetime.datetime.now(datetime.timezone.utc)
+        DateTime, default=datetime.datetime.now(datetime.UTC)
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Output class as a string."""
         return (
             f"<OutputFile(nid='{self.nid}', "
             f"libraryId='{self.libraryId}', "
@@ -147,9 +151,7 @@ class OutputFile(Base):
 
 
 class Resource(Base):
-    """
-    Resource to be upgraded.
-    """
+    """Resource to be upgraded."""
 
     __tablename__ = "resource"
     __table_args__ = (UniqueConstraint("sierraId", "libraryId"),)
@@ -164,33 +166,32 @@ class Resource(Base):
     )
 
     bibDate: Mapped[datetime.date] = mapped_column(Date, nullable=False)
-    author: Mapped[Optional[str]] = mapped_column(String)
-    title: Mapped[Optional[str]] = mapped_column(String)
-    pubDate: Mapped[Optional[str]] = mapped_column(String)
+    author: Mapped[str | None] = mapped_column(String)
+    title: Mapped[str | None] = mapped_column(String)
+    pubDate: Mapped[str | None] = mapped_column(String)
 
-    congressNumber: Mapped[Optional[str]] = mapped_column(String)
-    controlNumber: Mapped[Optional[str]] = mapped_column(String)
-    distributorNumber: Mapped[Optional[str]] = mapped_column(String)
-    otherNumber: Mapped[Optional[str]] = mapped_column(String)
+    congressNumber: Mapped[str | None] = mapped_column(String)
+    controlNumber: Mapped[str | None] = mapped_column(String)
+    distributorNumber: Mapped[str | None] = mapped_column(String)
+    otherNumber: Mapped[str | None] = mapped_column(String)
     sourceId: Mapped[int] = mapped_column(
         Integer, ForeignKey("source_file.nid"), nullable=False
     )
-    srcFieldsToKeep: Mapped[Optional[bytes]] = mapped_column(PickleType)
-    standardNumber: Mapped[Optional[str]] = mapped_column(String)
+    srcFieldsToKeep: Mapped[bytes | None] = mapped_column(PickleType)
+    standardNumber: Mapped[str | None] = mapped_column(String)
     suppressed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    oclcMatchNumber: Mapped[Optional[str]] = mapped_column(String)
-    fullBib: Mapped[Optional[bytes]] = mapped_column(BYTEA)
-    outputId: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("output_file.nid")
-    )
-    status: Mapped[Optional[str]] = mapped_column(STATUS)
-    enhanceTimestamp: Mapped[Optional[datetime.datetime]] = mapped_column(
+    oclcMatchNumber: Mapped[str | None] = mapped_column(String)
+    fullBib: Mapped[bytes | None] = mapped_column(BYTEA)
+    outputId: Mapped[int | None] = mapped_column(Integer, ForeignKey("output_file.nid"))
+    status: Mapped[str | None] = mapped_column(STATUS)
+    enhanceTimestamp: Mapped[datetime.datetime | None] = mapped_column(
         DateTime, nullable=True
     )
     queries = relationship("WorldcatQuery", cascade="all, delete-orphan")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Output class as a string."""
         return (
             f"<Resource(nid='{self.nid}', "
             f"sierraId='{self.sierraId}', libraryId='{self.libraryId}', "
@@ -213,22 +214,21 @@ class Resource(Base):
 
 
 class ResourceCategory(Base):
-    """
-    Resource Category. Example: ebook, fiction-gen, fiction-mystery.
-    """
+    """Resource Category. Example: ebook, fiction-gen, fiction-mystery."""
 
     __tablename__ = "resource_category"
 
     nid: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, unique=True)
-    description: Mapped[Optional[str]] = mapped_column(String)
+    description: Mapped[str | None] = mapped_column(String)
     sierraBibFormatBpl: Mapped[str] = mapped_column(String, nullable=False)
     sierraBibFormatNyp: Mapped[str] = mapped_column(String, nullable=False)
-    srcTags2Keep: Mapped[Optional[str]] = mapped_column(String)
-    dstTags2Delete: Mapped[Optional[str]] = mapped_column(String)
+    srcTags2Keep: Mapped[str | None] = mapped_column(String)
+    dstTags2Delete: Mapped[str | None] = mapped_column(String)
     queryDays: Mapped[str] = mapped_column(String, nullable=False)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Output class as a string."""
         return (
             f"<ResourceCategory(nid='{self.nid}', "
             f"name='{self.name}', "
@@ -242,10 +242,7 @@ class ResourceCategory(Base):
 
 
 class RottenApple(Base):
-    """
-    List of OCLC organization codes which records
-    should be rejected because of poor quality
-    """
+    """OCLC org codes whose records should be rejected because of poor quality."""
 
     __tablename__ = "rotten_apple"
 
@@ -256,15 +253,13 @@ class RottenApple(Base):
         "RottenAppleResource", cascade="all, delete-orphan"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Output class as a string."""
         return f"<RottenApple(nid='{self.nid}', code='{self.code}')>"
 
 
 class RottenAppleResource(Base):
-    """
-    Specifies applicable `ResourceCategory` instances for each
-    RottenApple
-    """
+    """The applicable `ResourceCategory` instances for each RottenApple."""
 
     __tablename__ = "rotten_apple_resource"
 
@@ -275,7 +270,8 @@ class RottenAppleResource(Base):
         Integer, ForeignKey("resource_category.nid"), primary_key=True
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Output class as a string."""
         return (
             f"<RottenAppleResource(rottenAppleId='{self.rottenAppleId}', "
             f"resourceCategoryId='{self.resourceCategoryId}')>"
@@ -283,9 +279,7 @@ class RottenAppleResource(Base):
 
 
 class SourceFile(Base):
-    """
-    Source MARC file info.
-    """
+    """Source MARC file info."""
 
     __tablename__ = "source_file"
     __table_args__ = (UniqueConstraint("handle", "libraryId"),)
@@ -296,10 +290,11 @@ class SourceFile(Base):
     )
     handle: Mapped[str] = mapped_column(String, nullable=False)
     timestamp: Mapped[datetime.datetime] = mapped_column(
-        DateTime, default=datetime.datetime.now(datetime.timezone.utc)
+        DateTime, default=datetime.datetime.now(datetime.UTC)
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Output class as a string."""
         return (
             f"<SourceFile(nid='{self.nid}', "
             f"libraryId='{self.libraryId}', "
@@ -309,9 +304,7 @@ class SourceFile(Base):
 
 
 class WorldcatQuery(Base):
-    """
-    Metadata API responses.
-    """
+    """Metadata API responses."""
 
     __tablename__ = "worldcat_query"
 
@@ -320,12 +313,13 @@ class WorldcatQuery(Base):
         Integer, ForeignKey("resource.nid", ondelete="CASCADE"), nullable=False
     )
     match: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    response: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB)
+    response: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     timestamp: Mapped[datetime.datetime] = mapped_column(
-        DateTime, default=datetime.datetime.now(datetime.timezone.utc), nullable=False
+        DateTime, default=datetime.datetime.now(datetime.UTC), nullable=False
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Output class as a string."""
         return (
             f"<WorldcatQuery(nid='{self.nid}', "
             f"resourceId='{self.resourceId}', "
