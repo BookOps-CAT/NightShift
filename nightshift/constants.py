@@ -1,22 +1,13 @@
-"""
+"""Constants used within NightShift app.
+
 Use following patterns to record data:
-    src_tags2delete & dst_tags2delete: string of MARC tags separated by comma, example:
-        "020,037,856"
-
-    queryDays:
-        record as string;
-
-        all numbers indicate days since bib was created, example: '15' means 15 days
-        after bib created date
-
-        to indicate an individual period record the starting and ending age in days
-        separated by hyphen, example: '15-30' which means query should happen between
-        15th and 30th day since bib was created
-
-        separate individual periods with a comma, example: '15-30,30-60'
-
-        multiple time periods will trigger as many query attempts, one in each period
-
+ - srcTags2Keep:
+    a comma-separated string of MARC tags (eg. "020,037,856")
+ - dstTags2Delete:
+    a comma-separated string of MARC tags (eg. "020,037,856")
+ - queryDays:
+    a string of start/end date pairs separated by hyphens. individual periods
+    should be separated by commas (eg. "15-30,30-60")
 """
 
 LIBRARIES = {"NYP": {"nid": 1}, "BPL": {"nid": 2}}

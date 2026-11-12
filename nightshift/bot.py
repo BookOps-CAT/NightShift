@@ -1,6 +1,4 @@
-"""
-Launches NightShift application
-"""
+"""Launch NightShift application."""
 
 import argparse
 import logging
@@ -19,13 +17,14 @@ from nightshift.ns_exceptions import DatabaseInitializationError
 def config_local_env_variables(
     config_file: str = "nightshift/config/config.yaml",
 ) -> None:
-    """
-    Sets up environment variables to run NighShift locally.
-    Requires a valid config.yaml file in the nightshift/config directory
+    """Set up environment variables to run NighShift locally.
+
+    Requires a valid config.yaml file in the nightshift/config directory.
 
     Args:
         config_file:            path to config file that includes environmental
                                 variables
+
     """
     with open(config_file, "r") as f:
         data = yaml.safe_load(f)
@@ -34,11 +33,11 @@ def config_local_env_variables(
 
 
 def configure_database(env: str = "prod") -> None:
-    """
-    Sets up proper database tables and populates them with constant data
+    """Set up proper database tables and populate it with constant data.
 
     Args:
         env:                    environment to set up database
+
     """
     if env == "local":
         config_local_env_variables()
@@ -63,20 +62,18 @@ def configure_database(env: str = "prod") -> None:
 
 
 def run(env: str = "prod") -> None:
-    """
-    Launches processing of new and older resources and performs
-    database maintenance. This is the main NightShift process.
+    """Launch processing of new and older resources and perform database maintenance.
 
-    In production environment it is assumed environment variables
-    are independently set up before NighShift is launched.
+    This is the main NightShift process. In production environment it is assumed
+    environment variables are independently set up before NighShift is launched.
 
     In a local installation environment variables are read from a
     file and set up at runtime.
 
     Args:
         env:                    application environment: 'local' or 'prod'
-    """
 
+    """
     if env == "local":
         config_local_env_variables()
 
@@ -92,11 +89,11 @@ def run(env: str = "prod") -> None:
 
 
 def main(args: list) -> None:
-    """
-    Parses command-line arguments used to configure and run NightShift
+    """Parse command-line arguments used to configure and run NightShift.
 
     Args:
         args:                   list of arguments
+
     """
     parser = argparse.ArgumentParser(
         prog="NightShift", description="NighShift launcher"
