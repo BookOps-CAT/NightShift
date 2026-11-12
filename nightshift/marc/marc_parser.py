@@ -111,56 +111,28 @@ class BibReader:
             return None
 
     def _fields2keep(self, bib: Bib, resource_category: str) -> bytes:
-        """Resource category specific MARC tags to be carried over to output records."""
-        keep = []
+        """Serialize resource-category-specific MARC tags to carry over."""
         tags2keep = self._res_cat[resource_category].srcTags2Keep
-        keep.extend(bib.get_fields(*tags2keep))
-        pickled_keep = pickle.dumps(keep)
-
-        return pickled_keep
+        return pickle.dumps(list(bib.get_fields(*tags2keep)))
 
     def _map_data(self, bib: Bib, resource_category: str) -> Resource:
-        """Map selected data from bib to `datastore.Resource` table columns.
-
-        Args:
-            bib: `bookops_marc.Bib` instance
-            resource_category: the resource_category for the bib record as a string
-
-        Returns:
-            a `datastore.Resource` instance
-
-        """
-        sierraId = bib.sierra_bib_id_normalized
-        resourceCategoryId = self._res_cat[resource_category].nid
-        bibDate = bib.created_date
-        author = bib.author
-        title = bib.title
-        pubDate = bib.pubyear
-        congressNumber = bib.lccn
-        controlNumber = bib.control_number
-        distributorNumber = bib.overdrive_number
-        suppressed = bib.suppressed
-        otherNumber = bib.upc_number
-        srcFieldsToKeep = self._fields2keep(bib, resource_category)
-        standardNumber = bib.isbn
-
+        """Map selected data from `Bib` to `datastore.Resource` table columns."""
         resource = Resource(
-            sierraId=sierraId,
+            sierraId=bib.sierra_bib_id_normalized,
             libraryId=self.libraryId,
-            resourceCategoryId=resourceCategoryId,
-            bibDate=bibDate,
-            author=author,
-            title=title,
-            pubDate=pubDate,
-            congressNumber=congressNumber,
-            controlNumber=controlNumber,
-            distributorNumber=distributorNumber,
-            suppressed=suppressed,
-            otherNumber=otherNumber,
-            srcFieldsToKeep=srcFieldsToKeep,
-            standardNumber=standardNumber,
+            resourceCategoryId=self._res_cat[resource_category].nid,
+            bibDate=bib.created_date,
+            author=bib.author,
+            title=bib.title,
+            pubDate=bib.pubyear,
+            congressNumber=bib.lccn,
+            controlNumber=bib.control_number,
+            distributorNumber=bib.overdrive_number,
+            suppressed=bib.suppressed,
+            otherNumber=bib.upc_number,
+            srcFieldsToKeep=self._fields2keep(bib, resource_category),
+            standardNumber=bib.isbn,
             status="open",
         )
         logger.debug(f"Parsed resource: {resource}")
-
         return resource
