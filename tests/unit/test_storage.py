@@ -19,6 +19,14 @@ class TestDriveMocked:
             assert drive.dst_dir == "load_dir"
         assert f"Opening a secure channel to {expectation}." in caplog.text
         assert "Successfully connected to the SFTP." in caplog.text
+        assert "SFTP client session closed." in caplog.text
+        assert "Secure channels closed." in caplog.text
+
+    def test_drive_close(self, mock_drive, caplog):
+        with Drive(*get_credentials()) as drive:
+            drive.transport = None
+        assert "SFTP client session closed." in caplog.text
+        assert "Secure channels closed." not in caplog.text
 
     def test_drive_connection_error(self, caplog, mock_ssh_exception):
         creds = get_credentials()
