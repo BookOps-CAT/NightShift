@@ -36,7 +36,7 @@ class TestWorldcatMocked:
         resource2 = Resource(
             nid=2, sierraId=33333333, title="TEST TITLE", oclcMatchNumber="123"
         )
-        [i for i in stub_worldcat_session.get_full_bibs([resource1, resource2])]
+        list(stub_worldcat_session.get_full_bibs([resource1, resource2]))
         assert len(caplog.records) == 1
         assert (
             "Full bib Worldcat request for NYP Sierra bib # b33333333a: request_url_here."
@@ -107,7 +107,7 @@ class TestWorldcatMocked:
         query = stub_worldcat_session.get_brief_bibs(
             [resource], rotten_apples={1: ["FOO", "BAR"]}
         )
-        all_results = [i for i in query]
+        all_results = list(query)
         result = all_results[0]
         assert isinstance(result, tuple)
 
@@ -134,7 +134,7 @@ class TestWorldcatMocked:
             title="TEST TITLE",
             distributorNumber="111",
         )
-        all_results = [i for i in stub_worldcat_session.get_brief_bibs([resource])]
+        all_results = list(stub_worldcat_session.get_brief_bibs([resource]))
         result = all_results[0]
 
         assert isinstance(result, tuple)
@@ -166,8 +166,8 @@ class TestWorldcatMocked:
             title="TEST TITLE",
         )
 
-        results = [i for i in stub_worldcat_session.get_brief_bibs([resource])]
-        [i for i in results]
+        results = list(stub_worldcat_session.get_brief_bibs([resource]))
+        list(results)
         assert (
             "Unable to create a payload for brief bib query for NYP resource nid=1, sierraId=b22222222a."
             in caplog.text

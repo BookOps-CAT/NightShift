@@ -1,12 +1,13 @@
-"""
-This module handles communication with network drive accessible via SFTP where Sierra
-dumps daily files for processing and where CAT staff can access produces MARC files.
+"""Handle communications with network drive accessible via SFTP.
+
+Interacts with NSDROP, the drive where Sierra dumps daily files for processing and
+where CAT staff can access MARC files.
 """
 
 import logging
 import os
 from io import BytesIO
-from typing import Optional
+from typing import Self
 
 from paramiko.sftp_client import SFTPClient
 from paramiko.ssh_exception import SSHException
@@ -18,11 +19,11 @@ logger = logging.getLogger("nightshift")
 
 
 def get_credentials() -> tuple[str, ...]:
-    """
-    Retrieves SFTP credentials from environmental variables.
+    """Retrieve SFTP credentials from environmental variables.
 
     Returns:
         credentials as a tuple of strings
+
     """
     return (
         os.environ["SFTP_HOST"],
@@ -35,6 +36,8 @@ def get_credentials() -> tuple[str, ...]:
 
 
 class Drive:
+    """Session wrapper for interactions with SFTP networked drive."""
+
     def __init__(
         self,
         host: str,
@@ -42,17 +45,18 @@ class Drive:
         password: str,
         src_dir: str,
         dst_dir: str,
-        port: Optional[str] = None,
+        port: str | None = None,
     ) -> None:
-        """
-        Opens a secure communication channel via SFTP to a networked drive
+        """Open a secure communication channel via SFTP to a networked drive.
 
         Args:
-            host:                       SFTP host
-            port:                       SFTP port (optional)
-            user:                       SFTP user name
-            password:                   SFTP user password
-            home_directory:             NighShift directory on the drive
+            host: SFTP host
+            user: SFTP user name
+            password: SFTP user password
+            src_dir: NightShift directory on drive for Sierra exports
+            dst_dir: NightShift directory on drive for processed files
+            port: SFTP port (optional)
+
         """
         self.transport: Transport | None = None
         sock = self._sock(host, port)
@@ -60,15 +64,16 @@ class Drive:
         self.src_dir = src_dir
         self.dst_dir = dst_dir
 
-    def __enter__(self, *args):
+    def __enter__(self, *args: tuple[str, ...]) -> Self:
+        """Open Drive as a context manager."""
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: object) -> None:
+        """Close an open context manager."""
         self.close()
 
     def check_file_exists(self, remote_file_path: str) -> bool:
-        """
-        Checks if file exists in 'load' directory of the SFTP drive
+        """Check if file exists in remote_file_path directory of the SFTP drive.
 
         Args:
             remote_file_path:           file path to check on the SFTP
@@ -78,6 +83,7 @@ class Drive:
 
         Raises:
             DriveError
+
         """
         try:
             self.sftp.stat(remote_file_path)
@@ -88,8 +94,7 @@ class Drive:
             return False
 
     def fetch_file(self, src_fh: str) -> BytesIO:
-        """
-        Retrieves file of the given path
+        """Retrieve file from the given path.
 
         Args:
             src_fh:                     file handle of file in the
@@ -100,6 +105,7 @@ class Drive:
 
         Raises:
             DriveError
+
         """
         src_file_path = self._construct_src_file_path(src_fh)
         logger.info(f"Fetching {src_file_path} file from the SFTP.")
@@ -108,23 +114,20 @@ class Drive:
                 file_size = file.stat().st_size
                 file.prefetch(file_size)
                 return BytesIO(file.read(file_size))
-        except IOError as exc:
+        except OSError as exc:
             logger.error(f"Unable to fetch file {src_file_path} from the SFTP. {exc}.")
             raise DriveError
 
     def list_src_directory(self) -> list[str]:
-        """
-        Returns a list of files found in SFTP/Drive sierra_dumps directory
-        """
+        """Return a list of files found in SFTP/Drive sierra_dumps directory."""
         try:
             return self.sftp.listdir(path=self.src_dir)
-        except IOError as exc:
+        except OSError as exc:
             logger.error(f"Unable to reach {self.src_dir} on the SFTP. {exc}")
             raise DriveError
 
     def output_file(self, local_file_path: str, remote_file_name_base: str) -> str:
-        """
-        Appends stream to a file in SFTP/Drive load directory
+        """Append byte stream to a file in SFTP/Drive load directory.
 
         Args:
             local_file_path:            path to a local file to be transferred to SFTP
@@ -135,6 +138,7 @@ class Drive:
 
         Raises:
             DriveError
+
         """
         try:
             remote_file_path = self._construct_dst_file_path(remote_file_name_base)
@@ -142,26 +146,24 @@ class Drive:
             logger.info(f"Successfully created {remote_file_path} on the SFTP.")
             return os.path.basename(remote_file_path)
 
-        except IOError as exc:
+        except OSError as exc:
             logger.error(
                 f"IOError. Unable to output {local_file_path} to "
                 f"{remote_file_path} on the SFTP. {exc}"
             )
             raise DriveError
 
-    def close(self):
-        """
-        Closes SFTP session and underlying channel.
-        """
+    def close(self) -> None:
+        """Close SFTP session and underlying channel."""
         self.sftp.close()
         logger.debug("SFTP client session closed.")
         # necessary since paramiko keeps open threads hanging occasionally
-        self.transport.close()
-        logger.debug("Secure channels closed.")
+        if self.transport:
+            self.transport.close()
+            logger.debug("Secure channels closed.")
 
     def _construct_dst_handle(self, base_name: str, n: int) -> str:
-        """
-        Creates full file handle with given numeration and MARC21 extension
+        """Create full file handle with given numeration and MARC21 extension.
 
         Args:
             base_name:              base name of the file
@@ -169,12 +171,13 @@ class Drive:
 
         Returns:
             file handle
+
         """
         return f"{base_name}-{str(n).zfill(2)}.mrc"
 
     def _construct_dst_file_path(self, file_base_name: str) -> str:
-        """
-        Creates a file path to the destination folder (load) on the SFTP server.
+        """Create a file path to the destination folder (load) on the SFTP server.
+
         If such a file already exists, appends a consecutive number to
         avoid overwriting file on the SFTP.
 
@@ -183,6 +186,7 @@ class Drive:
 
         Returns:
             file_path
+
         """
         n = 1
         remote_handle = self._construct_dst_handle(file_base_name, n)
@@ -200,21 +204,19 @@ class Drive:
         return remote_file_path
 
     def _construct_src_file_path(self, src_fh: str) -> str:
-        """
-        Creates a file path to the source folder (sierra_dumps) on the SFTP server.
+        """Create a file path to the source folder (sierra_dumps) on the SFTP server.
 
         Args:
             src_fh:                 sierra export file handle
 
         Returns:
             file_path
+
         """
         return f"{self.src_dir}/{src_fh}"
 
     def _sftp(self, sock: str, user: str, password: str) -> SFTPClient:
-        """
-        Establishes a secure channel to SFTP server and returns a client/session for
-        communication.
+        """Establish a secure channel to SFTP server and returns a client/session.
 
         Args:
             sock:                   SFTP server host and port
@@ -223,6 +225,7 @@ class Drive:
 
         Returns:
             `paramiko.sftp_client.SFTPClient` instance
+
         """
         logger.debug(f"Opening a secure channel to {sock}.")
         try:
@@ -241,7 +244,7 @@ class Drive:
             logger.error("Unable to create SFTP Client from Transport.")
             raise DriveError
 
-    def _sock(self, host: str, port: Optional[str] = None) -> str:
+    def _sock(self, host: str, port: str | None = None) -> str:
         if port:
             return f"{host}:{port}"
         else:

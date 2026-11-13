@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -36,7 +36,7 @@ def test_process_resources_live(live_env_vars, test_data_rich, test_session):
     with Drive(*drive_creds) as drive:
         temp_files = drive.sftp.listdir(path=drive.dst_dir)
 
-        today = datetime.now(timezone.utc).date()
+        today = datetime.now(UTC).date()
         assert temp_files == [
             f"{today:%y%m%d}-NYP-ebook-01.mrc",
             f"{today:%y%m%d}-BPL-ebook-01.mrc",

@@ -19,6 +19,14 @@ class TestDriveMocked:
             assert drive.dst_dir == "load_dir"
         assert f"Opening a secure channel to {expectation}." in caplog.text
         assert "Successfully connected to the SFTP." in caplog.text
+        assert "SFTP client session closed." in caplog.text
+        assert "Secure channels closed." in caplog.text
+
+    def test_drive_close(self, mock_drive, caplog):
+        with Drive(*get_credentials()) as drive:
+            drive.transport = None
+        assert "SFTP client session closed." in caplog.text
+        assert "Secure channels closed." not in caplog.text
 
     def test_drive_connection_error(self, caplog, mock_ssh_exception):
         creds = get_credentials()
@@ -45,9 +53,8 @@ class TestDriveMocked:
             assert isinstance(result, io.BytesIO)
 
     def test_fetch_file_io_error(self, caplog, mock_drive, mock_io_error):
-        with Drive(*get_credentials()) as drive:
-            with pytest.raises(DriveError):
-                drive.fetch_file("foo.mrc")
+        with Drive(*get_credentials()) as drive, pytest.raises(DriveError):
+            drive.fetch_file("foo.mrc")
         assert (
             "Unable to fetch file sierra_dumps_dir/foo.mrc from the SFTP."
             in caplog.text
@@ -59,9 +66,8 @@ class TestDriveMocked:
             assert result == ["NYP-bar-pout"]
 
     def test_list_src_directory_io_error(self, caplog, mock_drive, mock_io_error):
-        with Drive(*get_credentials()) as drive:
-            with pytest.raises(DriveError):
-                drive.list_src_directory()
+        with Drive(*get_credentials()) as drive, pytest.raises(DriveError):
+            drive.list_src_directory()
 
         assert "Unable to reach sierra_dumps_dir on the SFTP." in caplog.text
 
@@ -71,9 +77,8 @@ class TestDriveMocked:
         assert out_file == "foo-02.mrc"
 
     def test_output_file_io_error(self, caplog, mock_drive, mock_io_error):
-        with Drive(*get_credentials()) as drive:
-            with pytest.raises(DriveError):
-                drive.output_file("temp.mrc", "NYPebook210715")
+        with Drive(*get_credentials()) as drive, pytest.raises(DriveError):
+            drive.output_file("temp.mrc", "NYPebook210715")
         assert (
             "IOError. Unable to output temp.mrc to load_dir/NYPebook210715-01.mrc on the SFTP."
             in caplog.text

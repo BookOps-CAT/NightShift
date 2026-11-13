@@ -1,11 +1,9 @@
-"""
-This module handles WorldCat Metadata API requests.
-"""
+"""Handle WorldCat Metadata API requests."""
 
 import logging
 import os
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, Self
 
 from bookops_worldcat import MetadataSession, WorldcatAccessToken
 from requests import Response
@@ -17,28 +15,34 @@ logger = logging.getLogger("nightshift")
 
 
 class BriefBibResponse:
-    def __init__(self, response: Response):
+    """A brief bibliograpic resource response from WorldCat."""
+
+    def __init__(self, response: Response) -> None:
+        """Initialize a `BriefBibResponse` instance.
+
+        Args:
+            response: a `requests.Response` object returned from WorldCat.
+
+        """
         self.as_json = response.json()
         self.is_match = self._is_match()
         self.oclc_number = self._parse_oclc_number()
 
     def _is_match(self) -> bool:
-        """
-        Determines if Worldcat brief bib search response returned matching record
+        """Determine if Worldcat brief bib search response returned matching record.
+
         Returns:
-            bool
+            bool.
+
         """
-        if self.as_json["numberOfRecords"] == 0:
-            return False
-        else:
-            return True
+        return self.as_json["numberOfRecords"] != 0
 
     def _parse_oclc_number(self) -> Any:
-        """
-        Parses OCLC number from MetadataAPI brief bib search response
+        """Parse OCLC number from MetadataAPI brief bib search response.
 
         Returns:
             oclc_number
+
         """
         if self.is_match:
             return self.as_json["briefRecords"][0]["oclcNumber"]
@@ -46,13 +50,14 @@ class BriefBibResponse:
 
 
 class Worldcat:
-    def __init__(self, library: str):
-        """
-        Initiate reader by obtaining MetadataAPI access token and by creating
-        a session
+    """WorldCat MetadataAPI wrapper session."""
+
+    def __init__(self, library: str) -> None:
+        """Obtain MetadataAPI access token and by create a session.
 
         Args:
             library:                'NYP' or "BPL"
+
         """
         if library not in ("NYP", "BPL", "nyp", "bpl"):
             raise ValueError(
@@ -65,22 +70,24 @@ class Worldcat:
         token = self._get_access_token(creds)
         self.session = self._create_worldcat_session(token)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
+        """Open Worldcat session as a context manager."""
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: object) -> None:
+        """Close context manager session."""
         self.session.close()
 
     def _create_worldcat_session(
         self, access_token: WorldcatAccessToken
     ) -> MetadataSession:
-        """
-        Opens a session with MetadataAPI service
+        """Open a session with MetadataAPI service.
 
         Args:
             access_token:               `WorldcatAccessToken` instance
         Yields:
             `MetadataSession` object
+
         """
         with MetadataSession(authorization=access_token) as session:
             return session
@@ -88,8 +95,7 @@ class Worldcat:
     def _format_rotten_apples(
         self, resource_category_id: int, rotten_apples: dict[int, list[str]]
     ) -> str:
-        """
-        Formats a list of forbidden org codes to be includes in a Worldcat query
+        """Format a list of forbidden org codes to be includes in a Worldcat query.
 
         Args:
             resource_category_id:       `nid` of applicable resource category
@@ -99,6 +105,7 @@ class Worldcat:
 
         Returns:
             a segment of query string
+
         """
         rotten_apples_list = rotten_apples.get(resource_category_id)
         if not rotten_apples_list:
@@ -106,38 +113,37 @@ class Worldcat:
         return "".join([f" NOT cs={a}" for a in rotten_apples_list])
 
     def _get_access_token(self, credentials: dict) -> WorldcatAccessToken:
-        """
-        Requests from the OCLC's authentication server an access token
+        """Get an access token from OCLC's authentication server.
 
         Args:
             credentials:                library's credentials for OCLC services
 
         Returns:
             access_token:               an instance of `WorldcatAccessToken`
+
         """
         access_token = WorldcatAccessToken(**credentials)
         logger.info(f"{self.library} Worldcat Metadata API access token obtained.")
         return access_token
 
     def _get_credentials(self) -> dict:
-        """
-        Retrieves library's credential from environmental variables
+        """Retrieve API credentials from environment variables.
 
         Returns:
-            credentials
+            credentials as a dictionary.
+
         """
-        return dict(
-            key=os.environ[f"WC{self.library}_KEY"],
-            secret=os.environ[f"WC{self.library}_SECRET"],
-            scopes="WorldCatMetadataAPI",
-            agent=f"{__title__}/{__version__}",
-        )
+        return {
+            "key": os.environ[f"WC{self.library}_KEY"],
+            "secret": os.environ[f"WC{self.library}_SECRET"],
+            "scopes": "WorldCatMetadataAPI",
+            "agent": f"{__title__}/{__version__}",
+        }
 
     def _prep_resource_queries_payloads(
         self, resource: Resource, rotten_apples: dict[int, list[str]]
     ) -> list[dict]:
-        """
-        Prepares payloads with query parameters for different resources.
+        """Prepare payloads with query parameters for different resources.
 
         Args:
             resource:                   `datastore.Resource` instance
@@ -147,6 +153,7 @@ class Worldcat:
 
         Returns:
             payloads
+
         """
         payloads = []
 
@@ -158,49 +165,49 @@ class Worldcat:
         if resource.resourceCategoryId == 1 and resource.distributorNumber:
             # ebook
             payloads.append(
-                dict(
-                    q=f"sn={dist_number} NOT lv:3{forbidden_sources}",
-                    itemType="book",
-                    itemSubType="book-digital",
-                )
+                {
+                    "q": f"sn={dist_number} NOT lv:3{forbidden_sources}",
+                    "itemType": "book",
+                    "itemSubType": "book-digital",
+                }
             )
         elif resource.resourceCategoryId == 2 and resource.distributorNumber:
             # eaudio
             payloads.append(
-                dict(
-                    q=f"sn={dist_number} NOT lv:3{forbidden_sources}",
-                    itemType="audiobook",
-                    itemSubType="audiobook-digital",
-                )
+                {
+                    "q": f"sn={dist_number} NOT lv:3{forbidden_sources}",
+                    "itemType": "audiobook",
+                    "itemSubType": "audiobook-digital",
+                }
             )
         elif resource.resourceCategoryId == 3 and resource.distributorNumber:
             # evideo
             payloads.append(
-                dict(
-                    q=f"sn={dist_number} NOT lv:3 NOT lv:M{forbidden_sources}",
-                    itemType="video",
-                    itemSubType="video-digital",
-                )
+                {
+                    "q": f"sn={dist_number} NOT lv:3 NOT lv:M{forbidden_sources}",
+                    "itemType": "video",
+                    "itemSubType": "video-digital",
+                }
             )
         elif resource.resourceCategoryId in range(4, 12):
             # print monograph materials
             if resource.standardNumber:
                 payloads.append(
-                    dict(
-                        q=f"bn:{resource.standardNumber}{forbidden_sources}",
-                        itemType="book",
-                        itemSubType="book-printbook",
-                        catalogSource="DLC",
-                    )
+                    {
+                        "q": f"bn:{resource.standardNumber}{forbidden_sources}",
+                        "itemType": "book",
+                        "itemSubType": "book-printbook",
+                        "catalogSource": "DLC",
+                    }
                 )
             if resource.congressNumber:
                 payloads.append(
-                    dict(
-                        q=f"ln:{resource.congressNumber}{forbidden_sources}",
-                        itemType="book",
-                        itemSubType="book-printbook",
-                        catalogSource="DLC",
-                    )
+                    {
+                        "q": f"ln:{resource.congressNumber}{forbidden_sources}",
+                        "itemType": "book",
+                        "itemSubType": "book-printbook",
+                        "catalogSource": "DLC",
+                    }
                 )
         logger.debug(
             f"Query payload for {self.library} Sierra bib # b{resource.sierraId}a: "
@@ -209,10 +216,12 @@ class Worldcat:
         return payloads
 
     def get_brief_bibs(
-        self, resources: list[Resource], rotten_apples: dict[int, list[str]] = {}
+        self,
+        resources: list[Resource],
+        rotten_apples: dict[int, list[str]] | None = None,
     ) -> Iterator[tuple[Resource, BriefBibResponse]]:
-        """
-        Performs WorldCat queries for each resource in the passed library batch.
+        """Perform WorldCat queries for each resource in the passed library batch.
+
         Resources must belong to the same library.
 
         Args:
@@ -223,10 +232,12 @@ class Worldcat:
                                         `ResourceCategory.nid` and value a list of
                                         OCLC organization codes
 
-        yields:
+        Yields:
             (`Resource`, `BriefBibResponse`)
 
         """
+        if not rotten_apples:
+            rotten_apples = {}
         for resource in resources:
             payloads = self._prep_resource_queries_payloads(resource, rotten_apples)
             if not payloads:
@@ -267,9 +278,7 @@ class Worldcat:
     def get_full_bibs(
         self, resources: list[Resource]
     ) -> Iterator[tuple[Resource, bytes]]:
-        """
-        Makes MetadataAPI requests for full bibliographic resources
-        """
+        """Make MetadataAPI requests for full bibliographic resources."""
         for resource in resources:
             if resource.oclcMatchNumber:
                 response = self.session.bib_get(oclcNumber=resource.oclcMatchNumber)

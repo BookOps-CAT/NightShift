@@ -1,7 +1,4 @@
-"""
-This module provides methods for manipulation and serialization of Worldcat responses
-into MARC21.
-"""
+"""Manipulate and serialize Worldcat responses to MARC21."""
 
 import logging
 import pickle
@@ -19,8 +16,7 @@ logger = logging.getLogger("nightshift")
 
 
 class BibEnhancer:
-    """
-    A class used for upgrading MARC records.
+    """A class used for upgrading MARC records.
 
     To initiate the class pass `nightshift.datastore.Resource` instance that
     was updated with WorldCat MARC XML record.
@@ -45,38 +41,13 @@ class BibEnhancer:
     into MARC 21 and saves it to a temporary file.
     """
 
-    DATA: dict[str, dict[str, dict[str, str]]] = {
-        "BPL": {
-            "tags": {"initials_tag": "947", "sierra_id_tag": "907", "call_tag": "099"},
-            "values": {
-                "default_loc": "bn=elres",
-                "bib_format_attr": "sierraBibFormatBpl",
-                "ebook": "eBOOK",
-                "eaudio": "eAUDIO",
-                "evideo": "eVIDEO",
-            },
-        },
-        "NYP": {
-            "tags": {"initials_tag": "901", "sierra_id_tag": "945", "call_tag": "091"},
-            "values": {
-                "default_loc": "bn=ia",
-                "bib_format_attr": "sierraBibFormatNyp",
-                "ebook": "eNYPL Book",
-                "eaudio": "eNYPL Audio",
-                "evideo": "eNYPL Video",
-            },
-        },
-    }
-
     def __init__(
         self,
         resource: Resource,
         library: str,
         resource_categories: dict[int, ResCatById],
     ) -> None:
-        """
-        Initiates BibEnhancer by parsing WorldCat MARC XML byte string received
-        from MetadataAPI service.
+        """Initiate BibEnhancer and parse MARC XML received from MetadataAPI service.
 
         Args:
             resource:                       `datastore.Resource` instance
@@ -87,7 +58,38 @@ class BibEnhancer:
 
         Raises:
             TypeError
+
         """
+        self.data: dict[str, dict[str, dict[str, str]]] = {
+            "BPL": {
+                "tags": {
+                    "initials_tag": "947",
+                    "sierra_id_tag": "907",
+                    "call_tag": "099",
+                },
+                "values": {
+                    "default_loc": "bn=elres",
+                    "bib_format_attr": "sierraBibFormatBpl",
+                    "ebook": "eBOOK",
+                    "eaudio": "eAUDIO",
+                    "evideo": "eVIDEO",
+                },
+            },
+            "NYP": {
+                "tags": {
+                    "initials_tag": "901",
+                    "sierra_id_tag": "945",
+                    "call_tag": "091",
+                },
+                "values": {
+                    "default_loc": "bn=ia",
+                    "bib_format_attr": "sierraBibFormatNyp",
+                    "ebook": "eNYPL Book",
+                    "eaudio": "eNYPL Audio",
+                    "evideo": "eNYPL Video",
+                },
+            },
+        }
         self.resource = resource
         self.library = library
         self.res_cat = resource_categories.get(self.resource.resourceCategoryId)
@@ -96,37 +98,34 @@ class BibEnhancer:
 
     @property
     def tags(self) -> dict[str, str]:
+        """MARC tags to be used during MARC serialization. Based on library code."""
         tags = {}
-        if self.library in self.DATA.keys():
-            tags.update(self.DATA[self.library]["tags"])
+        if self.library in self.data:
+            tags.update(self.data[self.library]["tags"])
         return tags
 
     @property
     def values(self) -> dict[str, str]:
+        """MARC values to be used during MARC serialization. Based on library code."""
         values = {}
-        if self.library in self.DATA.keys():
-            values.update(self.DATA[self.library]["values"])
+        if self.library in self.data:
+            values.update(self.data[self.library]["values"])
         return values
 
     def is_acceptable(self) -> bool:
+        """Check if full Worldcat record meets required criteria.
+
+        Determines if the record meets minimum criteria and if a valid call number
+        can be constructed.
         """
-        Checks if full Worldcat record meet minimum criteria and
-        a valid call number can be constructed.
-        """
-        if self._meets_minimum_criteria() and self._add_call_number():
-            return True
-        else:
-            return False
+        return self._meets_minimum_criteria() and self._add_call_number()
 
     def manipulate(self) -> None:
-        """
-        Manipulates WorldCat record according to `nightshift.constants` module
-        specs.
+        """Manipulate WorldCat record according to `nightshift.constants` module specs.
 
-        Full manipulation happens only if records meets minimum requirements and
+        Full record manipulation happens only if records meets minimum requirements and
         a call number can be constructed.
         """
-
         # delete unwanted MARC tags
         self._purge_tags()
 
@@ -142,7 +141,7 @@ class BibEnhancer:
                 f"Worldcat record # {self.resource.oclcMatchNumber} is rejected. "
                 "Does not meet minimum requirements."
             )
-            return None
+            return
         else:
             logger.info(
                 f"Worldcat record # {self.resource.oclcMatchNumber} is acceptable. "
@@ -169,32 +168,27 @@ class BibEnhancer:
                 self._digits_only_in_tag_001()
 
     def save2file(self, file_path: str = "temp.mrc") -> None:
-        """
-        Appends bib as MARC21 to a temporary dump file.
+        """Append bib as MARC21 to a temporary file.
 
         Args:
             file_path:                    path of the file to output records
 
         Raises:
             OSError
+
         """
-        if self.is_acceptable():
-            try:
-                with open(file_path, "ab") as out:
-                    out.write(self.bib.as_marc())
-                    logger.debug(
-                        f"Saving to file {self.library} record "
-                        f"b{self.resource.sierraId}a."
-                    )
-            except OSError as exc:
-                logger.error(f"Unable to save record to a temp file. Error {exc}.")
-                raise
-        else:
-            logger.warning("No pymarc object to serialize to MARC21.")
+        try:
+            with open(file_path, "ab") as out:
+                out.write(self.bib.as_marc())
+                logger.debug(
+                    f"Saving to file {self.library} record b{self.resource.sierraId}a."
+                )
+        except OSError as exc:
+            logger.error(f"Unable to save record to a temp file. Error {exc}.")
+            raise
 
     def worldcat_response_to_bib(self, response: bytes | None) -> Bib:
-        """
-        Converts MetadataApi responses into `bookops_marc.Bib` objects.
+        """Convert MetadataApi responses into `bookops_marc.Bib` objects.
 
         Args:
             response:                           MARC XML in binary format
@@ -203,6 +197,7 @@ class BibEnhancer:
 
         Raises:
             TypeError
+
         """
         logger.debug("Converting Worldcat response to bookops-marc Bib object.")
         if not isinstance(response, bytes):
@@ -218,14 +213,14 @@ class BibEnhancer:
             return bib
 
     def _add_call_number(self) -> bool:
-        """
-        Adds a call number MARC tag specific to resource category and each library.
+        """Add a call number MARC tag specific to resource category and each library.
 
         !!Creation of call numbers will be moved to a separate module or even package
         when print materials will be incorporated into the process (due to complexity)!!
 
         Returns:
             bool
+
         """
         resource_cat = getattr(self.res_cat, "name", "")
 
@@ -252,9 +247,7 @@ class BibEnhancer:
             return False
 
     def _add_command_tag(self) -> None:
-        """
-        Adds Sierra's command MARC tag (949) specific to resource category and
-        each library.
+        """Add Sierra's command MARC tag (949) based on resource category and library.
 
         Includes commands for matching Sierra bib # (ov=) Sierra bib format (b2=), and
         optional suppression (b2=) code.
@@ -287,65 +280,60 @@ class BibEnhancer:
         )
 
     def _clean_up_genre_tags(self) -> None:
-        """
-        Adds genre tags to e-resources.
-        """
+        """Add genre tags to e-resource records."""
         resource_cat = getattr(self.res_cat, "name", None)
 
         if resource_cat == "ebook":
-            for field in self.bib.subjects:
-                if "electronic books" in field.value().lower():
-                    self.bib.remove_field(field)
+            self._clean_up_ebook_genre_tags()
 
         if resource_cat == "eaudio":
-            # 'Audiobooks' term
-            # remove electronic audiobooks
-            for field in self.bib.subjects:
-                if "electronic audiobooks" in field.value().lower():
-                    self.bib.remove_field(field)
-
-            # but keep lcgft audiobooks
-            found = False
-            for field in self.bib.subjects:
-                if "audiobooks." in field.value().lower():
-                    found = True
-                    break
-            if not found:
-                self.bib.add_field(
-                    Field(
-                        tag="655",
-                        indicators=Indicators(" ", "7"),
-                        subfields=[
-                            Subfield("a", "Audiobooks."),
-                            Subfield("2", "lcgft"),
-                        ],
-                    )
-                )
-                logger.debug("Added 'Audiobooks' LCGFT genre to 655 tag.")
+            self._clean_up_eaudio_genre_tags()
 
         if resource_cat == "evideo":
-            found = False
-            for field in self.bib.subjects:
-                if "internet videos." in field.value().lower():
-                    found = True
-                    break
-            if not found:
-                self.bib.add_field(
-                    Field(
-                        tag="655",
-                        indicators=Indicators(" ", "7"),
-                        subfields=[
-                            Subfield("a", "Internet videos."),
-                            Subfield("2", "lcgft"),
-                        ],
-                    )
-                )
-                logger.debug("Added 'Internet videos' LCGFT genre to 655 tag.")
+            self._clean_up_evideo_genre_tags()
+
+    def _clean_up_ebook_genre_tags(self) -> None:
+        """Remove unused ebook genre tags."""
+        for field in self.bib.subjects:
+            if "electronic books" in field.value().lower():
+                self.bib.remove_field(field)
+
+    def _clean_up_eaudio_genre_tags(self) -> None:
+        """Ensure eaudio records contain correct genre tags."""
+        # remove electronic audiobooks
+        for field in self.bib.subjects:
+            if "electronic audiobooks" in field.value().lower():
+                self.bib.remove_field(field)
+
+        # but keep lcgft audiobooks
+        for field in self.bib.subjects:
+            if "audiobooks." in field.value().lower():
+                return
+        self.bib.add_field(
+            Field(
+                tag="655",
+                indicators=Indicators(" ", "7"),
+                subfields=[Subfield("a", "Audiobooks."), Subfield("2", "lcgft")],
+            )
+        )
+        logger.debug("Added 'Audiobooks' LCGFT genre to 655 tag.")
+
+    def _clean_up_evideo_genre_tags(self) -> None:
+        """Add appropriate genre tags for evideo records."""
+        for field in self.bib.subjects:
+            if "internet videos." in field.value().lower():
+                return
+        self.bib.add_field(
+            Field(
+                tag="655",
+                indicators=Indicators(" ", "7"),
+                subfields=[Subfield("a", "Internet videos."), Subfield("2", "lcgft")],
+            )
+        )
+        logger.debug("Added 'Internet videos' LCGFT genre to 655 tag.")
 
     def _add_local_tags(self) -> None:
-        """
-        Adds local tags to the WorldCat bib.
-        """
+        """Add local tags to the WorldCat bib."""
         if self.resource.srcFieldsToKeep:
             tags2keep = pickle.loads(self.resource.srcFieldsToKeep)
             fields = []
@@ -363,9 +351,7 @@ class BibEnhancer:
             )
 
     def _add_initials_tag(self) -> None:
-        """
-        Marks records as produced by the NightShift bot.
-        """
+        """Mark records as produced by the NightShift bot."""
         tag = self.tags["initials_tag"]
 
         self.bib.add_field(
@@ -380,10 +366,7 @@ class BibEnhancer:
         )
 
     def _add_sierraId(self) -> None:
-        """
-        Adds 907 (BPL) or 945 (NYP) tag to manipulated MARC record for
-        matching/overlaying purposes.
-        """
+        """Add bib ID tag to MARC record for matching/overlaying purposes."""
         self.bib.add_field(
             Field(
                 tag=self.tags["sierra_id_tag"],
@@ -393,16 +376,12 @@ class BibEnhancer:
         )
 
     def _digits_only_in_tag_001(self) -> None:
-        """
-        Removes OCLC control number prefix from the 001 tag
-        """
+        """Remove OCLC control number prefix from the 001 tag."""
         controlNo = OclcNumber(self.bib["001"].value())
         self.bib["001"].data = controlNo.without_prefix
 
     def _meets_minimum_criteria(self) -> bool:
-        """
-        Checks if Worldcat record meets minimum criteria
-        """
+        """Check if Worldcat record meets minimum criteria."""
         # check uppercase title (indicates poor quality)
         if self.bib.title and self.bib.title.isupper():
             logger.debug("Worldcat record failed uppercase title test.")
@@ -427,11 +406,7 @@ class BibEnhancer:
                 b"\xc2\xa9" in bytes(self.bib.author, "utf-8")
                 or b"\xc2\xa9" in bytes(self.bib.title, "utf-8")
             )
-        ):
-            logger.debug("Worldcat record failed characters encoding test.")
-            return False
-
-        elif (
+        ) or (
             self.bib.author
             and self.bib.title
             and (
@@ -451,9 +426,9 @@ class BibEnhancer:
         return True
 
     def _purge_tags(self) -> None:
-        """
-        Removes MARC tags indicated in `constants.RESOURCE_CATEGORIES`
-        from the WorldCat bib.
+        """Remove unwanted MARC tags from from the WorldCat bib.
+
+        Tags to be deleted are indicated in `constants.RESOURCE_CATEGORIES`
         """
         if self.res_cat:
             delete_tags = self.res_cat.dstTags2Delete
@@ -467,9 +442,7 @@ class BibEnhancer:
             logger.warning("Encountered unsupported resource category.")
 
     def _remove_eresource_vendors(self) -> None:
-        """
-        Removes from e-resource bib any tags indicating distributor
-        """
+        """Remove any tags indicating distributor from e-resource bib."""
         vendors = ["overdrive", "cloudlibrary", "3m", "recorded books"]
 
         for tag in self.bib.get_fields("710"):

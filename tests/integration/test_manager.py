@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -53,8 +53,7 @@ class TestProcessResourcesMocked:
         resource.enhanceTimestamp = None
         resource.queries = [
             WorldcatQuery(
-                match=False,
-                timestamp=datetime.now(timezone.utc).date() - timedelta(days=31),
+                match=False, timestamp=datetime.now(UTC).date() - timedelta(days=31)
             )
         ]
         resource.outputId = None
@@ -95,7 +94,7 @@ def test_perform_db_maintenance_set_expired(
                 sourceId=1,
                 resourceCategoryId=1,
                 status="open",
-                bibDate=datetime.now(timezone.utc).date() - timedelta(days=age),
+                bibDate=datetime.now(UTC).date() - timedelta(days=age),
                 queries=[WorldcatQuery(match=False)],
             )
         )
@@ -116,7 +115,7 @@ def test_perform_db_maintenance_set_expired(
         else:
             assert event is not None
             assert event.status == "expired"
-            assert event.timestamp.date() == datetime.now(timezone.utc).date()
+            assert event.timestamp.date() == datetime.now(UTC).date()
 
 
 @pytest.mark.parametrize(
@@ -137,7 +136,7 @@ def test_perform_db_maintenance_delete(
                 sourceId=1,
                 resourceCategoryId=1,
                 status="open",
-                bibDate=datetime.now(timezone.utc).date() - timedelta(days=age),
+                bibDate=datetime.now(UTC).date() - timedelta(days=age),
                 queries=[WorldcatQuery(match=False)],
             )
         )

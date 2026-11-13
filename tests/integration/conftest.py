@@ -86,9 +86,7 @@ def mock_worldcat_brief_bib_matches(monkeypatch):
         task_instance = args[0]
         resources = args[1]
         with task_instance.db_provider.session_scope() as session:
-            n = 0
-            for res in resources:
-                n += 1
+            for n, res in enumerate(resources):
                 instance = datastore_transactions.update_resource(
                     session, res.sierraId, res.libraryId, oclcMatchNumber=str(n)
                 )
@@ -171,11 +169,3 @@ def mock_transfer_to_drive(monkeypatch):
         os.remove("temp.mrc")
     except OSError:
         pass
-
-
-@pytest.fixture
-def mock_enhance_and_output_bibs(monkeypatch):
-    def enhance_and_output(*args, **kwargs):
-        pass
-
-    monkeypatch.setattr(Tasks, "enhance_and_output_bibs", enhance_and_output)

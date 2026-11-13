@@ -1,17 +1,16 @@
-"""
-Configures app logging
-"""
+"""Configures app logging."""
 
 import os
 
 
 def log_conf() -> dict:
-    """
-    Returns dictionary with logger configuration. Depends on
-    environmental variables to access loggly token and specify logger.
+    """Return dictionary with logger configuration.
+
+    Depends on environmental variables to access loggly token and specify logger.
 
     Returns:
-        logging_config
+        logging_config as a dictionary
+
     """
     log_token = os.environ["LOGGLY_TOKEN"]
     log_handlers = os.environ["LOG_HANDLERS"]

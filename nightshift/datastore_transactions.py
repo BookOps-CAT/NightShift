@@ -1,7 +1,9 @@
+"""Functions that manage database interactions."""
+
 import os
 from collections import namedtuple
-from datetime import datetime, timedelta, timezone
-from typing import Optional, cast
+from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 
 from sqlalchemy import and_, delete, func, inspect, select, update
 from sqlalchemy.dialects.postgresql import insert
@@ -60,15 +62,16 @@ def get_connection_string() -> str:
 
 
 def create_db_provider(connection_str: str) -> DatabaseProvider:
+    """Create a `DatabaseProvider` instance for a given connection string."""
     return DatabaseProvider(connection_str)
 
 
 def init_db(db_provider: DatabaseProvider) -> None:
-    """
-    Initiates the database and prepopulates needed tables
+    """Initialize the database and prepopulate needed tables.
 
     Args:
-        session:                `sqlalchemy.Session` instance
+        db_provider: `DatabaseProvider` instance
+
     """
     # make sure to start from scratch
     # recreate schema & prepopulate needed tables
@@ -147,8 +150,7 @@ def init_db(db_provider: DatabaseProvider) -> None:
 
 
 def add_event(session: Session, resource: Resource, status: str) -> Event:
-    """
-    Inserts an event row.
+    """Insert an event row into the database.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -163,6 +165,7 @@ def add_event(session: Session, resource: Resource, status: str) -> Event:
 
     Returns:
         `nightshift.datastore.Event` instance
+
     """
     instance = Event(
         libraryId=resource.libraryId,
@@ -170,7 +173,7 @@ def add_event(session: Session, resource: Resource, status: str) -> Event:
         bibDate=resource.bibDate,
         resourceCategoryId=resource.resourceCategoryId,
         status=status,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
     session.add(instance)
@@ -179,8 +182,7 @@ def add_event(session: Session, resource: Resource, status: str) -> Event:
 
 
 def add_output_file(session: Session, libraryId: int, file_handle: str) -> OutputFile:
-    """
-    Adds OutputFile record to db.
+    """Add OutputFile record to the database.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -189,17 +191,17 @@ def add_output_file(session: Session, libraryId: int, file_handle: str) -> Outpu
 
     Returns:
         `nightshift.datastore.OutputFile` instance
+
     """
     instance = insert_or_ignore(
-        session, OutputFile, libraryId=libraryId, handle=file_handle
+        session=session, model=OutputFile, libraryId=libraryId, handle=file_handle
     )
     session.flush()
     return instance
 
 
-def add_resource(session: Session, resource: Resource) -> Optional[Resource]:
-    """
-    Adds Resource record to db.
+def add_resource(session: Session, resource: Resource) -> Resource | None:
+    """Add Resource record to the database.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -207,6 +209,7 @@ def add_resource(session: Session, resource: Resource) -> Optional[Resource]:
 
     Returns:
         `Resource` instance updated with `nid`
+
     """
     values = {
         column.name: getattr(resource, column.name)
@@ -221,8 +224,7 @@ def add_resource(session: Session, resource: Resource) -> Optional[Resource]:
 
 
 def add_source_file(session: Session, libraryId: int, handle: str) -> SourceFile:
-    """
-    Adds SourceFile record to db.
+    """Add SourceFile record to the database.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -231,16 +233,20 @@ def add_source_file(session: Session, libraryId: int, handle: str) -> SourceFile
 
     Returns:
         `SourceFile` instance
+
     """
-    instance = insert_or_ignore(session, SourceFile, libraryId=libraryId, handle=handle)
+    instance = insert_or_ignore(
+        session=session, model=SourceFile, libraryId=libraryId, handle=handle
+    )
     session.flush()
     return instance
 
 
 def delete_resources(session: Session, resourceCategoryId: int, age: int) -> int:
-    """
-    Deletes resources from the database based on category and days since
-    bib creation in Sierra.
+    """Delete resources from the database.
+
+    Resources are deleted based on their category and the number of days since the
+    bib was created in Sierra.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -249,8 +255,9 @@ def delete_resources(session: Session, resourceCategoryId: int, age: int) -> int
 
     Returns:
         number of deleted rows in the database
+
     """
-    cutoff_date = datetime.now(timezone.utc).date() - timedelta(days=age)
+    cutoff_date = datetime.now(UTC).date() - timedelta(days=age)
     stmt = (
         delete(Resource)
         .where(Resource.resourceCategoryId == resourceCategoryId)
@@ -261,9 +268,8 @@ def delete_resources(session: Session, resourceCategoryId: int, age: int) -> int
     return result.rowcount
 
 
-def insert_or_ignore(session, model, **kwargs):
-    """
-    Adds a new record to given table (model) or ignores if the same.
+def insert_or_ignore(session: Session, model: Any, **kwargs: Any) -> Any:
+    """Add a new record to a given table or ignore if no changes have been made.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -272,6 +278,7 @@ def insert_or_ignore(session, model, **kwargs):
 
     Returns:
         instance of inserted or duplicate record
+
     """
     stmt = insert(model).values(**kwargs).on_conflict_do_nothing()
     session.execute(stmt)
@@ -282,15 +289,14 @@ def insert_or_ignore(session, model, **kwargs):
 
 
 def library_by_id(session: Session) -> dict[int, str]:
-    """
-    Creates a dictionary where the key is `datastore.Library.nid` and a value is the
-    library code.
+    """Create a dictionary of Library.nid/library code pairs.
 
     Args:
         session:                `sqlalchemy.Session` instance
 
     Returns:
         dict of `nid` and library `codes`
+
     """
     stmt = select(Library)
     instances = session.scalars(stmt).all()
@@ -298,15 +304,14 @@ def library_by_id(session: Session) -> dict[int, str]:
 
 
 def parse_query_days(query_days: str) -> list[tuple[int, ...]]:
-    """
-    Parses query days stored as strings in the datastore
-    into proper format.
+    """Parse query days stored as strings in the datastore into proper format.
 
     Args:
         query_days:             `datastore.ResourceCategory.queryDays` value
 
     Returns:
         list of day periods tuples
+
     """
     periods = []
 
@@ -318,18 +323,18 @@ def parse_query_days(query_days: str) -> list[tuple[int, ...]]:
 
 
 def resource_category_by_name(session: Session) -> dict[str, ResCatByName]:
-    """
-    Creates a dictionary of resource categories with names as the key.
+    """Create a dictionary of name/resource category pairs.
 
     Args:
         session:                `sqlalchemy.Session` instance
 
     Returns:
         dict of `names` and resource category data as values
+
     """
     stmt = select(ResourceCategory)
     instances = session.scalars(stmt).all()
-    data = dict()
+    data = {}
     for i in instances:
         queryDays = parse_query_days(i.queryDays)
         srcTags2Keep = i.srcTags2Keep.split(",") if i.srcTags2Keep else []
@@ -349,10 +354,10 @@ def resource_category_by_name(session: Session) -> dict[str, ResCatByName]:
 def retrieve_expired_resources(
     session: Session, resourceCategoryId: int, expiration_age: int
 ) -> list[Resource]:
-    """
-    Retrieves resources for a particular category specified by resourceCategoryId that
-    expired according to the schedule from the `constants.RESOURCE_CATEGORIES`
-    query_days.
+    """Retrieve resources for a particular category by resourceCategoryId.
+
+    Returns resources that have expired based on the schedule from the
+    `constants.RESOURCE_CATEGORIES` query_days.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -361,22 +366,20 @@ def retrieve_expired_resources(
 
     Returns:
         list of matching query `Resource` instances
+
     """
     resources = select(Resource).where(
         Resource.resourceCategoryId == resourceCategoryId,
         Resource.status == "open",
-        Resource.bibDate
-        < datetime.now(timezone.utc).date() - timedelta(days=expiration_age),
+        Resource.bibDate < datetime.now(UTC).date() - timedelta(days=expiration_age),
     )
     return list(session.scalars(resources).all())
 
 
 def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
-    """
-    Retrieves resources that have been added to the db
-    but has not been processed yet.
-    The results are grouped by the resource category and ordered by
-    resource nid.
+    """Retrieve resources that have been added to the db but have not been processed.
+
+    The results are grouped by the resource category and ordered by resource nid.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -384,6 +387,7 @@ def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
 
     Returns:
         list of `Resource` instances
+
     """
     resources = (
         select(Resource)
@@ -396,9 +400,9 @@ def retrieve_new_resources(session: Session, libraryId: int) -> list[Resource]:
 def retrieve_open_older_resources(
     session: Session, libraryId: int, resourceCategoryId: int, minAge: int, maxAge: int
 ) -> list[Resource]:
-    """
-    Queries resources with open status that has not been queried in WorldCat
-    between minAge and maxAge.
+    """Retrieve resources with open status that have not been queried in WorldCat.
+
+    Returns resources between minAge and maxAge.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -409,8 +413,9 @@ def retrieve_open_older_resources(
 
     Returns:
         list of `Row` instances
+
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     subq = (
         select(Resource.nid, func.max(WorldcatQuery.timestamp).label("last_query"))
@@ -438,10 +443,9 @@ def retrieve_open_older_resources(
 def retrieve_open_matched_resources_without_full_bib(
     session: Session, libraryId: int
 ) -> list[Resource]:
-    """
-    Retrieves resources that have been matched to records in WorldCat,
-    but not upgraded yet.
-    The results are grouped by resource category and ordered by resource nid
+    """Retrieve resources that have been matched in WorldCat but not yet upgraded.
+
+    The results are grouped by resource category and ordered by resource nid.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -449,6 +453,7 @@ def retrieve_open_matched_resources_without_full_bib(
 
     Returns:
         list of `Resource` instances
+
     """
     resources = (
         select(Resource)
@@ -466,8 +471,7 @@ def retrieve_open_matched_resources_without_full_bib(
 def retrieve_open_matched_resources_with_full_bib_obtained(
     session: Session, libraryId: int, resourceCategoryId: int
 ) -> list[Resource]:
-    """
-    Retrieves resources that include MARC XML with full bib
+    """Retrieve resources that include MARC XML with full bib.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -476,6 +480,7 @@ def retrieve_open_matched_resources_with_full_bib_obtained(
 
     Returns:
         list of `Resource` instances
+
     """
     resources = select(Resource).where(
         Resource.libraryId == libraryId,
@@ -487,8 +492,7 @@ def retrieve_open_matched_resources_with_full_bib_obtained(
 
 
 def retrieve_processed_files(session: Session, libraryId: int) -> list[str]:
-    """
-    Retrieves file handles of all processed files for specific library.
+    """Retrieve file handles of all processed files for a given library.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -496,20 +500,21 @@ def retrieve_processed_files(session: Session, libraryId: int) -> list[str]:
 
     Returns:
         list of file handles
+
     """
     stmt = select(SourceFile.handle).filter_by(libraryId=libraryId)
     return list(session.scalars(stmt).all())
 
 
 def retrieve_rotten_apples(session: Session) -> dict[int, list[str]]:
-    """
-    Retrieves OCLC codes of organizations that result should be excluded from
+    """Retrieve OCLC codes of organizations whose results should be excluded.
 
     Args:
         session:                `sqlalchemy.Session` instance
 
     Returns:
         dictionary of resource category ids and list of org codes
+
     """
     stmt = select(RottenAppleResource.resourceCategoryId, RottenApple.code).join(
         RottenApple, RottenApple.nid == RottenAppleResource.rottenAppleId
@@ -530,9 +535,10 @@ def retrieve_rotten_apples(session: Session) -> dict[int, list[str]]:
 def set_resources_to_expired(
     session: Session, resourceCategoryId: int, age: int
 ) -> int:
-    """
-    Updates status from 'open' to 'expired' in resources with given category
-    and age in days since bib created in Sierra.
+    """Update status from 'open' to 'expired'.
+
+    Updates resources with given the resource category ID and age in days
+    since the bib was created in Sierra.
 
     Args:
         session:                `sqlalchemy.Session` instance
@@ -541,13 +547,14 @@ def set_resources_to_expired(
 
     Returns:
         number of updated rows in the database
+
     """
     stmt = (
         update(Resource)
         .where(
             Resource.resourceCategoryId == resourceCategoryId,
             Resource.status == "open",
-            Resource.bibDate < datetime.now(timezone.utc).date() - timedelta(days=age),
+            Resource.bibDate < datetime.now(UTC).date() - timedelta(days=age),
         )
         .values(status="expired")
     )
@@ -555,9 +562,10 @@ def set_resources_to_expired(
     return result.rowcount
 
 
-def update_resource(session, sierraId, libraryId, **kwargs) -> Resource:
-    """
-    Updates Resource record.
+def update_resource(
+    session: Session, sierraId: int, libraryId: int, **kwargs: Any
+) -> Resource:
+    """Update Resource record.
 
     Args:
         session:                `sqlalchemy.Session` instance

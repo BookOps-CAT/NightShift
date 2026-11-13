@@ -1,11 +1,9 @@
-"""
-This module provides the manager methods to perform particular tasks
-"""
+"""Manages tasks performed by NightShift application."""
 
 import logging
 import os
-from datetime import datetime, timezone
-from typing import Callable, Optional
+from collections.abc import Callable
+from datetime import UTC, datetime
 
 from nightshift.comms.sierra_search_platform import BplSolr, NypPlatform
 from nightshift.comms.storage import Drive, get_credentials
@@ -29,9 +27,10 @@ logger = logging.getLogger("nightshift")
 
 
 class Tasks:
-    """
-    Handles various operations related to ingesting new files, searching Worldcat,
-    manipulating results and outputting the results to SFTP.
+    """Handle multiple tasks completed during NightShift processing.
+
+    Includes operations related to ingesting new files, searching Worldcat,
+    manipulating results and outputting the results to a file on the SFTP drive.
     """
 
     def __init__(
@@ -41,23 +40,24 @@ class Tasks:
         libraryId: int,
         resource_categories: dict[str, ResCatByName],
     ) -> None:
-        """
+        """Initialize a `Tasks` instance.
+
         Args:
-            db_provider:                        `DatabaseProvider` instance
-            library:                            'NYP' or 'BPL'
-            libraryId:                          `datastore.Library.nid`
-            resource_categories:                dictionary by category name with
-                                                associated data
+            db_provider: `DatabaseProvider` instance
+            library: 'NYP' or 'BPL'
+            libraryId: `datastore.Library.nid`
+            resource_categories: dictionary by category name with associated data.
+
         """
         self.db_provider = db_provider
         self.library = library
         self.libraryId = libraryId
         self._res_cat = resource_categories
         self._res_cat_idx = self._create_resource_category_idx()
-        self.rotten_apples: dict[int, list[str]] = dict()
+        self.rotten_apples: dict[int, list[str]] = {}
 
     def _create_resource_category_idx(self) -> dict[int, ResCatById]:
-        """Creates a dictionary of resource categories by their id."""
+        """Create a dictionary of resource categories by their id."""
         return {
             data.nid: ResCatById(
                 name,
@@ -71,18 +71,12 @@ class Tasks:
         }
 
     def _create_rotten_apples_idx(self) -> dict[int, list[str]]:
-        """
-        Creates a dictionary of forbidden organization codes whose records
-        should be excluded from WorldCat results.
-        """
+        """Return dict of org codes whose records to exclude from WorldCat results."""
         with self.db_provider.session_scope() as session:
             return retrieve_rotten_apples(session)
 
     def check_resources_sierra_state(self, resources: list[Resource]) -> None:
-        """
-        Checks and updates status & suppression of records using
-        NYPL Platform & BPL Solr.
-        """
+        """Update status of records in DB based on Sierra status/suppression."""
         sierra_platform_factory: Callable[..., BplSolr | NypPlatform]
         if self.library == "NYP":
             sierra_platform_factory = NypPlatform
@@ -119,7 +113,8 @@ class Tasks:
     def enhance_and_output_bibs(
         self, resource_category: str, resources: list[Resource]
     ) -> None:
-        """
+        """Review WorldCat results and update records in DB with resulting MARC records.
+
         Manipulates downloaded WorldCat records, serializes them into MARC21 format,
         transfers file to SFTP, and updates database records.
 
@@ -128,6 +123,7 @@ class Tasks:
                                             processed
             resources:                      list of `nightshift.datastore.Resource`
                                             instances to be processed
+
         """
         temp_file, enhanced_resources = self.manipulate_and_serialize_bibs(
             resource_category, resources
@@ -136,12 +132,12 @@ class Tasks:
         self.update_status_to_upgraded(remote_file, enhanced_resources)
 
     def get_worldcat_brief_bib_matches(self, resources: list[Resource]) -> None:
-        """
-        Queries Worldcat for given resources and persists responses in the database.
+        """Query Worldcat for given resources and persist responses in the database.
 
         Args:
             resources:                      list of `nightshift.datastore.Resource`
                                             instances
+
         """
         logger.info(
             f"Searching Worldcat for brief records for {len(resources)} resources."
@@ -188,10 +184,7 @@ class Tasks:
                         add_event(session, resource, status="worldcat_miss")
 
     def get_worldcat_full_bibs(self, resources: list[Resource]) -> None:
-        """
-        Requests full bibliographic records from MetadataAPI service and
-        stores the responses in the db.
-        """
+        """Retrieve full bib records from MetadataAPI and save responses to the db."""
         logger.info(
             f"Downloading full records from WorldCat for {len(resources)} resources."
         )
@@ -204,9 +197,7 @@ class Tasks:
                     )
 
     def ingest_new_files(self) -> None:
-        """
-        Imports resources from newly added SFTP files to the database.
-        """
+        """Import resources from newly added SFTP files to the database."""
         drive_creds = get_credentials()
         with Drive(*drive_creds) as drive:
             unproc_files = self.isolate_unprocessed_files(drive)
@@ -233,9 +224,9 @@ class Tasks:
                     logger.info(f"Ingested {n} records from the file '{handle}'.")
 
     def isolate_unprocessed_files(self, drive: Drive) -> list[str]:
-        """
-        Finds unprocessed files on the network drive by comparing db SourceFile
-        record handles with handles retrieved from the drive.
+        """Find unprocessed files on SFTP drive.
+
+        Compares db SourceFile record handles with handles retrieved from the drive.
         """
         remote_files = drive.list_src_directory()
         library_remote_files = [
@@ -255,10 +246,8 @@ class Tasks:
         resource_category: str,
         resources: list[Resource],
         out_fh: str = "temp.mrc",
-    ) -> tuple[Optional[str], list[Resource]]:
-        """
-        Merges Sierra brief bibs data with WorldCat full bib,
-        and serializes them into MARC21 format
+    ) -> tuple[str | None, list[Resource]]:
+        """Merge Sierra records with WorldCat records and serialize them to MARC.
 
         Args:
             resource_category:              name of resource category ('ebook', etc.)
@@ -268,6 +257,7 @@ class Tasks:
 
         Returns:
             tuple (output file, list of enhanced resources)
+
         """
         enhanced_resources = []
         skipped_resources = []
@@ -319,13 +309,12 @@ class Tasks:
         return (None, enhanced_resources)
 
     def transfer_to_drive(
-        self, resource_category: str, src_file: Optional[str]
-    ) -> Optional[str]:
-        """
-        Transfers local temporary MARC21 file to network drive.
-        Arguments `library` and `resource_category` is used to name the MARC file on the
-        network drive.
-        After successful transfer the temporary file is deleted.
+        self, resource_category: str, src_file: str | None
+    ) -> str | None:
+        """Transfer local temporary MARC21 file to network drive.
+
+        The `library` and `resource_category` args are used for the file name on the
+        network drive. After successful transfer the temporary file is deleted.
 
         Args:
             resource_category:             name of resource category being processed
@@ -336,6 +325,7 @@ class Tasks:
 
         Raises:
             DriveError
+
         """
         today = datetime.now().date()
         remote_file_name_base = f"{today:%y%m%d}-{self.library}-{resource_category}"
@@ -348,16 +338,17 @@ class Tasks:
         return None
 
     def update_status_to_upgraded(
-        self, out_file_handle: Optional[str], resources: list[Resource]
+        self, out_file_handle: str | None, resources: list[Resource]
     ) -> None:
-        """
-        Upgrades given resources status to "bot_enhanced" and records output file id.
+        """Upgrade status to "bot_enhanced" for given resources and record file id.
+
         Adds appropriate event record to the database.
 
         Args:
             out_file_handle:                handle of the output file
             resources:                      list of `nightshift.datastore.Resource`
                                             instances
+
         """
         if out_file_handle is None:
             logger.info(
@@ -378,6 +369,6 @@ class Tasks:
                     resource.libraryId,
                     status="bot_enhanced",
                     outputId=out_file_record.nid,
-                    enhanceTimestamp=datetime.now(timezone.utc),
+                    enhanceTimestamp=datetime.now(UTC),
                 )
                 add_event(session, resource, status="bot_enhanced")

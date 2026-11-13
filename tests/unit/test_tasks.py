@@ -1,5 +1,4 @@
-import os
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
 from pymarc import MARCReader
@@ -13,9 +12,11 @@ from nightshift.tasks import Tasks
 
 def test_create_resource_category_idx(db_provider, stub_res_cat_by_name):
     tasks = Tasks(db_provider, "NYP", 1, stub_res_cat_by_name)
-    tasks._res_cat = dict(
-        ebook=ResCatByName(9, "a", "b", ["999"], ["099", "199"], [(15, 30), (30, 60)])
-    )
+    tasks._res_cat = {
+        "ebook": ResCatByName(
+            9, "a", "b", ["999"], ["099", "199"], [(15, 30), (30, 60)]
+        )
+    }
     res = tasks._create_resource_category_idx()
     assert isinstance(res, dict)
     assert len(res) == 1
@@ -197,7 +198,7 @@ def test_get_worldcat_brief_bib_matches_success(
                 libraryId=1,
                 resourceCategoryId=1,
                 sourceId=1,
-                bibDate=datetime.now(timezone.utc).date(),
+                bibDate=datetime.now(UTC).date(),
                 title="Pride and prejudice.",
                 distributorNumber="123",
                 status="open",
@@ -249,7 +250,7 @@ def test_get_worldcat_brief_bib_matches_failed(
                 libraryId=library_id,
                 resourceCategoryId=1,
                 sourceId=1,
-                bibDate=datetime.now(timezone.utc).date(),
+                bibDate=datetime.now(UTC).date(),
                 title="Pride and prejudice.",
                 distributorNumber="123",
                 status="open",
@@ -299,7 +300,7 @@ def test_get_worldcat_full_bibs(
                 libraryId=1,
                 resourceCategoryId=1,
                 sourceId=1,
-                bibDate=datetime.now(timezone.utc).date(),
+                bibDate=datetime.now(UTC).date(),
                 title="Pride and prejudice.",
                 distributorNumber="123",
                 status="open",
@@ -375,7 +376,7 @@ def test_isolate_unprocessed_files(
 
 
 def test_manipulate_and_serialize_bibs_default_outfile(
-    caplog, stub_res_cat_by_name, db_provider, test_data_rich
+    caplog, stub_res_cat_by_name, db_provider, test_data_rich, mock_drive
 ):
     with db_provider.session_scope() as session:
         resources = list(session.scalars(select(Resource)).all())
@@ -393,12 +394,6 @@ def test_manipulate_and_serialize_bibs_default_outfile(
     assert bib["945"].value() == ".b11111111a"
     assert bib["949"].value() == "*b2=z;bn=ia;"
     assert bib["901"].value() == "NightShift/0.6.2"
-
-    if os.path.exists("temp.mrc"):
-        try:
-            os.remove("temp.mrc")
-        except OSError:
-            raise
 
 
 def test_manipulate_and_serialize_bibs_custom_outfile(
@@ -428,7 +423,7 @@ def test_manipulate_and_serialize_bibs_custom_outfile(
 
 
 def test_manipulate_and_serialize_bibs_failed(
-    caplog, db_provider, test_data_rich, stub_res_cat_by_name
+    caplog, db_provider, test_data_rich, stub_res_cat_by_name, mock_drive
 ):
     with db_provider.session_scope() as session:
         resource = session.scalars(select(Resource)).one_or_none()

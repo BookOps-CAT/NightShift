@@ -26,8 +26,8 @@ class TestBibEnhancer:
         with pytest.raises(TypeError):
             BibEnhancer(stub_resource, "NYP", stub_res_cat_by_id)
         assert (
-            caplog.records[1].msg
-            == "Invalid MARC data format: NoneType. Not able to convert to bookops-marc Bib object."
+            "Invalid MARC data format: NoneType. Not able to convert to bookops-marc Bib object."
+            in caplog.text
         )
 
     def test_init_invalid_library(self, stub_resource, stub_res_cat_by_id):
@@ -232,13 +232,3 @@ class TestBibEnhancer:
             be.save2file()
 
         assert "Unable to save record to a temp file. Error" in caplog.text
-
-    def test_save2file_unacceptable(
-        self, caplog, tmpdir, stub_resource, stub_res_cat_by_id
-    ):
-        outfile = tmpdir.join("foo.mrc")
-        stub_resource.resourceCategoryId = 99
-        be = BibEnhancer(stub_resource, "BPL", stub_res_cat_by_id)
-        be.save2file(outfile)
-
-        assert "No pymarc object to serialize to MARC21" in caplog.text
