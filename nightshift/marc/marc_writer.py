@@ -177,19 +177,15 @@ class BibEnhancer:
             OSError
 
         """
-        if self.is_acceptable():
-            try:
-                with open(file_path, "ab") as out:
-                    out.write(self.bib.as_marc())
-                    logger.debug(
-                        f"Saving to file {self.library} record "
-                        f"b{self.resource.sierraId}a."
-                    )
-            except OSError as exc:
-                logger.error(f"Unable to save record to a temp file. Error {exc}.")
-                raise
-        else:
-            logger.warning("No pymarc object to serialize to MARC21.")
+        try:
+            with open(file_path, "ab") as out:
+                out.write(self.bib.as_marc())
+                logger.debug(
+                    f"Saving to file {self.library} record b{self.resource.sierraId}a."
+                )
+        except OSError as exc:
+            logger.error(f"Unable to save record to a temp file. Error {exc}.")
+            raise
 
     def worldcat_response_to_bib(self, response: bytes | None) -> Bib:
         """Convert MetadataApi responses into `bookops_marc.Bib` objects.
